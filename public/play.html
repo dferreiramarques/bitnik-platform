@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bitnik — A jogar</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d0f14;--panel:#141720;--border:#252a38;--text:#c8ccda;--muted:#5a607a;
   --accent:#4f7cff;--gold:#c8973a;--teal:#2a6b6e;--rust:#b84e2a}
@@ -12,7 +12,7 @@
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
   min-height:100vh;font-size:13px}
 #app{max-width:960px;margin:0 auto;padding:20px}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:14px;
   letter-spacing:2px;color:var(--gold);text-transform:uppercase;
   margin-bottom:24px;display:flex;align-items:center;gap:10px}
 .logo a{color:inherit;text-decoration:none}
@@ -23,7 +23,7 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
 
 /* Name entry */
 #s-name{max-width:400px;margin:80px auto;text-align:center}
-#s-name h1{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;
+#s-name h1{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:32px;
   margin-bottom:8px;letter-spacing:-1px}
 #s-name p{color:var(--muted);font-size:12px;margin-bottom:32px}
 .inp{width:100%;padding:14px;background:#141720;border:1px solid var(--border);
@@ -31,7 +31,7 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
   font-size:14px;margin-bottom:12px;outline:none;text-align:center}
 .inp:focus{border-color:var(--gold)}
 .btn{padding:14px 28px;background:var(--gold);color:#0d0f14;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:13px;
+  font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;
   letter-spacing:1.5px;text-transform:uppercase;border:none;
   border-radius:4px;cursor:pointer;width:100%;transition:background .2s}
 .btn:hover{background:#d4a84a}
@@ -43,7 +43,7 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
 /* Lobby */
 #s-lobby .card{background:var(--panel);border:1px solid var(--border);
   border-radius:6px;padding:20px;margin-bottom:12px}
-.lobby-title{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;
+.lobby-title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:24px;
   margin-bottom:4px;letter-spacing:-0.5px}
 .lobby-sub{font-size:11px;color:var(--muted);margin-bottom:20px}
 .seat-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
@@ -68,7 +68,7 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
   border-radius:6px;margin-bottom:12px}
 .phase-tag{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)}
 .phase-node{font-size:11px;color:var(--muted)}
-.round-badge{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+.round-badge{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px}
 
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
   gap:8px;margin-bottom:12px}
@@ -82,7 +82,7 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
   color:var(--teal);border-radius:2px}
 .pname .cur{font-size:9px;padding:1px 5px;background:rgba(200,151,58,.2);
   color:var(--gold);border-radius:2px}
-.pscore{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gold)}
+.pscore{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:28px;color:var(--gold)}
 
 .action-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;
   padding:16px;margin-bottom:12px}
@@ -111,16 +111,16 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
 /* Game over */
 #s-over{max-width:480px;margin:60px auto}
 #s-over .card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:28px}
-.over-title{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;
+.over-title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:28px;
   margin-bottom:20px;letter-spacing:-0.5px}
 .score-row{display:flex;align-items:center;padding:10px 0;
   border-bottom:1px solid var(--border)}
 .score-row:last-child{border:none}
-.score-pos{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;
+.score-pos{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:20px;
   width:36px;color:var(--muted)}
 .score-pos.gold{color:var(--gold)}
 .score-name{flex:1;font-size:13px;color:#fff}
-.score-pts{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--gold)}
+.score-pts{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:22px;color:var(--gold)}
 
 /* Conn indicator */
 #conn{position:fixed;top:12px;right:12px;width:8px;height:8px;border-radius:50%;
@@ -191,7 +191,8 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
 <script>
 // ── State ─────────────────────────────────────────────────────────
 const gameKey = location.pathname.replace('/play/','').split('/')[0];
-let ws, myName='', mySeat=-1, state=null, gameInfo=null;
+let ws, myName='', mySeat=-1, state=null, lobbyInfo=null;
+let bestTableNum = 1;  // track which table to join
 
 // ── WebSocket ─────────────────────────────────────────────────────
 function connect() {
@@ -205,27 +206,33 @@ function connect() {
 function send(msg) { if (ws?.readyState===1) ws.send(JSON.stringify(msg)); }
 
 function onOpen() {
-  // Ask server about this game
   send({ type:'LIST_LOBBIES', gameKey });
 }
 
 function handle(msg) {
   if (msg.type === 'WELCOME') {
-    if (!msg.games.includes(gameKey)) {
-      document.getElementById('name-title').textContent = 'Jogo não encontrado';
-      document.getElementById('name-sub').textContent = `"${gameKey}" não existe neste servidor.`;
+    if (!msg.games || !msg.games.includes(gameKey)) {
+      document.getElementById('name-title').textContent = 'Jogo não disponível';
+      document.getElementById('name-sub').textContent = `"${gameKey}" não foi encontrado. Verifica o URL.`;
+      document.querySelector('.btn').disabled = true;
       return;
     }
-    document.getElementById('name-title').textContent = 'Bem-vindo';
-    document.getElementById('name-sub').textContent = 'Escolhe o teu nome para jogar';
   }
   if (msg.type === 'LOBBIES') {
-    // Pick first available lobby
-    const available = msg.lobbies.find(l => l.gameKey===gameKey && !l.inGame && l.players < l.maxP)
-                    || msg.lobbies.find(l => l.gameKey===gameKey);
-    if (available) {
-      document.getElementById('game-label').textContent = available.gameName || gameKey;
-      document.getElementById('name-title').textContent = available.gameName || gameKey;
+    // Find best available lobby
+    const avail = (msg.lobbies || []).find(l =>
+      l.gameKey === gameKey && !l.inGame && l.players < l.maxP
+    ) || (msg.lobbies || []).find(l => l.gameKey === gameKey);
+
+    if (avail) {
+      bestTableNum = avail.tableNum || 1;
+      const name = avail.gameName || gameKey;
+      document.getElementById('game-label').textContent = name;
+      document.getElementById('name-title').textContent = name;
+      document.getElementById('name-sub').textContent = 'Escolhe o teu nome para entrar';
+    } else {
+      document.getElementById('name-title').textContent = gameKey;
+      document.getElementById('name-sub').textContent = 'Escolhe o teu nome para entrar';
     }
   }
   if (msg.type === 'JOINED') {
@@ -236,14 +243,19 @@ function handle(msg) {
   if (msg.type === 'LOBBY_STATE') renderLobby(msg);
   if (msg.type === 'PLAYER_JOINED') send({ type:'REQUEST_STATE' });
   if (msg.type === 'GAME_STATE') renderGame(msg.state);
-  if (msg.type === 'ERROR') alert(msg.text);
+  if (msg.type === 'ERROR') {
+    // Show error inline, don't just alert
+    const sub = document.getElementById('name-sub');
+    if (sub) sub.textContent = '⚠ ' + msg.text;
+    console.error('Server error:', msg.text);
+  }
 }
 
 function joinGame() {
   const n = document.getElementById('inp-name').value.trim();
-  if (!n) { alert('Precisas de um nome'); return; }
+  if (!n) { document.getElementById('inp-name').focus(); return; }
   myName = n;
-  send({ type:'JOIN', gameKey, tableNum: 1, name: n });
+  send({ type:'JOIN', gameKey, tableNum: bestTableNum, name: n });
 }
 
 function startGame() { send({ type:'START' }); }

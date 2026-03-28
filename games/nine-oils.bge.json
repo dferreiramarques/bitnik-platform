@@ -1,0 +1,48 @@
+{
+  "_format": "bge",
+  "_version": "0.4",
+  "game": { "name": "Nine Oils", "players": { "min": 2, "max": 2 } },
+  "swimlanes": [
+    { "id": "sl1", "name": "Setup", "color": "#f5a623", "y": 0, "h": 360, "collapsed": false },
+    { "id": "sl2", "name": "Game Loop", "color": "#2ec4a4", "y": 360, "h": 1080, "collapsed": false },
+    { "id": "sl3", "name": "End Game", "color": "#f87171", "y": 1440, "h": 360, "collapsed": false }
+  ],
+  "nodes": [
+    { "id": "n01", "node": "GAME_START", "label": "Game Start", "x": 60, "y": 60, "config": { "maxPlayers": 2, "notes": "2 jogadores: Vendedor vs Banca. 9 dados d6. Baralho de cartas de personagem (Temptress, Gambler, Preacher...). Cada jogador começa com 3 cartas na mão. Objectivo: encher 6 garrafas na banca." } },
+    { "id": "n02", "node": "DECK", "label": "Baralho de personagens", "x": 300, "y": 60, "config": { "notes": "Cartas: Temptress (rouba combo), Gambler (dobra aposta), Preacher (cancela ataque), Snake (veneno — perde dados), Doctor (recupera dados), Sheriff (bloqueio). ~30 cartas total." } },
+    { "id": "n03", "node": "DRAW_CARD", "label": "Distribuir mão inicial", "x": 540, "y": 60, "config": { "amt": 3, "notes": "Cada jogador recebe 3 cartas de personagem. Mão máxima: 5." } },
+    { "id": "n04", "node": "COUNTER", "label": "Garrafas na banca (0/6)", "x": 800, "y": 60, "config": { "notes": "Contador partilhado de 0 a 6. Quando chega a 6: fim do jogo." } },
+    { "id": "n05", "node": "TURN_BLOCK", "label": "Turno do Vendedor", "x": 60, "y": 450, "config": { "tb": { "constraint": "all", "max": 3, "actions": [ { "id": "a1", "type": "Dice Roll", "mand": true }, { "id": "a2", "type": "Play Card", "mand": false }, { "id": "a3", "type": "Custom\u2026", "mand": false } ], "outcomes": [ { "id": "o1", "label": "sell", "color": "#4ade80" }, { "id": "o2", "label": "bust", "color": "#f87171" }, { "id": "o3", "label": "instant_win", "color": "#f5a623" } ] }, "notes": "1. Rola 9 dados. 2. Pode jogar cartas de modificação. 3. Banca responde. 4. Resolve combos." } },
+    { "id": "n06", "node": "DICE_ROLL", "label": "Rolar 9 dados", "x": 340, "y": 450, "config": { "count": 9, "sides": 6, "notes": "Rola todos os 9 dados d6. Resultado visible para ambos." } },
+    { "id": "n07", "node": "CARD_MOD", "label": "Jogar carta modificadora", "x": 340, "y": 620, "config": { "notes": "Opcional. Jogar 1 carta antes da resolução: Temptress rouba o melhor combo do oponente; Gambler duplica garrafas do próximo sell; Snake remove 1 dado do adversário." } },
+    { "id": "n08", "node": "REACT_DEF", "label": "Banca responde", "x": 600, "y": 620, "config": { "notes": "Banca pode jogar 1 carta reactiva: Preacher cancela modificação; Sheriff bloqueia venda; Doctor repõe dados removidos. Simultâneo — ambos decidem antes de revelar." } },
+    { "id": "n09", "node": "COMBO_DET", "label": "Detectar combos", "x": 600, "y": 450, "config": { "combos": "DOUBLE,TRIPLE,QUAD,PENTA,SIX_OF_KIND,JOKER,DOUBLE_QUAD,INSTANT_WIN", "notes": "DOUBLE=2 iguais → 0 garrafas (base). TRIPLE=3 → 1 garrafa. QUAD=4 → 2 garrafas. PENTA=5 → 3 garrafas. SIX=6 → 4 garrafas. SEVEN=7 → 5 garrafas. EIGHT=8 → Joker (escolhe valor). NINE=9 → vitória imediata (9-of-a-kind)." } },
+    { "id": "n10", "node": "CONF_CHOICE", "label": "Escolher melhor bundle", "x": 840, "y": 450, "config": { "notes": "Se múltiplos combos válidos, vendedor escolhe qual activar. Ex: [3,3,3,4,4,4,5,5,5] → pode escolher TRIPLE_DOUBLE ou THREE_TRIPLES." } },
+    { "id": "n11", "node": "SCORE_PTS", "label": "Encher garrafas", "x": 840, "y": 620, "config": { "amt": 1, "who": "active", "notes": "Score = garrafas na banca. Incrementa o contador de garrafas conforme o combo resolvido." } },
+    { "id": "n12", "node": "INSTANT_WIN", "label": "9-of-a-kind — vitória imediata", "x": 840, "y": 800, "config": { "notes": "Se todos os 9 dados mostrarem o mesmo número, o Vendedor ganha imediatamente." } },
+    { "id": "n13", "node": "DRAW_CARD", "label": "Comprar 1 carta", "x": 340, "y": 800, "config": { "amt": 1, "notes": "No fim do turno, ambos compram 1 carta (se mão < 5). Em seguida passa o turno." } },
+    { "id": "n14", "node": "CHECK_WIN", "label": "6 garrafas cheias?", "x": 340, "y": 960, "config": { "cond": "score >= 6", "notes": "Verifica se o vendedor encheu 6 garrafas. Se sim, o Vendedor ganha." } },
+    { "id": "n15", "node": "ON_COND", "label": "Trigger: 9-of-a-kind", "x": 60, "y": 800, "config": { "cond": "lastRoll_all_same", "rep": "always", "notes": "Detecta 9 dados iguais em qualquer rolo. Dispara vitória imediata." } },
+    { "id": "n16", "node": "GAME_END", "label": "Game End — Vendedor vence", "x": 60, "y": 1510, "config": { "notes": "Vendedor encheu 6 garrafas. Conta pontos: garrafas × cartas especiais usadas." } },
+    { "id": "n17", "node": "GAME_END", "label": "Game End — Banca vence", "x": 300, "y": 1510, "config": { "notes": "Baralho esgotado sem 6 garrafas, ou Preacher bloqueou o último sell possível." } }
+  ],
+  "edges": [
+    { "id": "e01", "fromNode": "n01", "fromPort": "next", "toNode": "n02", "toPort": "card" },
+    { "id": "e02", "fromNode": "n02", "fromPort": "card", "toNode": "n03", "toPort": "in" },
+    { "id": "e03", "fromNode": "n03", "fromPort": "next", "toNode": "n05", "toPort": "start" },
+    { "id": "e04", "fromNode": "n05", "fromPort": "sell", "toNode": "n06", "toPort": "trigger" },
+    { "id": "e05", "fromNode": "n06", "fromPort": "result", "toNode": "n07", "toPort": "play" },
+    { "id": "e06", "fromNode": "n07", "fromPort": "modified", "toNode": "n08", "toPort": "attack" },
+    { "id": "e07", "fromNode": "n08", "fromPort": "result", "toNode": "n09", "toPort": "roll" },
+    { "id": "e08", "fromNode": "n09", "fromPort": "combos", "toNode": "n10", "toPort": "options" },
+    { "id": "e09", "fromNode": "n10", "fromPort": "chosen", "toNode": "n11", "toPort": "trigger" },
+    { "id": "e10", "fromNode": "n11", "fromPort": "next", "toNode": "n13", "toPort": "in" },
+    { "id": "e11", "fromNode": "n13", "fromPort": "next", "toNode": "n14", "toPort": "in" },
+    { "id": "e12", "fromNode": "n14", "fromPort": "win", "toNode": "n16", "toPort": "prev" },
+    { "id": "e13", "fromNode": "n14", "fromPort": "continue", "toNode": "n05", "toPort": "start" },
+    { "id": "e14", "fromNode": "n05", "fromPort": "instant_win", "toNode": "n12", "toPort": "trigger" },
+    { "id": "e15", "fromNode": "n05", "fromPort": "bust", "toNode": "n17", "toPort": "prev" },
+    { "id": "e16", "fromNode": "n15", "fromPort": "fire", "toNode": "n12", "toPort": "trigger" }
+  ],
+  "engine_nodes_used": ["GAME_START","DECK","DRAW_CARD","COUNTER","TURN_BLOCK","DICE_ROLL","CARD_MOD","REACT_DEF","COMBO_DET","CONF_CHOICE","SCORE_PTS","INSTANT_WIN","CHECK_WIN","ON_COND","GAME_END"]
+}

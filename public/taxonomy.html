@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bitnik — Node Taxonomy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14; --surface:#141720; --panel:#1a1e2a;
+  --border:#252a38; --border2:#303548;
+  --text:#c8ccda; --muted:#5a607a; --accent:#4f7cff;
+  --flow:#f5a623; --logic:#4f7cff; --actions:#2ec4a4;
+  --data:#a78bfa; --events:#f87171; --triggers:#ff6eb4; --assets:#4ade80;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);font-size:13px;line-height:1.6}
+
+/* Layout */
+.wrap{display:flex;min-height:100vh}
+nav{width:200px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);
+  padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+nav::-webkit-scrollbar{width:3px}
+nav::-webkit-scrollbar-thumb{background:var(--border2)}
+main{flex:1;padding:40px 48px;max-width:900px}
+
+/* Nav */
+.nav-logo{padding:0 18px 20px;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:14px;color:var(--accent);letter-spacing:1px}
+.nav-logo small{display:block;color:var(--muted);font-size:10px;
+  font-family:'DM Mono',monospace;font-weight:400;letter-spacing:.5px;margin-top:2px}
+.nav-sect{padding:12px 18px 4px;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted)}
+nav a{display:flex;align-items:center;gap:8px;padding:5px 18px;
+  color:var(--muted);text-decoration:none;font-size:12px;transition:color .15s;
+  border-left:2px solid transparent}
+nav a:hover{color:var(--text)}
+nav a.on{color:var(--accent);border-left-color:var(--accent)}
+.nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Header */
+h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;
+  color:#fff;margin-bottom:6px;letter-spacing:-.5px}
+.lead{font-size:14px;color:var(--muted);margin-bottom:36px;line-height:1.8}
+h2{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;
+  color:#fff;margin:48px 0 16px;padding-top:48px;
+  border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+h2:first-of-type{margin-top:0;padding-top:0;border-top:none}
+h2 .fam-badge{font-size:10px;padding:3px 10px;border-radius:3px;
+  font-family:'DM Mono',monospace;font-weight:400;letter-spacing:1px}
+
+/* Node grid */
+.node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:8px}
+.node-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:14px 16px;border-top:2px solid var(--nc,var(--border))}
+.node-type{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--nc,var(--muted));margin-bottom:4px}
+.node-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;
+  color:#fff;margin-bottom:6px}
+.node-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.node-ports{display:flex;gap:8px;flex-wrap:wrap}
+.port{font-size:10px;padding:2px 7px;border-radius:2px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border2)}
+.port.in{border-color:rgba(79,124,255,.3);color:#7090dd}
+.port.out{border-color:rgba(46,196,164,.3);color:#5ab8a0}
+.node-new::after{content:'★';color:var(--nc);font-size:9px;
+  margin-left:6px;vertical-align:middle}
+.node-game{font-size:10px;color:var(--muted);margin-top:6px;
+  padding-top:6px;border-top:1px solid var(--border)}
+.node-game em{color:var(--nc);font-style:normal}
+
+/* Case study blocks */
+.case{background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  padding:18px 20px;margin:16px 0 24px}
+.case-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;
+  color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.case-game{font-size:11px;color:var(--muted)}
+.case-flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.cf-node{padding:4px 10px;border-radius:3px;font-size:11px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text)}
+.cf-arr{color:var(--muted);font-size:14px}
+.case-note{font-size:12px;color:var(--muted);line-height:1.7}
+
+/* Concept blocks */
+.concept{background:var(--surface);border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0;padding:14px 18px;margin:16px 0}
+.concept.warn{border-color:var(--flow)}
+.concept.tip{border-color:var(--actions)}
+.concept p{font-size:12px;color:var(--muted);margin:0;line-height:1.8}
+.concept strong{color:#fff}
+
+/* Format example */
+pre{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:18px;overflow-x:auto;font-size:11px;line-height:1.8;margin:12px 0 20px}
+code{font-family:'DM Mono',monospace}
+.k{color:#f5a623}.s{color:#a8c87a}.n{color:#8db5b7}.c{color:#5a607a}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);
+  font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{color:#fff;font-weight:500;white-space:nowrap}
+
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="nav-logo">Bitnik<small>Node Taxonomy</small></div>
+  <div class="nav-sect">Conceitos</div>
+  <a href="#intro">Introdução</a>
+  <a href="#edges-vs-triggers">Edges vs Triggers</a>
+  <a href="#turn-block">Turn Block</a>
+  <a href="#swimlanes">Swimlanes</a>
+  <div class="nav-sect">Famílias</div>
+  <a href="#flow"><span class="nav-dot" style="background:var(--flow)"></span>FLOW</a>
+  <a href="#logic"><span class="nav-dot" style="background:var(--logic)"></span>LOGIC</a>
+  <a href="#actions"><span class="nav-dot" style="background:var(--actions)"></span>ACTIONS</a>
+  <a href="#data"><span class="nav-dot" style="background:var(--data)"></span>DATA</a>
+  <a href="#events"><span class="nav-dot" style="background:var(--events)"></span>EVENTS</a>
+  <a href="#triggers"><span class="nav-dot" style="background:var(--triggers)"></span>TRIGGERS</a>
+  <a href="#assets"><span class="nav-dot" style="background:var(--assets)"></span>ASSETS</a>
+  <div class="nav-sect">Casos Reais</div>
+  <a href="#bulbous">Bulbous</a>
+  <a href="#capivaras">Capivaras</a>
+  <a href="#percebes">Praia das Percebes</a>
+  <a href="#nine-oils">Nine Oils</a>
+  <div class="nav-sect">Formato</div>
+  <a href="#bge-format">.bge</a>
+</nav>
+
+<main>
+<h1>Taxonomia de Nós</h1>
+<p class="lead">43 nós em 7 famílias — derivados empiricamente portando 4 jogos reais para a plataforma.<br>
+Cada nó é uma mecânica atómica. O grafo de nós é a definição completa do jogo.</p>
+
+<!-- INTRO -->
+<section id="intro">
+<h2>Como funciona</h2>
+<p style="color:var(--muted);line-height:1.9;margin-bottom:12px">
+Um jogo em Bitnik é um <strong style="color:#fff">grafo de nós</strong> — nós ligados por edges. O runtime percorre o grafo seguindo as edges, chamando o executor de cada nó. Quando encontra um WAIT, para e aguarda input do jogador. Quando encontra END, o jogo termina.
+</p>
+<div class="concept">
+  <p><strong>Fluxo típico:</strong> GAME_START → ROUND_START → TURN_BLOCK → [player acts] → CHECK_WIN → (loop ou GAME_END)</p>
+</div>
+
+<table>
+  <tr><th>Elemento</th><th>O que é</th><th>Exemplo</th></tr>
+  <tr><td>Nó</td><td>Mecânica atómica com ports de entrada e saída</td><td>TURN_BLOCK, DICE_ROLL</td></tr>
+  <tr><td>Edge</td><td>Ligação sequencial entre ports — "depois disto, faz aquilo"</td><td>TURN_END → next → CHECK_WIN</td></tr>
+  <tr><td>Trigger</td><td>Listener reactivo — "sempre que X, dispara Y"</td><td>ON_DECK_E → fire → EXTRA_TURNS</td></tr>
+  <tr><td>Swimlane</td><td>Região visual que organiza nós por fase (Setup / Loop / End)</td><td>—</td></tr>
+</table>
+</section>
+
+<!-- EDGES VS TRIGGERS -->
+<section id="edges-vs-triggers">
+<h2>Edges vs Triggers</h2>
+<div class="concept warn">
+  <p><strong>Edges</strong> modelam fluxo sequencial. <strong>Triggers</strong> modelam comportamento reactivo. A diferença importa: um trigger ON_DECK_E dispara mesmo que o jogo esteja no meio de um turno — a edge só seguiria quando o fluxo chegasse lá naturalmente.</p>
+</div>
+
+<div class="case">
+  <div class="case-title">Exemplo: endgame no Bulbous</div>
+  <div class="case-flow">
+    <span class="cf-node" style="border-color:rgba(255,110,180,.3);color:#ff6eb4">ON_COND<br><span style="font-size:10px;color:var(--muted)">reserve vazio</span></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node">fire</span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:#7090dd">CHECK_WIN</span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:#f87171">GAME_END</span>
+  </div>
+  <p class="case-note">Quando um jogador coloca a última Baelfungious do reservatório, o trigger ON_COND dispara imediatamente — mesmo que o fluxo esteja dentro de TURN_BLOCK a aguardar apostas. Usar uma edge aqui seria errado: o CHECK_WIN só correria no fim do turno.</p>
+</div>
+</section>
+
+<!-- TURN BLOCK -->
+<section id="turn-block">
+<h2>Turn Block — anatomia</h2>
+<p style="color:var(--muted);margin-bottom:14px">O Turn Block é o nó mais importante. Substitui a necessidade de ligar Turn Start → [N acções] → Turn End. Define constraint, lista de acções, e outcomes que se tornam ports reais.</p>
+
+<table>
+  <tr><th>Constraint</th><th>Comportamento</th><th>Usado em</th></tr>
+  <tr><td>choose_1</td><td>Jogador escolhe exactamente 1 acção</td><td>Capivaras (aposta), Praia das Percebes</td></tr>
+  <tr><td>up_to_n</td><td>Jogador faz até N acções (default: 2)</td><td>Jogos de acção múltipla</td></tr>
+  <tr><td>all</td><td>Todas obrigatórias em ordem</td><td>Nine Oils (rola → joga carta → resolve)</td></tr>
+  <tr><td>free</td><td>Qualquer número, qualquer ordem</td><td>Sandbox, euro games</td></tr>
+</table>
+
+<pre><code><span class="c">// Turn Block config no .bge</span>
+{
+  <span class="k">"constraint"</span>: <span class="s">"up_to_n"</span>,
+  <span class="k">"max"</span>: <span class="n">2</span>,
+  <span class="k">"actions"</span>: [
+    { <span class="k">"id"</span>: <span class="s">"a1"</span>, <span class="k">"type"</span>: <span class="s">"Play Card"</span>,  <span class="k">"mand"</span>: <span class="n">false</span> },
+    { <span class="k">"id"</span>: <span class="s">"a2"</span>, <span class="k">"type"</span>: <span class="s">"Move Piece"</span>, <span class="k">"mand"</span>: <span class="n">false</span> }
+  ],
+  <span class="k">"outcomes"</span>: [
+    { <span class="k">"id"</span>: <span class="s">"o1"</span>, <span class="k">"label"</span>: <span class="s">"end_turn"</span>, <span class="k">"color"</span>: <span class="s">"#4ade80"</span> },
+    { <span class="k">"id"</span>: <span class="s">"o2"</span>, <span class="k">"label"</span>: <span class="s">"endgame"</span>,  <span class="k">"color"</span>: <span class="s">"#f87171"</span> }
+  ]
+}
+<span class="c">// Cada outcome → port de saída real no nó</span></code></pre>
+</section>
+
+<!-- SWIMLANES -->
+<section id="swimlanes">
+<h2>Swimlanes</h2>
+<p style="color:var(--muted);margin-bottom:12px">As swimlanes dividem o canvas em fases. São cosméticas — não afectam a execução — mas impõem legibilidade e mapeiam directamente para scenes no runtime.</p>
+<table>
+  <tr><th>Lane</th><th>Proporção default</th><th>O que contém</th></tr>
+  <tr><td>Setup</td><td>20%</td><td>GAME_START, DECK, distribuição inicial, roles iniciais</td></tr>
+  <tr><td>Game Loop</td><td>60%</td><td>ROUND_START, TURN_BLOCK, lógica de turno, triggers activos</td></tr>
+  <tr><td>End Game</td><td>20%</td><td>Scoring final, MAJORITY, COLL_BONUS, GAME_END</td></tr>
+</table>
+</section>
+
+<!-- FLOW -->
+<section id="flow">
+<h2><span style="color:var(--flow)">▶</span> FLOW <span class="fam-badge" style="background:rgba(245,166,35,.12);color:var(--flow)">Controlo de fluxo</span></h2>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW</div>
+    <div class="node-name">Game Start</div>
+    <div class="node-desc">Entry point obrigatório. Um por jogo. Configura max jogadores e setup inicial.</div>
+    <div class="node-ports"><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW</div>
+    <div class="node-name">Round Start</div>
+    <div class="node-desc">Início de ronda. Reset de estado por ronda: trickNum, contestedThisRound, etc.</div>
+    <div class="node-ports"><span class="port in">prev</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW · ★</div>
+    <div class="node-name node-new">Turn Block</div>
+    <div class="node-desc">Macro-nó. Encapsula constraint + acções + outcomes. Duplo-clique para editar. Outcomes → ports reais.</div>
+    <div class="node-ports"><span class="port in">start</span><span class="port out">end_turn</span><span class="port out">endgame</span><span class="port out">...</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW</div>
+    <div class="node-name">Turn Start / Turn End</div>
+    <div class="node-desc">Activa o próximo jogador (Start) ou passa a vez (End). Dispara triggers ON_TURN_S / ON_TURN_E.</div>
+    <div class="node-ports"><span class="port in">prev</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW</div>
+    <div class="node-name">Game End</div>
+    <div class="node-desc">Terminal. Ordena jogadores por score. Exibe ranking final. Sem outputs.</div>
+    <div class="node-ports"><span class="port in">prev</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW · ★</div>
+    <div class="node-name node-new">Instant Win</div>
+    <div class="node-desc">Vitória imediata sem passar por Game End normal. Ex: 9-of-a-kind em Nine Oils.</div>
+    <div class="node-ports"><span class="port in">trigger</span></div>
+    <div class="node-game">Descoberto em: <em>Nine Oils</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW · ★</div>
+    <div class="node-name node-new">Extra Turns</div>
+    <div class="node-desc">Dá uma última volta a todos os jogadores restantes após o endgame disparar.</div>
+    <div class="node-ports"><span class="port in">trigger</span><span class="port out">done</span></div>
+    <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
+  </div>
+</div>
+</section>
+
+<!-- LOGIC -->
+<section id="logic">
+<h2><span style="color:var(--logic)">◆</span> LOGIC <span class="fam-badge" style="background:rgba(79,124,255,.12);color:var(--logic)">Decisões e condições</span></h2>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC</div>
+    <div class="node-name">Check Condition</div>
+    <div class="node-desc">If/else genérico. Avalia uma expressão (ex: score >= 10, trickNum >= 4).</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">true</span><span class="port out">false</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC</div>
+    <div class="node-name">Check Resource</div>
+    <div class="node-desc">Testa se o jogador activo tem pelo menos N de um recurso. Config: resource, amount.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">yes</span><span class="port out">no</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC</div>
+    <div class="node-name">Check Victory</div>
+    <div class="node-desc">Avalia condição de vitória. continue → volta ao loop; win → End Game.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">win</span><span class="port out">continue</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC · ★</div>
+    <div class="node-name node-new">Dice Roll</div>
+    <div class="node-desc">Rola N dados de S faces. Resultado armazenado em player.meta.lastRoll para COMBO_DET.</div>
+    <div class="node-ports"><span class="port in">trigger</span><span class="port out">result</span></div>
+    <div class="node-game">Descoberto em: <em>Nine Oils</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC · ★</div>
+    <div class="node-name node-new">Combo Detect</div>
+    <div class="node-desc">Analisa roll de dados para padrões: DOUBLE, TRIPLE, QUAD, PENTA, SIX_OF_KIND, JOKER, INSTANT_WIN.</div>
+    <div class="node-ports"><span class="port in">roll</span><span class="port out">combos</span></div>
+    <div class="node-game">Descoberto em: <em>Nine Oils</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC · ★</div>
+    <div class="node-name node-new">Conflict Choice</div>
+    <div class="node-desc">Quando múltiplos combos são válidos, apresenta ao jogador para escolher qual activar.</div>
+    <div class="node-ports"><span class="port in">options</span><span class="port out">chosen</span></div>
+    <div class="node-game">Descoberto em: <em>Nine Oils</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--logic)">
+    <div class="node-type">LOGIC</div>
+    <div class="node-name">Random</div>
+    <div class="node-desc">Escolhe aleatoriamente entre os ports de saída disponíveis.</div>
+    <div class="node-ports"><span class="port in">trigger</span><span class="port out">result</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ACTIONS -->
+<section id="actions">
+<h2><span style="color:var(--actions)">▲</span> ACTIONS <span class="fam-badge" style="background:rgba(46,196,164,.12);color:var(--actions)">Acções do jogador</span></h2>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS</div>
+    <div class="node-name">Play Card</div>
+    <div class="node-desc">Move carta da mão do jogador para destino (board, discard, effect zone).</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS</div>
+    <div class="node-name">Draw Card</div>
+    <div class="node-desc">Move N cartas do deck para a mão. Config: amount.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS · ★</div>
+    <div class="node-name node-new">Swap</div>
+    <div class="node-desc">Descarta N cartas e compra N cartas atomicamente. Hand refresh.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous (BET action)</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS · ★</div>
+    <div class="node-name node-new">Tile Place</div>
+    <div class="node-desc">Coloca tile no Shared Board com validação de adjacência. Config: adjRule.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+    <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS</div>
+    <div class="node-name">Move Piece</div>
+    <div class="node-desc">Move peça entre Zones. Config: validação de destino.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS</div>
+    <div class="node-name">Collect Resource</div>
+    <div class="node-desc">Transfere recurso de célula do board para inventário do jogador.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS · ★</div>
+    <div class="node-name node-new">Optional Action</div>
+    <div class="node-desc">Acção secundária ou Skip. Jogador pode fazer ou passar.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">done</span><span class="port out">skip</span></div>
+    <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS · ★</div>
+    <div class="node-name node-new">Card Modifier</div>
+    <div class="node-desc">Carta jogada antes de um roll que modifica o outcome (Temptress, Snake em Nine Oils).</div>
+    <div class="node-ports"><span class="port in">play</span><span class="port out">modified</span></div>
+    <div class="node-game">Descoberto em: <em>Nine Oils</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--actions)">
+    <div class="node-type">ACTIONS · ★</div>
+    <div class="node-name node-new">Steal</div>
+    <div class="node-desc">Transfere peça ou recurso de um oponente para o jogador activo.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">next</span></div>
+  </div>
+</div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+<h2><span style="color:var(--data)">●</span> DATA <span class="fam-badge" style="background:rgba(167,139,250,.12);color:var(--data)">Contentores de estado</span></h2>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA</div>
+    <div class="node-name">Deck</div>
+    <div class="node-desc">Baralho ordenado com shuffle, draw, discard pile recycling.</div>
+    <div class="node-ports"><span class="port out">card</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA</div>
+    <div class="node-name">Hand</div>
+    <div class="node-desc">Cartas privadas do jogador. Hidden-state: outros jogadores não vêem.</div>
+    <div class="node-ports"><span class="port out">card</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA</div>
+    <div class="node-name">Counter</div>
+    <div class="node-desc">Valor numérico — score, recursos, número de ronda, garrafas.</div>
+    <div class="node-ports"><span class="port out">value</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA</div>
+    <div class="node-name">Player State</div>
+    <div class="node-desc">Set completo de atributos do jogador: nome, cor, score, recursos, peças.</div>
+    <div class="node-ports"><span class="port out">data</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA · ★</div>
+    <div class="node-name node-new">Shared Board</div>
+    <div class="node-desc">Grelha partilhada (hex ou square) com tracking de conteúdo de células e adjacência.</div>
+    <div class="node-ports"><span class="port out">cells</span></div>
+    <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA · ★</div>
+    <div class="node-name node-new">Structure</div>
+    <div class="node-desc">Objectivo coleccionável N-slot. Preenche todos os slots para completar (Baelfungious).</div>
+    <div class="node-ports"><span class="port out">slots</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--data)">
+    <div class="node-type">DATA · ★</div>
+    <div class="node-name node-new">Role</div>
+    <div class="node-desc">Token rotativo (Governante, Primeiro Jogador) que passa entre jogadores por ronda.</div>
+    <div class="node-ports"><span class="port out">holder</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous</em></div>
+  </div>
+</div>
+</section>
+
+<!-- EVENTS -->
+<section id="events">
+<h2><span style="color:var(--events)">◉</span> EVENTS <span class="fam-badge" style="background:rgba(248,113,113,.12);color:var(--events)">Scoring e notificações</span></h2>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS</div>
+    <div class="node-name">Notify All / Player</div>
+    <div class="node-desc">Mensagem pública (All) ou privada (Player). Não altera estado — só informa.</div>
+    <div class="node-ports"><span class="port in">trigger</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS</div>
+    <div class="node-name">Score Points</div>
+    <div class="node-desc">Adiciona ou subtrai pontos imediatamente. Config: amount, who (active/winner/all).</div>
+    <div class="node-ports"><span class="port in">trigger</span><span class="port out">next</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">Spatial Score</div>
+    <div class="node-desc">Score baseado em geometria do board (banhistas no segmento do salva-vidas).</div>
+    <div class="node-ports"><span class="port in">end</span><span class="port out">next</span></div>
+    <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">Majority</div>
+    <div class="node-desc">Bónus por maioria em estrutura completada. Solo: +3. Empate: +1 para todos os empatados.</div>
+    <div class="node-ports"><span class="port in">end</span><span class="port out">next</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">Collection Bonus</div>
+    <div class="node-desc">Bónus por coleccionar N tipos distintos de um item (4 cores de Baelfungious = +5 pts).</div>
+    <div class="node-ports"><span class="port in">end</span><span class="port out">next</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">Secret Bet</div>
+    <div class="node-desc">Todos apostam secretamente. Revelação simultânea. Config: targets (cartas centrais, etc.).</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">placed</span></div>
+    <div class="node-game">Descoberto em: <em>Capivaras, Bulbous</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">Competing Claim</div>
+    <div class="node-desc">Aposta única ganha. Empate → ninguém ganha, carta descartada. Config: tieResult.</div>
+    <div class="node-ports"><span class="port in">bets</span><span class="port out">winner</span><span class="port out">tie</span></div>
+    <div class="node-game">Descoberto em: <em>Capivaras</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">First Claim</div>
+    <div class="node-desc">Primeiro jogador a cumprir condição reclama o objectivo. Pool de objectivos revelados progressivamente.</div>
+    <div class="node-ports"><span class="port in">trigger</span><span class="port out">claimed</span></div>
+    <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--events)">
+    <div class="node-type">EVENTS · ★</div>
+    <div class="node-name node-new">Reactive Defense</div>
+    <div class="node-desc">Um ataque abre janela de resposta para o oponente dentro do mesmo turno (Preacher em Nine Oils).</div>
+    <div class="node-ports"><span class="port in">attack</span><span class="port out">result</span></div>
+    <div class="node-game">Descoberto em: <em>Nine Oils</em></div>
+  </div>
+</div>
+</section>
+
+<!-- TRIGGERS -->
+<section id="triggers">
+<h2><span style="color:var(--triggers)">⚡</span> TRIGGERS <span class="fam-badge" style="background:rgba(255,110,180,.12);color:var(--triggers)">Listeners reactivos</span></h2>
+<div class="concept warn">
+  <p><strong>Triggers são sempre-on.</strong> Não precisam de estar ligados ao fluxo sequencial — o runtime indexa-os por tipo e dispara-os quando o evento ocorre, independentemente de onde o jogo está no grafo.</p>
+</div>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS</div>
+    <div class="node-name">On Turn Start / End</div>
+    <div class="node-desc">Dispara no início/fim de qualquer turno de qualquer jogador.</div>
+    <div class="node-ports"><span class="port out">fire</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS</div>
+    <div class="node-name">On Round End</div>
+    <div class="node-desc">Dispara quando todos os jogadores completaram o turno numa ronda.</div>
+    <div class="node-ports"><span class="port out">fire</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS</div>
+    <div class="node-name">On Tile Placed</div>
+    <div class="node-desc">Dispara quando tile é colocado. Config: filter por tipo (ex: type=salva-vidas).</div>
+    <div class="node-ports"><span class="port out">fire</span><span class="port out">r</span><span class="port out">c</span></div>
+    <div class="node-game">Usado em: <em>Praia das Percebes</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS</div>
+    <div class="node-name">On Card Played</div>
+    <div class="node-desc">Dispara quando carta é jogada da mão. Config: filter por tipo de carta.</div>
+    <div class="node-ports"><span class="port out">fire</span><span class="port out">card</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS</div>
+    <div class="node-name">On Score Change</div>
+    <div class="node-desc">Dispara quando score muda. Config: threshold mínimo (ex: score >= 10).</div>
+    <div class="node-ports"><span class="port out">fire</span><span class="port out">player</span></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS</div>
+    <div class="node-name">On Deck Empty</div>
+    <div class="node-desc">Dispara quando baralho esgota (após recycle do discard pile). Config: filter por deck.</div>
+    <div class="node-ports"><span class="port out">fire</span></div>
+    <div class="node-game">Usado em: <em>Capivaras</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS · ★</div>
+    <div class="node-name node-new">On Condition</div>
+    <div class="node-desc">Condição personalizada. Config: expression + repeat policy (always/once/per_turn).</div>
+    <div class="node-ports"><span class="port out">fire</span><span class="port out">else</span></div>
+    <div class="node-game">Usado em: <em>Bulbous (reservatório vazio)</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--triggers)">
+    <div class="node-type">TRIGGERS · ★</div>
+    <div class="node-name node-new">After Effect</div>
+    <div class="node-desc">Dispara após outro nó terminar. Config: source node, delay em ms.</div>
+    <div class="node-ports"><span class="port in">source</span><span class="port out">fire</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ASSETS -->
+<section id="assets">
+<h2><span style="color:var(--assets)">◐</span> ASSETS <span class="fam-badge" style="background:rgba(74,222,128,.12);color:var(--assets)">Presença visual e áudio</span></h2>
+<div class="node-grid">
+  <div class="node-card" style="--nc:var(--assets)">
+    <div class="node-type">ASSETS</div>
+    <div class="node-name">Board Layout</div>
+    <div class="node-desc">Configura o board visual: hex, square, ou custom. Liga ao Shared Board.</div>
+  </div>
+  <div class="node-card" style="--nc:var(--assets)">
+    <div class="node-type">ASSETS</div>
+    <div class="node-name">Card Template</div>
+    <div class="node-desc">Layout de frente/verso da carta com campos dinâmicos.</div>
+  </div>
+  <div class="node-card" style="--nc:var(--assets)">
+    <div class="node-type">ASSETS · ★</div>
+    <div class="node-name node-new">Timer</div>
+    <div class="node-desc">Countdown com timeout automático. Usado para Tie Break (20s) e fases cronometradas.</div>
+    <div class="node-ports"><span class="port in">start</span><span class="port out">tick</span><span class="port out">done</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous (Tie Break)</em></div>
+  </div>
+  <div class="node-card" style="--nc:var(--assets)">
+    <div class="node-type">ASSETS · ★</div>
+    <div class="node-name node-new">Simultaneous</div>
+    <div class="node-desc">Todos os jogadores (ou quorum) actuam em paralelo antes de avançar.</div>
+    <div class="node-ports"><span class="port in">in</span><span class="port out">done</span></div>
+    <div class="node-game">Descoberto em: <em>Bulbous, Capivaras</em></div>
+  </div>
+</div>
+</section>
+
+<!-- CASE STUDIES -->
+<section id="bulbous">
+<h2>Caso: Bulbous</h2>
+<p style="color:var(--muted);margin-bottom:16px">Trick-taking com bluff. 2–4 jogadores. Padrão: Governor escolhe alvo → todos apostam → revelação → tie break.</p>
+<div class="case">
+  <div class="case-title">Fluxo de um trick <span class="case-game">Bulbous</span></div>
+  <div class="case-flow">
+    <span class="cf-node" style="border-color:rgba(167,139,250,.3);color:var(--data)">ROLE<br><small>Governante</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(245,166,35,.3);color:var(--flow)">TURN_BLOCK<br><small>escolhe alvo</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">SECRET_BET</span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(74,222,128,.3);color:var(--assets)">SIMULTAN<br><small>revelar</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:var(--logic)">CHECK_COND<br><small>empate?</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(74,222,128,.3);color:var(--assets)">TIMER 20s</span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">SCORE_PTS<br><small>place bulb</small></span>
+  </div>
+  <p class="case-note"><strong style="color:#fff">Novos nós descobertos:</strong> SIMULTANEOUS (revelação paralela), ROLE (Governante rotativo), STRUCTURE (Baelfungious N-slot), TIMER (Tie Break 20s), MAJORITY (scoring de maioria nas Baelfungious completas).</p>
+</div>
+</section>
+
+<section id="capivaras">
+<h2>Caso: Capivaras</h2>
+<p style="color:var(--muted);margin-bottom:16px">Apostas secretas. 2–6 jogadores. Aposta única ganha — empate cancela.</p>
+<div class="case">
+  <div class="case-title">Fluxo de uma ronda <span class="case-game">Capivaras</span></div>
+  <div class="case-flow">
+    <span class="cf-node" style="border-color:rgba(245,166,35,.3);color:var(--flow)">ROUND_START<br><small>vira N cartas</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">SECRET_BET<br><small>cada jogador aposta</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(74,222,128,.3);color:var(--assets)">SIMULTAN<br><small>revelar</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">COMP_CLAIM<br><small>único ganha</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">SCORE_PTS</span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:var(--logic)">CHECK_COND<br><small>baralho vazio?</small></span>
+  </div>
+  <p class="case-note"><strong style="color:#fff">Novos nós descobertos:</strong> SECRET_BET (aposta simultânea e secreta), COMPETING_CLAIM (único ganha, empate cancela, distinto de winner-takes-all), COLLECTION_BONUS (bónus por coleccionar N tipos).</p>
+</div>
+</section>
+
+<section id="percebes">
+<h2>Caso: Praia das Percebes</h2>
+<p style="color:var(--muted);margin-bottom:16px">Tile placement. 2–4 jogadores. Tabuleiro 7×7 partilhado, salva-vidas marcam linhas/colunas.</p>
+<div class="case">
+  <div class="case-title">Fluxo de um turno <span class="case-game">Praia das Percebes</span></div>
+  <div class="case-flow">
+    <span class="cf-node" style="border-color:rgba(46,196,164,.3);color:var(--actions)">TILE_PLACE<br><small>adjacente</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(255,110,180,.3);color:var(--triggers)">ON_TILE<br><small>se salva-vidas</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">SPATIAL_SC<br><small>score segmento</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">FIRST_CLAIM<br><small>objectivo?</small></span>
+  </div>
+  <p class="case-note"><strong style="color:#fff">Novos nós descobertos:</strong> SHARED_BOARD (grid com adjacência), TILE_PLACE (validação ortogonal), SPATIAL_SCORE (scoring geométrico), FIRST_CLAIM (primeiro a cumprir reclama), PROGRESSIVE_REVEAL (pool de objectivos com janela de N visíveis), EXTRA_TURNS (última volta após endgame).</p>
+</div>
+</section>
+
+<section id="nine-oils">
+<h2>Caso: Nine Oils</h2>
+<p style="color:var(--muted);margin-bottom:16px">Dados + combos + cartas modificadoras. 2 jogadores. Encher 6 garrafas antes do adversário bloquear tudo.</p>
+<div class="case">
+  <div class="case-title">Fluxo de um turno <span class="case-game">Nine Oils</span></div>
+  <div class="case-flow">
+    <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:var(--logic)">DICE_ROLL<br><small>9d6</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(46,196,164,.3);color:var(--actions)">CARD_MOD<br><small>Temptress?</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">REACT_DEF<br><small>Preacher?</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:var(--logic)">COMBO_DET</span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:var(--logic)">CONF_CHOICE<br><small>se ambíguo</small></span>
+    <span class="cf-arr">→</span>
+    <span class="cf-node" style="border-color:rgba(248,113,113,.3);color:var(--events)">SCORE_PTS<br><small>garrafas</small></span>
+  </div>
+  <p class="case-note"><strong style="color:#fff">Novos nós descobertos:</strong> DICE_ROLL (N dados, S faces), COMBO_DETECT (Double/Triple/Quad/Penta/Instant Win), CONFLICT_CHOICE (escolha entre bundles válidos), CARD_MODIFIER (altera próximo roll), REACTIVE_DEFENSE (resposta do oponente no teu turno), INSTANT_WIN (9-of-a-kind, bypassa Game End normal).</p>
+</div>
+</section>
+
+<!-- BGE FORMAT -->
+<section id="bge-format">
+<h2>.bge — Formato</h2>
+<p style="color:var(--muted);margin-bottom:14px">Ficheiro JSON portável. É a única fonte de verdade — o runtime lê directamente, o code generator converte para TypeScript.</p>
+<pre><code>{
+  <span class="k">"_format"</span>: <span class="s">"bge"</span>,  <span class="c">// identificador fixo</span>
+  <span class="k">"_version"</span>: <span class="s">"0.4"</span>,
+  <span class="k">"game"</span>: { <span class="k">"name"</span>: <span class="s">"..."</span>, <span class="k">"players"</span>: { <span class="k">"min"</span>: <span class="n">2</span>, <span class="k">"max"</span>: <span class="n">4</span> } },
+
+  <span class="k">"swimlanes"</span>: [
+    { <span class="k">"id"</span>: <span class="s">"sl1"</span>, <span class="k">"name"</span>: <span class="s">"Setup"</span>,     <span class="k">"color"</span>: <span class="s">"#f5a623"</span>, <span class="k">"y"</span>: <span class="n">0</span>,    <span class="k">"h"</span>: <span class="n">360</span> },
+    { <span class="k">"id"</span>: <span class="s">"sl2"</span>, <span class="k">"name"</span>: <span class="s">"Game Loop"</span>, <span class="k">"color"</span>: <span class="s">"#2ec4a4"</span>, <span class="k">"y"</span>: <span class="n">360</span>,  <span class="k">"h"</span>: <span class="n">1080</span> },
+    { <span class="k">"id"</span>: <span class="s">"sl3"</span>, <span class="k">"name"</span>: <span class="s">"End Game"</span>,  <span class="k">"color"</span>: <span class="s">"#f87171"</span>, <span class="k">"y"</span>: <span class="n">1440</span>, <span class="k">"h"</span>: <span class="n">360</span> }
+  ],
+
+  <span class="k">"nodes"</span>: [
+    {
+      <span class="k">"id"</span>: <span class="s">"n01"</span>,
+      <span class="k">"node"</span>: <span class="s">"TURN_BLOCK"</span>,     <span class="c">// tipo do nó</span>
+      <span class="k">"label"</span>: <span class="s">"Turno do Jogador"</span>,
+      <span class="k">"x"</span>: <span class="n">280</span>, <span class="k">"y"</span>: <span class="n">430</span>,          <span class="c">// posição no canvas</span>
+      <span class="k">"config"</span>: {
+        <span class="k">"tb"</span>: {
+          <span class="k">"constraint"</span>: <span class="s">"up_to_n"</span>, <span class="k">"max"</span>: <span class="n">2</span>,
+          <span class="k">"actions"</span>:  [{ <span class="k">"id"</span>: <span class="s">"a1"</span>, <span class="k">"type"</span>: <span class="s">"Play Card"</span>, <span class="k">"mand"</span>: <span class="n">false</span> }],
+          <span class="k">"outcomes"</span>: [{ <span class="k">"id"</span>: <span class="s">"o1"</span>, <span class="k">"label"</span>: <span class="s">"end_turn"</span>, <span class="k">"color"</span>: <span class="s">"#4ade80"</span> }]
+        }
+      }
+    }
+  ],
+
+  <span class="k">"edges"</span>: [
+    { <span class="k">"id"</span>: <span class="s">"e01"</span>, <span class="k">"fromNode"</span>: <span class="s">"n01"</span>, <span class="k">"fromPort"</span>: <span class="s">"end_turn"</span>,
+                    <span class="k">"toNode"</span>:   <span class="s">"n02"</span>, <span class="k">"toPort"</span>:   <span class="s">"in"</span> }
+  ],
+
+  <span class="k">"engine_nodes_used"</span>: [<span class="s">"GAME_START"</span>, <span class="s">"TURN_BLOCK"</span>, <span class="s">"GAME_END"</span>]
+}</code></pre>
+</section>
+
+<footer>Bitnik Framework (beta) · David Marques · MIT License · Bitnik Games 2024</footer>
+</main>
+</div>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const links    = document.querySelectorAll('nav a[href^="#"]');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+  links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#'+cur));
+}, { passive: true });
+</script>
+</body>
+</html>

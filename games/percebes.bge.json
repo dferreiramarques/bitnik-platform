@@ -1,0 +1,40 @@
+{
+  "_format": "bge",
+  "_version": "0.4",
+  "game": { "name": "Praia das Percebes", "players": { "min": 2, "max": 4 } },
+  "swimlanes": [
+    { "id": "sl1", "name": "Setup", "color": "#f5a623", "y": 0, "h": 360, "collapsed": false },
+    { "id": "sl2", "name": "Game Loop", "color": "#2ec4a4", "y": 360, "h": 1080, "collapsed": false },
+    { "id": "sl3", "name": "End Game", "color": "#f87171", "y": 1440, "h": 360, "collapsed": false }
+  ],
+  "nodes": [
+    { "id": "n01", "node": "GAME_START", "label": "Game Start", "x": 60, "y": 60, "config": { "maxPlayers": 4, "notes": "2-4 jogadores. Tabuleiro 7x7 partilhado. Cada jogador tem tiles para colocar. Salva-vidas marcam linhas/colunas." } },
+    { "id": "n02", "node": "SHARD_BOARD", "label": "Tabuleiro 7×7", "x": 300, "y": 60, "config": { "w": 7, "h": 7, "adjRule": "orthogonal", "notes": "Grelha 7x7 partilhada. Células podem conter: Banhista, Salva-vidas, Perigo, Vazio." } },
+    { "id": "n03", "node": "PROG_REVEAL", "label": "Objectivos progressivos", "x": 540, "y": 60, "config": { "visible": 3, "total": 12, "notes": "Pool de 12 objectivos. Sempre visíveis os 3 próximos. Quando 1 é completado, revela-se o seguinte." } },
+    { "id": "n04", "node": "ROUND_START", "label": "Início de turno", "x": 60, "y": 430, "config": { "notes": "Turno de cada jogador. Ordem: clockwise. Cada jogador tem 1 acção principal + opcionais." } },
+    { "id": "n05", "node": "TURN_BLOCK", "label": "Turno do jogador", "x": 300, "y": 430, "config": { "tb": { "constraint": "choose_1", "max": 1, "actions": [ { "id": "a1", "type": "Tile Place", "mand": true }, { "id": "a2", "type": "Optional Action", "mand": false } ], "outcomes": [ { "id": "o1", "label": "end_turn", "color": "#4ade80" }, { "id": "o2", "label": "endgame", "color": "#f87171" } ] }, "notes": "Acção obrigatória: colocar 1 tile adjacente a tile existente. Depois pode fazer acção opcional." } },
+    { "id": "n06", "node": "TILE_PLACE", "label": "Colocar tile", "x": 580, "y": 430, "config": { "notes": "Tile deve ser adjacente a tile já existente. Tipos: Banhista (pontos), Salva-vidas (marca linha/col), Perigo (bloqueia). Validação de adjacência obrigatória." } },
+    { "id": "n07", "node": "ON_TILE", "label": "Trigger: tile colocado", "x": 60, "y": 700, "config": { "filter": "type=salva-vidas", "notes": "Quando Salva-vidas é colocado, marca a sua linha E coluna inteiras. Todos os banhistas nessas linhas pontuam para quem os colocou." } },
+    { "id": "n08", "node": "SPATIAL_SC", "label": "Score segmento salva-vidas", "x": 300, "y": 700, "config": { "formula": "banhistas_no_segmento", "notes": "Conta banhistas na linha/coluna do salva-vidas. Cada jogador marca pontos pelos seus banhistas nesse segmento." } },
+    { "id": "n09", "node": "FIRST_CLAIM", "label": "Reclamar objectivo", "x": 580, "y": 700, "config": { "notes": "Primeiro jogador a cumprir 1 dos 3 objectivos visíveis reclama-o. Objectivos: ex. 'ter 4 banhistas na mesma linha', '3 salva-vidas colocados'." } },
+    { "id": "n10", "node": "CHECK_WIN", "label": "Todos os tiles colocados?", "x": 300, "y": 900, "config": { "cond": "all_tiles_placed", "notes": "Quando algum jogador colocar o último tile, o jogo termina após o fim da ronda." } },
+    { "id": "n11", "node": "SPATIAL_SC", "label": "Score final — linhas e colunas", "x": 60, "y": 1510, "config": { "formula": "segmentos_salva-vidas", "notes": "Todos os segmentos marcados por salva-vidas pontuam novamente. Bônus por objectivos completados." } },
+    { "id": "n12", "node": "SCORE_PTS", "label": "Bónus de objectivos", "x": 300, "y": 1510, "config": { "amt": 3, "who": "active", "notes": "+3 pontos por cada objectivo reclamado." } },
+    { "id": "n13", "node": "GAME_END", "label": "Game End", "x": 540, "y": 1510, "config": { "notes": "Maior score ganha. Em empate: mais tiles colocados; depois primeiro a jogar." } }
+  ],
+  "edges": [
+    { "id": "e01", "fromNode": "n01", "fromPort": "next", "toNode": "n02", "toPort": "cells" },
+    { "id": "e02", "fromNode": "n02", "fromPort": "cells", "toNode": "n03", "toPort": "trigger" },
+    { "id": "e03", "fromNode": "n03", "fromPort": "revealed", "toNode": "n04", "toPort": "prev" },
+    { "id": "e04", "fromNode": "n04", "fromPort": "next", "toNode": "n05", "toPort": "start" },
+    { "id": "e05", "fromNode": "n05", "fromPort": "end_turn", "toNode": "n10", "toPort": "in" },
+    { "id": "e06", "fromNode": "n05", "fromPort": "endgame", "toNode": "n11", "toPort": "end" },
+    { "id": "e07", "fromNode": "n10", "fromPort": "continue", "toNode": "n04", "toPort": "prev" },
+    { "id": "e08", "fromNode": "n10", "fromPort": "win", "toNode": "n11", "toPort": "end" },
+    { "id": "e09", "fromNode": "n07", "fromPort": "fire", "toNode": "n08", "toPort": "end" },
+    { "id": "e10", "fromNode": "n08", "fromPort": "next", "toNode": "n09", "toPort": "trigger" },
+    { "id": "e11", "fromNode": "n11", "fromPort": "next", "toNode": "n12", "toPort": "trigger" },
+    { "id": "e12", "fromNode": "n12", "fromPort": "next", "toNode": "n13", "toPort": "prev" }
+  ],
+  "engine_nodes_used": ["GAME_START","SHARD_BOARD","PROG_REVEAL","ROUND_START","TURN_BLOCK","TILE_PLACE","ON_TILE","SPATIAL_SC","FIRST_CLAIM","CHECK_WIN","SCORE_PTS","GAME_END"]
+}
