@@ -1,43 +1,308 @@
 {
   "_format": "bge",
   "_version": "0.4",
-  "game": { "name": "Capivaras", "players": { "min": 2, "max": 6 } },
+  "game": {
+    "name": "Capivaras",
+    "players": {
+      "min": 2,
+      "max": 6
+    }
+  },
   "swimlanes": [
-    { "id": "sl1", "name": "Setup", "color": "#f5a623", "y": 0, "h": 360, "collapsed": false },
-    { "id": "sl2", "name": "Game Loop", "color": "#2ec4a4", "y": 360, "h": 1080, "collapsed": false },
-    { "id": "sl3", "name": "End Game", "color": "#f87171", "y": 1440, "h": 360, "collapsed": false }
+    {
+      "id": "sl1",
+      "name": "Setup",
+      "color": "#f5a623",
+      "y": 0,
+      "h": 360,
+      "collapsed": false
+    },
+    {
+      "id": "sl2",
+      "name": "Game Loop",
+      "color": "#2ec4a4",
+      "y": 360,
+      "h": 1080,
+      "collapsed": false
+    },
+    {
+      "id": "sl3",
+      "name": "End Game",
+      "color": "#f87171",
+      "y": 1440,
+      "h": 360,
+      "collapsed": false
+    }
   ],
   "nodes": [
-    { "id": "n01", "node": "GAME_START", "label": "Game Start", "x": 60, "y": 60, "config": { "maxPlayers": 6, "notes": "2-6 jogadores. Baralho: cartas de Capivaras (4 tipos × N) + Nenúfares + Pássaros. Embaralhar e dividir igualmente." } },
-    { "id": "n02", "node": "DECK", "label": "Baralho Capivaras", "x": 300, "y": 60, "config": { "notes": "Cartas de Capivara (4 tipos: Grande, Pequena, Bebé, Mãe), Nenúfares, Pássaros. Embaralhar." } },
-    { "id": "n03", "node": "DRAW_CARD", "label": "Distribuir mãos iguais", "x": 540, "y": 60, "config": { "amt": "deck.length / playerCount", "notes": "Cada jogador recebe o mesmo número de cartas. Jogam com a mão inteira durante a partida." } },
-    { "id": "n04", "node": "ROUND_START", "label": "Início de ronda", "x": 60, "y": 430, "config": { "notes": "Vira N cartas do centro da mesa (1 por jogador). Estas são os alvos da ronda." } },
-    { "id": "n05", "node": "DRAW_CARD", "label": "Virar cartas centrais", "x": 300, "y": 430, "config": { "amt": "playerCount", "notes": "Vira tantas cartas do baralho central quantos os jogadores. Ficam visíveis no centro." } },
-    { "id": "n06", "node": "SECRET_BET", "label": "Aposta secreta", "x": 540, "y": 430, "config": { "targets": "central_cards", "notes": "Cada jogador escolhe secretamente em qual carta central quer apostar — coloca 1 carta da mão virada para baixo." } },
-    { "id": "n07", "node": "SIMULTAN", "label": "Revelar apostas", "x": 780, "y": 430, "config": { "wait": "all", "notes": "Todos revelam a aposta ao mesmo tempo. Compara-se quem apostou em quê." } },
-    { "id": "n08", "node": "COMP_CLAIM", "label": "Resolver apostas", "x": 780, "y": 600, "config": { "tieResult": "nobody_wins", "notes": "Para cada carta central: se só 1 jogador apostou → ganha essa carta. Se 2+ apostaram na mesma → ninguém ganha, carta descartada." } },
-    { "id": "n09", "node": "SCORE_PTS", "label": "Score cartas ganhas", "x": 540, "y": 600, "config": { "amt": 1, "who": "winner", "notes": "Cada carta ganha vale pontos (variável por tipo). Pássaros contam para o token." } },
-    { "id": "n10", "node": "CHECK_COND", "label": "Baralho central esgotado?", "x": 300, "y": 760, "config": { "cond": "central_deck_empty", "notes": "Se não há mais cartas para virar no centro, a partida termina." } },
-    { "id": "n11", "node": "ON_DECK_E", "label": "Trigger: baralho vazio", "x": 60, "y": 760, "config": { "notes": "Trigger reactivo: quando o baralho central esgota, dispara o endgame." } },
-    { "id": "n12", "node": "MAJORITY", "label": "Token do Pássaro", "x": 60, "y": 1510, "config": { "solo": 5, "tie": 0, "notes": "Quem tiver mais cartas-Pássaro ganha o token. Em empate ninguém ganha o token. Token vale pontos bónus." } },
-    { "id": "n13", "node": "SCORE_PTS", "label": "Pontuação final de cartas", "x": 300, "y": 1510, "config": { "amt": 1, "who": "active", "notes": "Conta pontos de todas as cartas ganhas: Capivara Grande=3, Pequena=2, Bebé=1, Mãe=4, Nenúfar=1, Pássaro=0 (só conta para token)." } },
-    { "id": "n14", "node": "GAME_END", "label": "Game End", "x": 540, "y": 1510, "config": { "notes": "Soma pontos + token. Maior score ganha." } }
+    {
+      "id": "n01",
+      "node": "GAME_START",
+      "label": "Game Start",
+      "x": 60,
+      "y": 60,
+      "config": {
+        "maxPlayers": 6,
+        "notes": "2-6 jogadores. Baralho: cartas de Capivaras (4 tipos × N) + Nenúfares + Pássaros. Embaralhar e dividir igualmente."
+      }
+    },
+    {
+      "id": "n02",
+      "node": "DECK",
+      "label": "Baralho Capivaras",
+      "x": 300,
+      "y": 60,
+      "config": {
+        "notes": "Cartas de Capivara (4 tipos: Grande, Pequena, Bebé, Mãe), Nenúfares, Pássaros. Embaralhar."
+      }
+    },
+    {
+      "id": "n03",
+      "node": "DRAW_CARD",
+      "label": "Distribuir mãos iguais",
+      "x": 540,
+      "y": 60,
+      "config": {
+        "amt": "deck.length / playerCount",
+        "notes": "Cada jogador recebe o mesmo número de cartas. Jogam com a mão inteira durante a partida."
+      }
+    },
+    {
+      "id": "n04",
+      "node": "ROUND_START",
+      "label": "Início de ronda",
+      "x": 60,
+      "y": 430,
+      "config": {
+        "notes": "Vira N cartas do centro da mesa (1 por jogador). Estas são os alvos da ronda."
+      }
+    },
+    {
+      "id": "n05",
+      "node": "DRAW_CARD",
+      "label": "Virar cartas centrais",
+      "x": 300,
+      "y": 430,
+      "config": {
+        "amt": "playerCount",
+        "notes": "Vira tantas cartas do baralho central quantos os jogadores. Ficam visíveis no centro."
+      }
+    },
+    {
+      "id": "n06",
+      "node": "SECRET_BET",
+      "label": "Aposta secreta",
+      "x": 540,
+      "y": 430,
+      "config": {
+        "targets": "central_cards",
+        "notes": "Cada jogador escolhe secretamente em qual carta central quer apostar — coloca 1 carta da mão virada para baixo."
+      }
+    },
+    {
+      "id": "n07",
+      "node": "BARRIER",
+      "label": "Barrier — aguarda todas as apostas",
+      "x": 780,
+      "y": 430,
+      "config": {
+        "waitFor": "all",
+        "timeout_ms": 0,
+        "on_timeout": "auto_submit",
+        "notes": "Aguarda que todos os jogadores submetam a aposta antes de avançar para a revelação."
+      }
+    },
+    {
+      "id": "n08",
+      "node": "COMP_CLAIM",
+      "label": "Resolver apostas",
+      "x": 780,
+      "y": 600,
+      "config": {
+        "tieResult": "nobody_wins",
+        "notes": "Para cada carta central: se só 1 jogador apostou → ganha essa carta. Se 2+ apostaram na mesma → ninguém ganha, carta descartada."
+      }
+    },
+    {
+      "id": "n09",
+      "node": "SCORE_PTS",
+      "label": "Score cartas ganhas",
+      "x": 540,
+      "y": 600,
+      "config": {
+        "amt": 1,
+        "who": "winner",
+        "notes": "Cada carta ganha vale pontos (variável por tipo). Pássaros contam para o token."
+      }
+    },
+    {
+      "id": "n10",
+      "node": "CHECK_COND",
+      "label": "Baralho central esgotado?",
+      "x": 300,
+      "y": 760,
+      "config": {
+        "cond": "central_deck_empty",
+        "notes": "Se não há mais cartas para virar no centro, a partida termina."
+      }
+    },
+    {
+      "id": "n11",
+      "node": "ON_DECK_E",
+      "label": "Trigger: baralho vazio",
+      "x": 60,
+      "y": 760,
+      "config": {
+        "notes": "Trigger reactivo: quando o baralho central esgota, dispara o endgame."
+      }
+    },
+    {
+      "id": "n12",
+      "node": "MAJORITY",
+      "label": "Token do Pássaro",
+      "x": 60,
+      "y": 1510,
+      "config": {
+        "solo": 5,
+        "tie": 0,
+        "notes": "Quem tiver mais cartas-Pássaro ganha o token. Em empate ninguém ganha o token. Token vale pontos bónus."
+      }
+    },
+    {
+      "id": "n13",
+      "node": "SCORE_PTS",
+      "label": "Pontuação final de cartas",
+      "x": 300,
+      "y": 1510,
+      "config": {
+        "amt": 1,
+        "who": "active",
+        "notes": "Conta pontos de todas as cartas ganhas: Capivara Grande=3, Pequena=2, Bebé=1, Mãe=4, Nenúfar=1, Pássaro=0 (só conta para token)."
+      }
+    },
+    {
+      "id": "n14",
+      "node": "GAME_END",
+      "label": "Game End",
+      "x": 540,
+      "y": 1510,
+      "config": {
+        "notes": "Soma pontos + token. Maior score ganha."
+      }
+    }
   ],
   "edges": [
-    { "id": "e01", "fromNode": "n01", "fromPort": "next", "toNode": "n02", "toPort": "card" },
-    { "id": "e02", "fromNode": "n02", "fromPort": "card", "toNode": "n03", "toPort": "in" },
-    { "id": "e03", "fromNode": "n03", "fromPort": "next", "toNode": "n04", "toPort": "prev" },
-    { "id": "e04", "fromNode": "n04", "fromPort": "next", "toNode": "n05", "toPort": "in" },
-    { "id": "e05", "fromNode": "n05", "fromPort": "next", "toNode": "n06", "toPort": "in" },
-    { "id": "e06", "fromNode": "n06", "fromPort": "placed", "toNode": "n07", "toPort": "in" },
-    { "id": "e07", "fromNode": "n07", "fromPort": "done", "toNode": "n08", "toPort": "bets" },
-    { "id": "e08", "fromNode": "n08", "fromPort": "winner", "toNode": "n09", "toPort": "trigger" },
-    { "id": "e09", "fromNode": "n09", "fromPort": "next", "toNode": "n10", "toPort": "in" },
-    { "id": "e10", "fromNode": "n10", "fromPort": "false", "toNode": "n04", "toPort": "prev" },
-    { "id": "e11", "fromNode": "n10", "fromPort": "true", "toNode": "n12", "toPort": "end" },
-    { "id": "e12", "fromNode": "n11", "fromPort": "fire", "toNode": "n10", "toPort": "in" },
-    { "id": "e13", "fromNode": "n12", "fromPort": "next", "toNode": "n13", "toPort": "trigger" },
-    { "id": "e14", "fromNode": "n13", "fromPort": "next", "toNode": "n14", "toPort": "prev" }
+    {
+      "id": "e01",
+      "fromNode": "n01",
+      "fromPort": "next",
+      "toNode": "n02",
+      "toPort": "card"
+    },
+    {
+      "id": "e02",
+      "fromNode": "n02",
+      "fromPort": "card",
+      "toNode": "n03",
+      "toPort": "in"
+    },
+    {
+      "id": "e03",
+      "fromNode": "n03",
+      "fromPort": "next",
+      "toNode": "n04",
+      "toPort": "prev"
+    },
+    {
+      "id": "e04",
+      "fromNode": "n04",
+      "fromPort": "next",
+      "toNode": "n05",
+      "toPort": "in"
+    },
+    {
+      "id": "e05",
+      "fromNode": "n05",
+      "fromPort": "next",
+      "toNode": "n06",
+      "toPort": "in"
+    },
+    {
+      "id": "e06",
+      "fromNode": "n06",
+      "fromPort": "placed",
+      "toNode": "n07",
+      "toPort": "in"
+    },
+    {
+      "id": "e07",
+      "fromNode": "n07",
+      "fromPort": "done",
+      "toNode": "n08",
+      "toPort": "bets"
+    },
+    {
+      "id": "e08",
+      "fromNode": "n08",
+      "fromPort": "winner",
+      "toNode": "n09",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e09",
+      "fromNode": "n09",
+      "fromPort": "next",
+      "toNode": "n10",
+      "toPort": "in"
+    },
+    {
+      "id": "e10",
+      "fromNode": "n10",
+      "fromPort": "false",
+      "toNode": "n04",
+      "toPort": "prev"
+    },
+    {
+      "id": "e11",
+      "fromNode": "n10",
+      "fromPort": "true",
+      "toNode": "n12",
+      "toPort": "end"
+    },
+    {
+      "id": "e12",
+      "fromNode": "n11",
+      "fromPort": "fire",
+      "toNode": "n10",
+      "toPort": "in"
+    },
+    {
+      "id": "e13",
+      "fromNode": "n12",
+      "fromPort": "next",
+      "toNode": "n13",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e14",
+      "fromNode": "n13",
+      "fromPort": "next",
+      "toNode": "n14",
+      "toPort": "prev"
+    }
   ],
-  "engine_nodes_used": ["GAME_START","DECK","DRAW_CARD","ROUND_START","SECRET_BET","SIMULTAN","COMP_CLAIM","SCORE_PTS","CHECK_COND","ON_DECK_E","MAJORITY","GAME_END"]
+  "engine_nodes_used": [
+    "GAME_START",
+    "DECK",
+    "DRAW_CARD",
+    "ROUND_START",
+    "SECRET_BET",
+    "BARRIER",
+    "COMP_CLAIM",
+    "SCORE_PTS",
+    "CHECK_COND",
+    "ON_DECK_E",
+    "MAJORITY",
+    "GAME_END"
+  ]
 }

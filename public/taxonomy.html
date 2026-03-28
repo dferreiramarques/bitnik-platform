@@ -269,6 +269,13 @@ Um jogo em Bitnik é um <strong style="color:#fff">grafo de nós</strong> — n�
     <div class="node-ports"><span class="port in">trigger</span><span class="port out">done</span></div>
     <div class="node-game">Descoberto em: <em>Praia das Percebes</em></div>
   </div>
+  <div class="node-card" style="--nc:var(--flow)">
+    <div class="node-type">FLOW · ★</div>
+    <div class="node-name node-new">Barrier</div>
+    <div class="node-desc">Ponto de sincronização. Cada jogador percorre o seu turno independentemente e fica bloqueado aqui até o quórum ser atingido (all / majority / first). Só então o fluxo avança para todos. Suporta timeout com auto-submit.</div>
+    <div class="node-ports"><span class="port in">done</span><span class="port out">next</span><span class="port out">timeout</span></div>
+    <div class="node-game">Descoberto em: <em>Capivaras · Bulbous (setup)</em></div>
+  </div>
 </div>
 </section>
 
@@ -644,7 +651,7 @@ Um jogo em Bitnik é um <strong style="color:#fff">grafo de nós</strong> — n�
     <span class="cf-arr">→</span>
     <span class="cf-node" style="border-color:rgba(79,124,255,.3);color:var(--logic)">CHECK_COND<br><small>baralho vazio?</small></span>
   </div>
-  <p class="case-note"><strong style="color:#fff">Novos nós descobertos:</strong> SECRET_BET (aposta simultânea e secreta), COMPETING_CLAIM (único ganha, empate cancela, distinto de winner-takes-all), COLLECTION_BONUS (bónus por coleccionar N tipos).</p>
+  <p class="case-note"><strong style="color:#fff">Novos nós descobertos:</strong> SECRET_BET (aposta simultânea e secreta), BARRIER (sincronização de todos os jogadores — percepção simultânea, implementação paralela), COMPETING_CLAIM (único ganha, empate cancela, distinto de winner-takes-all), COLLECTION_BONUS (bónus por coleccionar N tipos).</p>
 </div>
 </section>
 

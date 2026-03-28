@@ -211,6 +211,32 @@ function executeNode(state, node, inPort) {
         pending: state.players.map(p => p.idx),
       });
 
+    case 'BARRIER': {
+      // Each player arrives independently; advance when all (or quorum) have checked in
+      const waitFor = node.config.waitFor || 'all';
+      const timeoutMs = Number(node.config.timeout_ms) || 0;
+      const needed = waitFor === 'all' ? state.playerCount
+                   : waitFor === 'majority' ? Math.floor(state.playerCount/2)+1
+                   : 1; // 'first'
+      const pending = state.players.map(p => p.idx);
+      state.meta = state.meta || {};
+      state.meta['barrier_'+node.id] = { arrived: [], needed };
+      if (timeoutMs > 0) {
+        const deadline = Date.now() + timeoutMs;
+        const pending_action = {
+          type: 'BARRIER', nodeId: node.id,
+          players: pending, needed, deadline,
+          on_timeout: node.config.on_timeout || 'auto_submit',
+        };
+        return wait(pending_action);
+      }
+      return wait({
+        type: 'BARRIER', nodeId: node.id,
+        players: pending, needed, deadline: 0,
+        on_timeout: 'auto_submit',
+      });
+    }
+
     case 'TIMER':
       return wait({
         type: 'TIE_BREAK', nodeId: node.id,
@@ -292,6 +318,27 @@ function handleAction(lobby, playerIdx, msg) {
       const next = state.graph.nodes.get(e.nodeId);
       if (next) traverse(state, next, e.inPort || 'in');
     }
+  }
+
+  if (pending.type === 'BARRIER') {
+    const meta = state.meta?.['barrier_'+pending.nodeId] || { arrived: [], needed: state.playerCount };
+    if (!meta.arrived.includes(playerIdx)) meta.arrived.push(playerIdx);
+    state.meta['barrier_'+pending.nodeId] = meta;
+    if (meta.arrived.length >= meta.needed) {
+      // Quorum reached — advance
+      state.pendingAction = null;
+      const node = state.graph.nodes.get(pending.nodeId);
+      const edges = node?.outputs.get('next') || [];
+      for (const e of edges) {
+        const next = state.graph.nodes.get(e.nodeId);
+        if (next) traverse(state, next, e.inPort || 'in');
+      }
+    } else {
+      // Not everyone here yet — update pending
+      state.pendingAction = { ...pending, arrived: meta.arrived };
+    }
+    broadcastAll(lobby);
+    return;
   }
 
   if (pending.type === 'SIMULTANEOUS') {
@@ -493,12 +540,39 @@ const server = http.createServer((req, res) => {
 });
 
 // ── WebSocket server ──────────────────────────────────────────────
-const wss = new WebSocketServer({ server, path: undefined });
+const wss = new WebSocketServer({ noServer: true });
 // Capivaras dedicated WebSocket - handled via upgrade event below
 let capWss;
 
 wss.on('connection', (ws, req) => {
-  // Expect client to JOIN with { type:'JOIN', gameKey, tableNum, name }
+  // Route: capivaras connections go to dedicated handler
+  if (ws._isCap) {
+    capSend(ws, { type:'LOBBIES', lobbies: Object.values(CAP_LOBBIES).map(capLobbyInfo) });
+    ws.on('message', raw => { try { capHandle(ws, JSON.parse(raw)); } catch {} });
+    ws.on('close', () => {
+      const st = CAP_WS_STATE.get(ws); if (!st||!st.lobbyId) return;
+      const lobby = CAP_LOBBIES[st.lobbyId]; if (!lobby) return;
+      const {seat} = st;
+      lobby.players[seat] = null;
+      lobby.players.forEach(p=>{ if(p) capSend(p,{type:'OPPONENT_DISCONNECTED',seat,name:lobby.names[seat],graceMs:45000}); });
+      capBroadcastLobbies();
+      const g=lobby.game;
+      if(g&&g.phase==='BETTING'){
+        const gs=capFindGs(lobby,seat);
+        if(gs!==-1&&g.bets[gs]===null){
+          const gen=g.turnGen;
+          lobby.autoTimers[seat]=setTimeout(()=>{
+            if(!lobby.game||lobby.game.turnGen!==gen||g.bets[gs]!==null)return;
+            g.bets[gs]=Math.floor(Math.random()*g.n);capBroadcast(lobby);capCheckBets(lobby);
+          },10000);
+        }
+      }
+      lobby.graceTimers[seat]=setTimeout(()=>capHardLeave(lobby,seat),45000);
+    });
+    ws.on('error',()=>{});
+    return;
+  }
+  // Generic BGE game connection
   send(ws, { type: 'WELCOME', games: Object.keys(GAME_REGISTRY) });
 
   ws.on('message', raw => {
@@ -828,45 +902,17 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Bitnik] Games: ${Object.keys(GAME_REGISTRY).join(', ') || 'none'}`);
 });
 
-// Route WebSocket upgrades: /ws/capivaras → Capivaras WSS, all else → main WSS
-capWss = new WebSocketServer({ noServer: true });
-capWss.on('connection', ws => {
-  capSend(ws, { type:'LOBBIES', lobbies: Object.values(CAP_LOBBIES).map(capLobbyInfo) });
-  ws.on('message', raw => { try { capHandle(ws, JSON.parse(raw)); } catch {} });
-  ws.on('close', () => {
-    const st = CAP_WS_STATE.get(ws); if (!st||!st.lobbyId) return;
-    const lobby = CAP_LOBBIES[st.lobbyId]; if (!lobby) return;
-    const {seat} = st;
-    lobby.players[seat] = null;
-    lobby.players.forEach(p=>{ if(p) capSend(p,{type:'OPPONENT_DISCONNECTED',seat,name:lobby.names[seat],graceMs:45000}); });
-    capBroadcastLobbies();
-    const g=lobby.game;
-    if(g&&g.phase==='BETTING'){
-      const gs=capFindGs(lobby,seat);
-      if(gs!==-1&&g.bets[gs]===null){
-        const gen=g.turnGen;
-        lobby.autoTimers[seat]=setTimeout(()=>{
-          if(!lobby.game||lobby.game.turnGen!==gen||g.bets[gs]!==null)return;
-          g.bets[gs]=Math.floor(Math.random()*g.n);capBroadcast(lobby);capCheckBets(lobby);
-        },10000);
-      }
-    }
-    lobby.graceTimers[seat]=setTimeout(()=>capHardLeave(lobby,seat),45000);
-  });
-  ws.on('error',()=>{});
-});
-
+// ALL WebSocket upgrades routed here — single wss, path-based routing
 server.on('upgrade', (req, socket, head) => {
-  const path = req.url?.split('?')[0];
-  if (path === '/ws/capivaras') {
-    capWss.handleUpgrade(req, socket, head, ws => capWss.emit('connection', ws, req));
-  } else {
-    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
-  }
+  const urlPath = (req.url || '').split('?')[0];
+  wss.handleUpgrade(req, socket, head, ws => {
+    ws._isCap = (urlPath === '/ws/capivaras');
+    wss.emit('connection', ws, req);
+  });
 });
 
 setInterval(() => {
-  for (const ws of capWss.clients) if (ws.readyState===1) ws.ping();
+  for (const ws of wss.clients) if (ws.readyState === 1) ws.ping();
 }, 25000);
 
 // ── Serve /play/:gameId → play.html ──────────────────────────────

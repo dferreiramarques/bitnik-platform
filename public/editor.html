@@ -245,6 +245,7 @@ const FAM = {
     {id:'GAME_END',    label:'Game End',     desc:'Fim, ranking, scores',       ports:{in:['prev'],out:[]}},
     {id:'INSTANT_WIN', label:'Instant Win',  desc:'Vitória imediata',          ports:{in:['trigger'],out:[]},isNew:true},
     {id:'EXTRA_TURNS', label:'Extra Turns',  desc:'Turno extra por jogador',   ports:{in:['trigger'],out:['done']},isNew:true},
+    {id:'BARRIER',     label:'Barrier',      desc:'Sincroniza todos os jogadores antes de avançar', ports:{in:['done'],out:['next','timeout']},isNew:true},
   ]},
   logic:{label:'LOGIC',color:'#4f7cff',nodes:[
     {id:'CHECK_COND',  label:'Check Condition',desc:'if / else genérico',       ports:{in:['in'],out:['true','false']}},
@@ -596,6 +597,7 @@ const CFG_FIELDS = {
   ON_DECK_E:  [{k:'deck',l:'Baralho',t:'text',ph:'qualquer'}],
   ON_ACTION:  [{k:'action',l:'Acção',t:'text',ph:'PLACE_TILE'}],
   AFTER_EFF:  [{k:'delay',l:'Delay (ms)',t:'number',d:0}],
+  BARRIER:    [{k:'waitFor',l:'Aguardar',t:'select',opts:['all','majority','first']},{k:'timeout_ms',l:'Timeout (ms)',t:'number',d:0},{k:'on_timeout',l:'Ao expirar',t:'select',opts:['auto_submit','skip_remaining','end_round']}],
 };
 
 function renderIns(nd) {

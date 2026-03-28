@@ -99,13 +99,15 @@
     },
     {
       "id": "n06",
-      "node": "SIMULTAN",
-      "label": "Escolher Baelfungious (setup)",
+      "node": "BARRIER",
+      "label": "Barrier — Escolher Baelfungious (setup)",
       "x": 780,
       "y": 60,
       "config": {
         "wait": "all",
-        "notes": "Fase inicial: cada jogador escolhe qual Baelfungious colocar no slot activo. Simultâneo — todos escolhem independentemente."
+        "notes": "Fase inicial: cada jogador escolhe qual Baelfungious colocar no slot activo. Simultâneo — todos escolhem independentemente. Barrier: cada jogador escolhe independentemente, avança quando todos submetem.",
+        "waitFor": "all",
+        "timeout_ms": 0
       }
     },
     {
@@ -120,13 +122,15 @@
     },
     {
       "id": "n08",
-      "node": "SIMULTAN",
-      "label": "Escolher Baelfungious (mid-game)",
+      "node": "BARRIER",
+      "label": "Barrier — Escolher Baelfungious (mid-game)",
       "x": 60,
       "y": 590,
       "config": {
         "wait": "all",
-        "notes": "Disparado quando uma Baelfungious é completada e o slot fica vazio. Jogadores escolhem a próxima do seu reservatório."
+        "notes": "Disparado quando uma Baelfungious é completada e o slot fica vazio. Jogadores escolhem a próxima do seu reservatório. Barrier: cada jogador escolhe independentemente, avança quando todos submetem.",
+        "waitFor": "all",
+        "timeout_ms": 0
       }
     },
     {
@@ -235,13 +239,15 @@
     },
     {
       "id": "n14",
-      "node": "SIMULTAN",
+      "node": "BARRIER",
       "label": "Submissão simultânea (tie break)",
       "x": 900,
       "y": 980,
       "config": {
         "wait": "all",
-        "notes": "Só os jogadores empatados submetem. Carta da mesma cor da Baelfungious ou passa (null)."
+        "notes": "Só os jogadores empatados submetem. Carta da mesma cor da Baelfungious ou passa (null). Barrier: cada jogador escolhe independentemente, avança quando todos submetem.",
+        "waitFor": "all",
+        "timeout_ms": 0
       }
     },
     {
@@ -549,7 +555,7 @@
     "DRAW_CARD",
     "STRUCTURE",
     "ROLE",
-    "SIMULTAN",
+    "BARRIER",
     "ROUND_START",
     "TURN_BLOCK",
     "NOTIFY_ALL",
