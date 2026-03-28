@@ -329,14 +329,8 @@ function onJoined(msg) {
   isHost   = mySeat === 0;
   sessionStorage.setItem('cap_token', myToken);
   if (isSolo) {
-    // Solo: server already has game running. renderGame() will auto-show s-game.
-    // Show a temporary loading message on the name screen.
-    document.getElementById('name-title').textContent = '🤖 A preparar bots…';
-    document.getElementById('name-sub').textContent = 'O jogo vai começar já';
-    document.getElementById('btn-go').style.display = 'none';
-    document.getElementById('inp-name').style.display = 'none';
-    show('s-name');
-    // Request state — server will respond with GAME_STATE → renderGame → s-game
+    // Solo: server already has game running — just request state directly.
+    // renderGame() will call show('s-game') when it arrives.
     send({type:'REQUEST_STATE'});
     setTimeout(() => { if (!state) send({type:'REQUEST_STATE'}); }, 1500);
     return;
@@ -383,10 +377,6 @@ function leaveLobby() {
   sessionStorage.removeItem('cap_token');
   myToken=''; myLobbyId=''; mySeat=-1; state=null;
   document.getElementById('btn-start').style.display = '';
-  document.getElementById('btn-go').style.display = '';
-  document.getElementById('inp-name').style.display = '';
-  document.getElementById('name-title').textContent = '🦫 Capivaras';
-  document.getElementById('name-sub').textContent = 'Apostas secretas no Pantanal · 2–6 jogadores';
   show('s-lobby'); send({type:'LOBBIES'});
 }
 
