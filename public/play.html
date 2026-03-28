@@ -375,7 +375,7 @@ function showOver(s) {
   show('s-over');
   document.getElementById('final-list').innerHTML = (s.finalScores||[]).map((sc,i) => `
     <div class="score-row">
-      <div class="score-pos ${i===0?'gold':'}">${i===0?'🥇':i+1+'.'}</div>
+      <div class="score-pos ${i===0?'gold':''}">${i===0?'🥇':i+1+'.'}</div>
       <div class="score-name">${sc.name}</div>
       <div class="score-pts">${sc.score}</div>
     </div>
