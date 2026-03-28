@@ -869,9 +869,6 @@ function capHandle(ws,msg){
     lobby.players.forEach((p,i)=>{if(p&&i!==seat)capSend(p,{type:'PLAYER_JOINED',seat,name,lobby:capLobbyInfo(lobby)});});
     capBroadcastLobbies();
     if(lobby.solo){
-      // Reset solo lobby — clear any stale player slot
-      lobby.players.fill(null); lobby.names.fill(''); lobby.tokens.fill(null);
-      lobby.players[seat]=ws; lobby.names[seat]=name; lobby.tokens[seat]=token;
       const s=CAP_WS_STATE.get(ws);if(s)s.gameSeat=0;
       lobby.game=capNewGame([name,'Bot 1','Bot 2'],true);
       capBroadcast(lobby);capBots(lobby);

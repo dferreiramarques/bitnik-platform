@@ -329,7 +329,16 @@ function onJoined(msg) {
   isHost   = mySeat === 0;
   sessionStorage.setItem('cap_token', myToken);
   if (isSolo) {
-    // Solo game starts immediately
+    // Solo: game is already running on server — ask for its state
+    show('s-wait');
+    document.getElementById('wait-title').textContent = '🤖 A preparar bots…';
+    document.getElementById('wait-players').innerHTML =
+      '<div style="color:var(--muted);font-size:12px;padding:8px 0">O jogo vai começar já…</div>';
+    document.getElementById('btn-start').style.display = 'none';
+    // Request state immediately — server already has game running
+    send({type:'REQUEST_STATE'});
+    // Fallback: if no GAME_STATE in 2s, request again
+    setTimeout(() => { if (!state) send({type:'REQUEST_STATE'}); }, 2000);
     return;
   }
   show('s-wait');
@@ -372,7 +381,8 @@ function startGame() { send({type:'START'}); }
 function leaveLobby() {
   send({type:'LEAVE_LOBBY'});
   sessionStorage.removeItem('cap_token');
-  myToken=''; myLobbyId=''; mySeat=-1;
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  document.getElementById('btn-start').style.display = '';
   show('s-lobby'); send({type:'LOBBIES'});
 }
 
