@@ -746,7 +746,12 @@ function capBroadcast(lobby){
   if(lobby.solo){capSend(lobby.players[0],{type:'GAME_STATE',state:capView(g,0)});}
   else if(lobby.seatMap){lobby.seatMap.forEach((ls,gs)=>{if(lobby.players[ls])capSend(lobby.players[ls],{type:'GAME_STATE',state:capView(g,gs)});});}
 }
-function capLobbyInfo(l){return{id:l.id,name:l.name,solo:l.solo,seated:l.players.filter(Boolean).length,maxH:l.maxH,playing:!!l.game&&l.game.phase!=='GAME_OVER',full:l.players.filter(Boolean).length>=l.maxH,names:l.names.filter(Boolean)};}
+function capLobbyInfo(l){
+  const seated=l.players.filter(Boolean).length;
+  const playing=!!l.game&&l.game.phase!=='GAME_OVER';
+  return{id:l.id,name:l.name,solo:l.solo,seated,maxH:l.maxH,playing,
+    full:l.solo?false:seated>=l.maxH,  // solo never full — always joinable
+    names:l.names.filter(Boolean)};}
 function capBroadcastLobbies(){
   const list=Object.values(CAP_LOBBIES).map(capLobbyInfo);
   for(const ws of capWss.clients){if(ws.readyState!==1)continue;const st=CAP_WS_STATE.get(ws);if(!st||!st.lobbyId)capSend(ws,{type:'LOBBIES',lobbies:list});}
@@ -788,7 +793,8 @@ function capNextRound(lobby){
   g.table=g.deck.splice(0,g.n);g.bets=new Array(g.n).fill(null);
   g.lastResult=null;g.phase='BETTING';g.turnGen++;
   capBroadcast(lobby);
-  if(g.isSolo)capBots(lobby);else capAutoBeats(lobby);
+  if(g.isSolo)capBots(lobby);
+  // multiplayer: no auto-bet, players choose freely
 }
 function capEndGame(lobby){
   const g=lobby.game;g.phase='GAME_OVER';g.finalScores=capScores(g);
@@ -862,7 +868,14 @@ function capHandle(ws,msg){
     capSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,solo:lobby.solo,name,lobby:capLobbyInfo(lobby),names:lobby.names});
     lobby.players.forEach((p,i)=>{if(p&&i!==seat)capSend(p,{type:'PLAYER_JOINED',seat,name,lobby:capLobbyInfo(lobby)});});
     capBroadcastLobbies();
-    if(lobby.solo){const s=CAP_WS_STATE.get(ws);if(s)s.gameSeat=0;lobby.game=capNewGame([name,'Bot 1','Bot 2'],true);capBroadcast(lobby);capBots(lobby);}
+    if(lobby.solo){
+      // Reset solo lobby — clear any stale player slot
+      lobby.players.fill(null); lobby.names.fill(''); lobby.tokens.fill(null);
+      lobby.players[seat]=ws; lobby.names[seat]=name; lobby.tokens[seat]=token;
+      const s=CAP_WS_STATE.get(ws);if(s)s.gameSeat=0;
+      lobby.game=capNewGame([name,'Bot 1','Bot 2'],true);
+      capBroadcast(lobby);capBots(lobby);
+    }
     return;
   }
   const st=CAP_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
@@ -879,7 +892,7 @@ function capHandle(ws,msg){
     if(active.length<2){capSend(ws,{type:'ERROR',text:'Precisas de pelo menos 2 jogadores.'});return;}
     lobby.seatMap=active;lobby.game=capNewGame(active.map(i=>lobby.names[i]),false);
     active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=CAP_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
-    capBroadcast(lobby);capBroadcastLobbies();capAutoBeats(lobby);return;
+    capBroadcast(lobby);capBroadcastLobbies();return;  // no auto-bet: players must choose
   }
   if(msg.type==='BET'){
     if(!g||g.phase!=='BETTING'){if(g)capSend(ws,{type:'GAME_STATE',state:capView(g,capFindGs(lobby,ls))});return;}
@@ -893,7 +906,7 @@ function capHandle(ws,msg){
     else{if(ls!==0)return;const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);if(active.length<2)return;
       lobby.seatMap=active;lobby.game=capNewGame(active.map(i=>lobby.names[i]),false);
       active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=CAP_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
-      capBroadcast(lobby);capAutoBeats(lobby);}
+      capBroadcast(lobby);}
   }
 }
 

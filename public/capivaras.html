@@ -299,16 +299,17 @@ function renderLobbyList(list) {
   show('s-lobby');
   const el = document.getElementById('lobby-list');
   el.innerHTML = (list||[]).map(l => `
-    <div class="lobby-row ${l.full||l.playing?'full':''} ${l.playing?'playing':''}"
-         onclick="${l.full||l.playing?'':'joinLobby(\''+l.id+'\')'}">
+    <div class="lobby-row ${!l.solo&&(l.full||l.playing)?'full':''} ${l.playing&&!l.solo?'playing':''}"
+         onclick="joinLobby('${l.id}')">
       <div>
         <div class="lr-name">${l.solo?'🤖 '+l.name:l.name}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">
-          ${l.names.join(', ')||'(vazia)'}
+          ${l.solo?'Solo vs 2 bots':l.names.join(', ')||'(vazia)'}
         </div>
       </div>
-      <div class="lr-count">${l.seated}/${l.maxH}</div>
-      ${l.playing?'<div class="lr-badge">A jogar</div>':
+      ${l.solo?'':"<div class='lr-count'>"+l.seated+"/"+l.maxH+"</div>"}
+      ${l.solo?'<span style="font-size:10px;color:var(--teal)">Jogar solo →</span>':
+        l.playing?'<div class="lr-badge">A jogar</div>':
         l.full?'<span style="font-size:10px;color:var(--muted)">Cheia</span>':
         '<span style="font-size:10px;color:var(--teal)">Entrar →</span>'}
     </div>
