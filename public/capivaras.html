@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Capivaras — Bitnik Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f2e8; --surface:#fff; --panel:#f0ead8; --border:#d8ceb8;
+  --ink:#1a1410; --muted:#8a7a60; --accent:#c47c28; --teal:#2a7a6e;
+  --red:#c43028; --gold:#c8a040;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--ink);font-size:13px}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* NAV */
+.nav{background:var(--ink);padding:0 20px;height:44px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#f0ead8;letter-spacing:1px}
+.nav-logo span{color:var(--gold)}
+.nav-back{color:#5a5040;text-decoration:none;font-size:11px;letter-spacing:1px}
+.nav-back:hover{color:var(--gold)}
+.conn{width:8px;height:8px;border-radius:50%;background:#c43028;margin-left:auto}
+.conn.ok{background:#4a9a6e}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column}
+.screen.active{display:flex}
+
+/* NAME SCREEN */
+#s-name{align-items:center;justify-content:center;padding:40px 20px;gap:12px}
+.name-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;letter-spacing:-.5px;text-align:center}
+.name-sub{color:var(--muted);font-size:12px;text-align:center;margin-bottom:8px}
+.name-input{width:280px;padding:12px 16px;border:2px solid var(--border);border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:14px;background:var(--surface);
+  text-align:center;outline:none;color:var(--ink)}
+.name-input:focus{border-color:var(--accent)}
+.btn-go{padding:12px 32px;background:var(--accent);color:white;border:none;border-radius:4px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;width:280px;transition:background .2s}
+.btn-go:hover{background:#a86820}
+
+/* LOBBY SCREEN */
+#s-lobby{padding:24px;gap:16px;max-width:600px;margin:0 auto;width:100%}
+.lobby-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;margin-bottom:4px}
+.lobby-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.lobby-list{display:flex;flex-direction:column;gap:8px}
+.lobby-row{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.lobby-row:hover{border-color:var(--accent);background:#faf6ee}
+.lobby-row.full{opacity:.5;cursor:default}
+.lobby-row.playing{border-left:3px solid var(--teal)}
+.lr-name{flex:1;font-weight:500;font-size:13px}
+.lr-count{font-size:11px;color:var(--muted)}
+.lr-badge{font-size:10px;padding:2px 8px;border-radius:3px;
+  background:rgba(42,122,110,.12);color:var(--teal);letter-spacing:.5px}
+
+/* WAIT SCREEN */
+#s-wait{padding:24px;gap:16px;max-width:500px;margin:0 auto;width:100%;align-items:stretch}
+.wait-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px}
+.wait-players{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.wp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:4px}
+.wp-num{width:22px;height:22px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.wp-num.me{background:var(--accent);color:white}
+.wp-name{flex:1;font-size:12px}
+.btn-start{padding:12px;background:var(--teal);color:white;border:none;border-radius:4px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;transition:background .2s}
+.btn-start:hover:not(:disabled){background:#1f6058}
+.btn-start:disabled{opacity:.5;cursor:not-allowed}
+.btn-leave{padding:10px;background:transparent;color:var(--muted);border:1px solid var(--border);
+  border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer}
+
+/* GAME SCREEN */
+#s-game{display:none;padding:16px;gap:12px;flex-direction:column;max-width:900px;margin:0 auto;width:100%}
+#s-game.active{display:flex}
+
+/* Phase bar */
+.phase-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+.phase-badge{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
+  letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:3px}
+.phase-BETTING{background:rgba(196,124,40,.12);color:var(--accent)}
+.phase-REVEAL{background:rgba(42,122,110,.12);color:var(--teal)}
+.phase-GAME_OVER{background:rgba(26,20,16,.08);color:var(--ink)}
+.phase-right{display:flex;align-items:center;gap:16px;font-size:11px;color:var(--muted)}
+
+/* Players bar */
+.players-row{display:flex;gap:8px;flex-wrap:wrap}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;flex:1;min-width:120px;transition:all .2s}
+.pcard.active{border-color:var(--accent);background:#fdf6ea}
+.pcard.me{border-color:var(--teal)}
+.pcard-name{font-size:11px;color:var(--muted);margin-bottom:2px;
+  display:flex;align-items:center;gap:6px}
+.tag{font-size:9px;padding:1px 5px;border-radius:2px}
+.tag-me{background:rgba(42,122,110,.12);color:var(--teal)}
+.pcard-score{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px}
+.pcard-bird{font-size:10px;color:var(--muted)}
+
+/* Table cards */
+.table-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px}
+.table-cards{display:flex;gap:10px;flex-wrap:wrap}
+.cap-card{background:var(--surface);border:2px solid var(--border);border-radius:8px;
+  padding:14px;cursor:pointer;transition:all .2s;position:relative;
+  min-width:110px;flex:1;max-width:160px}
+.cap-card:hover.can-bet{border-color:var(--accent);transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(196,124,40,.2)}
+.cap-card.selected{border-color:var(--accent);background:#fdf6ea}
+.cap-card.won{border-color:var(--teal);background:#f0faf6}
+.cap-card.nobody{border-color:var(--border);opacity:.6}
+.card-pos{font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.card-caps{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;margin-bottom:4px}
+.card-word{font-size:10px;color:var(--muted);margin-bottom:8px}
+.card-lilies{display:flex;gap:4px;flex-wrap:wrap}
+.lily{font-size:10px;padding:2px 6px;border-radius:2px;font-weight:500}
+.lily-Y{background:#fff3c0;color:#a07010}
+.lily-R{background:#ffe0dc;color:#a03020}
+.lily-W{background:#f0f0f0;color:#606060}
+.lily-B{background:#dce8ff;color:#204080}
+.lily-bird{background:#f0faf0;color:#306040}
+.card-result{position:absolute;top:8px;right:8px;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:500}
+.result-win{background:rgba(42,122,110,.15);color:var(--teal)}
+.result-nobody{background:rgba(196,52,40,.1);color:var(--red);font-size:9px}
+
+/* Status */
+.status-bar{padding:12px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;font-size:13px;display:flex;align-items:center;gap:10px}
+.bet-count{font-size:11px;color:var(--muted);margin-left:auto}
+
+/* Scored cards */
+.scored-section{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px}
+.scored-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.scored-list{display:flex;gap:6px;flex-wrap:wrap}
+.mini-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:6px 8px;font-size:11px;display:flex;align-items:center;gap:6px}
+.mini-cap{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px}
+
+/* Bird token */
+.bird-token{padding:10px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;font-size:12px;display:flex;align-items:center;gap:8px}
+.bird-token.has-holder{border-color:var(--gold);background:#fdf9ee}
+.bird-icon{font-size:18px}
+
+/* Deck info */
+.deck-info{font-size:11px;color:var(--muted);text-align:right}
+
+/* GAME OVER overlay */
+.overlay{position:fixed;inset:0;background:rgba(26,20,16,.6);
+  display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:28px;width:100%;max-width:440px}
+.overlay-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;margin-bottom:20px}
+.score-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.score-row:last-child{border:none}
+.score-pos{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;width:36px;color:var(--muted)}
+.score-pos.winner{color:var(--gold)}
+.score-name{flex:1;font-size:13px}
+.score-detail{font-size:10px;color:var(--muted);margin-top:1px}
+.score-pts{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:var(--accent)}
+.winner-badge{font-size:10px;padding:1px 6px;background:rgba(200,160,64,.15);
+  color:var(--gold);border-radius:3px;margin-left:6px;vertical-align:middle}
+.btn-restart{padding:12px 24px;background:var(--accent);color:white;border:none;border-radius:4px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;margin-top:16px;margin-right:8px}
+.btn-lobby{padding:12px 24px;background:transparent;color:var(--muted);
+  border:1px solid var(--border);border-radius:4px;font-family:'DM Mono',monospace;
+  font-size:12px;cursor:pointer;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="nav-logo">Bitnik <span>Games</span></div>
+  <a class="nav-back" href="/">← Catálogo</a>
+  <div class="conn" id="conn"></div>
+</div>
+
+<!-- NAME -->
+<div class="screen active" id="s-name">
+  <div class="name-title">🦫 Capivaras</div>
+  <p class="name-sub">Apostas secretas no Pantanal · 2–6 jogadores</p>
+  <input class="name-input" id="inp-name" placeholder="O teu nome…" maxlength="20">
+  <button class="btn-go" id="btn-go" onclick="goLobby()">Entrar →</button>
+  <p class="name-sub" id="name-err" style="color:var(--red)"></p>
+</div>
+
+<!-- LOBBY LIST -->
+<div class="screen" id="s-lobby">
+  <div class="lobby-title">Escolhe uma mesa</div>
+  <p class="lobby-sub">Selecciona uma mesa disponível para jogar</p>
+  <div class="lobby-list" id="lobby-list"></div>
+</div>
+
+<!-- WAIT -->
+<div class="screen" id="s-wait">
+  <div class="wait-title" id="wait-title">A aguardar jogadores…</div>
+  <div class="wait-players" id="wait-players"></div>
+  <button class="btn-start" id="btn-start" onclick="startGame()">Iniciar jogo</button>
+  <button class="btn-leave" onclick="leaveLobby()">← Sair da mesa</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="s-game">
+  <div class="phase-bar">
+    <div class="phase-badge" id="phase-badge">—</div>
+    <div class="phase-right">
+      <span id="bet-count"></span>
+      <span class="deck-info" id="deck-info"></span>
+    </div>
+  </div>
+  <div class="players-row" id="players-row"></div>
+  <div class="table-section">
+    <h3>Cartas na mesa — clica para apostar</h3>
+    <div class="table-cards" id="table-cards"></div>
+  </div>
+  <div class="status-bar" id="status-bar">A aguardar…</div>
+  <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start">
+    <div class="scored-section">
+      <h3>As tuas cartas</h3>
+      <div class="scored-list" id="scored-list"><span style="color:var(--muted);font-size:11px">Ainda vazio</span></div>
+    </div>
+    <div>
+      <div class="bird-token" id="bird-token">
+        <span class="bird-icon">🐦</span>
+        <span>Token do Pássaro — sem detentor</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="overlay-over">
+  <div class="overlay-box">
+    <div class="overlay-title">🏆 Fim de jogo</div>
+    <div id="final-scores"></div>
+    <div>
+      <button class="btn-restart" id="btn-restart" onclick="restart()">Jogar de novo</button>
+      <button class="btn-lobby" onclick="goHome()">← Catálogo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let ws, myName='', myToken='', myLobbyId='', mySeat=-1, myGameSeat=-1;
+let state=null, isSolo=false, isHost=false;
+const LILY_NAMES={Y:'Amarelo',R:'Vermelho',W:'Branco',B:'Azul'};
+const LILY_CLS={Y:'lily-Y',R:'lily-R',W:'lily-W',B:'lily-B'};
+
+// ── WebSocket ─────────────────────────────────────────────────────
+function connect() {
+  const proto = location.protocol==='https:'?'wss':'ws';
+  // Connect to dedicated Capivaras WS endpoint
+  const host = location.hostname;
+  const port = location.port || (location.protocol==='https:'?'443':'80');
+  ws = new WebSocket(`${proto}://${location.host}/ws/capivaras`);
+  ws.onopen    = () => {
+    document.getElementById('conn').classList.add('ok');
+    // Try reconnect if we have a token
+    if (myToken) { send({type:'RECONNECT', token:myToken}); }
+    else { send({type:'LOBBIES'}); }
+  };
+  ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch(err){ console.error(err); } };
+  ws.onclose   = () => { document.getElementById('conn').classList.remove('ok'); setTimeout(connect,2000); };
+  ws.onerror   = () => {};
+}
+function send(msg){ if(ws?.readyState===1) ws.send(JSON.stringify(msg)); }
+
+function handle(msg) {
+  if (msg.type==='LOBBIES')          renderLobbyList(msg.lobbies);
+  if (msg.type==='JOINED')           onJoined(msg);
+  if (msg.type==='RECONNECTED')      onReconnected(msg);
+  if (msg.type==='RECONNECT_FAIL')   { myToken=''; send({type:'LOBBIES'}); }
+  if (msg.type==='PLAYER_JOINED')    send({type:'REQUEST_STATE'});
+  if (msg.type==='LOBBY_STATE')      renderWait(msg);
+  if (msg.type==='GAME_STATE')       renderGame(msg.state);
+  if (msg.type==='OPPONENT_DISCONNECTED') showMsg(msg.name+' desligou. A aguardar reconexão…');
+  if (msg.type==='OPPONENT_RECONNECTED')  showMsg(msg.name+' reconectou!');
+  if (msg.type==='ERROR')            showErr(msg.text);
+}
+
+// ── Name screen ───────────────────────────────────────────────────
+function goLobby() {
+  const n = document.getElementById('inp-name').value.trim();
+  if (!n) { showErr('Precisas de um nome!'); return; }
+  myName = n;
+  show('s-lobby');
+  if (!ws || ws.readyState > 1) connect();
+  else send({type:'LOBBIES'});
+}
+
+// ── Lobby list ────────────────────────────────────────────────────
+function renderLobbyList(list) {
+  show('s-lobby');
+  const el = document.getElementById('lobby-list');
+  el.innerHTML = (list||[]).map(l => `
+    <div class="lobby-row ${l.full||l.playing?'full':''} ${l.playing?'playing':''}"
+         onclick="${l.full||l.playing?'':'joinLobby(\''+l.id+'\')'}">
+      <div>
+        <div class="lr-name">${l.solo?'🤖 '+l.name:l.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">
+          ${l.names.join(', ')||'(vazia)'}
+        </div>
+      </div>
+      <div class="lr-count">${l.seated}/${l.maxH}</div>
+      ${l.playing?'<div class="lr-badge">A jogar</div>':
+        l.full?'<span style="font-size:10px;color:var(--muted)">Cheia</span>':
+        '<span style="font-size:10px;color:var(--teal)">Entrar →</span>'}
+    </div>
+  `).join('');
+}
+
+function joinLobby(id) {
+  myLobbyId = id;
+  send({type:'JOIN_LOBBY', lobbyId: id, playerName: myName});
+}
+
+function onJoined(msg) {
+  mySeat   = msg.seat;
+  myToken  = msg.token;
+  myLobbyId= msg.lobbyId;
+  isSolo   = msg.solo;
+  isHost   = mySeat === 0;
+  sessionStorage.setItem('cap_token', myToken);
+  if (isSolo) {
+    // Solo game starts immediately
+    return;
+  }
+  show('s-wait');
+  renderWait({lobby: msg.lobby, names: msg.names, myLobbySeat: mySeat});
+}
+
+function onReconnected(msg) {
+  mySeat     = msg.seat;
+  myGameSeat = msg.gameSeat;
+  isSolo     = msg.solo;
+  isHost     = mySeat === 0;
+  send({type:'REQUEST_STATE'});
+}
+
+// ── Wait screen ───────────────────────────────────────────────────
+function renderWait(msg) {
+  show('s-wait');
+  const l = msg.lobby;
+  document.getElementById('wait-title').textContent = l.name + ' — a aguardar';
+  const names = msg.names || [];
+  document.getElementById('wait-players').innerHTML =
+    Array.from({length: l.maxH}, (_,i) => {
+      const name = names[i];
+      const isMe = i === (msg.myLobbySeat??mySeat);
+      return `<div class="wp-row">
+        <div class="wp-num ${isMe?'me':''}">${i+1}</div>
+        <div class="wp-name">${name||(isMe?myName:'(vazio)')}</div>
+        ${isMe?'<span style="font-size:10px;color:var(--teal)">tu</span>':''}
+      </div>`;
+    }).join('');
+  const seated = names.filter(Boolean).length;
+  const btn = document.getElementById('btn-start');
+  btn.disabled = !isHost || seated < 2;
+  btn.textContent = isHost
+    ? (seated < 2 ? `Aguarda ${2-seated} jogador(es)` : 'Iniciar jogo')
+    : 'O host inicia o jogo';
+}
+
+function startGame() { send({type:'START'}); }
+function leaveLobby() {
+  send({type:'LEAVE_LOBBY'});
+  sessionStorage.removeItem('cap_token');
+  myToken=''; myLobbyId=''; mySeat=-1;
+  show('s-lobby'); send({type:'LOBBIES'});
+}
+
+// ── Game screen ───────────────────────────────────────────────────
+function renderGame(s) {
+  state = s;
+  myGameSeat = s.mySeat;
+
+  if (s.phase === 'GAME_OVER') { show('s-game'); showGameOver(s); return; }
+  show('s-game');
+  document.getElementById('overlay-over').classList.remove('open');
+
+  // Phase badge
+  const badge = document.getElementById('phase-badge');
+  badge.className = 'phase-badge phase-'+s.phase;
+  badge.textContent = s.phase==='BETTING'?'A Apostar':'Revelação';
+
+  // Bet count
+  const placed = (s.betsPlaced||[]).filter(Boolean).length;
+  document.getElementById('bet-count').textContent =
+    s.phase==='BETTING' ? `${placed}/${s.n} apostas` : '';
+
+  // Deck info
+  document.getElementById('deck-info').textContent =
+    (s.deckPass===0?'1ª':'2ª') + ' passagem · ' + s.deckLeft + ' cartas restantes';
+
+  // Players
+  document.getElementById('players-row').innerHTML =
+    (s.players||[]).map(p => `
+      <div class="pcard ${p.isMe?'me':''}">
+        <div class="pcard-name">
+          ${p.name}
+          ${p.isMe?'<span class="tag tag-me">tu</span>':''}
+        </div>
+        <div class="pcard-score">${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span></div>
+        ${p.birdCards>0?`<div class="pcard-bird">🐦 ×${p.birdCards}</div>`:''}
+      </div>
+    `).join('');
+
+  // Table cards
+  const tableEl = document.getElementById('table-cards');
+  tableEl.innerHTML = '';
+  const canBet = s.phase==='BETTING' && s.myBet===null;
+  (s.table||[]).forEach((card, pos) => {
+    const div = document.createElement('div');
+    let cls = 'cap-card';
+    if (canBet) cls += ' can-bet';
+    if (s.phase==='BETTING' && s.myBet===pos) cls += ' selected';
+
+    let result = '';
+    if (s.phase==='REVEAL' && s.lastResult) {
+      const w = s.lastResult.winners;
+      if (w && w[pos] !== undefined) {
+        cls += ' won';
+        const winner = s.players.find(p=>p.seat===w[pos]);
+        result = `<div class="card-result result-win">${esc(winner?.name||'?')}</div>`;
+      } else {
+        cls += ' nobody';
+        result = `<div class="card-result result-nobody">Empate</div>`;
+      }
+    }
+
+    div.className = cls;
+    const capWord = card.cap===1?'capivara':'capivaras';
+    const lilies  = (card.lilies||[]).map(l =>
+      `<span class="lily ${LILY_CLS[l]||''}">${LILY_NAMES[l]||l}</span>`).join('');
+    const bird = card.bird ? `<span class="lily lily-bird">🐦 Pássaro</span>` : '';
+    div.innerHTML = `
+      ${result}
+      <div class="card-pos">${String.fromCharCode(64+pos+1)}</div>
+      <div class="card-caps">${card.cap}</div>
+      <div class="card-word">${capWord}</div>
+      <div class="card-lilies">${lilies}${bird}</div>
+    `;
+    if (canBet) {
+      div.onclick = () => {
+        send({type:'BET', position:pos});
+        state.myBet = pos; renderGame(state);
+      };
+    }
+    tableEl.appendChild(div);
+  });
+
+  // Status text
+  const statusEl = document.getElementById('status-bar');
+  if (s.phase==='BETTING') {
+    if (s.myBet !== null) {
+      statusEl.textContent = '✓ Apostaste na carta '+String.fromCharCode(64+s.myBet+1)+' — a aguardar os outros…';
+    } else {
+      statusEl.textContent = 'Clica numa carta para apostar';
+    }
+  } else if (s.phase==='REVEAL') {
+    const bu = s.lastResult?.birdUpdate;
+    if (bu) {
+      if (bu.type==='first')      statusEl.textContent = `🐦 ${bu.name} ganhou o token do pássaro!`;
+      else if (bu.type==='steal') statusEl.textContent = `🐦 ${bu.name} roubou o token de ${bu.fromName}!`;
+      else if (bu.type==='tie_first') statusEl.textContent = '🐦 Empate — ninguém ficou com o token.';
+      else if (bu.type==='tie_steal') statusEl.textContent = '🐦 Empate — token mantém-se com o detentor.';
+      else statusEl.textContent = 'Revelação!';
+    } else {
+      const nWon = Object.keys(s.lastResult?.winners||{}).length;
+      statusEl.textContent = nWon > 0
+        ? `${nWon} carta${nWon!==1?'s':''} recolhida${nWon!==1?'s':''}!`
+        : 'Todos empataram — ninguém ganhou cartas!';
+    }
+  }
+
+  // Scored cards
+  const me = s.players?.find(p=>p.isMe);
+  const scoredEl = document.getElementById('scored-list');
+  if (!me || !me.scored || me.scored.length===0) {
+    scoredEl.innerHTML = '<span style="color:var(--muted);font-size:11px">Ainda vazio</span>';
+  } else {
+    scoredEl.innerHTML = me.scored.map(c => {
+      const word = c.cap===1?'cap.':'caps.';
+      const b    = c.bird?'🐦 ':'';
+      return `<div class="mini-card">
+        <span class="mini-cap">${b}${c.cap}</span>
+        <span style="color:var(--muted);font-size:10px">${word}</span>
+        ${(c.lilies||[]).map(l=>`<span class="lily ${LILY_CLS[l]||''}" style="padding:1px 4px;font-size:9px">${l}</span>`).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  // Bird token
+  const bt = document.getElementById('bird-token');
+  if (s.birdHolder === null) {
+    bt.className = 'bird-token';
+    bt.innerHTML = '<span class="bird-icon">🐦</span> <span>Token do Pássaro — sem detentor</span>';
+  } else {
+    const holder = s.players?.find(p=>p.seat===s.birdHolder);
+    bt.className = 'bird-token has-holder';
+    bt.innerHTML = `<span class="bird-icon">🐦</span>
+      <span><strong>${esc(holder?.name||'?')}</strong> — ${s.birdHolderCards} carta${s.birdHolderCards!==1?'s':''}</span>`;
+  }
+}
+
+function showGameOver(s) {
+  const el = document.getElementById('final-scores');
+  const scores = s.finalScores || s.players || [];
+  el.innerHTML = scores.map((p,i) => {
+    const isW = i === s.winnerIdx;
+    const details = [];
+    if (p.birdCards>0) details.push(`🐦 ×${p.birdCards}`);
+    if (p.hasBird)    details.push('+5 token');
+    if (p.allLilies)  details.push('+10 todos os nenúfares!');
+    return `<div class="score-row">
+      <div class="score-pos ${isW?'winner':''}">${isW?'🥇':(i+1)+'.'}</div>
+      <div>
+        <div class="score-name">${esc(p.name)}${isW?'<span class="winner-badge">Vencedor</span>':''}</div>
+        <div class="score-detail">${details.join(' · ')||'só capivaras'}</div>
+      </div>
+      <div class="score-pts">${p.pts} pts</div>
+    </div>`;
+  }).join('');
+  document.getElementById('btn-restart').style.display =
+    (isSolo || isHost) ? 'inline-block' : 'none';
+  document.getElementById('overlay-over').classList.add('open');
+}
+
+function restart() {
+  document.getElementById('overlay-over').classList.remove('open');
+  send({type:'RESTART'});
+}
+function goHome() { location.href = '/'; }
+
+// ── Helpers ───────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showErr(msg) {
+  document.getElementById('name-err').textContent = msg;
+  setTimeout(()=>{ document.getElementById('name-err').textContent=''; },3000);
+}
+function showMsg(msg) {
+  document.getElementById('status-bar').textContent = msg;
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+document.getElementById('inp-name').addEventListener('keydown', e => {
+  if (e.key==='Enter') goLobby();
+});
+
+const saved = sessionStorage.getItem('cap_token');
+if (saved) { myToken = saved; connect(); }
+
+setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); }, 20000);
+</script>
+</body>
+</html>

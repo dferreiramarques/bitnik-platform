@@ -1,6 +1,7 @@
 'use strict';
 // ═══════════════════════════════════════════════════════════════════
 //  BITNIK SERVER
+// Capivaras runs as a dedicated in-process game handler
 //  Serve ficheiros estáticos + WebSocket runtime em simultâneo.
 //  Um processo, uma porta — Railway-ready.
 // ═══════════════════════════════════════════════════════════════════
@@ -451,7 +452,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // /play/:gameId → play.html (game client reads gameKey from URL)
+  // /play/capivaras → dedicated Capivaras client
+  if (url === '/play/capivaras' || url === '/play/capivaras/') {
+    fs.readFile(path.join(PUB_DIR, 'capivaras.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
+  // /play/:gameId → generic play.html
   if (url.startsWith('/play/')) {
     fs.readFile(path.join(PUB_DIR, 'play.html'), (err, data) => {
       if (err) { res.writeHead(404); res.end('Not found'); return; }
@@ -483,7 +493,9 @@ const server = http.createServer((req, res) => {
 });
 
 // ── WebSocket server ──────────────────────────────────────────────
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: undefined });
+// Capivaras dedicated WebSocket - handled via upgrade event below
+let capWss;
 
 wss.on('connection', (ws, req) => {
   // Expect client to JOIN with { type:'JOIN', gameKey, tableNum, name }
@@ -598,10 +610,264 @@ Object.keys(GAME_REGISTRY).forEach(key => {
   for (let t = 1; t <= 3; t++) getLobby(key, t);
 });
 
+
+// ── CAPIVARAS EMBEDDED GAME ───────────────────────────────────────
+// Full Capivaras game logic runs in-process, handling /ws/capivaras
+const CAP_LOBBIES  = {};
+const CAP_SESSIONS = {};
+const CAP_WS_STATE = new WeakMap();
+
+function capMkCard(cap, lilies, bird) { return { cap, lilies:[...lilies], bird }; }
+const CAP_DECK = [
+  capMkCard(1,[],false),capMkCard(1,[],false),capMkCard(1,['R'],false),capMkCard(1,['R'],false),
+  capMkCard(1,['B','W'],false),capMkCard(1,['W'],true),
+  capMkCard(2,[],false),capMkCard(2,[],false),capMkCard(2,[],false),capMkCard(2,[],false),
+  capMkCard(2,[],false),capMkCard(2,[],false),capMkCard(2,['Y'],false),capMkCard(2,['Y'],false),
+  capMkCard(2,['B'],false),capMkCard(2,['Y'],true),capMkCard(2,['R'],true),
+  capMkCard(2,[],true),capMkCard(2,[],true),
+  capMkCard(3,[],false),capMkCard(3,[],false),capMkCard(3,[],false),capMkCard(3,[],false),
+  capMkCard(3,[],false),capMkCard(3,[],false),capMkCard(3,['Y'],false),
+  capMkCard(3,['B'],false),capMkCard(3,['B'],false),capMkCard(3,[],true),capMkCard(3,[],true),
+  capMkCard(4,[],false),capMkCard(4,[],false),capMkCard(4,[],true),capMkCard(4,[],true),
+  capMkCard(5,[],false),capMkCard(5,[],true),
+];
+function capShuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function capMakeLobby(id,name,solo,maxH){
+  const n=solo?1:maxH;
+  return{id,name,solo,maxH,players:new Array(n).fill(null),names:new Array(n).fill(''),
+    tokens:new Array(n).fill(null),graceTimers:new Array(n).fill(null),
+    autoTimers:new Array(n).fill(null),seatMap:null,game:null};
+}
+for(let i=1;i<=5;i++) CAP_LOBBIES['mp'+i]=capMakeLobby('mp'+i,'Mesa '+i,false,6);
+CAP_LOBBIES['solo']=capMakeLobby('solo','Solo (vs 2 Bots)',true,1);
+
+function capNewGame(names,isSolo){
+  const n=names.length, deck=capShuffle(CAP_DECK);
+  return{players:names.map(name=>({name,scored:[],birdCards:0})),n,deck,discard:[],
+    table:deck.splice(0,n),bets:new Array(n).fill(null),birdHolder:null,
+    phase:'BETTING',deckPass:0,lastResult:null,isSolo,turnGen:0,winnerIdx:null,finalScores:null};
+}
+function capScores(g){
+  return g.players.map((p,i)=>{
+    let pts=0;const lilies=new Set();
+    for(const c of p.scored){pts+=c.cap;c.lilies.forEach(l=>lilies.add(l));}
+    if(i===g.birdHolder)pts+=5;
+    const allLilies=['Y','R','W','B'].every(c=>lilies.has(c));
+    if(allLilies)pts+=10;
+    return{name:p.name,pts,scored:p.scored,lilies:[...lilies],birdCards:p.birdCards,hasBird:i===g.birdHolder,allLilies};
+  });
+}
+function capView(g,seat){
+  const sc=capScores(g);
+  return{phase:g.phase,n:g.n,table:g.table,myBet:g.bets[seat],betsPlaced:g.bets.map(b=>b!==null),
+    lastResult:g.lastResult?{winners:g.lastResult.winners,birdUpdate:g.lastResult.birdUpdate,bets:g.lastResult.bets}:null,
+    players:sc.map((s,i)=>({...s,isMe:i===seat,seat:i})),birdHolder:g.birdHolder,
+    birdHolderCards:g.birdHolder!==null?g.players[g.birdHolder].birdCards:0,
+    deckPass:g.deckPass,deckLeft:g.deck.length,winnerIdx:g.winnerIdx,finalScores:g.finalScores,
+    mySeat:seat,isSolo:g.isSolo,myBirdCards:g.players[seat].birdCards,turnGen:g.turnGen};
+}
+function capSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
+function capBroadcast(lobby){
+  const g=lobby.game;if(!g)return;
+  if(lobby.solo){capSend(lobby.players[0],{type:'GAME_STATE',state:capView(g,0)});}
+  else if(lobby.seatMap){lobby.seatMap.forEach((ls,gs)=>{if(lobby.players[ls])capSend(lobby.players[ls],{type:'GAME_STATE',state:capView(g,gs)});});}
+}
+function capLobbyInfo(l){return{id:l.id,name:l.name,solo:l.solo,seated:l.players.filter(Boolean).length,maxH:l.maxH,playing:!!l.game&&l.game.phase!=='GAME_OVER',full:l.players.filter(Boolean).length>=l.maxH,names:l.names.filter(Boolean)};}
+function capBroadcastLobbies(){
+  const list=Object.values(CAP_LOBBIES).map(capLobbyInfo);
+  for(const ws of capWss.clients){if(ws.readyState!==1)continue;const st=CAP_WS_STATE.get(ws);if(!st||!st.lobbyId)capSend(ws,{type:'LOBBIES',lobbies:list});}
+}
+function capCheckBets(lobby){const g=lobby.game;if(!g||g.phase!=='BETTING')return;if(g.bets.every(b=>b!==null))capResolve(lobby);}
+function capResolve(lobby){
+  const g=lobby.game;
+  const betCount=new Array(g.n).fill(0),betBySeat=new Array(g.n).fill(-1);
+  g.bets.forEach((bet,seat)=>{if(bet!==null){betCount[bet]++;betBySeat[bet]=seat;}});
+  const result={bets:[...g.bets],winners:{},birdUpdate:null};
+  g.table.forEach((card,pos)=>{
+    if(betCount[pos]===1){const seat=betBySeat[pos];g.players[seat].scored.push({...card,lilies:[...card.lilies]});result.winners[pos]=seat;if(card.bird)g.players[seat].birdCards++;}
+  });
+  const prev=g.birdHolder;
+  if(prev===null){
+    const bw=Object.entries(result.winners).filter(([pos])=>g.table[pos].bird).map(([,s])=>s);
+    if(bw.length===1){g.birdHolder=bw[0];result.birdUpdate={type:'first',seat:bw[0],name:g.players[bw[0]].name};}
+    else if(bw.length>1){result.birdUpdate={type:'tie_first',names:bw.map(s=>g.players[s].name)};}
+  } else {
+    const hc=g.players[prev].birdCards;
+    const thieves=g.players.reduce((acc,p,i)=>{if(i!==prev&&p.birdCards>hc)acc.push(i);return acc;},[]);
+    if(thieves.length===1){g.birdHolder=thieves[0];result.birdUpdate={type:'steal',seat:thieves[0],from:prev,name:g.players[thieves[0]].name,fromName:g.players[prev].name};}
+    else if(thieves.length>1){result.birdUpdate={type:'tie_steal',names:thieves.map(s=>g.players[s].name)};}
+  }
+  g.discard.push(...g.table.map(c=>({...c,lilies:[...c.lilies]})));
+  g.lastResult=result;g.phase='REVEAL';g.turnGen++;
+  lobby.autoTimers.forEach((t,i)=>{if(t){clearTimeout(t);lobby.autoTimers[i]=null;}});
+  capBroadcast(lobby);
+  const gen=g.turnGen;
+  setTimeout(()=>{if(!lobby.game||lobby.game.turnGen!==gen||lobby.game.phase!=='REVEAL')return;capNextRound(lobby);},5000);
+}
+function capNextRound(lobby){
+  const g=lobby.game;
+  if(g.deck.length<g.n){
+    if(g.deckPass===0){g.deck.push(...capShuffle(g.discard));g.discard=[];g.deckPass=1;}
+    else{capEndGame(lobby);return;}
+  }
+  if(g.deck.length<g.n){capEndGame(lobby);return;}
+  g.table=g.deck.splice(0,g.n);g.bets=new Array(g.n).fill(null);
+  g.lastResult=null;g.phase='BETTING';g.turnGen++;
+  capBroadcast(lobby);
+  if(g.isSolo)capBots(lobby);else capAutoBeats(lobby);
+}
+function capEndGame(lobby){
+  const g=lobby.game;g.phase='GAME_OVER';g.finalScores=capScores(g);
+  const max=Math.max(...g.finalScores.map(s=>s.pts));
+  g.winnerIdx=g.finalScores.findIndex(s=>s.pts===max);
+  capBroadcast(lobby);capBroadcastLobbies();
+}
+function capBots(lobby){
+  const g=lobby.game;if(!g||!g.isSolo||g.phase!=='BETTING')return;
+  const gen=g.turnGen;
+  [1,2].forEach(bot=>{
+    if(g.bets[bot]!==null)return;
+    setTimeout(()=>{
+      if(!lobby.game||lobby.game.turnGen!==gen||g.phase!=='BETTING'||g.bets[bot]!==null)return;
+      const scores=g.table.map((c,i)=>({i,s:c.cap+(c.bird?2:0)+c.lilies.length})).sort((a,b)=>b.s-a.s);
+      const pick=scores.find(s=>s.i!==g.bets[0])||scores[0];
+      g.bets[bot]=pick.i;capBroadcast(lobby);capCheckBets(lobby);
+    },900+Math.random()*1700);
+  });
+}
+function capAutoBeats(lobby){
+  const g=lobby.game;if(!g||g.isSolo||g.phase!=='BETTING')return;
+  const gen=g.turnGen;
+  g.bets.forEach((bet,seat)=>{
+    if(bet!==null||lobby.autoTimers[seat])return;
+    lobby.autoTimers[seat]=setTimeout(()=>{
+      if(!lobby.game||lobby.game.turnGen!==gen||g.bets[seat]!==null)return;
+      g.bets[seat]=Math.floor(Math.random()*g.n);capBroadcast(lobby);capCheckBets(lobby);
+    },10000);
+  });
+}
+function capFindGs(lobby,ls){return lobby.seatMap?lobby.seatMap.indexOf(ls):ls;}
+function capHardLeave(lobby,seat){
+  lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;
+  const g=lobby.game;
+  if(g&&g.phase!=='GAME_OVER'){
+    const rem=lobby.seatMap?lobby.seatMap.filter(li=>lobby.players[li]).length:lobby.players.filter(Boolean).length;
+    if(rem<2)capEndGame(lobby);
+  }
+  capBroadcastLobbies();
+}
+function capHandle(ws,msg){
+  if(msg.type==='PING'){capSend(ws,{type:'PONG'});return;}
+  if(msg.type==='LOBBIES'){capSend(ws,{type:'LOBBIES',lobbies:Object.values(CAP_LOBBIES).map(capLobbyInfo)});return;}
+  if(msg.type==='RECONNECT'){
+    const sess=CAP_SESSIONS[msg.token];
+    if(!sess){capSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const lobby=CAP_LOBBIES[sess.lobbyId];if(!lobby){capSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const{seat,name}=sess;
+    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
+    lobby.players[seat]=ws;lobby.names[seat]=name;
+    const gs=lobby.seatMap?lobby.seatMap.indexOf(seat):seat;
+    CAP_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,gameSeat:gs,token:msg.token});
+    capSend(ws,{type:'RECONNECTED',seat,gameSeat:gs,name,solo:lobby.solo});
+    capBroadcastLobbies();
+    if(lobby.game)capBroadcast(lobby);
+    else capSend(ws,{type:'LOBBY_STATE',lobby:capLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});
+    return;
+  }
+  if(msg.type==='JOIN_LOBBY'){
+    const lobby=CAP_LOBBIES[msg.lobbyId];
+    if(!lobby){capSend(ws,{type:'ERROR',text:'Mesa não encontrada.'});return;}
+    if(!lobby.solo&&lobby.game&&lobby.game.phase!=='GAME_OVER'){capSend(ws,{type:'ERROR',text:'Jogo em curso.'});return;}
+    const seat=lobby.players.findIndex(p=>p===null);
+    if(seat===-1){capSend(ws,{type:'ERROR',text:'Mesa cheia.'});return;}
+    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
+    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
+    CAP_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,gameSeat:seat,token});
+    CAP_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
+    capSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,solo:lobby.solo,name,lobby:capLobbyInfo(lobby),names:lobby.names});
+    lobby.players.forEach((p,i)=>{if(p&&i!==seat)capSend(p,{type:'PLAYER_JOINED',seat,name,lobby:capLobbyInfo(lobby)});});
+    capBroadcastLobbies();
+    if(lobby.solo){const s=CAP_WS_STATE.get(ws);if(s)s.gameSeat=0;lobby.game=capNewGame([name,'Bot 1','Bot 2'],true);capBroadcast(lobby);capBots(lobby);}
+    return;
+  }
+  const st=CAP_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
+  const lobby=CAP_LOBBIES[st.lobbyId];if(!lobby)return;
+  const ls=st.seat,g=lobby.game;
+  if(msg.type==='LEAVE_LOBBY'){capHardLeave(lobby,ls);CAP_WS_STATE.delete(ws);capSend(ws,{type:'LOBBIES',lobbies:Object.values(CAP_LOBBIES).map(capLobbyInfo)});return;}
+  if(msg.type==='REQUEST_STATE'){
+    if(g)capSend(ws,{type:'GAME_STATE',state:capView(g,capFindGs(lobby,ls))});
+    else capSend(ws,{type:'LOBBY_STATE',lobby:capLobbyInfo(lobby),names:lobby.names,myLobbySeat:ls});return;
+  }
+  if(msg.type==='START'){
+    if(lobby.solo||ls!==0||(g&&g.phase!=='GAME_OVER'))return;
+    const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
+    if(active.length<2){capSend(ws,{type:'ERROR',text:'Precisas de pelo menos 2 jogadores.'});return;}
+    lobby.seatMap=active;lobby.game=capNewGame(active.map(i=>lobby.names[i]),false);
+    active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=CAP_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
+    capBroadcast(lobby);capBroadcastLobbies();capAutoBeats(lobby);return;
+  }
+  if(msg.type==='BET'){
+    if(!g||g.phase!=='BETTING'){if(g)capSend(ws,{type:'GAME_STATE',state:capView(g,capFindGs(lobby,ls))});return;}
+    const gs=capFindGs(lobby,ls);if(gs===-1)return;
+    const pos=parseInt(msg.position);if(isNaN(pos)||pos<0||pos>=g.n||g.bets[gs]!==null)return;
+    g.bets[gs]=pos;capBroadcast(lobby);capCheckBets(lobby);return;
+  }
+  if(msg.type==='RESTART'){
+    if(!g||g.phase!=='GAME_OVER')return;
+    if(lobby.solo){const s=CAP_WS_STATE.get(ws);if(s)s.gameSeat=0;lobby.game=capNewGame([lobby.names[0]||'Jogador','Bot 1','Bot 2'],true);capBroadcast(lobby);capBots(lobby);}
+    else{if(ls!==0)return;const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);if(active.length<2)return;
+      lobby.seatMap=active;lobby.game=capNewGame(active.map(i=>lobby.names[i]),false);
+      active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=CAP_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
+      capBroadcast(lobby);capAutoBeats(lobby);}
+  }
+}
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Bitnik] Server on http://0.0.0.0:${PORT}`);
   console.log(`[Bitnik] Games: ${Object.keys(GAME_REGISTRY).join(', ') || 'none'}`);
 });
+
+// Route WebSocket upgrades: /ws/capivaras → Capivaras WSS, all else → main WSS
+capWss = new WebSocketServer({ noServer: true });
+capWss.on('connection', ws => {
+  capSend(ws, { type:'LOBBIES', lobbies: Object.values(CAP_LOBBIES).map(capLobbyInfo) });
+  ws.on('message', raw => { try { capHandle(ws, JSON.parse(raw)); } catch {} });
+  ws.on('close', () => {
+    const st = CAP_WS_STATE.get(ws); if (!st||!st.lobbyId) return;
+    const lobby = CAP_LOBBIES[st.lobbyId]; if (!lobby) return;
+    const {seat} = st;
+    lobby.players[seat] = null;
+    lobby.players.forEach(p=>{ if(p) capSend(p,{type:'OPPONENT_DISCONNECTED',seat,name:lobby.names[seat],graceMs:45000}); });
+    capBroadcastLobbies();
+    const g=lobby.game;
+    if(g&&g.phase==='BETTING'){
+      const gs=capFindGs(lobby,seat);
+      if(gs!==-1&&g.bets[gs]===null){
+        const gen=g.turnGen;
+        lobby.autoTimers[seat]=setTimeout(()=>{
+          if(!lobby.game||lobby.game.turnGen!==gen||g.bets[gs]!==null)return;
+          g.bets[gs]=Math.floor(Math.random()*g.n);capBroadcast(lobby);capCheckBets(lobby);
+        },10000);
+      }
+    }
+    lobby.graceTimers[seat]=setTimeout(()=>capHardLeave(lobby,seat),45000);
+  });
+  ws.on('error',()=>{});
+});
+
+server.on('upgrade', (req, socket, head) => {
+  const path = req.url?.split('?')[0];
+  if (path === '/ws/capivaras') {
+    capWss.handleUpgrade(req, socket, head, ws => capWss.emit('connection', ws, req));
+  } else {
+    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
+  }
+});
+
+setInterval(() => {
+  for (const ws of capWss.clients) if (ws.readyState===1) ws.ping();
+}, 25000);
 
 // ── Serve /play/:gameId → play.html ──────────────────────────────
 // Note: this is already handled by the SPA fallback above,
