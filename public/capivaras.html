@@ -277,7 +277,7 @@ function handle(msg) {
   if (msg.type==='RECONNECTED')      onReconnected(msg);
   if (msg.type==='RECONNECT_FAIL')   { myToken=''; send({type:'LOBBIES'}); }
   if (msg.type==='PLAYER_JOINED')    send({type:'REQUEST_STATE'});
-  if (msg.type==='LOBBY_STATE')      renderWait(msg);
+  if (msg.type==='LOBBY_STATE')      { if (!isSolo) renderWait(msg); }  // solo skips wait
   if (msg.type==='GAME_STATE')       renderGame(msg.state);
   if (msg.type==='OPPONENT_DISCONNECTED') showMsg(msg.name+' desligou. A aguardar reconexão…');
   if (msg.type==='OPPONENT_RECONNECTED')  showMsg(msg.name+' reconectou!');
@@ -329,16 +329,16 @@ function onJoined(msg) {
   isHost   = mySeat === 0;
   sessionStorage.setItem('cap_token', myToken);
   if (isSolo) {
-    // Solo: game is already running on server — ask for its state
-    show('s-wait');
-    document.getElementById('wait-title').textContent = '🤖 A preparar bots…';
-    document.getElementById('wait-players').innerHTML =
-      '<div style="color:var(--muted);font-size:12px;padding:8px 0">O jogo vai começar já…</div>';
-    document.getElementById('btn-start').style.display = 'none';
-    // Request state immediately — server already has game running
+    // Solo: server already has game running. renderGame() will auto-show s-game.
+    // Show a temporary loading message on the name screen.
+    document.getElementById('name-title').textContent = '🤖 A preparar bots…';
+    document.getElementById('name-sub').textContent = 'O jogo vai começar já';
+    document.getElementById('btn-go').style.display = 'none';
+    document.getElementById('inp-name').style.display = 'none';
+    show('s-name');
+    // Request state — server will respond with GAME_STATE → renderGame → s-game
     send({type:'REQUEST_STATE'});
-    // Fallback: if no GAME_STATE in 2s, request again
-    setTimeout(() => { if (!state) send({type:'REQUEST_STATE'}); }, 2000);
+    setTimeout(() => { if (!state) send({type:'REQUEST_STATE'}); }, 1500);
     return;
   }
   show('s-wait');
@@ -383,6 +383,10 @@ function leaveLobby() {
   sessionStorage.removeItem('cap_token');
   myToken=''; myLobbyId=''; mySeat=-1; state=null;
   document.getElementById('btn-start').style.display = '';
+  document.getElementById('btn-go').style.display = '';
+  document.getElementById('inp-name').style.display = '';
+  document.getElementById('name-title').textContent = '🦫 Capivaras';
+  document.getElementById('name-sub').textContent = 'Apostas secretas no Pantanal · 2–6 jogadores';
   show('s-lobby'); send({type:'LOBBIES'});
 }
 
