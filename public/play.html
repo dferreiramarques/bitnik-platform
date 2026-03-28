@@ -19,7 +19,9 @@ body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
 .logo span{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:1px}
 
 /* Screens */
-.screen{display:none}.screen.active{display:block}
+.screen{display:none !important}
+.screen.active{display:block !important}
+#s-game.active{display:grid !important}
 
 /* Name entry */
 #s-name{max-width:400px;margin:80px auto;text-align:center}
@@ -207,15 +209,17 @@ function send(msg) { if (ws?.readyState===1) ws.send(JSON.stringify(msg)); }
 
 function onOpen() {
   send({ type:'LIST_LOBBIES', gameKey });
+  // Re-enable button in case we reconnected
+  const btn = document.querySelector('.btn');
+  if (btn && btn.disabled) { btn.textContent = 'ENTRAR →'; btn.disabled = false; }
 }
 
 function handle(msg) {
   if (msg.type === 'WELCOME') {
-    if (!msg.games || !msg.games.includes(gameKey)) {
-      document.getElementById('name-title').textContent = 'Jogo não disponível';
-      document.getElementById('name-sub').textContent = `"${gameKey}" não foi encontrado. Verifica o URL.`;
-      document.querySelector('.btn').disabled = true;
-      return;
+    // games list may be empty on first connect - don't block, just note
+    if (msg.games && msg.games.length > 0 && !msg.games.includes(gameKey)) {
+      document.getElementById('name-title').textContent = gameKey;
+      document.getElementById('name-sub').textContent = 'A carregar jogo…';
     }
   }
   if (msg.type === 'LOBBIES') {
@@ -237,6 +241,8 @@ function handle(msg) {
   }
   if (msg.type === 'JOINED') {
     mySeat = msg.seat;
+    const btn = document.querySelector('#s-name .btn');
+    if (btn) { btn.textContent = 'ENTRAR →'; btn.disabled = false; }
     show('s-lobby');
     send({ type:'REQUEST_STATE' });
   }
@@ -244,9 +250,10 @@ function handle(msg) {
   if (msg.type === 'PLAYER_JOINED') send({ type:'REQUEST_STATE' });
   if (msg.type === 'GAME_STATE') renderGame(msg.state);
   if (msg.type === 'ERROR') {
-    // Show error inline, don't just alert
     const sub = document.getElementById('name-sub');
     if (sub) sub.textContent = '⚠ ' + msg.text;
+    const btn = document.querySelector('#s-name .btn');
+    if (btn) { btn.textContent = 'ENTRAR →'; btn.disabled = false; }
     console.error('Server error:', msg.text);
   }
 }
@@ -255,6 +262,16 @@ function joinGame() {
   const n = document.getElementById('inp-name').value.trim();
   if (!n) { document.getElementById('inp-name').focus(); return; }
   myName = n;
+  const btn = document.querySelector('#s-name .btn');
+  if (btn) { btn.textContent = 'A entrar…'; btn.disabled = true; }
+  // If ws not ready yet, wait and retry
+  if (!ws || ws.readyState !== 1) {
+    setTimeout(() => {
+      if (btn) { btn.textContent = 'ENTRAR →'; btn.disabled = false; }
+      document.getElementById('name-sub').textContent = '⚠ A ligar ao servidor… tenta de novo.';
+    }, 2000);
+    return;
+  }
   send({ type:'JOIN', gameKey, tableNum: bestTableNum, name: n });
 }
 
