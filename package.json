@@ -1,0 +1,18 @@
+{
+  "name": "bitnik-games",
+  "version": "0.1.0",
+  "description": "Bitnik Framework — board game platform. David Marques · MIT License · 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "license": "MIT",
+  "author": "David Marques <david@bitnik.games>"
+}

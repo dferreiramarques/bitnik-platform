@@ -1,0 +1,575 @@
+{
+  "_format": "bge",
+  "_version": "0.4",
+  "_comment": "Bulbous — jogo de trick-taking com bluff. David Marques. Portado para Bitnik Framework.",
+  "game": {
+    "name": "Bulbous",
+    "players": {
+      "min": 2,
+      "max": 4
+    },
+    "modes": [
+      "2p",
+      "4p"
+    ]
+  },
+  "swimlanes": [
+    {
+      "id": "sl1",
+      "name": "Setup",
+      "color": "#f5a623",
+      "y": 0,
+      "h": 360,
+      "collapsed": false
+    },
+    {
+      "id": "sl2",
+      "name": "Game Loop",
+      "color": "#2ec4a4",
+      "y": 360,
+      "h": 1080,
+      "collapsed": false
+    },
+    {
+      "id": "sl3",
+      "name": "End Game",
+      "color": "#f87171",
+      "y": 1440,
+      "h": 360,
+      "collapsed": false
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n01",
+      "node": "GAME_START",
+      "label": "Game Start",
+      "x": 60,
+      "y": 60,
+      "config": {
+        "maxPlayers": 4,
+        "modes": "2p / 4p",
+        "notes": "4p: cada jogador tem 1 cor e 4 Baelfungious. 2p: cada jogador tem 2 cores e 8 Baelfungious."
+      }
+    },
+    {
+      "id": "n02",
+      "node": "DECK",
+      "label": "Charm Deck (34 cartas)",
+      "x": 300,
+      "y": 60,
+      "config": {
+        "notes": "28 numéricas (3-9, 4 cores) + 4 double (1 por cor) + 2 jokers (circle + triangle). Total: 34.",
+        "shuffled": "true"
+      }
+    },
+    {
+      "id": "n03",
+      "node": "DRAW_CARD",
+      "label": "Deal starting hand",
+      "x": 540,
+      "y": 60,
+      "config": {
+        "amt": 7,
+        "notes": "7 cartas em 4p, 9 cartas em 2p. Distribuído a todos antes de começar."
+      }
+    },
+    {
+      "id": "n04",
+      "node": "STRUCTURE",
+      "label": "Baelfungious (objectivos N-slot)",
+      "x": 300,
+      "y": 180,
+      "config": {
+        "slots": "1,2,3,4",
+        "perPlayer": "true",
+        "notes": "4 Baelfungious por jogador em 4p (1 de cada tamanho). 8 por jogador em 2p. Cor e símbolo determinam que cartas podem ser apostadas."
+      }
+    },
+    {
+      "id": "n05",
+      "node": "ROLE",
+      "label": "Governante (Governor token)",
+      "x": 540,
+      "y": 180,
+      "config": {
+        "rot": "end_round",
+        "notes": "Token rotativo. O Governante escolhe o alvo de cada trick. Roda para a esquerda no fim de cada ronda."
+      }
+    },
+    {
+      "id": "n06",
+      "node": "SIMULTAN",
+      "label": "Escolher Baelfungious (setup)",
+      "x": 780,
+      "y": 60,
+      "config": {
+        "wait": "all",
+        "notes": "Fase inicial: cada jogador escolhe qual Baelfungious colocar no slot activo. Simultâneo — todos escolhem independentemente."
+      }
+    },
+    {
+      "id": "n07",
+      "node": "ROUND_START",
+      "label": "Início de ronda",
+      "x": 60,
+      "y": 430,
+      "config": {
+        "notes": "Cada ronda tem exactamente 4 tricks. contestedThisRound é limpo. anyCompletedThisRound = false."
+      }
+    },
+    {
+      "id": "n08",
+      "node": "SIMULTAN",
+      "label": "Escolher Baelfungious (mid-game)",
+      "x": 60,
+      "y": 590,
+      "config": {
+        "wait": "all",
+        "notes": "Disparado quando uma Baelfungious é completada e o slot fica vazio. Jogadores escolhem a próxima do seu reservatório."
+      }
+    },
+    {
+      "id": "n09",
+      "node": "TURN_BLOCK",
+      "label": "Turno do Governante — escolhe alvo",
+      "x": 340,
+      "y": 430,
+      "config": {
+        "tb": {
+          "constraint": "choose_1",
+          "max": 1,
+          "actions": [
+            {
+              "id": "a_target",
+              "type": "Custom…",
+              "mand": true
+            }
+          ],
+          "outcomes": [
+            {
+              "id": "o_chosen",
+              "label": "target_chosen",
+              "color": "#f5a623"
+            }
+          ]
+        },
+        "notes": "Só o Governante age. Escolhe uma Baelfungious activa não contestada este turno como alvo do trick."
+      }
+    },
+    {
+      "id": "n10",
+      "node": "TURN_BLOCK",
+      "label": "Acções dos jogadores (BET / SWAP / PASS)",
+      "x": 340,
+      "y": 620,
+      "config": {
+        "tb": {
+          "constraint": "choose_1",
+          "max": 1,
+          "actions": [
+            {
+              "id": "a_bet",
+              "type": "Play Card",
+              "mand": false
+            },
+            {
+              "id": "a_swap",
+              "type": "Swap",
+              "mand": false
+            },
+            {
+              "id": "a_pass",
+              "type": "Draw Card",
+              "mand": false
+            }
+          ],
+          "outcomes": [
+            {
+              "id": "o_acted",
+              "label": "all_acted",
+              "color": "#2ec4a4"
+            },
+            {
+              "id": "o_discard",
+              "label": "need_discard",
+              "color": "#f5a623"
+            }
+          ]
+        },
+        "notes": "Sequencial a partir do Governante, sentido horário. BET: joga 1+ cartas da cor/símbolo certo. SWAP: descarta 1-2 cartas e compra igual. PASS: compra 1 carta (se ultrapassar limite → DISCARD_EXCESS)."
+      }
+    },
+    {
+      "id": "n11",
+      "node": "NOTIFY_ALL",
+      "label": "Revelar apostas",
+      "x": 340,
+      "y": 810,
+      "config": {
+        "notes": "Todos os bets são revelados simultaneamente. Calcula scoreBet() para cada jogador."
+      }
+    },
+    {
+      "id": "n12",
+      "node": "CHECK_COND",
+      "label": "Existe empate?",
+      "x": 620,
+      "y": 810,
+      "config": {
+        "cond": "winners.length > 1",
+        "notes": "Se dois ou mais jogadores apostaram o mesmo valor máximo (sem joker), entra em TIE_BREAK."
+      }
+    },
+    {
+      "id": "n13",
+      "node": "TIMER",
+      "label": "Tie Break (20s)",
+      "x": 620,
+      "y": 980,
+      "config": {
+        "ms": 20000,
+        "onexp": "auto_submit",
+        "notes": "Jogadores empatados têm 20s para jogar 1 carta da cor da Baelfungious alvo. Quem não jogar passa. Ao expirar, tieBreakTimeout() é chamado automaticamente."
+      }
+    },
+    {
+      "id": "n14",
+      "node": "SIMULTAN",
+      "label": "Submissão simultânea (tie break)",
+      "x": 900,
+      "y": 980,
+      "config": {
+        "wait": "all",
+        "notes": "Só os jogadores empatados submetem. Carta da mesma cor da Baelfungious ou passa (null)."
+      }
+    },
+    {
+      "id": "n15",
+      "node": "SCORE_PTS",
+      "label": "Place bulb (vencedor do trick)",
+      "x": 340,
+      "y": 1050,
+      "config": {
+        "amt": 1,
+        "who": "winner",
+        "notes": "O vencedor do trick coloca 1 bulb na Baelfungious alvo. Se bulbs >= slots → Baelfungious completa."
+      }
+    },
+    {
+      "id": "n16",
+      "node": "CHECK_COND",
+      "label": "Ronda terminada? (4 tricks)",
+      "x": 620,
+      "y": 1050,
+      "config": {
+        "cond": "trickNum >= 4",
+        "notes": "Cada ronda tem exactamente 4 tricks. Após o 4º trick, termina a ronda."
+      }
+    },
+    {
+      "id": "n17",
+      "node": "CHECK_COND",
+      "label": "Baelfungious completada?",
+      "x": 900,
+      "y": 1050,
+      "config": {
+        "cond": "anyCompletedThisRound",
+        "notes": "Se alguma Baelfungious foi completada nesta ronda, todos os jogadores compram até ao limite de mão."
+      }
+    },
+    {
+      "id": "n18",
+      "node": "DRAW_CARD",
+      "label": "Comprar até ao limite de mão",
+      "x": 1140,
+      "y": 1050,
+      "config": {
+        "amt": "handLimit - hand.length",
+        "notes": "Só activado se anyCompletedThisRound = true. handLimit = 7 em 4p, 9 em 2p."
+      }
+    },
+    {
+      "id": "n19",
+      "node": "CHECK_VICTORY",
+      "label": "Endgame disparado?",
+      "x": 900,
+      "y": 1200,
+      "config": {
+        "cond": "endgameFired",
+        "notes": "endgameFired = true quando um jogador não tem mais Baelfungious no reservatório. Disparado em chooseBaelf()."
+      }
+    },
+    {
+      "id": "n20",
+      "node": "ON_COND",
+      "label": "Trigger: reservatório vazio",
+      "x": 60,
+      "y": 980,
+      "config": {
+        "cond": "player.reserve.length === 0 && !player.endgameTriggered",
+        "rep": "once",
+        "notes": "Dispara quando um jogador coloca a última Baelfungious do reservatório. Define endgameFired = true."
+      }
+    },
+    {
+      "id": "n21",
+      "node": "MAJORITY",
+      "label": "Scoring — majority bonus",
+      "x": 60,
+      "y": 1510,
+      "config": {
+        "solo": 3,
+        "tie": 1,
+        "notes": "Por cada Baelfungious COMPLETA: quem tiver mais bulbs ganha +3 pts. Em empate, todos empatados ganham +1 pt."
+      }
+    },
+    {
+      "id": "n22",
+      "node": "SCORE_PTS",
+      "label": "Scoring — bulbs individuais",
+      "x": 340,
+      "y": 1510,
+      "config": {
+        "amt": 1,
+        "who": "active",
+        "notes": "Cada bulb colocado (em Baelfungious completas ou incompletas) vale 1 ponto."
+      }
+    },
+    {
+      "id": "n23",
+      "node": "COLL_BONUS",
+      "label": "Scoring — collection bonus",
+      "x": 620,
+      "y": 1510,
+      "config": {
+        "n": 4,
+        "pts": 5,
+        "notes": "Jogador que controla maioria em Baelfungious de todas as 4 cores ganha +5 pts. Jogador que controla ambos os símbolos ganha +5 pts. Podem acumular."
+      }
+    },
+    {
+      "id": "n24",
+      "node": "GAME_END",
+      "label": "Game End — ranking",
+      "x": 900,
+      "y": 1510,
+      "config": {
+        "notes": "Ordena jogadores por pontuação total (bulbs + majority + collection). Em caso de empate, o jogador com mais bulbs em Baelfungious completas ganha."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e01",
+      "fromNode": "n01",
+      "fromPort": "next",
+      "toNode": "n02",
+      "toPort": "card"
+    },
+    {
+      "id": "e02",
+      "fromNode": "n02",
+      "fromPort": "card",
+      "toNode": "n03",
+      "toPort": "in"
+    },
+    {
+      "id": "e03",
+      "fromNode": "n03",
+      "fromPort": "next",
+      "toNode": "n06",
+      "toPort": "in"
+    },
+    {
+      "id": "e04",
+      "fromNode": "n06",
+      "fromPort": "done",
+      "toNode": "n07",
+      "toPort": "prev"
+    },
+    {
+      "id": "e05",
+      "fromNode": "n07",
+      "fromPort": "next",
+      "toNode": "n09",
+      "toPort": "start"
+    },
+    {
+      "id": "e06",
+      "fromNode": "n09",
+      "fromPort": "target_chosen",
+      "toNode": "n10",
+      "toPort": "start"
+    },
+    {
+      "id": "e07",
+      "fromNode": "n10",
+      "fromPort": "all_acted",
+      "toNode": "n11",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e08",
+      "fromNode": "n10",
+      "fromPort": "need_discard",
+      "toNode": "n11",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e09",
+      "fromNode": "n11",
+      "fromPort": "next",
+      "toNode": "n12",
+      "toPort": "in"
+    },
+    {
+      "id": "e10",
+      "fromNode": "n12",
+      "fromPort": "true",
+      "toNode": "n13",
+      "toPort": "start"
+    },
+    {
+      "id": "e11",
+      "fromNode": "n13",
+      "fromPort": "tick",
+      "toNode": "n14",
+      "toPort": "in"
+    },
+    {
+      "id": "e12",
+      "fromNode": "n14",
+      "fromPort": "done",
+      "toNode": "n15",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e13",
+      "fromNode": "n12",
+      "fromPort": "false",
+      "toNode": "n15",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e14",
+      "fromNode": "n15",
+      "fromPort": "next",
+      "toNode": "n16",
+      "toPort": "in"
+    },
+    {
+      "id": "e15",
+      "fromNode": "n16",
+      "fromPort": "false",
+      "toNode": "n09",
+      "toPort": "start"
+    },
+    {
+      "id": "e16",
+      "fromNode": "n16",
+      "fromPort": "true",
+      "toNode": "n17",
+      "toPort": "in"
+    },
+    {
+      "id": "e17",
+      "fromNode": "n17",
+      "fromPort": "true",
+      "toNode": "n18",
+      "toPort": "in"
+    },
+    {
+      "id": "e18",
+      "fromNode": "n18",
+      "fromPort": "next",
+      "toNode": "n19",
+      "toPort": "in"
+    },
+    {
+      "id": "e19",
+      "fromNode": "n17",
+      "fromPort": "false",
+      "toNode": "n19",
+      "toPort": "in"
+    },
+    {
+      "id": "e20",
+      "fromNode": "n19",
+      "fromPort": "win",
+      "toNode": "n21",
+      "toPort": "end"
+    },
+    {
+      "id": "e21",
+      "fromNode": "n19",
+      "fromPort": "continue",
+      "toNode": "n08",
+      "toPort": "in"
+    },
+    {
+      "id": "e22",
+      "fromNode": "n08",
+      "fromPort": "done",
+      "toNode": "n07",
+      "toPort": "prev"
+    },
+    {
+      "id": "e23",
+      "fromNode": "n20",
+      "fromPort": "fire",
+      "toNode": "n19",
+      "toPort": "in"
+    },
+    {
+      "id": "e24",
+      "fromNode": "n21",
+      "fromPort": "next",
+      "toNode": "n22",
+      "toPort": "trigger"
+    },
+    {
+      "id": "e25",
+      "fromNode": "n22",
+      "fromPort": "next",
+      "toNode": "n23",
+      "toPort": "end"
+    },
+    {
+      "id": "e26",
+      "fromNode": "n23",
+      "fromPort": "next",
+      "toNode": "n24",
+      "toPort": "prev"
+    }
+  ],
+  "engine_nodes_used": [
+    "GAME_START",
+    "DECK",
+    "DRAW_CARD",
+    "STRUCTURE",
+    "ROLE",
+    "SIMULTAN",
+    "ROUND_START",
+    "TURN_BLOCK",
+    "NOTIFY_ALL",
+    "CHECK_COND",
+    "TIMER",
+    "SCORE_PTS",
+    "CHECK_VICTORY",
+    "ON_COND",
+    "MAJORITY",
+    "COLL_BONUS",
+    "GAME_END"
+  ],
+  "_stress_test": {
+    "new_nodes_required": [
+      "SIMULTAN",
+      "ROLE",
+      "STRUCTURE",
+      "TIMER",
+      "MAJORITY"
+    ],
+    "notes": "Bulbous foi o primeiro stress test da taxonomia. Os 5 nós marcados acima não existiam na taxonomia base de 24 e foram adicionados após este porting."
+  }
+}

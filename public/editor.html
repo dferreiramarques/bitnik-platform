@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bitnik Framework (beta) — Node Editor</title>
+<style>
+:root {
+  --bg:#0d0f14; --surface:#141720; --panel:#1a1e2a;
+  --border:#252a38; --border2:#303548;
+  --text:#c8ccda; --muted:#5a607a; --accent:#4f7cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',monospace;background:var(--bg);color:var(--text);
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:12px}
+
+/* TOP BAR */
+#topbar{display:flex;align-items:center;gap:8px;padding:0 12px;height:44px;
+  background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{font-size:11px;letter-spacing:3px;color:var(--accent);font-weight:700;margin-right:4px}
+.sep{width:1px;height:20px;background:var(--border2)}
+.tb-btn{padding:5px 11px;border-radius:4px;border:1px solid var(--border2);
+  background:transparent;color:var(--text);cursor:pointer;font-size:11px;
+  font-family:inherit;letter-spacing:.5px;transition:all .15s}
+.tb-btn:hover{background:var(--border);border-color:var(--accent);color:#fff}
+.tb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tb-btn.primary:hover{background:#6b93ff}
+#game-name{background:transparent;border:1px solid var(--border2);border-radius:4px;
+  color:var(--text);font-family:inherit;font-size:12px;padding:4px 10px;width:170px}
+#game-name:focus{outline:none;border-color:var(--accent)}
+#status-bar{margin-left:auto;font-size:10px;color:var(--muted)}
+
+/* LAYOUT */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* PALETTE */
+#palette{width:190px;flex-shrink:0;background:var(--panel);
+  border-right:1px solid var(--border);overflow-y:auto;padding-bottom:20px}
+#palette::-webkit-scrollbar{width:3px}
+#palette::-webkit-scrollbar-thumb{background:var(--border2)}
+.fam-hdr{padding:10px 10px 5px;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);font-weight:700;
+  display:flex;align-items:center;gap:7px}
+.fam-hdr::before{content:'';width:7px;height:7px;border-radius:50%;
+  background:var(--fc,#fff);flex-shrink:0}
+.pnode{margin:2px 7px;padding:6px 9px;border-radius:5px;
+  border:1px solid var(--border);border-left:3px solid var(--fc,var(--border));
+  cursor:grab;user-select:none;transition:all .12s;
+  background:rgba(255,255,255,.02)}
+.pnode:hover{background:rgba(255,255,255,.06);border-color:var(--fc,var(--border));color:#fff}
+.pnode .nl{font-weight:700;font-size:11px}
+.pnode .nd{color:var(--muted);font-size:10px;margin-top:2px;line-height:1.3}
+.pnode.new::after{content:'★';color:var(--fc);font-size:9px;margin-left:3px}
+
+/* CANVAS WRAP */
+#cwrap{flex:1;position:relative;overflow:hidden;background:var(--bg);
+  background-image:radial-gradient(circle,#252a38 1px,transparent 1px);
+  background-size:28px 28px}
+#canvas{position:absolute;top:0;left:0;width:4000px;height:4000px;transform-origin:0 0}
+#svg-layer{position:absolute;top:0;left:0;width:4000px;height:4000px;
+  pointer-events:none;transform-origin:0 0}
+#zoom-lbl{position:absolute;bottom:12px;left:12px;font-size:10px;color:var(--muted);
+  background:rgba(20,23,32,.85);padding:3px 8px;border-radius:4px;pointer-events:none}
+#minimap{position:absolute;bottom:12px;right:12px;width:130px;height:80px;
+  background:rgba(20,23,32,.9);border:1px solid var(--border2);
+  border-radius:5px;pointer-events:none}
+
+/* SWIMLANES */
+.swimlane{position:absolute;left:0;width:4000px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  transition:height .2s ease}
+.sl-bar{position:sticky;left:0;width:100%;height:36px;display:flex;align-items:center;
+  gap:10px;padding:0 14px;cursor:default;flex-shrink:0;
+  background:rgba(13,15,20,.85);backdrop-filter:blur(2px);
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.sl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sl-name{flex:1;background:transparent;border:none;color:inherit;
+  font-family:inherit;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:700;cursor:text;min-width:0}
+.sl-name:focus{outline:1px solid rgba(255,255,255,.2);border-radius:2px}
+.sl-pct{font-size:11px;color:var(--muted)}
+.sl-btn{width:20px;height:20px;border-radius:3px;background:rgba(255,255,255,.06);
+  border:none;color:var(--muted);cursor:pointer;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sl-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+.sl-resize{position:absolute;bottom:0;left:0;width:100%;height:5px;
+  cursor:ns-resize;z-index:10}
+.sl-resize:hover{background:rgba(255,255,255,.08)}
+.swimlane.collapsed .sl-resize{display:none}
+
+/* NODES */
+.node{position:absolute;width:172px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:8px;
+  border-top:3px solid var(--nc,var(--accent));
+  cursor:move;user-select:none;z-index:5;
+  box-shadow:0 4px 18px rgba(0,0,0,.4);transition:box-shadow .15s}
+.node:hover,.node.sel{box-shadow:0 0 0 2px var(--nc,var(--accent)),0 4px 18px rgba(0,0,0,.6)}
+.node.turn-block{border-top-width:4px}
+.node-head{padding:8px 10px 6px;border-bottom:1px solid var(--border)}
+.node-fam{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--nc,var(--muted));margin-bottom:2px}
+.node-title{font-size:13px;font-weight:700;color:#fff}
+.tb-badge{display:inline-block;font-size:11px;letter-spacing:.5px;
+  padding:1px 6px;border-radius:3px;margin-top:3px;
+  background:rgba(245,166,35,.15);color:#f5a623}
+.node-body{padding:5px 10px 8px}
+.ports{display:flex;justify-content:space-between;align-items:flex-start}
+.ports-in,.ports-out{display:flex;flex-direction:column;gap:5px}
+.ports-out{align-items:flex-end}
+.port-row{display:flex;align-items:center;gap:5px}
+.port-row.out{flex-direction:row-reverse}
+.pdot{width:13px;height:13px;border-radius:50%;
+  border:2px solid var(--nc,var(--border2));
+  background:var(--bg);cursor:crosshair;transition:all .12s;flex-shrink:0}
+.pdot:hover,.pdot.active{background:var(--nc,var(--accent))}
+.plbl{font-size:11px;color:var(--muted)}
+.port-row.out .plbl{text-align:right}
+
+/* EDGES */
+.edge{fill:none;stroke-width:2;opacity:.7;pointer-events:stroke;cursor:pointer}
+.edge:hover{opacity:1;stroke-width:3}
+.eghost{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:6 4;opacity:.6;pointer-events:none}
+
+/* INSPECTOR */
+#inspector{width:210px;flex-shrink:0;background:var(--panel);
+  border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+#inspector::-webkit-scrollbar{width:3px}
+#inspector::-webkit-scrollbar-thumb{background:var(--border2)}
+.ins-hdr{padding:11px 13px 8px;border-bottom:1px solid var(--border);
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.ins-sec{padding:11px 13px;border-bottom:1px solid var(--border)}
+.ins-sec h4{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.field{margin-bottom:9px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);
+  border:1px solid var(--border2);border-radius:4px;color:var(--text);
+  font-family:inherit;font-size:12px;padding:4px 7px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:55px}
+.field select option{background:var(--panel)}
+.del-btn{width:100%;padding:6px;margin-top:5px;
+  background:rgba(248,113,113,.1);border:1px solid #f87171;
+  border-radius:4px;color:#f87171;cursor:pointer;font-family:inherit;font-size:12px}
+.del-btn:hover{background:rgba(248,113,113,.2)}
+.empty-state{padding:20px 13px;color:var(--muted);font-size:12px;line-height:1.7}
+
+/* TURN DETAIL */
+#tdpanel{width:260px;flex-shrink:0;background:var(--panel);
+  border-left:1px solid var(--border);display:none;flex-direction:column;overflow-y:auto}
+#tdpanel.open{display:flex}
+#tdpanel::-webkit-scrollbar{width:3px}
+#tdpanel::-webkit-scrollbar-thumb{background:var(--border2)}
+.td-hdr{padding:11px 13px 8px;border-bottom:1px solid var(--border);
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#f5a623;
+  display:flex;align-items:center;justify-content:space-between}
+.td-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+.td-close:hover{color:#fff}
+.td-sec{padding:11px 13px;border-bottom:1px solid var(--border)}
+.td-sec h4{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:9px}
+.cpills{display:flex;gap:5px;flex-wrap:wrap}
+.cpill{padding:4px 9px;border-radius:4px;border:1px solid var(--border2);
+  font-size:11px;cursor:pointer;color:var(--muted);transition:all .12s}
+.cpill.on{border-color:#f5a623;color:#f5a623;background:rgba(245,166,35,.1)}
+.arow{display:flex;align-items:center;gap:5px;padding:4px 0;
+  border-bottom:1px solid var(--border)}
+.arow:last-child{border:none}
+.arow select{flex:1;background:var(--bg);border:1px solid var(--border2);
+  border-radius:4px;color:var(--text);font-family:inherit;font-size:11px;padding:3px 5px}
+.atag{font-size:10px;padding:2px 5px;border-radius:3px;cursor:pointer;
+  border:1px solid var(--border2);color:var(--muted);white-space:nowrap}
+.atag.mand{border-color:#f87171;color:#f87171;background:rgba(248,113,113,.1)}
+.atag.opt{border-color:#4ade80;color:#4ade80;background:rgba(74,222,128,.1)}
+.adel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px}
+.adel:hover{color:#f87171}
+.add-btn{width:100%;padding:6px;margin-top:7px;
+  background:rgba(255,255,255,.03);border:1px dashed var(--border2);
+  border-radius:4px;color:var(--muted);cursor:pointer;font-family:inherit;font-size:11px}
+.add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.orow{display:flex;align-items:center;gap:5px;padding:3px 0}
+.orow input{flex:1;background:var(--bg);border:1px solid var(--border2);
+  border-radius:4px;color:var(--text);font-family:inherit;font-size:11px;padding:3px 5px}
+.odot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* CONTEXT MENU */
+#ctx{position:fixed;background:var(--panel);border:1px solid var(--border2);
+  border-radius:6px;padding:4px 0;min-width:140px;
+  box-shadow:0 8px 28px rgba(0,0,0,.5);display:none;z-index:200}
+.ci{padding:7px 13px;font-size:12px;cursor:pointer}
+.ci:hover{background:var(--border);color:#fff}
+.ci.red{color:#f87171}
+.ci.red:hover{background:rgba(248,113,113,.1)}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <span class="logo">bitnik</span>
+  <div class="sep"></div>
+  <input id="game-name" type="text" placeholder="nome do jogo…" value="meu_jogo">
+  <div class="sep"></div>
+  <button class="tb-btn" onclick="clearAll()">Limpar</button>
+  <button class="tb-btn" onclick="doImport()">Importar .bge</button>
+  <button class="tb-btn primary" onclick="doExport()">Exportar .bge</button>
+  <button class="tb-btn" onclick="doValidate()">Validar</button>
+  <div id="status-bar">nós: <span id="nc">0</span> · edges: <span id="ec">0</span></div>
+</div>
+<div id="main">
+  <div id="palette"></div>
+  <div id="cwrap">
+    <div id="canvas"></div>
+    <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <g id="eg"></g>
+      <path id="ghost" class="eghost" d="" style="display:none"/>
+    </svg>
+    <div id="zoom-lbl">100%</div>
+    <canvas id="mm" width="130" height="80"></canvas>
+  </div>
+  <div id="inspector">
+    <div class="ins-hdr">Inspector</div>
+    <div id="ins-body"><div class="empty-state">Selecciona um nó para editar as suas propriedades.</div></div>
+  </div>
+  <div id="tdpanel">
+    <div class="td-hdr">Turn Block <button class="td-close" onclick="closeTD()">×</button></div>
+    <div id="td-body"></div>
+  </div>
+</div>
+<div id="ctx"></div>
+<input type="file" id="fi" accept=".json,.bge" style="display:none" onchange="onFile(event)">
+
+<script>
+// ── TAXONOMY ──────────────────────────────────────────────
+const FAM = {
+  flow:{label:'FLOW',color:'#f5a623',nodes:[
+    {id:'GAME_START',  label:'Game Start',   desc:'Setup inicial',              ports:{in:[],out:['next']}},
+    {id:'ROUND_START', label:'Round Start',  desc:'Início de ronda, reset',     ports:{in:['prev'],out:['next']}},
+    {id:'TURN_BLOCK',  label:'Turn Block',   desc:'Macro-nó do turno',         ports:{in:['start'],out:['end_turn','endgame']},isTB:true},
+    {id:'TURN_START',  label:'Turn Start',   desc:'Activa jogador',             ports:{in:['prev'],out:['next']}},
+    {id:'TURN_END',    label:'Turn End',     desc:'Passa a vez',                ports:{in:['prev'],out:['next']}},
+    {id:'GAME_END',    label:'Game End',     desc:'Fim, ranking, scores',       ports:{in:['prev'],out:[]}},
+    {id:'INSTANT_WIN', label:'Instant Win',  desc:'Vitória imediata',          ports:{in:['trigger'],out:[]},isNew:true},
+    {id:'EXTRA_TURNS', label:'Extra Turns',  desc:'Turno extra por jogador',   ports:{in:['trigger'],out:['done']},isNew:true},
+  ]},
+  logic:{label:'LOGIC',color:'#4f7cff',nodes:[
+    {id:'CHECK_COND',  label:'Check Condition',desc:'if / else genérico',       ports:{in:['in'],out:['true','false']}},
+    {id:'CHECK_RES',   label:'Check Resource', desc:'Tem X de Y?',             ports:{in:['in'],out:['yes','no']}},
+    {id:'CHECK_WIN',   label:'Check Victory',  desc:'Condição de vitória',      ports:{in:['in'],out:['win','continue']}},
+    {id:'DICE_ROLL',   label:'Dice Roll',      desc:'Rola N dados d6',          ports:{in:['trigger'],out:['result']},isNew:true},
+    {id:'COMBO_DET',   label:'Combo Detect',   desc:'Pattern match em dados',   ports:{in:['roll'],out:['combos']},isNew:true},
+    {id:'CONF_CHOICE', label:'Conflict Choice',desc:'Jogador escolhe combo',    ports:{in:['options'],out:['chosen']},isNew:true},
+    {id:'RANDOM',      label:'Random',         desc:'Resultado aleatório',      ports:{in:['trigger'],out:['result']}},
+  ]},
+  actions:{label:'ACTIONS',color:'#2ec4a4',nodes:[
+    {id:'PLAY_CARD',   label:'Play Card',      desc:'Mão → efeito',            ports:{in:['in'],out:['next']}},
+    {id:'DRAW_CARD',   label:'Draw Card',      desc:'Deck → mão',              ports:{in:['in'],out:['next']}},
+    {id:'SWAP',        label:'Swap',           desc:'Descarta N, compra N',     ports:{in:['in'],out:['next']},isNew:true},
+    {id:'TILE_PLACE',  label:'Tile Place',     desc:'Coloca tile no board',     ports:{in:['in'],out:['next']},isNew:true},
+    {id:'MOVE_PIECE',  label:'Move Piece',     desc:'Zona A → Zona B',          ports:{in:['in'],out:['next']}},
+    {id:'PLACE_TOKEN', label:'Place Token',    desc:'Gasta recursos, coloca',   ports:{in:['in'],out:['next']}},
+    {id:'COLLECT_RES', label:'Collect Res.',   desc:'Célula → inventário',      ports:{in:['in'],out:['next']}},
+    {id:'OPT_ACTION',  label:'Optional Action',desc:'Acção secundária ou Skip', ports:{in:['in'],out:['done','skip']},isNew:true},
+    {id:'STEAL',       label:'Steal',          desc:'Transfere de oponente',    ports:{in:['in'],out:['next']},isNew:true},
+    {id:'CARD_MOD',    label:'Card Modifier',  desc:'Carta altera próximo combo',ports:{in:['play'],out:['modified']},isNew:true},
+  ]},
+  data:{label:'DATA',color:'#a78bfa',nodes:[
+    {id:'DECK',        label:'Deck',           desc:'Baralho ordenado',         ports:{in:[],out:['card']}},
+    {id:'HAND',        label:'Hand',           desc:'Cartas privadas',          ports:{in:[],out:['card']}},
+    {id:'COUNTER',     label:'Counter',        desc:'Valor numérico',           ports:{in:[],out:['value']}},
+    {id:'PLAYER_ST',   label:'Player State',   desc:'Atributos do jogador',     ports:{in:[],out:['data']}},
+    {id:'ZONE',        label:'Zone',           desc:'Área privada do jogador',  ports:{in:[],out:['pieces']}},
+    {id:'SHARD_BOARD', label:'Shared Board',   desc:'Tabuleiro partilhado',     ports:{in:[],out:['cells']},isNew:true},
+    {id:'STRUCTURE',   label:'Structure',      desc:'Objectivo N-slot',         ports:{in:[],out:['slots']},isNew:true},
+    {id:'LOCKED_SLOT', label:'Locked Slot',    desc:'locked → open → filled',  ports:{in:[],out:['state']},isNew:true},
+    {id:'ROLE',        label:'Role',           desc:'Token rotativo',           ports:{in:[],out:['holder']},isNew:true},
+  ]},
+  events:{label:'EVENTS',color:'#f87171',nodes:[
+    {id:'NOTIFY_ALL',  label:'Notify All',     desc:'Msg para todos',           ports:{in:['trigger'],out:['next']}},
+    {id:'NOTIFY_P',    label:'Notify Player',  desc:'Msg privada',              ports:{in:['trigger'],out:['next']}},
+    {id:'SCORE_PTS',   label:'Score Points',   desc:'+/- pontos',               ports:{in:['trigger'],out:['next']}},
+    {id:'SPATIAL_SC',  label:'Spatial Score',  desc:'Score por posição',        ports:{in:['end'],out:['next']},isNew:true},
+    {id:'MAJORITY',    label:'Majority',       desc:'Bonus maioria',            ports:{in:['end'],out:['next']},isNew:true},
+    {id:'COLL_BONUS',  label:'Collection Bonus',desc:'Coleccionar N = bonus',  ports:{in:['end'],out:['next']},isNew:true},
+    {id:'FIRST_CLAIM', label:'First Claim',    desc:'Primeiro reclama',         ports:{in:['trigger'],out:['claimed']},isNew:true},
+    {id:'PROG_REVEAL', label:'Prog. Reveal',   desc:'Pool → N visíveis',        ports:{in:['trigger'],out:['revealed']},isNew:true},
+    {id:'SECRET_BET',  label:'Secret Bet',     desc:'Aposta secreta',           ports:{in:['in'],out:['placed']},isNew:true},
+    {id:'COMP_CLAIM',  label:'Competing Claim',desc:'Único ganha, empate cancela',ports:{in:['bets'],out:['winner','tie']},isNew:true},
+    {id:'REACT_DEF',   label:'Reactive Defense',desc:'Oponente responde no teu turno',ports:{in:['attack'],out:['result']},isNew:true},
+  ]},
+  triggers:{label:'TRIGGERS',color:'#ff6eb4',nodes:[
+    {id:'ON_TURN_S',   label:'On Turn Start',  desc:'Início de cada turno',     ports:{in:[],out:['fire']}},
+    {id:'ON_TURN_E',   label:'On Turn End',    desc:'Fim de cada turno',        ports:{in:[],out:['fire']}},
+    {id:'ON_ROUND_E',  label:'On Round End',   desc:'Fim de cada ronda',        ports:{in:[],out:['fire']}},
+    {id:'ON_TILE',     label:'On Tile Placed', desc:'Tile colocado',            ports:{in:[],out:['fire','r','c']}},
+    {id:'ON_CARD',     label:'On Card Played', desc:'Carta jogada',             ports:{in:[],out:['fire','card']}},
+    {id:'ON_SCORE',    label:'On Score Change',desc:'Pontuação muda',           ports:{in:[],out:['fire','player']}},
+    {id:'ON_PIECE',    label:'On Piece Placed',desc:'Peça colocada',            ports:{in:[],out:['fire','cell']}},
+    {id:'ON_RES',      label:'On Resource',    desc:'Recurso ganho',            ports:{in:[],out:['fire','res']}},
+    {id:'ON_DECK_E',   label:'On Deck Empty',  desc:'Baralho esgota',           ports:{in:[],out:['fire']}},
+    {id:'ON_COND',     label:'On Condition',   desc:'Condição cumprida',        ports:{in:[],out:['fire','else']},isNew:true},
+    {id:'ON_ACTION',   label:'On Player Action',desc:'Qualquer acção do jogador',ports:{in:[],out:['fire','action']}},
+    {id:'AFTER_EFF',   label:'After Effect',   desc:'Após outro nó terminar',   ports:{in:['source'],out:['fire']},isNew:true},
+  ]},
+  assets:{label:'ASSETS',color:'#4ade80',nodes:[
+    {id:'BOARD_LAY',   label:'Board Layout',   desc:'Hex / grid / custom',      ports:{in:[],out:[]}},
+    {id:'PIECE_VIS',   label:'Piece Visual',   desc:'Sprite / cor',             ports:{in:[],out:[]}},
+    {id:'CARD_TPL',    label:'Card Template',  desc:'Frente/verso',             ports:{in:[],out:[]}},
+    {id:'ANIMATION',   label:'Animation',      desc:'Move / flip / glow',       ports:{in:['trigger'],out:[]}},
+    {id:'SOUND_FX',    label:'Sound FX',       desc:'Áudio por evento',         ports:{in:['trigger'],out:[]}},
+    {id:'TIMER',       label:'Timer',          desc:'Fase com timeout',          ports:{in:['start'],out:['tick','done']},isNew:true},
+    {id:'SIMULTAN',    label:'Simultaneous',   desc:'Todos agem em paralelo',   ports:{in:['in'],out:['done']},isNew:true},
+  ]},
+};
+
+function getNodeDef(type) {
+  for (const [fk,fd] of Object.entries(FAM)) {
+    const nd = fd.nodes.find(n=>n.id===type);
+    if (nd) return {...nd, fam:fk, color:fd.color};
+  }
+  return null;
+}
+
+// ── STATE ─────────────────────────────────────────────────
+let nodes=[], edges=[], swimlanes=[];
+let sel=null, nSeq=1, eSeq=1, slSeq=1;
+let zoom=1, panX=210, panY=10;
+let isPan=false, panStart={x:0,y:0,ox:0,oy:0};
+let dragNode=null, dragOff={x:0,y:0};
+let resizeSL=null, resizeStartY=0, resizeStartH=0;
+let connecting=null;
+let ctxTarget=null;
+
+// ── SWIMLANE SETUP ────────────────────────────────────────
+const CANVAS_H = 1800;
+const SL_DEFS = [
+  {name:'Setup',     color:'#f5a623', pct:.20},
+  {name:'Game Loop', color:'#2ec4a4', pct:.60},
+  {name:'End Game',  color:'#f87171', pct:.20},
+];
+
+function initSwimlanes() {
+  let y = 0;
+  SL_DEFS.forEach((def,i) => {
+    const h = Math.round(CANVAS_H * def.pct);
+    createSwimlane(def.name, def.color, y, h);
+    y += h;
+  });
+}
+
+function createSwimlane(name, color, y, h, collapsed=false) {
+  const id = 'sl'+(slSeq++);
+  const el = document.createElement('div');
+  el.className = 'swimlane' + (collapsed?' collapsed':'');
+  el.id = id;
+  el.style.cssText = `top:${y}px;height:${collapsed?36:h}px;border-color:${color}30;background:${color}05`;
+
+  el.innerHTML = `
+    <div class="sl-bar" style="border-left:3px solid ${color}">
+      <div class="sl-dot" style="background:${color}"></div>
+      <input class="sl-name" value="${name}" style="color:${color}" spellcheck="false">
+      <span class="sl-pct" id="slpct-${id}"></span>
+      <button class="sl-btn" title="Colapsar" onclick="toggleSL('${id}')">
+        ${collapsed?'▶':'▼'}
+      </button>
+    </div>
+    <div class="sl-resize" id="slr-${id}"></div>
+  `;
+
+  document.getElementById('canvas').insertBefore(el, document.getElementById('canvas').firstChild);
+
+  const sl = {id, name, color, y, h, collapsed, el};
+  swimlanes.push(sl);
+
+  el.querySelector('.sl-name').addEventListener('input', e => { sl.name = e.target.value; });
+
+  const rz = el.querySelector('.sl-resize');
+  rz.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    resizeSL = id;
+    resizeStartY = e.clientY;
+    resizeStartH = sl.h;
+  });
+
+  updateSLPct();
+  return sl;
+}
+
+function toggleSL(id) {
+  const sl = swimlanes.find(s=>s.id===id);
+  if (!sl) return;
+  sl.collapsed = !sl.collapsed;
+  sl.el.classList.toggle('collapsed', sl.collapsed);
+  sl.el.style.height = sl.collapsed ? '36px' : sl.h+'px';
+  sl.el.querySelector('.sl-btn').textContent = sl.collapsed ? '▶' : '▼';
+  // Hide/show nodes inside this lane
+  const {top, bot} = slBounds(sl);
+  nodes.forEach(nd => {
+    if (nd.y >= top && nd.y < bot) {
+      nd.el.style.display = sl.collapsed ? 'none' : '';
+    }
+  });
+  reflow();
+  updateAllEdges();
+}
+
+function slBounds(sl) { return {top: sl.y, bot: sl.y + sl.h}; }
+
+function reflow() {
+  // Stack swimlanes vertically after resize/collapse
+  let y = 0;
+  swimlanes.forEach(sl => {
+    sl.y = y;
+    sl.el.style.top = y+'px';
+    const visH = sl.collapsed ? 36 : sl.h;
+    sl.el.style.height = visH+'px';
+    y += visH;
+  });
+  updateSLPct();
+  updateAllEdges();
+}
+
+function updateSLPct() {
+  const total = swimlanes.reduce((s,sl)=>s+sl.h, 0) || 1;
+  swimlanes.forEach(sl => {
+    const el = document.getElementById('slpct-'+sl.id);
+    if (el) el.textContent = Math.round(sl.h/total*100)+'%';
+  });
+}
+
+// ── BUILD PALETTE ─────────────────────────────────────────
+function buildPalette() {
+  const pal = document.getElementById('palette');
+  for (const [fk,fd] of Object.entries(FAM)) {
+    const hdr = document.createElement('div');
+    hdr.className='fam-hdr';
+    hdr.style.setProperty('--fc', fd.color);
+    hdr.textContent = fd.label;
+    pal.appendChild(hdr);
+    fd.nodes.forEach(nd => {
+      const div = document.createElement('div');
+      div.className = 'pnode'+(nd.isNew?' new':'');
+      div.style.setProperty('--fc', fd.color);
+      div.draggable = true;
+      div.innerHTML = `<div class="nl">${nd.label}</div><div class="nd">${nd.desc}</div>`;
+      div.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('ntype', nd.id);
+        e.dataTransfer.setData('fam', fk);
+      });
+      pal.appendChild(div);
+    });
+  }
+}
+
+// ── CREATE NODE ───────────────────────────────────────────
+function createNode(type, fam, x, y, opts={}) {
+  const def = getNodeDef(type);
+  if (!def) return null;
+  const id = 'n'+(nSeq++);
+  const label = opts.label || def.label;
+  const config = opts.config || {};
+
+  const el = document.createElement('div');
+  el.className = 'node'+(def.isTB?' turn-block':'');
+  el.id = id;
+  el.style.cssText = `left:${x}px;top:${y}px`;
+  el.style.setProperty('--nc', def.color);
+
+  el.innerHTML = `
+    <div class="node-head">
+      <div class="node-fam">${def.fam.toUpperCase()}</div>
+      <div class="node-title">${label}</div>
+      ${def.isTB ? '<div class="tb-badge">MACRO · duplo-clique</div>' : ''}
+    </div>
+    <div class="node-body">
+      <div class="ports">
+        <div class="ports-in"></div>
+        <div class="ports-out"></div>
+      </div>
+    </div>
+  `;
+
+  const pi = el.querySelector('.ports-in');
+  const po = el.querySelector('.ports-out');
+  (def.ports.in||[]).forEach(p => pi.appendChild(makePort(id, p, false, def.color)));
+  (def.ports.out||[]).forEach(p => po.appendChild(makePort(id, p, true, def.color)));
+
+  document.getElementById('canvas').appendChild(el);
+
+  const nd = {id, type, fam:def.fam, x, y, label, config, el, def};
+  nodes.push(nd);
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('pdot')) return;
+    if (e.button!==0) return;
+    const nid = e.currentTarget.id;
+    selectNode(nid); dragNode=nid;
+    const cur = nodes.find(n=>n.id===nid);
+    if (cur) {
+      dragOff.x = (e.clientX-panX)/zoom - cur.x;
+      dragOff.y = (e.clientY-panY)/zoom - cur.y;
+    }
+    e.stopPropagation();
+  });
+  el.addEventListener('dblclick', e => {
+    const nid = e.currentTarget.id;
+    const cur = nodes.find(n=>n.id===nid);
+    if (cur && getNodeDef(cur.type)?.isTB) openTD(nid);
+  });
+  el.addEventListener('contextmenu', e => {
+    e.preventDefault(); ctxTarget=e.currentTarget.id; showCtx(e.clientX,e.clientY,'node');
+  });
+
+  // If this is a Turn Block with saved outcomes, rebuild ports from config
+  if (def.isTB && opts.config?.tb?.outcomes) {
+    const po = el.querySelector('.ports-out');
+    if (po) {
+      po.innerHTML = '';
+      opts.config.tb.outcomes.forEach(o => {
+        po.appendChild(makePort(id, o.label, true, o.color));
+      });
+    }
+  }
+
+  selectNode(id);
+  updateCounters();
+  return nd;
+}
+
+function makePort(nodeId, port, isOut, color) {
+  const row = document.createElement('div');
+  row.className = 'port-row'+(isOut?' out':'');
+  const dot = document.createElement('div');
+  dot.className='pdot';
+  dot.style.setProperty('--nc', color);
+  dot.dataset.nid=nodeId; dot.dataset.port=port; dot.dataset.out=isOut?'1':'0';
+  dot.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    if (connecting) {
+      if (dot !== connecting.dot) finishConn(nodeId, port, isOut);
+    } else {
+      startConn(nodeId, port, isOut, dot);
+    }
+  });
+  const lbl=document.createElement('span');
+  lbl.className='plbl'; lbl.textContent=port;
+  if (isOut) { row.appendChild(lbl); row.appendChild(dot); }
+  else        { row.appendChild(dot); row.appendChild(lbl); }
+  return row;
+}
+
+// ── SELECTION & INSPECTOR ─────────────────────────────────
+function selectNode(id) {
+  nodes.forEach(n=>n.el.classList.remove('sel'));
+  sel=id;
+  const nd=nodes.find(n=>n.id===id);
+  if (nd) { nd.el.classList.add('sel'); renderIns(nd); }
+}
+function deselect() {
+  nodes.forEach(n=>n.el.classList.remove('sel'));
+  sel=null;
+  document.getElementById('ins-body').innerHTML=
+    '<div class="empty-state">Selecciona um nó para editar.</div>';
+}
+
+const CFG_FIELDS = {
+  GAME_START: [{k:'maxPlayers',l:'Max jogadores',t:'number',d:4}],
+  ROUND_START:[{k:'rounds',l:'Rondas total',t:'number',d:0}],
+  TURN_START: [{k:'order',l:'Ordem',t:'select',opts:['clockwise','counter','custom']}],
+  GAME_END:   [{k:'cond',l:'Condição',t:'select',opts:['score','objective','deck_empty','custom']}],
+  CHECK_COND: [{k:'cond',l:'Condição',t:'text',ph:'score >= 10'}],
+  CHECK_RES:  [{k:'res',l:'Recurso',t:'text',ph:'wood'},{k:'amt',l:'Quantidade',t:'number',d:1}],
+  CHECK_WIN:  [{k:'cond',l:'Condição vitória',t:'text',ph:'stall_full'}],
+  DICE_ROLL:  [{k:'count',l:'Nº dados',t:'number',d:9},{k:'sides',l:'Faces',t:'number',d:6}],
+  COMBO_DET:  [{k:'combos',l:'Combos (vírgula)',t:'text',ph:'DOUBLE,TRIPLE,QUAD'}],
+  SCORE_PTS:  [{k:'amt',l:'Pontos',t:'number',d:1},{k:'who',l:'Destinatário',t:'select',opts:['active','winner','all']}],
+  SPATIAL_SC: [{k:'formula',l:'Fórmula',t:'text',ph:'bathers_in_segment'}],
+  MAJORITY:   [{k:'solo',l:'Bonus solo',t:'number',d:3},{k:'tie',l:'Bonus empate',t:'number',d:1}],
+  COLL_BONUS: [{k:'n',l:'N tipos',t:'number',d:4},{k:'pts',l:'Bonus',t:'number',d:5}],
+  DRAW_CARD:  [{k:'amt',l:'Cartas',t:'number',d:1}],
+  SHARD_BOARD:[{k:'w',l:'Largura',t:'number',d:7},{k:'h',l:'Altura',t:'number',d:7},{k:'adj',l:'Adjacência',t:'select',opts:['orthogonal','hex','diagonal']}],
+  TIMER:      [{k:'ms',l:'Duração (ms)',t:'number',d:20000},{k:'onexp',l:'Ao expirar',t:'select',opts:['auto_submit','end_phase','custom']}],
+  SIMULTAN:   [{k:'wait',l:'Aguardar',t:'select',opts:['all','majority','first']}],
+  ROLE:       [{k:'rot',l:'Rotação',t:'select',opts:['end_round','end_turn','custom']}],
+  STRUCTURE:  [{k:'slots',l:'Nº slots',t:'number',d:4},{k:'per',l:'Por jogador',t:'select',opts:['true','false']}],
+  PROG_REVEAL:[{k:'vis',l:'Visíveis',t:'number',d:4},{k:'tot',l:'Total',t:'number',d:8}],
+  SECRET_BET: [{k:'targets',l:'Alvos',t:'text',ph:'table_cards'}],
+  COMP_CLAIM: [{k:'tie',l:'Em empate',t:'select',opts:['nobody','all','reroll']}],
+  ON_COND:    [{k:'cond',l:'Condição',t:'text',ph:'score >= 10'},{k:'rep',l:'Repetir',t:'select',opts:['always','once','per_turn']}],
+  ON_TILE:    [{k:'filter',l:'Filtro tile',t:'text',ph:'type=surf'}],
+  ON_CARD:    [{k:'filter',l:'Filtro carta',t:'text',ph:'TEMPTRESS'}],
+  ON_SCORE:   [{k:'thresh',l:'Limiar',t:'number',ph:'N'},{k:'player',l:'Jogador',t:'select',opts:['active','any','all']}],
+  ON_DECK_E:  [{k:'deck',l:'Baralho',t:'text',ph:'qualquer'}],
+  ON_ACTION:  [{k:'action',l:'Acção',t:'text',ph:'PLACE_TILE'}],
+  AFTER_EFF:  [{k:'delay',l:'Delay (ms)',t:'number',d:0}],
+};
+
+function renderIns(nd) {
+  const flds = CFG_FIELDS[nd.type] || [];
+  document.getElementById('ins-body').innerHTML = `
+    <div class="ins-sec">
+      <h4>Nó</h4>
+      <div class="field"><label>TIPO</label>
+        <input type="text" value="${nd.type}" readonly style="color:var(--muted)">
+      </div>
+      <div class="field"><label>LABEL</label>
+        <input type="text" id="ins-lbl" value="${nd.label}">
+      </div>
+    </div>
+    <div class="ins-sec">
+      <h4>Config</h4>
+      <div class="field"><label>NOTAS</label>
+        <textarea id="ins-notes" placeholder="comportamento…">${nd.config.notes||''}</textarea>
+      </div>
+      ${flds.map(f=>`
+        <div class="field"><label>${f.l.toUpperCase()}</label>
+          ${f.t==='select'
+            ? `<select id="cfg-${f.k}">${(f.opts||[]).map(o=>`<option${nd.config[f.k]===o?' selected':''}>${o}</option>`).join('')}</select>`
+            : `<input type="${f.t||'text'}" id="cfg-${f.k}" value="${nd.config[f.k]||f.d||''}" placeholder="${f.ph||''}">`
+          }
+        </div>`).join('')}
+    </div>
+    <div class="ins-sec">
+      <button class="del-btn" onclick="deleteNode('${nd.id}')">Apagar nó</button>
+    </div>
+  `;
+  const li=document.getElementById('ins-lbl');
+  if(li) li.addEventListener('input',e=>{
+    nd.label=e.target.value;
+    const t=nd.el.querySelector('.node-title');
+    if(t) t.textContent=nd.label;
+  });
+  const no=document.getElementById('ins-notes');
+  if(no) no.addEventListener('input',e=>{nd.config.notes=e.target.value;});
+  flds.forEach(f=>{
+    const el=document.getElementById('cfg-'+f.k);
+    if(el) el.addEventListener('input',e=>{nd.config[f.k]=e.target.value;});
+  });
+}
+
+// ── CONNECTIONS ───────────────────────────────────────────
+function startConn(nid, port, isOut, dot) {
+  if (!isOut) {
+    const ex = edges.find(e=>e.toNode===nid&&e.toPort===port);
+    if (ex) { deleteEdge(ex.id); return; }
+  }
+  connecting={nid, port, isOut, dot};
+  dot.classList.add('active');
+  setStatus('A ligar… clica no porto destino ou ESC');
+}
+
+function finishConn(toNid, toPort, toIsOut) {
+  if (!connecting) return;
+  const from=connecting; connecting=null;
+  from.dot.classList.remove('active');
+  document.getElementById('ghost').style.display='none';
+  if (from.isOut===toIsOut) { setStatus('Liga saída → entrada'); return; }
+  if (from.nid===toNid) { setStatus('Não podes ligar a si próprio'); return; }
+  const outN=from.isOut?from.nid:toNid, outP=from.isOut?from.port:toPort;
+  const inN=from.isOut?toNid:from.nid,  inP=from.isOut?toPort:from.port;
+  const dup=edges.find(e=>e.toNode===inN&&e.toPort===inP);
+  if(dup) deleteEdge(dup.id);
+  createEdge(outN,outP,inN,inP);
+}
+
+function createEdge(fromNode,fromPort,toNode,toPort) {
+  const id='e'+(eSeq++);
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('class','edge');
+  path.dataset.eid=id;
+  const nd=nodes.find(n=>n.id===fromNode);
+  const col=nd?getNodeDef(nd.type)?.color||'#4f7cff':'#4f7cff';
+  path.setAttribute('stroke',col);
+  path.setAttribute('marker-end','url(#arr)');
+  path.addEventListener('click',()=>deleteEdge(id));
+  document.getElementById('eg').appendChild(path);
+  const edge={id,fromNode,fromPort,toNode,toPort,el:path};
+  edges.push(edge);
+  updateEdge(edge);
+  updateCounters();
+  setStatus('Ligação criada');
+  return edge;
+}
+
+function getPortPos(nid, port, isOut) {
+  const nd=nodes.find(n=>n.id===nid);
+  if(!nd) return{x:0,y:0};
+  const dot=nd.el.querySelector(`.pdot[data-port="${port}"]`);
+  if(!dot) return{x:nd.x+(isOut?172:0),y:nd.y+40};
+  // dot and node are inside canvas (transformed element).
+  // Measure dot relative to node element — both in the same transformed space.
+  // (dotRect - nodeRect) gives offset in screen pixels; divide by zoom for canvas pixels.
+  const dr=dot.getBoundingClientRect();
+  const nr=nd.el.getBoundingClientRect();
+  const relX=(dr.left+dr.width/2 -nr.left)/zoom;
+  const relY=(dr.top +dr.height/2-nr.top )/zoom;
+  return{ x:nd.x+relX, y:nd.y+relY };
+}
+
+function updateEdge(e) {
+  const f=getPortPos(e.fromNode,e.fromPort,true);
+  const t=getPortPos(e.toNode,e.toPort,false);
+  const dx=Math.abs(t.x-f.x)*.5;
+  e.el.setAttribute('d',`M${f.x},${f.y}C${f.x+dx},${f.y} ${t.x-dx},${t.y} ${t.x},${t.y}`);
+}
+function updateAllEdges(){edges.forEach(updateEdge);}
+
+function deleteEdge(id) {
+  const i=edges.findIndex(e=>e.id===id);
+  if(i<0) return;
+  edges[i].el.remove(); edges.splice(i,1); updateCounters();
+}
+
+// ── DELETE NODE ───────────────────────────────────────────
+function deleteNode(id) {
+  edges.filter(e=>e.fromNode===id||e.toNode===id).forEach(e=>deleteEdge(e.id));
+  const i=nodes.findIndex(n=>n.id===id);
+  if(i<0) return;
+  nodes[i].el.remove(); nodes.splice(i,1);
+  if(sel===id) deselect();
+  updateCounters();
+}
+
+// ── MOUSE / PAN / ZOOM ────────────────────────────────────
+const cwrap=document.getElementById('cwrap');
+const canvas=document.getElementById('canvas');
+const svgl=document.getElementById('svg-layer');
+
+cwrap.addEventListener('dragover',e=>e.preventDefault());
+cwrap.addEventListener('drop',e=>{
+  e.preventDefault();
+  const type=e.dataTransfer.getData('ntype');
+  const fam=e.dataTransfer.getData('fam');
+  if(!type) return;
+  const r=cwrap.getBoundingClientRect();
+  const x=(e.clientX-r.left-panX)/zoom;
+  const y=(e.clientY-r.top-panY)/zoom;
+  createNode(type,fam,x,y);
+});
+
+let spaceDown=false;
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){spaceDown=true;cwrap.style.cursor='grab';}});
+window.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;cwrap.style.cursor='';}});
+
+cwrap.addEventListener('mousedown',e=>{
+  const onBg=e.target===cwrap||e.target===canvas||e.target===svgl;
+  // Pan: middle button anywhere, OR left button on background, OR space+left drag
+  if(e.button===1||(e.button===0&&(onBg||spaceDown)&&!connecting)){
+    e.preventDefault();
+    isPan=true;panStart={x:e.clientX,y:e.clientY,ox:panX,oy:panY};
+    cwrap.style.cursor='grabbing';
+  }
+  if(e.button===0&&onBg&&!connecting&&!spaceDown) deselect();
+});
+
+window.addEventListener('mousemove',e=>{
+  if(isPan){
+    panX=panStart.ox+(e.clientX-panStart.x);
+    panY=panStart.oy+(e.clientY-panStart.y);
+    applyT();
+  }
+  if(dragNode){
+    const nd=nodes.find(n=>n.id===dragNode);
+    if(nd){
+      const nx=(e.clientX-panX)/zoom-dragOff.x;
+      const ny=(e.clientY-panY)/zoom-dragOff.y;
+      nd.x=nx;nd.y=ny;
+      nd.el.style.left=nx+'px';nd.el.style.top=ny+'px';
+      updateAllEdges();
+    }
+  }
+  if(resizeSL){
+    const sl=swimlanes.find(s=>s.id===resizeSL);
+    if(sl){
+      const dy=(e.clientY-resizeStartY)/zoom;
+      sl.h=Math.max(80, resizeStartH+dy);
+      reflow();
+    }
+  }
+  if(connecting){
+    const r=cwrap.getBoundingClientRect();
+    const mx=(e.clientX-r.left-panX)/zoom;
+    const my=(e.clientY-r.top-panY)/zoom;
+    const from=getPortPos(connecting.nid,connecting.port,connecting.isOut);
+    const dx=Math.abs(mx-from.x)*.5;
+    const gh=document.getElementById('ghost');
+    gh.setAttribute('d',`M${from.x},${from.y}C${from.x+dx},${from.y} ${mx-dx},${my} ${mx},${my}`);
+    gh.style.display='block';
+  }
+});
+
+window.addEventListener('mouseup',e=>{
+  isPan=false; dragNode=null; resizeSL=null;
+  cwrap.style.cursor=spaceDown?'grab':'';
+  if(connecting){
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const dot=el?.closest('.pdot');
+    if(dot&&dot!==connecting.dot)
+      finishConn(dot.dataset.nid,dot.dataset.port,dot.dataset.out==='1');
+  }
+});
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&connecting){
+    connecting.dot.classList.remove('active');
+    connecting=null;
+    document.getElementById('ghost').style.display='none';
+    setStatus('');
+  }
+  if((e.key==='Delete'||e.key==='Backspace')&&sel&&
+     e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){
+    deleteNode(sel);
+  }
+});
+
+cwrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=cwrap.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const nz=Math.max(.15,Math.min(3,zoom*(e.deltaY>0?.88:1.14)));
+  panX=mx-(mx-panX)*(nz/zoom);
+  panY=my-(my-panY)*(nz/zoom);
+  zoom=nz; applyT();
+},{passive:false});
+
+function applyT(){
+  // canvas and svg-layer are siblings inside cwrap — both need the same transform
+  const t=`translate(${panX}px,${panY}px) scale(${zoom})`;
+  canvas.style.transform=t;
+  svgl.style.transform=t;
+  const zi=document.getElementById('zoom-lbl');
+  if(zi) zi.textContent=Math.round(zoom*100)+'%';
+  updateAllEdges();
+  drawMM();
+}
+
+// ── TURN DETAIL PANEL ─────────────────────────────────────
+const ACT_OPTS=['Play Card','Draw Card','Swap','Move Piece','Place Token',
+  'Collect Resource','Tile Place','Trade','Optional Action',
+  'Dice Roll','Secret Bet','Steal','Custom…'];
+
+function openTD(nid){
+  const nd=nodes.find(n=>n.id===nid); if(!nd) return;
+  if(!nd.config.tb) nd.config.tb={
+    constraint:'up_to_n', max:2,
+    actions:[{id:'a1',type:'Play Card',mand:false},{id:'a2',type:'Move Piece',mand:false}],
+    outcomes:[{id:'o1',label:'end_turn',color:'#4ade80'},{id:'o2',label:'endgame',color:'#f87171'}],
+  };
+  document.getElementById('tdpanel').classList.add('open');
+  renderTD(nd);
+}
+function closeTD(){ document.getElementById('tdpanel').classList.remove('open'); }
+
+function renderTD(nd){
+  const tb=nd.config.tb;
+  const cs=[{id:'choose_1',l:'Escolhe 1'},{id:'up_to_n',l:'Até N'},
+            {id:'all',l:'Todas obr.'},{id:'free',l:'Livre'}];
+  document.getElementById('td-body').innerHTML=`
+    <div class="td-sec">
+      <h4>Constraint</h4>
+      <div class="cpills">
+        ${cs.map(c=>`<div class="cpill ${tb.constraint===c.id?'on':''}"
+          onclick="setConstr('${nd.id}','${c.id}')">${c.l}</div>`).join('')}
+      </div>
+      ${tb.constraint==='up_to_n'?`
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)">
+        Máx acções:
+        <input type="number" min="1" max="10" value="${tb.max}"
+          style="width:44px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;
+                 color:var(--text);font-family:inherit;font-size:11px;padding:3px 6px"
+          oninput="setMax('${nd.id}',this.value)">
+      </div>`:''}
+    </div>
+    <div class="td-sec">
+      <h4>Acções</h4>
+      <div id="al">
+        ${tb.actions.map(a=>`
+          <div class="arow">
+            <select onchange="updAct('${nd.id}','${a.id}',this.value)">
+              ${ACT_OPTS.map(o=>`<option${o===a.type?' selected':''}>${o}</option>`).join('')}
+            </select>
+            <div class="atag ${a.mand?'mand':'opt'}" onclick="togMand('${nd.id}','${a.id}')">
+              ${a.mand?'obrig.':'opc.'}
+            </div>
+            <button class="adel" onclick="remAct('${nd.id}','${a.id}')">×</button>
+          </div>`).join('')}
+      </div>
+      <button class="add-btn" onclick="addAct('${nd.id}')">+ Acção</button>
+    </div>
+    <div class="td-sec">
+      <h4>Outcomes (portos de saída)</h4>
+      <div id="ol">
+        ${tb.outcomes.map(o=>`
+          <div class="orow">
+            <div class="odot" style="background:${o.color}"></div>
+            <input value="${o.label}" onchange="updOut('${nd.id}','${o.id}',this.value)">
+            <button class="adel" onclick="remOut('${nd.id}','${o.id}')">×</button>
+          </div>`).join('')}
+      </div>
+      <button class="add-btn" onclick="addOut('${nd.id}')">+ Outcome</button>
+    </div>`;
+}
+
+function setConstr(nid,v){const nd=nodes.find(n=>n.id===nid);if(nd){nd.config.tb.constraint=v;renderTD(nd);}}
+function setMax(nid,v){const nd=nodes.find(n=>n.id===nid);if(nd)nd.config.tb.max=parseInt(v)||2;}
+function updAct(nid,aid,v){const nd=nodes.find(n=>n.id===nid);if(!nd)return;const a=nd.config.tb.actions.find(a=>a.id===aid);if(a)a.type=v;}
+function togMand(nid,aid){const nd=nodes.find(n=>n.id===nid);if(!nd)return;const a=nd.config.tb.actions.find(a=>a.id===aid);if(a){a.mand=!a.mand;renderTD(nd);}}
+function remAct(nid,aid){const nd=nodes.find(n=>n.id===nid);if(!nd)return;nd.config.tb.actions=nd.config.tb.actions.filter(a=>a.id!==aid);renderTD(nd);}
+function addAct(nid){const nd=nodes.find(n=>n.id===nid);if(!nd)return;nd.config.tb.actions.push({id:'a'+Date.now(),type:'Play Card',mand:false});renderTD(nd);}
+function addOut(nid){
+  const nd=nodes.find(n=>n.id===nid);if(!nd)return;
+  const cols=['#4ade80','#f87171','#f5a623','#4f7cff','#a78bfa','#2ec4a4'];
+  const id='o'+Date.now();
+  const label='outcome_'+(nd.config.tb.outcomes.length+1);
+  const color=cols[nd.config.tb.outcomes.length%cols.length];
+  nd.config.tb.outcomes.push({id,label,color});
+  rebuildTBPorts(nd); renderTD(nd);
+}
+function updOut(nid,oid,v){
+  const nd=nodes.find(n=>n.id===nid);if(!nd)return;
+  const o=nd.config.tb.outcomes.find(o=>o.id===oid);if(o){o.label=v;rebuildTBPorts(nd);}
+}
+function remOut(nid,oid){
+  const nd=nodes.find(n=>n.id===nid);if(!nd)return;
+  nd.config.tb.outcomes=nd.config.tb.outcomes.filter(o=>o.id!==oid);
+  rebuildTBPorts(nd); renderTD(nd);
+}
+function rebuildTBPorts(nd){
+  const po=nd.el.querySelector('.ports-out');if(!po)return;
+  po.innerHTML='';
+  (nd.config.tb.outcomes||[]).forEach(o=>{
+    po.appendChild(makePort(nd.id,o.label,true,o.color));
+  });
+  edges.filter(e=>e.fromNode===nd.id&&
+    !nd.config.tb.outcomes.find(o=>o.label===e.fromPort))
+    .forEach(e=>deleteEdge(e.id));
+  updateAllEdges();
+}
+
+// ── CONTEXT MENU ──────────────────────────────────────────
+function showCtx(x,y,mode){
+  const m=document.getElementById('ctx');
+  m.innerHTML = mode==='node'
+    ? `<div class="ci" onclick="ctxDup()">Duplicar</div>
+       <div class="ci red" onclick="deleteNode('${ctxTarget}');hideCtx()">Apagar</div>`
+    : '';
+  m.style.cssText=`display:block;left:${x}px;top:${y}px`;
+}
+function hideCtx(){document.getElementById('ctx').style.display='none';}
+function ctxDup(){
+  const nd=nodes.find(n=>n.id===ctxTarget);
+  if(nd) createNode(nd.type,nd.fam,nd.x+24,nd.y+24,{label:nd.label,config:{...nd.config}});
+  hideCtx();
+}
+window.addEventListener('click',e=>{if(!e.target.closest('#ctx'))hideCtx();});
+
+// ── MINIMAP ───────────────────────────────────────────────
+function drawMM(){
+  const c=document.getElementById('mm');if(!c)return;
+  const ctx=c.getContext('2d');
+  const W=130,H=80;
+  ctx.clearRect(0,0,W,H);
+  if(!nodes.length) return;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const minX=Math.min(...xs)-20,maxX=Math.max(...xs)+192;
+  const minY=Math.min(...ys)-20,maxY=Math.max(...ys)+80;
+  const sc=Math.min(W/(maxX-minX||1),H/(maxY-minY||1))*.88;
+  nodes.forEach(n=>{
+    const def=getNodeDef(n.type);
+    ctx.fillStyle=(def?.color||'#4f7cff')+'66';
+    ctx.fillRect((n.x-minX)*sc+4,(n.y-minY)*sc+4,172*sc,60*sc);
+  });
+}
+
+// ── COUNTERS / STATUS ─────────────────────────────────────
+function updateCounters(){
+  const nc=document.getElementById('nc'),ec=document.getElementById('ec');
+  if(nc)nc.textContent=nodes.length;if(ec)ec.textContent=edges.length;
+  drawMM();
+}
+function setStatus(msg){const s=document.getElementById('status-bar');if(s)s.textContent=msg;}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────
+function doExport(){
+  const name=document.getElementById('game-name').value.trim()||'jogo';
+  const bge={_format:'bge',_version:'0.4',game:{name},
+    swimlanes:swimlanes.map(sl=>({id:sl.id,name:sl.name,color:sl.color,
+      y:Math.round(sl.y),h:Math.round(sl.h),collapsed:sl.collapsed})),
+    nodes:nodes.map(nd=>({id:nd.id,node:nd.type,label:nd.label,
+      x:Math.round(nd.x),y:Math.round(nd.y),config:nd.config})),
+    edges:edges.map(e=>({id:e.id,fromNode:e.fromNode,fromPort:e.fromPort,
+      toNode:e.toNode,toPort:e.toPort})),
+    engine_nodes_used:[...new Set(nodes.map(n=>n.type))],
+  };
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(bge,null,2)],{type:'application/json'}));
+  a.download=name+'.bge.json'; a.click();
+  setStatus('Exportado: '+name+'.bge.json');
+}
+function doImport(){document.getElementById('fi').click();}
+function onFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{loadBGE(JSON.parse(ev.target.result));}catch{setStatus('Erro ao ler ficheiro');}};
+  r.readAsText(f); e.target.value='';
+}
+function loadBGE(bge){
+  clearAll(true);
+  if(bge.game?.name) document.getElementById('game-name').value=bge.game.name;
+  let maxN=0,maxE=0,maxSL=0;
+  (bge.nodes||[]).forEach(n=>{const v=parseInt(n.id.replace(/\D/g,''));if(v>maxN)maxN=v;});
+  (bge.edges||[]).forEach(e=>{const v=parseInt(e.id.replace(/\D/g,''));if(v>maxE)maxE=v;});
+  (bge.swimlanes||[]).forEach(s=>{const v=parseInt(s.id.replace(/\D/g,''));if(v>maxSL)maxSL=v;});
+  nSeq=maxN+1;eSeq=maxE+1;slSeq=maxSL+1;
+  (bge.swimlanes||[]).forEach(s=>{
+    const sl=createSwimlane(s.name,s.color,s.y,s.h,s.collapsed);
+    sl.id=s.id;sl.el.id=s.id;
+  });
+  (bge.nodes||[]).forEach(n=>{
+    const def=getNodeDef(n.node);if(!def)return;
+    const nd=createNode(n.node,def.fam,n.x,n.y,{label:n.label,config:n.config||{}});
+    if(nd){nd.id=n.id;nd.el.id=n.id;}
+  });
+  // Edges must be created after DOM paint so getBoundingClientRect() is accurate
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    (bge.edges||[]).forEach(e=>{
+      const edge=createEdge(e.fromNode,e.fromPort,e.toNode,e.toPort);
+      if(edge){edge.id=e.id;edge.el.dataset.eid=e.id;}
+    });
+    updateAllEdges();
+    deselect();
+    setStatus('Importado: '+(bge.game?.name||'—'));
+  }));
+  reflow();
+}
+
+function doValidate(){
+  const issues=[];
+  if(!nodes.some(n=>n.type==='GAME_START')) issues.push('Falta GAME_START');
+  if(!nodes.some(n=>n.type==='GAME_END'||n.type==='INSTANT_WIN')) issues.push('Falta GAME_END');
+  if(issues.length===0) setStatus('✓ Válido — '+nodes.length+' nós, '+edges.length+' edges');
+  else{ setStatus('⚠ '+issues[0]); alert(issues.join('\n')); }
+}
+
+function clearAll(silent=false){
+  if(!silent&&(nodes.length||swimlanes.length)&&!confirm('Limpar tudo?')) return;
+  nodes.forEach(n=>n.el.remove());
+  edges.forEach(e=>e.el.remove());
+  swimlanes.forEach(s=>s.el.remove());
+  nodes=[];edges=[];swimlanes=[];
+  nSeq=1;eSeq=1;slSeq=1;
+  deselect();updateCounters();
+}
+
+// ── STARTER EXAMPLE ───────────────────────────────────────
+function loadExample(){
+  initSwimlanes();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const sl=swimlanes;
+    const s1y=sl[0].y+55, s2y=sl[1].y+55, s3y=sl[2].y+55;
+
+    // Setup lane
+    const n1=createNode('GAME_START','flow',60,s1y);
+    const n2=createNode('SIMULTAN','assets',280,s1y,{label:'Escolher Baelfungious'});
+
+    // Game Loop lane
+    const n3=createNode('ROLE','data',60,s2y,{label:'Governante escolhe alvo'});
+    const n4=createNode('TURN_BLOCK','flow',280,s2y,{label:'Turno do Jogador'});
+    const n5=createNode('CHECK_COND','logic',520,s2y,{label:'Ronda terminada?'});
+    const n6=createNode('ROUND_START','flow',280,s2y+160,{label:'Próxima ronda'});
+
+    // End Game lane
+    const n7=createNode('MAJORITY','events',60,s3y,{label:'Scoring final'});
+    const n8=createNode('GAME_END','flow',280,s3y);
+
+    deselect();
+    setTimeout(()=>{
+      createEdge(n1.id,'next',n2.id,'in');
+      createEdge(n2.id,'done',n3.id,'in');
+      createEdge(n3.id,'holder',n4.id,'start');
+      createEdge(n4.id,'end_turn',n5.id,'in');
+      createEdge(n5.id,'false',n6.id,'prev');
+      createEdge(n5.id,'true',n7.id,'trigger');
+      createEdge(n6.id,'next',n3.id,'in');
+      createEdge(n7.id,'next',n8.id,'prev');
+      drawMM();
+      setStatus('Exemplo Bulbous carregado — 3 swimlanes, 8 nós');
+    },80);
+  }));
+}
+
+// ── INIT ──────────────────────────────────────────────────
+function init(){
+  buildPalette();
+  applyT();
+  loadExample();
+}
+if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',init);
+else init();
+</script>
+<div style="position:fixed;bottom:0;left:0;right:0;height:22px;
+  background:rgba(13,15,20,.95);border-top:1px solid #252a38;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Courier New',monospace;font-size:10px;color:#5a607a;
+  letter-spacing:.5px;pointer-events:none;z-index:1000">
+  Bitnik Framework (beta) &nbsp;·&nbsp; Node Editor &nbsp;·&nbsp;
+  David Marques &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; Bitnik Games 2026
+</div>
+</body>
+</html>
