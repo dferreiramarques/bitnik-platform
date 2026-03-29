@@ -372,14 +372,13 @@ function applyLang() {
     send({type:'LOBBIES'});
   }
 }
-window.addEventListener('langchange', applyLang);
-// Defer initial applyLang until after i18n.js is confirmed loaded
-if (typeof T !== 'undefined') applyLang();
-else document.addEventListener('DOMContentLoaded', () => { if(typeof T!=='undefined') applyLang(); });
-
-// ── State ─────────────────────────────────────────────────────────
+// ── State — declared first to avoid TDZ errors ───────────────────
 let ws, myName='', myToken='', myLobbyId='', mySeat=-1, myGameSeat=-1;
 let state=null, isSolo=false, isHost=false;
+
+window.addEventListener('langchange', applyLang);
+if (typeof T !== 'undefined') applyLang();
+else document.addEventListener('DOMContentLoaded', () => { if(typeof T!=='undefined') applyLang(); });
 
 // ── WebSocket ─────────────────────────────────────────────────────
 function connect() {
