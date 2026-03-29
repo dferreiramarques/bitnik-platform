@@ -1018,11 +1018,14 @@ function pbCanPlace(board,r,c){
   if(pbGet(board,r,c))return false;
   const occ=pbKeys(board);
   if(occ.length===0)return true;
-  // must be orthogonally adjacent
+  // must be orthogonally adjacent to existing tile
   if(!occ.some(p=>(p.r===r&&Math.abs(p.c-c)===1)||(p.c===c&&Math.abs(p.r-r)===1)))return false;
-  // max 7 in any row or col
-  if(occ.filter(p=>p.r===r).length>=7)return false;
-  if(occ.filter(p=>p.c===c).length>=7)return false;
+  // Board is constrained to a 7×7 bounding box
+  // Check that adding this tile doesn't push the bounding box beyond 7 in either dimension
+  const allR=occ.map(p=>p.r).concat(r);
+  const allC=occ.map(p=>p.c).concat(c);
+  if(Math.max(...allR)-Math.min(...allR)>=7)return false; // >6 span = >7 tiles wide
+  if(Math.max(...allC)-Math.min(...allC)>=7)return false;
   return true;
 }
 
