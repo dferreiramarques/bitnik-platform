@@ -91,9 +91,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
 #s-game.active{display:flex}
 .game-sticky{position:sticky;top:0;z-index:50;background:var(--bg);
   padding:12px 12px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
-.game-body{display:flex;flex-direction:row;gap:12px;flex:1;overflow:hidden;padding:12px}
-.game-left{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-width:0}
-.game-right{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.game-body{display:flex;flex-direction:row;gap:12px;flex:1;overflow-y:auto;padding:12px 16px}
+.game-left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.game-right{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
 .game-left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
 .game-right{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
 
@@ -124,11 +124,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .pcard-fichas{font-size:11px;color:var(--muted);margin-top:3px}
 
 /* Board */
-.board-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:12px;overflow:auto;display:flex;flex-direction:column;align-items:center}
-.board-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.board-grid{display:grid;gap:2px;width:fit-content}
-.cell{width:84px;height:84px;border-radius:2px;border:2px solid transparent;
+.board-wrap{background:transparent;border:none;border-radius:0;
+  padding:8px 0;overflow:visible;display:flex;flex-direction:column;align-items:flex-start}
+.board-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.board-grid{display:grid;gap:3px;width:fit-content}
+.cell{width:var(--cell-px,84px);height:var(--cell-px,84px);border-radius:2px;border:2px solid transparent;
   position:relative;cursor:default;transition:all .15s;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:10px;overflow:hidden}
 .cell.empty{background:rgba(42,122,110,.04);border-color:rgba(42,122,110,.12)}
@@ -138,7 +138,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .cell.placed-surf{background:#a8dcff;border-color:#29ADFF}
 .cell.placed-rock{background:#8a8480;border-color:#5F574F;color:#FFF1E8}
 .cell.placed-sand{background:#FFEC27;border-color:#FFA300}
-.cell-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;line-height:1}
+.cell-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(14px,2.5vw,22px);line-height:1}
 .cell-type{font-size:11px;color:rgba(0,0,0,.35);margin-top:1px}
 .cell-guard{position:absolute;bottom:2px;right:3px;font-size:18px;line-height:1;
   font-weight:800;text-shadow:0 0 3px rgba(255,255,255,.95)}
@@ -281,13 +281,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="leg-item"><span style="font-size:14px;font-weight:800;color:#2a7a6e">↔</span><span style="margin-left:4px">Guard H (linha)</span></div>
         <div class="leg-item"><span style="font-size:14px;font-weight:800;color:#c0502a">↕</span><span style="margin-left:4px">Guard V (coluna)</span></div>
       </div>
-      <div id="board-pan-wrap" style="margin-top:8px;overflow:hidden;width:100%;
-           cursor:grab;user-select:none;-webkit-user-select:none;position:relative"
-           oncontextmenu="return false">
-        <div id="board-pan-inner" style="display:flex;justify-content:center;
-             transform:translate(0px,0px);transition:none;will-change:transform">
-          <div class="board-grid" id="board-grid"></div>
-        </div>
+      <div style="margin-top:8px">
+        <div class="board-grid" id="board-grid"></div>
       </div>
     </div>
     <div class="status-bar" id="status-bar"></div>
@@ -619,7 +614,12 @@ function renderBoard(s) {
   const minR=Math.min(...allR)-margin, maxR=Math.max(...allR)+margin;
   const minC=Math.min(...allC)-margin, maxC=Math.max(...allC)+margin;
   const nCols=maxC-minC+1;
-  grid.style.gridTemplateColumns=`repeat(${nCols},84px)`;
+  // Fit board horizontally — compute cell size based on available width
+  const wrap=grid.parentElement;
+  const avail=wrap?wrap.offsetWidth||400:400;
+  const cellPx=Math.min(84, Math.floor((avail-8)/Math.max(nCols,1)));
+  grid.style.gridTemplateColumns=`repeat(${nCols},${cellPx}px)`;
+  grid.style.setProperty('--cell-px', cellPx+'px');
 
   const placed={};
   board.forEach(t=>{ placed[`${t.r},${t.c}`]=t; });
@@ -722,52 +722,7 @@ if(saved){ myToken=saved; }
 connect(); // always connect immediately
 setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); },20000);
 
-// ── Board panning ─────────────────────────────────────────────────
-(function(){
-  const wrap = document.getElementById('board-pan-wrap');
-  const inner = document.getElementById('board-pan-inner');
-  if (!wrap || !inner) return;
-  let panX=0, panY=0, startX=0, startY=0, isPanning=false, longPressTimer=null;
-
-  function startPan(x, y) {
-    isPanning=true; startX=x-panX; startY=y-panY;
-    wrap.style.cursor='grabbing';
-  }
-  function movePan(x, y) {
-    if (!isPanning) return;
-    panX=x-startX; panY=y-startY;
-    inner.style.transform=`translate(${panX}px,${panY}px)`;
-  }
-  function endPan() {
-    isPanning=false; wrap.style.cursor='grab';
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer=null; }
-  }
-
-  // Right-click drag
-  wrap.addEventListener('mousedown', e => {
-    if (e.button===2) { e.preventDefault(); startPan(e.clientX,e.clientY); }
-  });
-  window.addEventListener('mousemove', e => { if(e.buttons===2) movePan(e.clientX,e.clientY); });
-  window.addEventListener('mouseup', e => { if(e.button===2) endPan(); });
-
-  // Touch long press → pan
-  wrap.addEventListener('touchstart', e => {
-    const t=e.touches[0];
-    longPressTimer = setTimeout(() => {
-      startPan(t.clientX, t.clientY);
-    }, 400);
-  }, {passive:true});
-  wrap.addEventListener('touchmove', e => {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer=null; }
-    if (isPanning) { e.preventDefault(); const t=e.touches[0]; movePan(t.clientX,t.clientY); }
-  }, {passive:false});
-  wrap.addEventListener('touchend', endPan, {passive:true});
-
-  // Double-click resets pan
-  wrap.addEventListener('dblclick', () => {
-    panX=0; panY=0; inner.style.transform='translate(0px,0px)';
-  });
-})();
+// Board panning removed — board grows naturally
 </script>
 </body>
 </html>
