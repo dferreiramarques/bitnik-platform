@@ -1166,6 +1166,33 @@ function pbNewGame(names,isSolo){
   };
 }
 
+// ── Visibility framework ─────────────────────────────────────────
+// Three visibility levels for any piece of game state:
+//   PUBLIC   — all players see the real value (board, scores, guards)
+//   HIDDEN   — other players see only {hidden:true}, owner sees real value
+//   SECRET   — only owner sees it; others see nothing (or a masked count)
+//
+// Usage: pbVisible(value, ownerSeat, viewerSeat, level)
+function pbVisible(value, ownerSeat, viewerSeat, level='public') {
+  if (level === 'public')  return value;
+  if (level === 'hidden')  return ownerSeat === viewerSeat ? value : { hidden: true };
+  if (level === 'secret')  return ownerSeat === viewerSeat ? value : null;
+  return value;
+}
+
+// Filter player data by visibility:
+//   name, pts, fichas, objPts → PUBLIC
+//   drawnTile → HIDDEN (others know you drew, but not what)
+//   hand cards (future) → SECRET
+function pbPlayerView(player, playerIdx, viewerSeat) {
+  return {
+    name:   player.name,          // public
+    pts:    player.pts,           // public
+    fichas: player.fichas,        // public (count of remaining tokens)
+    objPts: player.objPts,        // public at game end; could be hidden mid-game
+  };
+}
+
 function pbBuildView(g,seat){
   const boardArr=Object.entries(g.board).map(([k,t])=>{
     const[r,c]=k.split(',');return{r:+r,c:+c,...t};});
@@ -1179,10 +1206,10 @@ function pbBuildView(g,seat){
   }
   return{
     mySeat:seat,
-    players:g.players.map(p=>({name:p.name,pts:p.pts,fichas:p.fichas,objPts:p.objPts})),
+    players:g.players.map((p,i)=>pbPlayerView(p,i,seat)),
     n:g.n, board:boardArr, guards:g.guards,
     phase:g.phase, currentPlayer:g.currentPlayer,
-    drawnTile:g.currentPlayer===seat?g.drawnTile:(g.drawnTile?{hidden:true}:null),
+    drawnTile:pbVisible(g.drawnTile, g.currentPlayer, seat, 'hidden'),
     validPlacements:g.currentPlayer===seat&&g.phase==='PLACE_TILE'?pbValidPlacements(g.board):[],
     deckSize:g.deck.length, totalDeck:g.totalDeck,
     revealedObjs:g.revealedObjs, claimedObjs:g.claimedObjs,
