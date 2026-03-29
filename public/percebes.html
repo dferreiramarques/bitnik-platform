@@ -86,8 +86,14 @@ body{display:flex;flex-direction:column;min-height:100vh}
   border-radius:4px;font-size:12px;cursor:pointer;margin-top:4px}
 
 /* GAME */
-#s-game{display:none;flex-direction:row;gap:12px;padding:12px;max-width:1100px;margin:0 auto;width:100%}
+#s-game{display:none;flex-direction:column;gap:0;max-width:1100px;margin:0 auto;
+  width:100%;height:calc(100vh - 44px);overflow:hidden}
 #s-game.active{display:flex}
+.game-sticky{position:sticky;top:0;z-index:50;background:var(--bg);
+  padding:12px 12px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.game-body{display:flex;flex-direction:row;gap:12px;flex:1;overflow:hidden;padding:12px}
+.game-left{flex:1;display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-width:0}
+.game-right{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
 .game-left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
 .game-right{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
 
@@ -200,10 +206,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* Rules modal */
 .rules-modal{position:fixed;inset:0;background:rgba(26,46,38,.75);
-  display:none;align-items:flex-end;justify-content:center;z-index:200}
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
 .rules-modal.open{display:flex}
-.rules-box{background:var(--surface);border-top:1px solid var(--border);
-  border-radius:12px 12px 0 0;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;padding:24px}
+.rules-box{background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;width:90vw;max-width:90vw;height:90vh;max-height:90vh;
+  overflow-y:auto;padding:28px 32px 36px;position:relative}
 .rules-box h2{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;margin-bottom:16px;
   display:flex;align-items:center;justify-content:space-between}
 .rules-box h2 button{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted)}
@@ -255,12 +262,15 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 <!-- GAME -->
 <div class="screen" id="s-game">
-  <div class="game-left">
+  <div class="game-sticky">
     <div class="phase-bar">
       <div class="phase-badge" id="phase-badge">—</div>
       <div class="deck-info" id="deck-info"></div>
     </div>
     <div class="players-row" id="players-row"></div>
+  </div><!-- /game-sticky -->
+  <div class="game-body">
+  <div class="game-left">
     <div class="board-wrap">
       <div class="board-label" data-i18n="perc.board">Tabuleiro</div>
       <div class="legend">
@@ -302,6 +312,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
   </div>
 </div>
 
+  </div><!-- /game-right -->
+  </div><!-- /game-body -->
 <!-- GAME OVER -->
 <div class="overlay" id="overlay-over">
   <div class="overlay-box">

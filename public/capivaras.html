@@ -76,8 +76,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
   border-radius:4px;font-family:'Nunito',sans-serif;font-size:12px;cursor:pointer}
 
 /* GAME SCREEN */
-#s-game{display:none;padding:16px;gap:12px;flex-direction:column;max-width:900px;margin:0 auto;width:100%}
+#s-game{display:none;flex-direction:column;gap:0;max-width:900px;margin:0 auto;
+  width:100%;height:calc(100vh - 44px);overflow:hidden}
 #s-game.active{display:flex}
+.game-sticky{background:var(--bg);padding:12px 16px 8px;
+  border-bottom:1px solid var(--border);flex-shrink:0;z-index:50}
+.game-scroll{flex:1;overflow-y:auto;padding:12px 16px;
+  display:flex;flex-direction:column;gap:12px}
 
 /* Phase bar */
 .phase-bar{display:flex;align-items:center;justify-content:space-between;
@@ -170,12 +175,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* Rules modal */
 .rules-modal{position:fixed;inset:0;background:rgba(26,20,16,.75);
-  display:none;align-items:flex-end;justify-content:center;z-index:200;
-  padding:0 0 0 0}
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
 .rules-modal.open{display:flex}
-.rules-box{background:var(--surface);border-top:1px solid var(--border);
-  border-radius:12px 12px 0 0;width:100%;max-width:680px;max-height:85vh;
-  overflow-y:auto;padding:24px 24px 32px}
+.rules-box{background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;width:90vw;max-width:90vw;height:90vh;max-height:90vh;
+  overflow-y:auto;padding:28px 32px 36px;position:relative}
 .rules-box h2{font-family:'Nunito',sans-serif;font-weight:700;
   font-size:18px;margin-bottom:16px;display:flex;align-items:center;
   justify-content:space-between}
@@ -270,6 +274,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 <!-- GAME -->
 <div class="screen" id="s-game">
+  <div class="game-sticky">
   <div class="phase-bar">
     <div class="phase-badge" id="phase-badge">—</div>
     <div class="phase-right">
@@ -278,6 +283,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
     </div>
   </div>
   <div class="players-row" id="players-row"></div>
+  </div><!-- /game-sticky -->
+  <div class="game-scroll">
   <div class="table-section">
     <h3>Cartas na mesa — clica para apostar</h3>
     <div class="table-cards" id="table-cards"></div>
@@ -313,6 +320,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
   </div>
 </div>
 
+  </div><!-- /game-scroll -->
 <!-- Rules modal -->
 <div class="rules-modal" id="rules-modal" onclick="if(event.target===this)closeRules()">
   <div class="rules-box">
