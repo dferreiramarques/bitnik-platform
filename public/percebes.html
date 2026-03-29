@@ -28,8 +28,8 @@
   --p3:#FFA300;        /* orange */
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
-body{display:flex;flex-direction:column;min-height:100vh}
+html,body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+body{display:flex;flex-direction:column}
 
 /* NAV */
 .nav{background:#1D2B53;padding:0 16px;height:44px;display:flex;align-items:center;gap:10px;flex-shrink:0}
@@ -527,6 +527,13 @@ function renderGame(s) {
   state=s; myGameSeat=s.mySeat;
   if (s.phase==='GAME_OVER') { show('s-game'); showGameOver(s); return; }
   show('s-game');
+  // Position right panel below sticky bar
+  const sticky=document.querySelector('.game-sticky');
+  const right=document.querySelector('.game-right');
+  if(sticky&&right){
+    const stickyH=sticky.offsetHeight;
+    right.style.top=(44+stickyH+8)+'px';
+  }
   document.getElementById('overlay-over').classList.remove('open');
 
   // Phase badge
