@@ -100,7 +100,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .tag-me{background:rgba(42,122,110,.12);color:var(--teal)}
 .pcard-score{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px}
 .pcard-bird{font-size:10px;color:var(--muted)}
-.pcard-lilies{display:flex;gap:3px;margin-top:5px;align-items:center;flex-wrap:wrap}
+.pcard-lilies{display:flex;gap:3px;margin-top:5px;align-items:center;flex-wrap:nowrap}
 .lily-dot{width:9px;height:9px;border-radius:50%;background:#cdc4b0;transition:background .3s;flex-shrink:0}
 .lily-dot.has.Y{background:#c8900a}
 .lily-dot.has.R{background:#c01808}
@@ -533,7 +533,7 @@ function renderGame(s) {
   const LILY_COLORS = ['Y','R','W','B'];
   function lilyDotsHTML(lilies, birdCards) {
     const birdImg = birdCards>0
-      ? `<img src="/capivaras/bird.png" width="11" height="11" style="margin-left:4px;vertical-align:middle" onerror="this.outerHTML='🐦'">×${birdCards}`
+      ? `<span style="display:inline-flex;align-items:center;gap:2px;margin-left:5px"><img src="/capivaras/bird.png" width="11" height="11" onerror="this.outerHTML='🐦'"><span style="font-size:10px">×${birdCards}</span></span>`
       : '';
     return '<div class="pcard-lilies">' +
       LILY_COLORS.map(c =>
