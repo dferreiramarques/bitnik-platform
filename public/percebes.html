@@ -395,12 +395,13 @@ function connect() {
   ws = new WebSocket(`${proto}://${location.host}/ws/percebes`);
   ws.onopen = () => {
     document.getElementById('conn').classList.add('ok');
-    if (myToken) send({type:'RECONNECT',token:myToken});
-    else send({type:'LOBBIES'});
-    // If user already named and is on s-lobby, refresh the list
-    if (myName && document.getElementById('s-lobby').classList.contains('active')) {
+    if (myToken) {
+      send({type:'RECONNECT', token:myToken});
+    } else if (myName) {
+      // Already named — request lobbies to populate screen
       send({type:'LOBBIES'});
     }
+    // If no name yet, stay on s-name — goLobby() will request LOBBIES when ready
   };
   ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch(err){ console.error(err); } };
   ws.onclose = () => { document.getElementById('conn').classList.remove('ok'); setTimeout(connect,2000); };
@@ -464,7 +465,8 @@ function onJoined(msg) {
 }
 
 function renderLobbyList(list) {
-  show('s-lobby');
+  // Only switch to lobby screen if user has already entered their name
+  if (myName) show('s-lobby');
   document.getElementById('lobby-list').innerHTML = (list||[]).map(l => `
     <div class="lobby-row ${!l.solo&&(l.full||l.playing)?'full':''}" onclick="joinLobby('${l.id}')">
       <div>
