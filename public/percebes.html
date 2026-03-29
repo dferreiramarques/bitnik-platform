@@ -337,6 +337,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <script>
 // ── i18n setup ────────────────────────────────────────────────────
 function applyLang() {
+  if (typeof T === 'undefined' || typeof getLang === 'undefined') return;
   const lang = getLang();
   document.getElementById('btn-lang').textContent = T('lang.toggle');
   document.documentElement.lang = lang;
@@ -368,7 +369,9 @@ function applyLang() {
   if (state) renderGame(state);
 }
 window.addEventListener('langchange', applyLang);
-applyLang();
+// Defer initial applyLang until after i18n.js is confirmed loaded
+if (typeof T !== 'undefined') applyLang();
+else document.addEventListener('DOMContentLoaded', () => { if(typeof T!=='undefined') applyLang(); });
 
 // ── State ─────────────────────────────────────────────────────────
 let ws, myName='', myToken='', myLobbyId='', mySeat=-1, myGameSeat=-1;
@@ -403,8 +406,13 @@ function handle(msg) {
 function goLobby() {
   const n = document.getElementById('inp-name').value.trim();
   if (!n) { document.getElementById('name-err').textContent = T('error.name'); return; }
-  myName = n; show('s-lobby');
-  if (!ws||ws.readyState>1) connect(); else send({type:'LOBBIES'});
+  myName = n;
+  // Show lobby screen with loading state
+  show('s-lobby');
+  document.getElementById('lobby-list').innerHTML =
+    '<div style="color:var(--muted);font-size:12px;padding:16px 0">A ligar…</div>';
+  if (!ws || ws.readyState > 1) connect();
+  else send({type:'LOBBIES'});
 }
 function joinLobby(id) { myLobbyId=id; send({type:'JOIN_LOBBY',lobbyId:id,playerName:myName}); }
 function startGame() { send({type:'START'}); }
