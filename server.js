@@ -541,8 +541,7 @@ const server = http.createServer((req, res) => {
 
 // ── WebSocket server ──────────────────────────────────────────────
 const wss = new WebSocketServer({ noServer: true });
-// Capivaras dedicated WebSocket - handled via upgrade event below
-let capWss;
+const capWss = { get clients() { return [...wss.clients].filter(w=>w._isCap); } }; // alias
 
 wss.on('connection', (ws, req) => {
   // Route: capivaras connections go to dedicated handler
@@ -754,7 +753,7 @@ function capLobbyInfo(l){
     names:l.names.filter(Boolean)};}
 function capBroadcastLobbies(){
   const list=Object.values(CAP_LOBBIES).map(capLobbyInfo);
-  for(const ws of capWss.clients){if(ws.readyState!==1)continue;const st=CAP_WS_STATE.get(ws);if(!st||!st.lobbyId)capSend(ws,{type:'LOBBIES',lobbies:list});}
+  for(const ws of wss.clients){if(!ws._isCap)continue;if(ws.readyState!==1)continue;const st=CAP_WS_STATE.get(ws);if(!st||!st.lobbyId)capSend(ws,{type:'LOBBIES',lobbies:list});}
 }
 function capCheckBets(lobby){const g=lobby.game;if(!g||g.phase!=='BETTING')return;if(g.bets.every(b=>b!==null))capResolve(lobby);}
 function capResolve(lobby){
