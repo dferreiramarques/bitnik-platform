@@ -367,6 +367,10 @@ function applyLang() {
     document.getElementById('r-end-text').textContent = 'Quando o baralho esgotar, os outros jogadores têm um turno extra cada. Depois calcula-se a pontuação final.';
   }
   if (state) renderGame(state);
+  // Re-render lobby list if visible
+  if (document.getElementById('s-lobby').classList.contains('active') && ws?.readyState===1) {
+    send({type:'LOBBIES'});
+  }
 }
 window.addEventListener('langchange', applyLang);
 // Defer initial applyLang until after i18n.js is confirmed loaded
@@ -385,6 +389,10 @@ function connect() {
     document.getElementById('conn').classList.add('ok');
     if (myToken) send({type:'RECONNECT',token:myToken});
     else send({type:'LOBBIES'});
+    // If user already named and is on s-lobby, refresh the list
+    if (myName && document.getElementById('s-lobby').classList.contains('active')) {
+      send({type:'LOBBIES'});
+    }
   };
   ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch(err){ console.error(err); } };
   ws.onclose = () => { document.getElementById('conn').classList.remove('ok'); setTimeout(connect,2000); };
@@ -407,12 +415,19 @@ function goLobby() {
   const n = document.getElementById('inp-name').value.trim();
   if (!n) { document.getElementById('name-err').textContent = T('error.name'); return; }
   myName = n;
-  // Show lobby screen with loading state
   show('s-lobby');
-  document.getElementById('lobby-list').innerHTML =
-    '<div style="color:var(--muted);font-size:12px;padding:16px 0">A ligar…</div>';
-  if (!ws || ws.readyState > 1) connect();
-  else send({type:'LOBBIES'});
+  // WS already connected from page load — just request lobbies
+  if (ws && ws.readyState === 1) {
+    send({type:'LOBBIES'});
+  } else {
+    // Still connecting — show loading, retry when open
+    document.getElementById('lobby-list').innerHTML =
+      `<div style="color:var(--muted);font-size:12px;padding:16px 0">${getLang()==='en'?'Connecting…':'A ligar…'}</div>`;
+    const waitOpen = setInterval(() => {
+      if (ws && ws.readyState === 1) { clearInterval(waitOpen); send({type:'LOBBIES'}); }
+    }, 200);
+    setTimeout(() => clearInterval(waitOpen), 5000);
+  }
 }
 function joinLobby(id) { myLobbyId=id; send({type:'JOIN_LOBBY',lobbyId:id,playerName:myName}); }
 function startGame() { send({type:'START'}); }
@@ -464,7 +479,7 @@ function renderWait(msg) {
     const name=names[i]; const isMe=i===(msg.myLobbySeat??mySeat);
     return `<div class="wp-row"><div class="wp-num ${isMe?'me':''}">${i+1}</div>
       <div style="flex:1;font-size:12px">${name||(isMe?myName:T('lobby.empty'))}</div>
-      ${isMe?`<span style="font-size:10px;color:var(--accent)">tu</span>`:''}
+      ${isMe?`<span style="font-size:10px;color:var(--accent)">${getLang()==='en'?'you':'tu'}</span>`:''}
     </div>`;
   }).join('');
   const seated=names.filter(Boolean).length;
@@ -644,8 +659,10 @@ function show(id) {
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 document.getElementById('inp-name').addEventListener('keydown',e=>{ if(e.key==='Enter') goLobby(); });
+// Connect on page load so lobbies are ready when user clicks Enter
 const saved=sessionStorage.getItem('perc_token');
-if(saved){ myToken=saved; connect(); }
+if(saved){ myToken=saved; }
+connect(); // always connect immediately
 setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); },20000);
 </script>
 </body>
