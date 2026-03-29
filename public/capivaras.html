@@ -98,9 +98,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
   display:flex;align-items:center;gap:6px}
 .tag{font-size:9px;padding:1px 5px;border-radius:2px}
 .tag-me{background:rgba(42,122,110,.12);color:var(--teal)}
-.pcard-score{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px}
-.pcard-bird{font-size:10px;color:var(--muted)}
-.pcard-lilies{display:flex;gap:3px;margin-top:5px;align-items:center;flex-wrap:nowrap}
+.pcard-score{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px;
+  margin-bottom:2px;line-height:1.1}
+.pcard-bird{display:none}
+.pcard-lilies{display:flex;gap:4px;margin-top:5px;align-items:center;flex-wrap:wrap}
 .lily-dot{width:9px;height:9px;border-radius:50%;background:#cdc4b0;transition:background .3s;flex-shrink:0}
 .lily-dot.has.Y{background:#c8900a}
 .lily-dot.has.R{background:#c01808}
@@ -550,22 +551,20 @@ function renderGame(s) {
         ${lilyDotsHTML(p.lilies, p.birdCards)}
       </div>`).join('');
   } else {
-    // Update scores, lily dots, and bird count in-place
+    // Update scores and lily dots in-place
     (s.players||[]).forEach(p => {
       const el = playersRow.querySelector(`[data-seat="${p.seat}"]`);
       if (!el) return;
       const scoreEl = el.querySelector('.pcard-score');
       if (scoreEl) scoreEl.innerHTML = `${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span>`;
-      // Update lily dots
-      LILY_COLORS.forEach(c => {
-        const dot = el.querySelector(`.lily-dot.${c}`);
-        if (dot) dot.classList.toggle('has', (p.lilies||[]).includes(c));
-      });
-      let bird = el.querySelector('.pcard-bird');
-      if (p.birdCards > 0) {
-        if (!bird) { bird = document.createElement('div'); bird.className='pcard-bird'; el.appendChild(bird); }
-        bird.textContent = `🐦 ×${p.birdCards}`;
-      } else if (bird) bird.remove();
+      // Rebuild lily row (cheap, no images)
+      const lilyRow = el.querySelector('.pcard-lilies');
+      const newLilies = lilyDotsHTML(p.lilies, p.birdCards);
+      if (lilyRow) {
+        lilyRow.outerHTML = newLilies;
+      } else {
+        el.insertAdjacentHTML('beforeend', newLilies);
+      }
     });
   }
 
@@ -640,10 +639,11 @@ function renderGame(s) {
   } else if (s.phase==='REVEAL') {
     const bu = s.lastResult?.birdUpdate;
     if (bu) {
-      if (bu.type==='first')      statusEl.textContent = `🐦 ${bu.name} ganhou o token do pássaro!`;
-      else if (bu.type==='steal') statusEl.textContent = `🐦 ${bu.name} roubou o token de ${bu.fromName}!`;
-      else if (bu.type==='tie_first') statusEl.textContent = '🐦 Empate — ninguém ficou com o token.';
-      else if (bu.type==='tie_steal') statusEl.textContent = '🐦 Empate — token mantém-se com o detentor.';
+      const bpng = `<img src="/capivaras/bird.png" width="14" height="14" style="vertical-align:middle;margin-right:3px" onerror="this.style.display='none'">`;
+      if (bu.type==='first')      statusEl.innerHTML = `${bpng}${bu.name} ganhou o token do pássaro!`;
+      else if (bu.type==='steal') statusEl.innerHTML = `${bpng}${bu.name} roubou o token de ${bu.fromName}!`;
+      else if (bu.type==='tie_first') statusEl.innerHTML = `${bpng}Empate — ninguém ficou com o token.`;
+      else if (bu.type==='tie_steal') statusEl.innerHTML = `${bpng}Empate — token mantém-se com o detentor.`;
       else statusEl.textContent = 'Revelação!';
     } else {
       const nWon = Object.keys(s.lastResult?.winners||{}).length;
@@ -695,7 +695,7 @@ function showGameOver(s) {
   el.innerHTML = scores.map((p,i) => {
     const isW = i === s.winnerIdx;
     const details = [];
-    if (p.birdCards>0) details.push(`🐦 ×${p.birdCards}`);
+    if (p.birdCards>0) details.push(`<img src='/capivaras/bird.png' width='11' height='11' style='vertical-align:middle'>×${p.birdCards}`);
     if (p.hasBird)    details.push('+5 token');
     if (p.allLilies)  details.push('+10 todos os nenúfares!');
     return `<div class="score-row">
