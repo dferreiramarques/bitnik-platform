@@ -1082,20 +1082,19 @@ function pbBuildDeck(n){
 }
 
 function pbBuildObjectives(){
+  // Original 8 objectives — pick 5 at random each game
   const all=[
-    {id:'obj1',descPt:'Quadrado 3×3 (9 tiles)',           descEn:'3×3 square',            pts:3,type:'square3'},
-    {id:'obj2',descPt:'Linha de 5 tiles',                 descEn:'Row of 5 tiles',         pts:4,type:'row5'},
-    {id:'obj3',descPt:'Linha de 7 tiles',                 descEn:'Row of 7 tiles',         pts:6,type:'row7'},
-    {id:'obj4',descPt:'Coluna de 5 tiles',                descEn:'Column of 5 tiles',      pts:4,type:'col5'},
-    {id:'obj5',descPt:'Coluna de 7 tiles',                descEn:'Column of 7 tiles',      pts:6,type:'col7'},
-    {id:'obj6',descPt:'2 Pranchas adjacentes',            descEn:'2 adjacent surfboards',  pts:4,type:'surf2adj'},
-    {id:'obj7',descPt:'Excursão (2×2 tiles com banhistas)',descEn:'Excursion (2×2 bathers)',pts:6,type:'excursion'},
-    {id:'obj8',descPt:'5 do mesmo tipo em linha',         descEn:'5 same-type in a row',   pts:4,type:'same5'},
-    {id:'obj9',descPt:'10 tiles no tabuleiro',            descEn:'10 tiles on board',      pts:3,type:'count10'},
-    {id:'obj10',descPt:'3 salva-vidas colocados',         descEn:'3 lifeguards placed',    pts:5,type:'guards3'},
+    {id:'obj1',descPt:'Quadrado 3×3 (9 tiles)',              descEn:'3×3 square (9 tiles)',          pts:2,type:'square3'},
+    {id:'obj2',descPt:'Linha de 5 tiles',                    descEn:'Row of 5 tiles',                pts:4,type:'row5'},
+    {id:'obj3',descPt:'Linha de 7 tiles',                    descEn:'Row of 7 tiles',                pts:6,type:'row7'},
+    {id:'obj4',descPt:'Quadrado 5×5 (25 tiles)',             descEn:'5×5 square (25 tiles)',         pts:2,type:'square5'},
+    {id:'obj5',descPt:'Coluna de 5 tiles',                   descEn:'Column of 5 tiles',             pts:4,type:'col5'},
+    {id:'obj6',descPt:'Coluna de 7 tiles',                   descEn:'Column of 7 tiles',             pts:6,type:'col7'},
+    {id:'obj7',descPt:'2 Pranchas adjacentes',               descEn:'2 adjacent surfboards',         pts:4,type:'surf2adj'},
+    {id:'obj8',descPt:'Excursão (2×2 tiles com 3 banhistas)',descEn:'Excursion (2×2 tiles, 3 each)', pts:6,type:'excursion'},
   ];
   for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
-  return all.slice(0,5); // pick 5 of 10
+  return all.slice(0,5);
 }
 
 function pbCheckObjectives(g,playerIdx){
@@ -1138,6 +1137,16 @@ function pbEvalObj(board,obj,g){
         if([0,1,2].every(dr=>[0,1,2].every(dc=>pbGet(board,r+dr,c+dc)))) return true;
       } return false;
     }
+    case 'square5': {
+      const rs=[...new Set(occ.map(p=>p.r))];
+      for(const r of rs) for(const c of [...new Set(occ.map(p=>p.c))]) {
+        let ok=true;
+        outer: for(let dr=0;dr<5;dr++) for(let dc=0;dc<5;dc++) {
+          if(!pbGet(board,r+dr,c+dc)){ok=false;break outer;}
+        }
+        if(ok) return true;
+      } return false;
+    }
     case 'row5':  return [...new Set(occ.map(p=>p.r))].some(r=>occ.filter(p=>p.r===r).length>=5);
     case 'row7':  return [...new Set(occ.map(p=>p.r))].some(r=>occ.filter(p=>p.r===r).length>=7);
     case 'col5':  return [...new Set(occ.map(p=>p.c))].some(c=>occ.filter(p=>p.c===c).length>=5);
@@ -1161,8 +1170,6 @@ function pbEvalObj(board,obj,g){
         if(cols.some(c=>typed.filter(p=>p.c===c).length>=5)) return true;
       } return false;
     }
-    case 'count10': return occ.length>=10;
-    case 'guards3': return (g&&g.guards?g.guards.length:0)>=3;
     default: return false;
   }
 }
