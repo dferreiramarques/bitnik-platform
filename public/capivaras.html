@@ -4,20 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Capivaras — Bitnik Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f8f2e8; --surface:#fff; --panel:#f0ead8; --border:#d8ceb8;
-  --ink:#1a1410; --muted:#8a7a60; --accent:#c47c28; --teal:#2a7a6e;
-  --red:#c43028; --gold:#c8a040;
+  --bg:#f8f2e2; --surface:#fff; --panel:#ede8d8; --border:#cfc5a8;
+  --ink:#2a2218; --muted:#8a7a5a; --accent:#c47c28; --teal:#2a7a6e;
+  --red:#b83020; --gold:#c8a030;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--ink);font-size:13px}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
 body{display:flex;flex-direction:column;min-height:100vh}
 
 /* NAV */
 .nav{background:var(--ink);padding:0 20px;height:44px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#f0ead8;letter-spacing:1px}
+.nav-logo{font-family:'Nunito',sans-serif;font-weight:700;font-size:14px;color:#f0ead8;letter-spacing:1px}
 .nav-logo span{color:var(--gold)}
 .nav-back{color:#5a5040;text-decoration:none;font-size:11px;letter-spacing:1px}
 .nav-back:hover{color:var(--gold)}
@@ -30,20 +30,20 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* NAME SCREEN */
 #s-name{align-items:center;justify-content:center;padding:40px 20px;gap:12px}
-.name-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;letter-spacing:-.5px;text-align:center}
+.name-title{font-family:'Nunito',sans-serif;font-weight:700;font-size:28px;letter-spacing:-.5px;text-align:center}
 .name-sub{color:var(--muted);font-size:12px;text-align:center;margin-bottom:8px}
 .name-input{width:280px;padding:12px 16px;border:2px solid var(--border);border-radius:4px;
-  font-family:'DM Mono',monospace;font-size:14px;background:var(--surface);
+  font-family:'Nunito',sans-serif;font-size:14px;background:var(--surface);
   text-align:center;outline:none;color:var(--ink)}
 .name-input:focus{border-color:var(--accent)}
 .btn-go{padding:12px 32px;background:var(--accent);color:white;border:none;border-radius:4px;
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
   text-transform:uppercase;cursor:pointer;width:280px;transition:background .2s}
 .btn-go:hover{background:#a86820}
 
 /* LOBBY SCREEN */
 #s-lobby{padding:24px;gap:16px;max-width:600px;margin:0 auto;width:100%}
-.lobby-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;margin-bottom:4px}
+.lobby-title{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px;margin-bottom:4px}
 .lobby-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
 .lobby-list{display:flex;flex-direction:column;gap:8px}
 .lobby-row{background:var(--surface);border:1px solid var(--border);border-radius:6px;
@@ -58,7 +58,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* WAIT SCREEN */
 #s-wait{padding:24px;gap:16px;max-width:500px;margin:0 auto;width:100%;align-items:stretch}
-.wait-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px}
+.wait-title{font-family:'Nunito',sans-serif;font-weight:700;font-size:20px}
 .wait-players{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .wp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;
   background:var(--surface);border:1px solid var(--border);border-radius:4px}
@@ -67,12 +67,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .wp-num.me{background:var(--accent);color:white}
 .wp-name{flex:1;font-size:12px}
 .btn-start{padding:12px;background:var(--teal);color:white;border:none;border-radius:4px;
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
   text-transform:uppercase;cursor:pointer;transition:background .2s}
 .btn-start:hover:not(:disabled){background:#1f6058}
 .btn-start:disabled{opacity:.5;cursor:not-allowed}
 .btn-leave{padding:10px;background:transparent;color:var(--muted);border:1px solid var(--border);
-  border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer}
+  border-radius:4px;font-family:'Nunito',sans-serif;font-size:12px;cursor:pointer}
 
 /* GAME SCREEN */
 #s-game{display:none;padding:16px;gap:12px;flex-direction:column;max-width:900px;margin:0 auto;width:100%}
@@ -80,8 +80,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* Phase bar */
 .phase-bar{display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px}
-.phase-badge{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
+  padding:10px 14px;background:transparent;border:none;border-radius:6px}
+.phase-badge{font-family:'Nunito',sans-serif;font-weight:700;font-size:11px;
   letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:3px}
 .phase-BETTING{background:rgba(196,124,40,.12);color:var(--accent)}
 .phase-REVEAL{background:rgba(42,122,110,.12);color:var(--teal)}
@@ -98,23 +98,23 @@ body{display:flex;flex-direction:column;min-height:100vh}
   display:flex;align-items:center;gap:6px}
 .tag{font-size:9px;padding:1px 5px;border-radius:2px}
 .tag-me{background:rgba(42,122,110,.12);color:var(--teal)}
-.pcard-score{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px}
+.pcard-score{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px}
 .pcard-bird{font-size:10px;color:var(--muted)}
 
 /* Table cards */
 .table-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;
   color:var(--muted);margin-bottom:10px}
-.table-cards{display:flex;gap:10px;flex-wrap:wrap}
+.table-cards{display:grid;gap:10px;
+  grid-template-columns:repeat(var(--n-cards,3),1fr)}
 .cap-card{background:var(--surface);border:2px solid var(--border);border-radius:8px;
-  padding:14px;cursor:pointer;transition:all .2s;position:relative;
-  min-width:110px;flex:1;max-width:160px}
+  padding:10px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
 .cap-card:hover.can-bet{border-color:var(--accent);transform:translateY(-2px);
   box-shadow:0 4px 12px rgba(196,124,40,.2)}
 .cap-card.selected{border-color:var(--accent);background:#fdf6ea}
 .cap-card.won{border-color:var(--teal);background:#f0faf6}
 .cap-card.nobody{border-color:var(--border);opacity:.6}
 .card-pos{font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:500}
-.card-caps{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;margin-bottom:4px}
+.card-caps{display:none}.card-word{display:none}
 .card-word{font-size:10px;color:var(--muted);margin-bottom:8px}
 .card-lilies{display:flex;gap:4px;flex-wrap:wrap}
 .lily{font-size:10px;padding:2px 6px;border-radius:2px;font-weight:500}
@@ -123,36 +123,39 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .lily-W{background:#f0f0f0;color:#606060}
 .lily-B{background:#dce8ff;color:#204080}
 .lily-bird{background:#f0faf0;color:#306040}
-.card-result{position:absolute;top:8px;right:8px;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:500}
-.result-win{background:rgba(42,122,110,.15);color:var(--teal)}
-.result-nobody{background:rgba(196,52,40,.1);color:var(--red);font-size:9px}
+.card-result-wrap{position:absolute;inset:0;z-index:10;pointer-events:none;
+  display:flex;align-items:flex-end;justify-content:stretch}
+.card-result{width:100%;font-size:11px;padding:6px 8px;font-weight:700;text-align:center}
+.result-win{background:rgba(42,122,110,.85);color:#fff}
+.result-nobody{background:rgba(180,48,32,.75);color:#fff}
 
 /* Status */
-.status-bar{padding:12px 14px;background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;font-size:13px;display:flex;align-items:center;gap:10px}
+.status-bar{padding:10px 0;background:transparent;border:none;
+  border-radius:0;font-size:14px;display:flex;align-items:center;gap:10px;color:var(--muted)}
 .bet-count{font-size:11px;color:var(--muted);margin-left:auto}
 
 /* Scored cards */
-.scored-section{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px}
-.scored-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.scored-section{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px}
+.scored-section h3{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .scored-list{display:flex;gap:6px;flex-wrap:wrap}
-.mini-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
-  padding:6px 8px;font-size:11px;display:flex;align-items:center;gap:6px}
-.mini-cap{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px}
+.mini-card{border-radius:4px;overflow:hidden;border:1px solid var(--border);
+  width:44px;height:58px;flex-shrink:0;cursor:default}
+.mini-card img{width:100%;height:100%;object-fit:cover;display:block}
+.mini-cap{display:none}
 
 /* Bird token */
-.bird-token{padding:10px 14px;background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;font-size:12px;display:flex;align-items:center;gap:8px}
+.bird-token{padding:10px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;font-size:11px;display:flex;align-items:center;gap:8px;
+  flex-direction:column;text-align:center}
 .bird-token.has-holder{border-color:var(--gold);background:#fdf9ee}
-.bird-icon{font-size:18px}
 
 /* Card art */
-.card-art{width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;
-  background:var(--panel);margin-bottom:8px;position:relative;display:flex;
+.card-art{width:calc(100% + 20px);margin:-10px -10px 6px -10px;aspect-ratio:3/4;
+  overflow:hidden;background:var(--panel);position:relative;display:flex;
   align-items:center;justify-content:center}
 .card-art img{width:100%;height:100%;object-fit:cover;display:block}
 .card-art .art-fb{width:100%;height:100%;display:flex;align-items:center;
-  justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  justify-content:center;font-family:'Nunito',sans-serif;font-weight:700;
   font-size:32px;color:var(--muted);background:var(--panel)}
 
 /* Rules modal */
@@ -163,7 +166,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .rules-box{background:var(--surface);border-top:1px solid var(--border);
   border-radius:12px 12px 0 0;width:100%;max-width:680px;max-height:85vh;
   overflow-y:auto;padding:24px 24px 32px}
-.rules-box h2{font-family:'Space Grotesk',sans-serif;font-weight:700;
+.rules-box h2{font-family:'Nunito',sans-serif;font-weight:700;
   font-size:18px;margin-bottom:16px;display:flex;align-items:center;
   justify-content:space-between}
 .rules-box h2 button{background:none;border:none;cursor:pointer;
@@ -189,7 +192,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
   object-fit:cover;display:none}
 .btn-rules{position:fixed;bottom:20px;right:20px;padding:10px 16px;
   background:var(--ink);color:var(--bg);border:none;border-radius:20px;
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:11px;
   letter-spacing:1px;text-transform:uppercase;cursor:pointer;
   box-shadow:0 2px 12px rgba(0,0,0,.2);z-index:100;transition:background .2s}
 .btn-rules:hover{background:#333}
@@ -203,21 +206,21 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .overlay.open{display:flex}
 .overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
   padding:28px;width:100%;max-width:440px}
-.overlay-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;margin-bottom:20px}
+.overlay-title{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px;margin-bottom:20px}
 .score-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
 .score-row:last-child{border:none}
-.score-pos{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;width:36px;color:var(--muted)}
+.score-pos{font-family:'Nunito',sans-serif;font-weight:700;font-size:18px;width:36px;color:var(--muted)}
 .score-pos.winner{color:var(--gold)}
 .score-name{flex:1;font-size:13px}
 .score-detail{font-size:10px;color:var(--muted);margin-top:1px}
-.score-pts{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:var(--accent)}
+.score-pts{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px;color:var(--accent)}
 .winner-badge{font-size:10px;padding:1px 6px;background:rgba(200,160,64,.15);
   color:var(--gold);border-radius:3px;margin-left:6px;vertical-align:middle}
 .btn-restart{padding:12px 24px;background:var(--accent);color:white;border:none;border-radius:4px;
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;
   text-transform:uppercase;cursor:pointer;margin-top:16px;margin-right:8px}
 .btn-lobby{padding:12px 24px;background:transparent;color:var(--muted);
-  border:1px solid var(--border);border-radius:4px;font-family:'DM Mono',monospace;
+  border:1px solid var(--border);border-radius:4px;font-family:'Nunito',sans-serif;
   font-size:12px;cursor:pointer;margin-top:16px}
 </style>
 </head>
@@ -230,7 +233,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 <!-- NAME -->
 <div class="screen active" id="s-name">
-  <div class="name-title">🦫 Capivaras</div>
+  <div class="name-title" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px">🦫 Capivaras</div>
   <p class="name-sub">Apostas secretas no Pantanal · 2–6 jogadores</p>
   <input class="name-input" id="inp-name" placeholder="O teu nome…" maxlength="20">
   <button class="btn-go" id="btn-go" onclick="goLobby()">Entrar →</button>
@@ -267,15 +270,16 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <div class="table-cards" id="table-cards"></div>
   </div>
   <div class="status-bar" id="status-bar">A aguardar…</div>
-  <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start">
+  <div style="display:grid;grid-template-columns:1fr 180px;gap:12px;align-items:start">
     <div class="scored-section">
       <h3>As tuas cartas</h3>
       <div class="scored-list" id="scored-list"><span style="color:var(--muted);font-size:11px">Ainda vazio</span></div>
     </div>
     <div>
       <div class="bird-token" id="bird-token">
-        <span class="bird-icon">🐦</span>
-        <span>Token do Pássaro — sem detentor</span>
+        <img src="/capivaras/bird.png" alt="🐦" width="20" height="20" style="flex-shrink:0"
+             onerror="this.outerHTML='<span style=\'font-size:18px\'>🐦</span>'">
+        <span>Sem detentor</span>
       </div>
     </div>
   </div>
@@ -531,6 +535,7 @@ function renderGame(s) {
   const needRebuild = existingCards.length !== (s.table||[]).length ||
     tableEl.dataset.phase !== s.phase;
 
+  tableEl.style.setProperty('--n-cards', s.n || 3);
   if (needRebuild) {
     // Full rebuild only when card count or phase changes
     tableEl.innerHTML = '';
@@ -621,34 +626,25 @@ function renderGame(s) {
     if (em) em.remove();
     // Append only the new cards (already-rendered ones stay intact)
     scored.slice(existingMini.length).forEach(c => {
-      const word = c.cap===1?'cap.':'caps.';
-      const b    = c.bird?'🐦 ':'';
       const imgSrc = `/capivaras/cards/${c.img||('cap'+c.cap)}.png`;
       const wrap = document.createElement('div');
       wrap.className = 'mini-card';
-      wrap.innerHTML = `
-        <img src="${imgSrc}" alt="${c.cap}"
-             style="width:32px;height:44px;object-fit:cover;border-radius:3px;flex-shrink:0"
-             onerror="this.style.display='none'">
-        <div>
-          <span class="mini-cap">${b}${c.cap}</span>
-          <span style="color:var(--muted);font-size:10px;display:block">${word}</span>
-          <div>${(c.lilies||[]).map(l=>`<span class="lily ${LILY_CLS[l]||''}" style="padding:1px 4px;font-size:9px">${l}</span>`).join('')}</div>
-        </div>`;
+      wrap.title = `${c.cap} capivara${c.cap!==1?'s':''}${c.bird?' + pássaro':''}${c.lilies?.length?' + '+c.lilies.join('+'):''}`;
+      wrap.innerHTML = `<img src="${imgSrc}" alt="" onerror="this.style.opacity='.3'">`;
       scoredEl.appendChild(wrap);
     });
   }
 
   // Bird token
   const bt = document.getElementById('bird-token');
+  const birdImg = `<img src="/capivaras/bird.png" alt="🐦" width="24" height="24" style="flex-shrink:0" onerror="this.outerHTML='🐦'">`;
   if (s.birdHolder === null) {
     bt.className = 'bird-token';
-    bt.innerHTML = '<span class="bird-icon">🐦</span> <span>Token do Pássaro — sem detentor</span>';
+    bt.innerHTML = birdImg + '<span style="font-size:11px;color:var(--muted)">Sem detentor</span>';
   } else {
     const holder = s.players?.find(p=>p.seat===s.birdHolder);
     bt.className = 'bird-token has-holder';
-    bt.innerHTML = `<span class="bird-icon">🐦</span>
-      <span><strong>${esc(holder?.name||'?')}</strong> — ${s.birdHolderCards} carta${s.birdHolderCards!==1?'s':''}</span>`;
+    bt.innerHTML = birdImg + `<span style="font-size:11px"><strong>${esc(holder?.name||'?')}</strong><br>${s.birdHolderCards}×</span>`;
   }
 }
 
