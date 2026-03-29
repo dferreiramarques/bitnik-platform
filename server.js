@@ -807,17 +807,49 @@ function capEndGame(lobby){
   g.winnerIdx=g.finalScores.findIndex(s=>s.pts===max);
   capBroadcast(lobby);capBroadcastLobbies();
 }
+function capBotScore(card, bot) {
+  // Bot 1: "Caçador de pontos" — prefere cartas com mais capivaras
+  // Bot 2: "Coleccionador" — prefere nenúfares e pássaros
+  if (bot === 1) {
+    return card.cap * 3 + (card.bird ? 1 : 0) + card.lilies.length * 0.5;
+  } else {
+    return card.cap * 1 + (card.bird ? 4 : 0) + card.lilies.length * 2.5;
+  }
+}
+
 function capBots(lobby){
   const g=lobby.game;if(!g||!g.isSolo||g.phase!=='BETTING')return;
   const gen=g.turnGen;
   [1,2].forEach(bot=>{
     if(g.bets[bot]!==null)return;
+    // Asymmetric timing: bot1 faster, bot2 slower
+    const delay = bot===1 ? 600+Math.random()*800 : 1400+Math.random()*1200;
     setTimeout(()=>{
       if(!lobby.game||lobby.game.turnGen!==gen||g.phase!=='BETTING'||g.bets[bot]!==null)return;
-      const scores=g.table.map((c,i)=>({i,s:c.cap+(c.bird?2:0)+c.lilies.length})).sort((a,b)=>b.s-a.s);
-      const pick=scores.find(s=>s.i!==g.bets[0])||scores[0];
+      // Score each card by this bot's playstyle
+      const scored = g.table.map((c,i) => ({i, s: capBotScore(c, bot)}));
+      // Add randomness: weighted random pick from top cards
+      scored.sort((a,b) => b.s - a.s);
+      // 70% pick best, 20% pick 2nd, 10% pick random — avoids always same choice
+      const rand = Math.random();
+      let pick;
+      if (rand < 0.68 || scored.length === 1) pick = scored[0];
+      else if (rand < 0.88 && scored.length >= 2) pick = scored[1];
+      else pick = scored[Math.floor(Math.random() * scored.length)];
+      // Avoid picking same as human (bot tries to be smart)
+      const humanBet = g.bets[0];
+      if (pick.i === humanBet && scored.length > 1) {
+        pick = scored.find(s => s.i !== humanBet) || pick;
+      }
+      // Bots also try not to clash with each other
+      const otherBot = bot === 1 ? 2 : 1;
+      if (g.bets[otherBot] !== null && pick.i === g.bets[otherBot] && scored.length > 1) {
+        pick = scored.find(s => s.i !== g.bets[otherBot] && s.i !== humanBet)
+             || scored.find(s => s.i !== g.bets[otherBot])
+             || pick;
+      }
       g.bets[bot]=pick.i;capBroadcast(lobby);capCheckBets(lobby);
-    },900+Math.random()*1700);
+    }, delay);
   });
 }
 function capAutoBeats(lobby){
