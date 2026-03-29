@@ -11,6 +11,7 @@
   --bg:#f0f7f4; --surface:#fff; --panel:#e4f0eb; --border:#c0d8cc;
   --ink:#1a2e26; --muted:#5a8070; --accent:#2a7a6e; --gold:#b87c20;
   --red:#b83020; --sand:#e8d8a8; --surf:#4080c0; --rock:#708060;
+  --p0:#2a7a6e; --p1:#c0502a; --p2:#5060c0; --p3:#a06020;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
@@ -92,6 +93,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
   padding:10px 12px;flex:1;min-width:100px}
 .pcard.me{border-color:var(--accent)}
 .pcard.active{border-color:var(--gold);background:#fdf8ee}
+.pcard[data-seat="0"]{border-left:3px solid var(--p0)}
+.pcard[data-seat="1"]{border-left:3px solid var(--p1)}
+.pcard[data-seat="2"]{border-left:3px solid var(--p2)}
+.pcard[data-seat="3"]{border-left:3px solid var(--p3)}
+.player-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
 .pcard-name{font-size:11px;color:var(--muted);margin-bottom:2px;display:flex;align-items:center;gap:4px}
 .tag-me{font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(42,122,110,.12);color:var(--accent)}
 .pcard-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;line-height:1.1}
@@ -99,7 +105,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* Board */
 .board-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:12px;overflow:auto}
+  padding:12px;overflow:auto;display:flex;flex-direction:column;align-items:center}
 .board-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .board-grid{display:grid;gap:2px;width:fit-content}
 .cell{width:52px;height:52px;border-radius:4px;border:1.5px solid transparent;
@@ -114,9 +120,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .cell.placed-sand{background:var(--sand);border-color:#c0a860}
 .cell-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;line-height:1}
 .cell-type{font-size:9px;color:rgba(0,0,0,.4);margin-top:1px}
-.cell-guard{position:absolute;bottom:2px;right:2px;width:10px;height:10px;border-radius:50%}
-.guard-h{background:rgba(42,122,110,.7)}
-.guard-v{background:rgba(184,124,32,.7)}
+.cell-guard{position:absolute;bottom:1px;right:1px;font-size:11px;line-height:1;
+  font-weight:800;text-shadow:0 0 3px rgba(255,255,255,.8)}
 .cell.last-placed{outline:2px solid var(--accent);outline-offset:1px}
 
 /* Tile hand */
@@ -246,13 +251,17 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="board-label" data-i18n="perc.board">Tabuleiro</div>
       <div class="legend">
         <div class="leg-item"><div class="leg-dot" style="background:#c8e8d0;border:1px solid #80b890"></div><span data-i18n="perc.tile.normal">Banhistas</span></div>
-        <div class="leg-item"><div class="leg-dot" style="background:#b8d0e8;border:1px solid #4080c0"></div><span data-i18n="perc.tile.surf">Prancha</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#b8d0e8;border:1px solid #4080c0"></div><span data-i18n="perc.tile.surf">Prancha ×2</span></div>
         <div class="leg-item"><div class="leg-dot" style="background:#c0c8b0;border:1px solid #708060"></div><span data-i18n="perc.tile.rock">Rocha</span></div>
         <div class="leg-item"><div class="leg-dot" style="background:#e8d8a8;border:1px solid #c0a860"></div><span data-i18n="perc.tile.sand">Areia</span></div>
-        <div class="leg-item"><div class="leg-dot" style="background:rgba(42,122,110,.7);border-radius:50%"></div><span>Guard H</span></div>
-        <div class="leg-item"><div class="leg-dot" style="background:rgba(184,124,32,.7);border-radius:50%"></div><span>Guard V</span></div>
+        <div class="leg-item"><span style="font-size:14px;font-weight:800;color:#2a7a6e">↔</span><span style="margin-left:4px">Guard H (linha)</span></div>
+        <div class="leg-item"><span style="font-size:14px;font-weight:800;color:#c0502a">↕</span><span style="margin-left:4px">Guard V (coluna)</span></div>
       </div>
-      <div style="margin-top:8px"><div class="board-grid" id="board-grid"></div></div>
+      <div style="margin-top:8px;overflow:auto;width:100%">
+        <div style="display:flex;justify-content:center">
+          <div class="board-grid" id="board-grid"></div>
+        </div>
+      </div>
     </div>
     <div class="status-bar" id="status-bar"></div>
   </div>
@@ -506,7 +515,10 @@ function renderGame(s) {
   if(pr.children.length!==(s.players||[]).length){
     pr.innerHTML=(s.players||[]).map((p,i)=>`
       <div class="pcard ${i===s.mySeat?'me':''} ${i===s.currentPlayer?'active':''}" data-seat="${i}">
-        <div class="pcard-name">${p.name}${i===s.mySeat?`<span class="tag-me">tu</span>`:''}</div>
+        <div class="pcard-name">
+          <span class="player-dot" style="background:${PLAYER_COLORS[i%4]}"></span>
+          ${p.name}${i===s.mySeat?`<span class="tag-me">tu</span>`:''}
+        </div>
         <div class="pcard-score">${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span></div>
         <div class="pcard-fichas">🚩 ×${p.fichas}</div>
       </div>`).join('');
@@ -559,27 +571,36 @@ function renderGame(s) {
   else { const cp=s.players[s.currentPlayer]; sb.textContent=cp?`${cp.name}…`:''; }
 }
 
+// ── Player colors ──────────────────────────────────────────
+const PLAYER_COLORS=['#2a7a6e','#c0502a','#5060c0','#a06020'];
+
 function renderBoard(s) {
   const grid=document.getElementById('board-grid');
   const board=s.board||[];
   if(!board.length)return;
   const rows=board.map(t=>t.r); const cols=board.map(t=>t.c);
   const valids=s.validPlacements||[];
-  // extend range by 1 for valid placements
-  const allR=[...rows,...valids.map(p=>p.r)]; const allC=[...cols,...valids.map(p=>p.c)];
-  const minR=Math.min(...allR,0), maxR=Math.max(...allR,0);
-  const minC=Math.min(...allC,0), maxC=Math.max(...allC,0);
-  const nRows=maxR-minR+1, nCols=maxC-minC+1;
+  // Always keep 0,0 visible — starting tile anchor
+  // Add ±1 margin around all tiles for breathing room
+  const margin=1;
+  const allR=[...rows,...valids.map(p=>p.r),0];
+  const allC=[...cols,...valids.map(p=>p.c),0];
+  const minR=Math.min(...allR)-margin, maxR=Math.max(...allR)+margin;
+  const minC=Math.min(...allC)-margin, maxC=Math.max(...allC)+margin;
+  const nCols=maxC-minC+1;
   grid.style.gridTemplateColumns=`repeat(${nCols},52px)`;
 
-  // Build lookup
   const placed={};
   board.forEach(t=>{ placed[`${t.r},${t.c}`]=t; });
   const validSet=new Set(valids.map(p=>`${p.r},${p.c}`));
+  // Multiple guards per cell possible (H and V)
   const guardMap={};
-  (s.guards||[]).forEach(g=>{ guardMap[`${g.r},${g.c}`]=g; });
+  (s.guards||[]).forEach(g=>{
+    const k=`${g.r},${g.c}`;
+    if(!guardMap[k]) guardMap[k]=[];
+    guardMap[k].push(g);
+  });
 
-  // Last placed highlight
   const lastPlaced=s.lastAction&&s.lastAction.type==='place'?`${s.lastAction.r},${s.lastAction.c}`:'';
 
   grid.innerHTML='';
@@ -588,14 +609,20 @@ function renderBoard(s) {
       const key=`${r},${c}`;
       const tile=placed[key];
       const isValid=validSet.has(key);
-      const guard=guardMap[key];
+      const guards=guardMap[key]||[];
       const div=document.createElement('div');
       if(tile){
         div.className=`cell placed-${tile.type}${key===lastPlaced?' last-placed':''}`;
-        const bLabel=tile.bathers>0?`<div class="cell-bathers">${tile.bathers}</div>`:'';
-        const tLabel=`<div class="cell-type">${tile.type[0].toUpperCase()}</div>`;
-        const gDot=guard?`<div class="cell-guard guard-${guard.dir}" title="Guard ${guard.dir} (P${guard.playerIdx+1})"></div>`:'';
-        div.innerHTML=bLabel+tLabel+gDot;
+        const bLabel=tile.bathers>0?`<div class="cell-bathers">${tile.bathers}${tile.type==='surf'?'×':''}
+          </div>`:'';
+        const tLabel=tile.type!=='normal'?`<div class="cell-type">${tile.type[0].toUpperCase()}</div>`:'';
+        // Guard arrows colored by player
+        const gArrows=guards.map(g=>{
+          const col=PLAYER_COLORS[g.playerIdx%PLAYER_COLORS.length];
+          const arrow=g.dir==='h'?'↔':'↕';
+          return `<div class="cell-guard" style="color:${col}">${arrow}</div>`;
+        }).join('');
+        div.innerHTML=bLabel+tLabel+gArrows;
       } else if(isValid){
         div.className='cell valid';
         div.onclick=()=>placeTile(r,c);
