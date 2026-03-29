@@ -1066,8 +1066,23 @@ function pbCountSegment(board,r,c,dir){
   return total*multiplier;
 }
 
+// Recalculate all guard contributions — call after every board change
+// Each guard stores awardedPts so we only add the DELTA to player scores
+function pbRecalcGuardScores(g){
+  for(const guard of g.guards){
+    const newScore=pbCountSegment(g.board,guard.r,guard.c,guard.dir);
+    const prev=guard.awardedPts||0;
+    const delta=newScore-prev;
+    if(delta>0){
+      g.players[guard.playerIdx].pts+=delta;
+      guard.awardedPts=newScore;
+    }
+  }
+}
+
 function pbComputeFinalScores(g){
-  // Guard pts already awarded live when placed — only add fichas + obj bonuses
+  // Final guard scores already tracked live via pbRecalcGuardScores
+  // Only add fichas bonuses and objective pts
   for(const p of g.players){ p.pts+=p.fichas*2; p.pts+=p.objPts; }
 }
 
@@ -1355,6 +1370,7 @@ function pbBotTurn(lobby){
     // Place tile
     pbSet(g.board,best.r,best.c,{...g.drawnTile,placedBy:bot});
     g.drawnTile._placedAt={r:best.r,c:best.c};
+    pbRecalcGuardScores(g);
     pbCheckObjectives(g,bot);
     // Bot places guard if has fichas and tile is not rock/sand
     const tile=pbGet(g.board,best.r,best.c);
@@ -1362,11 +1378,10 @@ function pbBotTurn(lobby){
       const dirs=pbGetAvailGuardDirs(g.guards,best.r,best.c);
       const dir=dirs.h&&dirs.v?(Math.random()<0.5?'h':'v'):dirs.h?'h':dirs.v?'v':null;
       if(dir){
-        g.guards.push({r:best.r,c:best.c,dir,playerIdx:bot,id:g.guardIdSeq++});
+        const botInitPts=pbCountSegment(g.board,best.r,best.c,dir);
+        g.guards.push({r:best.r,c:best.c,dir,playerIdx:bot,id:g.guardIdSeq++,awardedPts:botInitPts});
         g.players[bot].fichas--;
-        // Live scoring for bot guard
-        const botPts=pbCountSegment(g.board,best.r,best.c,dir);
-        g.players[bot].pts+=botPts;
+        g.players[bot].pts+=botInitPts;
       }
     }
     g.drawnTile=null; g.lastAction={type:'place',r:best.r,c:best.c,playerIdx:bot};
@@ -1463,6 +1478,8 @@ function pbHandle(ws,msg){
     if(!pbCanPlace(g.board,r,c))return;
     pbSet(g.board,r,c,{...g.drawnTile,placedBy:gs});
     g.drawnTile._placedAt={r,c};
+    // Recalculate all guard scores — new tile may extend existing segments
+    pbRecalcGuardScores(g);
     pbCheckObjectives(g,gs);
     const tile=pbGet(g.board,r,c);
     const avDirs=pbGetAvailGuardDirs(g.guards,r,c);
@@ -1481,12 +1498,12 @@ function pbHandle(ws,msg){
       const avDirs=pbGetAvailGuardDirs(g.guards,placed.r,placed.c);
       if(!avDirs[dir])return;
       const guardId=g.guardIdSeq++;
-      g.guards.push({r:placed.r,c:placed.c,dir,playerIdx:gs,id:guardId});
+      const initPts=pbCountSegment(g.board,placed.r,placed.c,dir);
+      g.guards.push({r:placed.r,c:placed.c,dir,playerIdx:gs,id:guardId,awardedPts:initPts});
       g.players[gs].fichas--;
-      // ── Live scoring: award pts immediately when guard placed ──
-      const livePts=pbCountSegment(g.board,placed.r,placed.c,dir);
-      g.players[gs].pts+=livePts;
-      g.lastAction={...g.lastAction,guardPts:livePts,guardDir:dir};
+      // Award initial pts when guard placed
+      g.players[gs].pts+=initPts;
+      g.lastAction={...g.lastAction,guardPts:initPts,guardDir:dir};
     }
     g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);return;
   }
