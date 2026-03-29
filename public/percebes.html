@@ -614,10 +614,12 @@ function renderBoard(s) {
   const minR=Math.min(...allR)-margin, maxR=Math.max(...allR)+margin;
   const minC=Math.min(...allC)-margin, maxC=Math.max(...allC)+margin;
   const nCols=maxC-minC+1;
-  // Fit board horizontally — compute cell size based on available width
-  const wrap=grid.parentElement;
-  const avail=wrap?wrap.offsetWidth||400:400;
-  const cellPx=Math.min(84, Math.floor((avail-8)/Math.max(nCols,1)));
+  // Use 84px tiles — only shrink if board doesn't fit the available width
+  const wrap=grid.parentElement?.parentElement; // board-wrap
+  const avail=wrap?wrap.offsetWidth||700:700;
+  const preferred=84;
+  const needed=nCols*preferred+(nCols-1)*3; // 3px gap
+  const cellPx=needed<=avail ? preferred : Math.max(32, Math.floor((avail-nCols*3)/nCols));
   grid.style.gridTemplateColumns=`repeat(${nCols},${cellPx}px)`;
   grid.style.setProperty('--cell-px', cellPx+'px');
 
