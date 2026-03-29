@@ -100,6 +100,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .tag-me{background:rgba(42,122,110,.12);color:var(--teal)}
 .pcard-score{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px}
 .pcard-bird{font-size:10px;color:var(--muted)}
+.pcard-lilies{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.lily-dot{width:8px;height:8px;border-radius:50%;opacity:.35;transition:opacity .3s}
+.lily-dot.has{opacity:1}
+.lily-dot.Y{background:#d4a820}
+.lily-dot.R{background:#c03020}
+.lily-dot.W{background:#a0a090;border:1px solid #ccc}
+.lily-dot.B{background:#3060c0}
 
 /* Table cards */
 .table-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;
@@ -116,7 +123,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .card-pos{font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:500}
 .card-caps{display:none}.card-word{display:none}
 .card-word{font-size:10px;color:var(--muted);margin-bottom:8px}
-.card-lilies{display:flex;gap:4px;flex-wrap:wrap}
+.card-lilies{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;min-height:22px;align-items:flex-end}
 .lily{font-size:10px;padding:2px 6px;border-radius:2px;font-weight:500}
 .lily-Y{background:#fff3c0;color:#a07010}
 .lily-R{background:#ffe0dc;color:#a03020}
@@ -233,7 +240,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 <!-- NAME -->
 <div class="screen active" id="s-name">
-  <div class="name-title" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px">🦫 Capivaras</div>
+  <div class="name-title" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px">Capivaras</div>
   <p class="name-sub">Apostas secretas no Pantanal · 2–6 jogadores</p>
   <input class="name-input" id="inp-name" placeholder="O teu nome…" maxlength="20">
   <button class="btn-go" id="btn-go" onclick="goLobby()">Entrar →</button>
@@ -481,11 +488,29 @@ function leaveLobby() {
 
 // ── Game screen ───────────────────────────────────────────────────
 function renderGame(s) {
+  const prevPhase = state?.phase;
+  const prevBets  = state?.betsPlaced?.filter(Boolean).length || 0;
   state = s;
   myGameSeat = s.mySeat;
 
-  if (s.phase === 'GAME_OVER') { show('s-game'); showGameOver(s); return; }
+  if (s.phase === 'GAME_OVER') { show('s-game'); playGameOver(); showGameOver(s); return; }
   show('s-game');
+
+  // Sound triggers
+  if (prevPhase === 'BETTING' && s.phase === 'REVEAL') {
+    playReveal();
+    // Check result for win/loss sounds
+    const myWins = Object.entries(s.lastResult?.winners||{}).filter(([,seat])=>seat===s.mySeat).length;
+    if (myWins > 0) setTimeout(playWin, 300);
+    else setTimeout(playLoss, 300);
+    // Bird token sound
+    const bu = s.lastResult?.birdUpdate;
+    if (bu && (bu.type==='first'||bu.type==='steal')) setTimeout(playBirdToken, 600);
+  }
+  const newBets = (s.betsPlaced||[]).filter(Boolean).length;
+  if (s.phase==='BETTING' && newBets > prevBets && newBets === s.n) {
+    setTimeout(playAllBetsIn, 100);
+  }
   document.getElementById('overlay-over').classList.remove('open');
 
   // Phase badge
@@ -504,6 +529,13 @@ function renderGame(s) {
 
   // Players — rebuild only on first render or count change
   const playersRow = document.getElementById('players-row');
+  const LILY_COLORS = ['Y','R','W','B'];
+  function lilyDotsHTML(lilies) {
+    return '<div class="pcard-lilies">' +
+      LILY_COLORS.map(c =>
+        `<div class="lily-dot ${c} ${(lilies||[]).includes(c)?'has':''}" title="${LILY_NAMES[c]}"></div>`
+      ).join('') + '</div>';
+  }
   if (playersRow.children.length !== (s.players||[]).length) {
     playersRow.innerHTML = (s.players||[]).map(p => `
       <div class="pcard ${p.isMe?'me':''}" data-seat="${p.seat}">
@@ -511,15 +543,21 @@ function renderGame(s) {
           ${p.name}${p.isMe?'<span class="tag tag-me">tu</span>':''}
         </div>
         <div class="pcard-score">${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span></div>
+        ${lilyDotsHTML(p.lilies)}
         ${p.birdCards>0?`<div class="pcard-bird">🐦 ×${p.birdCards}</div>`:''}
       </div>`).join('');
   } else {
-    // Just update scores and bird count in-place
+    // Update scores, lily dots, and bird count in-place
     (s.players||[]).forEach(p => {
       const el = playersRow.querySelector(`[data-seat="${p.seat}"]`);
       if (!el) return;
       const scoreEl = el.querySelector('.pcard-score');
       if (scoreEl) scoreEl.innerHTML = `${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span>`;
+      // Update lily dots
+      LILY_COLORS.forEach(c => {
+        const dot = el.querySelector(`.lily-dot.${c}`);
+        if (dot) dot.classList.toggle('has', (p.lilies||[]).includes(c));
+      });
       let bird = el.querySelector('.pcard-bird');
       if (p.birdCards > 0) {
         if (!bird) { bird = document.createElement('div'); bird.className='pcard-bird'; el.appendChild(bird); }
@@ -736,6 +774,107 @@ const saved = sessionStorage.getItem('cap_token');
 if (saved) { myToken = saved; connect(); }
 
 setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); }, 20000);
+
+// ── SOUNDS (Web Audio API — no files needed) ──────────────────────
+let _ctx = null;
+function getCtx() {
+  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_ctx.state === 'suspended') _ctx.resume();
+  return _ctx;
+}
+
+function playTone(freq, type, dur, vol, detune) {
+  try {
+    const ctx = getCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    if (detune) o.detune.value = detune;
+    g.gain.setValueAtTime(vol||0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+function playDuck() {
+  // Soft quack — descending tone with wobble
+  try {
+    const ctx = getCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(520, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.12);
+    o.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.18);
+    g.gain.setValueAtTime(0.22, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    o.start(); o.stop(ctx.currentTime + 0.22);
+  } catch(e) {}
+}
+
+function playBet() {
+  // Soft click — card placed
+  playTone(880, 'sine', 0.08, 0.12);
+}
+
+function playAllBetsIn() {
+  // Rising chord — everyone's in
+  [440, 554, 660].forEach((f, i) => {
+    setTimeout(() => playTone(f, 'sine', 0.2, 0.12), i * 60);
+  });
+}
+
+function playReveal() {
+  // Snare-like noise burst
+  try {
+    const ctx = getCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    const g = ctx.createGain();
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 3000;
+    src.buffer = buf;
+    src.connect(f); f.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    src.start(); src.stop(ctx.currentTime + 0.12);
+  } catch(e) {}
+}
+
+function playWin() {
+  // Happy ascending arpeggio
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((f, i) => {
+    setTimeout(() => playTone(f, 'triangle', 0.18, 0.14), i * 90);
+  });
+}
+
+function playLoss() {
+  // Descending minor — nobody won
+  [440, 370, 330].forEach((f, i) => {
+    setTimeout(() => playTone(f, 'sine', 0.2, 0.1), i * 100);
+  });
+}
+
+function playBirdToken() {
+  // Bird-like trill
+  [880, 1100, 880, 1320].forEach((f, i) => {
+    setTimeout(() => playTone(f, 'sine', 0.1, 0.12), i * 70);
+  });
+}
+
+function playGameOver() {
+  // Fanfare
+  const seq = [523, 659, 784, 1047, 784, 1047];
+  seq.forEach((f, i) => {
+    setTimeout(() => playTone(f, 'triangle', 0.2, 0.16), i * 100);
+  });
+}
 </script>
 </body>
 </html>
