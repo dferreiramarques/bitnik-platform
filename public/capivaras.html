@@ -498,62 +498,89 @@ function renderGame(s) {
   document.getElementById('deck-info').textContent =
     (s.deckPass===0?'1ª':'2ª') + ' passagem · ' + s.deckLeft + ' cartas restantes';
 
-  // Players
-  document.getElementById('players-row').innerHTML =
-    (s.players||[]).map(p => `
-      <div class="pcard ${p.isMe?'me':''}">
+  // Players — rebuild only on first render or count change
+  const playersRow = document.getElementById('players-row');
+  if (playersRow.children.length !== (s.players||[]).length) {
+    playersRow.innerHTML = (s.players||[]).map(p => `
+      <div class="pcard ${p.isMe?'me':''}" data-seat="${p.seat}">
         <div class="pcard-name">
-          ${p.name}
-          ${p.isMe?'<span class="tag tag-me">tu</span>':''}
+          ${p.name}${p.isMe?'<span class="tag tag-me">tu</span>':''}
         </div>
         <div class="pcard-score">${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span></div>
         ${p.birdCards>0?`<div class="pcard-bird">🐦 ×${p.birdCards}</div>`:''}
-      </div>
-    `).join('');
+      </div>`).join('');
+  } else {
+    // Just update scores and bird count in-place
+    (s.players||[]).forEach(p => {
+      const el = playersRow.querySelector(`[data-seat="${p.seat}"]`);
+      if (!el) return;
+      const scoreEl = el.querySelector('.pcard-score');
+      if (scoreEl) scoreEl.innerHTML = `${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span>`;
+      let bird = el.querySelector('.pcard-bird');
+      if (p.birdCards > 0) {
+        if (!bird) { bird = document.createElement('div'); bird.className='pcard-bird'; el.appendChild(bird); }
+        bird.textContent = `🐦 ×${p.birdCards}`;
+      } else if (bird) bird.remove();
+    });
+  }
 
-  // Table cards
+  // Table cards — update in-place to avoid image flicker
   const tableEl = document.getElementById('table-cards');
-  tableEl.innerHTML = '';
   const canBet = s.phase==='BETTING' && s.myBet===null;
-  (s.table||[]).forEach((card, pos) => {
-    const div = document.createElement('div');
-    let cls = 'cap-card';
-    if (canBet) cls += ' can-bet';
-    if (s.phase==='BETTING' && s.myBet===pos) cls += ' selected';
+  const existingCards = tableEl.querySelectorAll('.cap-card');
+  const needRebuild = existingCards.length !== (s.table||[]).length ||
+    tableEl.dataset.phase !== s.phase;
 
-    let result = '';
+  if (needRebuild) {
+    // Full rebuild only when card count or phase changes
+    tableEl.innerHTML = '';
+    tableEl.dataset.phase = s.phase;
+    (s.table||[]).forEach((card, pos) => {
+      const div = document.createElement('div');
+      const capWord = card.cap===1?'capivara':'capivaras';
+      const lilies  = (card.lilies||[]).map(l =>
+        `<span class="lily ${LILY_CLS[l]||''}">${LILY_NAMES[l]||l}</span>`).join('');
+      const bird = card.bird ? `<span class="lily lily-bird">🐦 Pássaro</span>` : '';
+      div.className = 'cap-card';
+      div.dataset.pos = pos;
+      div.innerHTML = `
+        <div class="card-result-wrap"></div>
+        ${cardArtHTML(card)}
+        <div class="card-pos">${String.fromCharCode(64+pos+1)}</div>
+        <div class="card-caps">${card.cap}</div>
+        <div class="card-word">${capWord}</div>
+        <div class="card-lilies">${lilies}${bird}</div>
+      `;
+      tableEl.appendChild(div);
+    });
+  }
+
+  // Always update only className + result overlay (no image reload)
+  tableEl.querySelectorAll('.cap-card').forEach((div, pos) => {
+    let cls = 'cap-card';
+    const resultWrap = div.querySelector('.card-result-wrap');
     if (s.phase==='REVEAL' && s.lastResult) {
       const w = s.lastResult.winners;
       if (w && w[pos] !== undefined) {
         cls += ' won';
         const winner = s.players.find(p=>p.seat===w[pos]);
-        result = `<div class="card-result result-win">${esc(winner?.name||'?')}</div>`;
+        if (resultWrap) resultWrap.innerHTML =
+          `<div class="card-result result-win">${esc(winner?.name||'?')}</div>`;
       } else {
         cls += ' nobody';
-        result = `<div class="card-result result-nobody">Empate</div>`;
+        if (resultWrap) resultWrap.innerHTML =
+          `<div class="card-result result-nobody">Empate</div>`;
       }
+    } else {
+      if (resultWrap) resultWrap.innerHTML = '';
+      if (canBet) cls += ' can-bet';
+      if (s.phase==='BETTING' && s.myBet===pos) cls += ' selected';
     }
-
     div.className = cls;
-    const capWord = card.cap===1?'capivara':'capivaras';
-    const lilies  = (card.lilies||[]).map(l =>
-      `<span class="lily ${LILY_CLS[l]||''}">${LILY_NAMES[l]||l}</span>`).join('');
-    const bird = card.bird ? `<span class="lily lily-bird">🐦 Pássaro</span>` : '';
-    div.innerHTML = `
-      ${result}
-      ${cardArtHTML(card)}
-      <div class="card-pos">${String.fromCharCode(64+pos+1)}</div>
-      <div class="card-caps">${card.cap}</div>
-      <div class="card-word">${capWord}</div>
-      <div class="card-lilies">${lilies}${bird}</div>
-    `;
-    if (canBet) {
-      div.onclick = () => {
-        send({type:'BET', position:pos});
-        state.myBet = pos; renderGame(state);
-      };
-    }
-    tableEl.appendChild(div);
+    div.onclick = canBet ? () => {
+      send({type:'BET', position:pos});
+      state.myBet = pos; renderGame(state);
+    } : null;
   });
 
   // Status text
@@ -580,26 +607,36 @@ function renderGame(s) {
     }
   }
 
-  // Scored cards
+  // Scored cards — append-only so existing images never reload
   const me = s.players?.find(p=>p.isMe);
   const scoredEl = document.getElementById('scored-list');
-  if (!me || !me.scored || me.scored.length===0) {
-    scoredEl.innerHTML = '<span style="color:var(--muted);font-size:11px">Ainda vazio</span>';
-  } else {
-    scoredEl.innerHTML = me.scored.map(c => {
+  const scored = me?.scored || [];
+  const existingMini = scoredEl.querySelectorAll('.mini-card');
+  if (scored.length === 0 && existingMini.length === 0) {
+    if (!scoredEl.querySelector('.empty-msg'))
+      scoredEl.innerHTML = '<span class="empty-msg" style="color:var(--muted);font-size:11px">Ainda vazio</span>';
+  } else if (scored.length > existingMini.length) {
+    // Remove empty message if present
+    const em = scoredEl.querySelector('.empty-msg');
+    if (em) em.remove();
+    // Append only the new cards (already-rendered ones stay intact)
+    scored.slice(existingMini.length).forEach(c => {
       const word = c.cap===1?'cap.':'caps.';
       const b    = c.bird?'🐦 ':'';
       const imgSrc = `/capivaras/cards/${c.img||('cap'+c.cap)}.png`;
-      return `<div class="mini-card">
-        <img src="${imgSrc}" alt="${c.cap}" style="width:32px;height:44px;object-fit:cover;border-radius:3px;flex-shrink:0"
+      const wrap = document.createElement('div');
+      wrap.className = 'mini-card';
+      wrap.innerHTML = `
+        <img src="${imgSrc}" alt="${c.cap}"
+             style="width:32px;height:44px;object-fit:cover;border-radius:3px;flex-shrink:0"
              onerror="this.style.display='none'">
         <div>
           <span class="mini-cap">${b}${c.cap}</span>
           <span style="color:var(--muted);font-size:10px;display:block">${word}</span>
           <div>${(c.lilies||[]).map(l=>`<span class="lily ${LILY_CLS[l]||''}" style="padding:1px 4px;font-size:9px">${l}</span>`).join('')}</div>
-        </div>
-      </div>`;
-    }).join('');
+        </div>`;
+      scoredEl.appendChild(wrap);
+    });
   }
 
   // Bird token
