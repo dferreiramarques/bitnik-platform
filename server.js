@@ -500,6 +500,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // /play/percebes → dedicated Percebes client
+  if (url === '/play/percebes' || url === '/play/percebes/') {
+    fs.readFile(path.join(PUB_DIR, 'percebes.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
   // /play/capivaras → dedicated Capivaras client
   if (url === '/play/capivaras' || url === '/play/capivaras/') {
     fs.readFile(path.join(PUB_DIR, 'capivaras.html'), (err, data) => {
@@ -545,6 +554,30 @@ const wss = new WebSocketServer({ noServer: true });
 const capWss = { get clients() { return [...wss.clients].filter(w=>w._isCap); } }; // alias
 
 wss.on('connection', (ws, req) => {
+  // Route: percebes connections
+  if (ws._isPerc) {
+    pbSend(ws, { type:'LOBBIES', lobbies: Object.values(PERC_LOBBIES).map(pbLobbyInfo) });
+    ws.on('message', raw => { try { pbHandle(ws, JSON.parse(raw)); } catch {} });
+    ws.on('close', () => {
+      const st = PERC_WS_STATE.get(ws); if (!st||!st.lobbyId) return;
+      const lobby = PERC_LOBBIES[st.lobbyId]; if (!lobby) return;
+      const {seat} = st;
+      lobby.players[seat] = null;
+      lobby.players.forEach(p=>{ if(p) pbSend(p,{type:'OPPONENT_DISCONNECTED',seat,name:lobby.names[seat]}); });
+      pbBroadcastLobbies();
+      lobby.graceTimers[seat] = setTimeout(() => {
+        lobby.names[seat]=''; lobby.tokens[seat]=null;
+        const g=lobby.game;
+        if(g&&g.phase!=='GAME_OVER'){
+          const rem=lobby.seatMap?lobby.seatMap.filter(li=>lobby.players[li]).length:lobby.players.filter(Boolean).length;
+          if(rem<2) pbEndGame(lobby);
+        }
+        pbBroadcastLobbies();
+      }, 45000);
+    });
+    ws.on('error',()=>{});
+    return;
+  }
   // Route: capivaras connections go to dedicated handler
   if (ws._isCap) {
     capSend(ws, { type:'LOBBIES', lobbies: Object.values(CAP_LOBBIES).map(capLobbyInfo) });
@@ -953,7 +986,8 @@ server.listen(PORT, '0.0.0.0', () => {
 server.on('upgrade', (req, socket, head) => {
   const urlPath = (req.url || '').split('?')[0];
   wss.handleUpgrade(req, socket, head, ws => {
-    ws._isCap = (urlPath === '/ws/capivaras');
+    ws._isCap  = (urlPath === '/ws/capivaras');
+    ws._isPerc = (urlPath === '/ws/percebes');
     wss.emit('connection', ws, req);
   });
 });
@@ -966,3 +1000,423 @@ setInterval(() => {
 // Note: this is already handled by the SPA fallback above,
 // but we add explicit routing for clarity.
 // The play.html reads gameKey from location.pathname client-side.
+
+// ═══════════════════════════════════════════════════════════════════
+//  PRAIA DAS PERCEBES — Servidor embebido
+//  Tile placement 7×7, salva-vidas, objectivos, fichas
+// ═══════════════════════════════════════════════════════════════════
+const PERC_LOBBIES  = {};
+const PERC_SESSIONS = {};
+const PERC_WS_STATE = new WeakMap();
+
+// ── Board helpers ─────────────────────────────────────────────────
+function pbGet(board,r,c){return board[`${r},${c}`]||null;}
+function pbSet(board,r,c,tile){board[`${r},${c}`]=tile;}
+function pbKeys(board){return Object.keys(board).map(k=>{const[r,c]=k.split(',');return{r:+r,c:+c};});}
+
+function pbCanPlace(board,r,c){
+  if(pbGet(board,r,c))return false;
+  const occ=pbKeys(board);
+  if(occ.length===0)return true;
+  // must be orthogonally adjacent
+  if(!occ.some(p=>(p.r===r&&Math.abs(p.c-c)===1)||(p.c===c&&Math.abs(p.r-r)===1)))return false;
+  // max 7 in any row or col
+  if(occ.filter(p=>p.r===r).length>=7)return false;
+  if(occ.filter(p=>p.c===c).length>=7)return false;
+  return true;
+}
+
+function pbValidPlacements(board){
+  const occ=pbKeys(board);
+  const cands=new Set();
+  for(const p of occ){
+    for(const n of [{r:p.r-1,c:p.c},{r:p.r+1,c:p.c},{r:p.r,c:p.c-1},{r:p.r,c:p.c+1}])
+      cands.add(`${n.r},${n.c}`);
+  }
+  return [...cands].filter(k=>{const[r,c]=k.split(',');return pbCanPlace(board,+r,+c);}).map(k=>{const[r,c]=k.split(',');return{r:+r,c:+c};});
+}
+
+function pbGetAvailGuardDirs(guards,r,c){
+  const usedH=guards.some(g=>g.r===r&&g.dir==='h');
+  const usedV=guards.some(g=>g.c===c&&g.dir==='v');
+  return{h:!usedH,v:!usedV};
+}
+
+function pbCountSegment(board,r,c,dir){
+  let total=0;
+  const key=dir==='h'?'c':'r';
+  const fixed=dir==='h'?r:c;
+  const pos=dir==='h'?c:r;
+  for(let i=pos-1;;i--){
+    const t=dir==='h'?pbGet(board,fixed,i):pbGet(board,i,fixed);
+    if(!t)break; if(t.type==='rock')break; total+=t.bathers; }
+  const self=pbGet(board,r,c);
+  if(self&&self.type!=='rock')total+=self.bathers;
+  for(let i=pos+1;;i++){
+    const t=dir==='h'?pbGet(board,fixed,i):pbGet(board,i,fixed);
+    if(!t)break; if(t.type==='rock')break; total+=t.bathers; }
+  return total;
+}
+
+function pbComputeFinalScores(g){
+  for(const guard of g.guards){
+    const score=pbCountSegment(g.board,guard.r,guard.c,guard.dir);
+    g.players[guard.playerIdx].pts+=score;
+  }
+  for(const p of g.players){ p.pts+=p.fichas*2; p.pts+=p.objPts; }
+}
+
+// ── Deck & Objectives ─────────────────────────────────────────────
+function pbBuildDeck(n){
+  const tiles=[]; let id=1;
+  for(let i=0;i<8; i++) tiles.push({id:id++,bathers:1,type:'normal',v:i+1});
+  for(let i=0;i<12;i++) tiles.push({id:id++,bathers:2,type:'normal',v:i+1});
+  for(let i=0;i<6; i++) tiles.push({id:id++,bathers:3,type:'normal',v:i+1});
+  for(let i=0;i<4; i++) tiles.push({id:id++,bathers:1,type:'surf',  v:i+1});
+  for(let i=0;i<2; i++) tiles.push({id:id++,bathers:0,type:'rock',  v:i+1});
+  for(let i=0;i<12;i++) tiles.push({id:id++,bathers:0,type:'sand',  v:i+1});
+  for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
+  return tiles.slice(0,n===3?42:44);
+}
+
+function pbBuildObjectives(){
+  const all=[
+    {id:'obj1',descPt:'Quadrado 3×3 (9 tiles)',        descEn:'3×3 square',         pts:2,type:'square3'},
+    {id:'obj2',descPt:'Linha de 5 tiles',              descEn:'Row of 5 tiles',      pts:4,type:'row5'},
+    {id:'obj3',descPt:'Linha de 7 tiles',              descEn:'Row of 7 tiles',      pts:6,type:'row7'},
+    {id:'obj4',descPt:'Coluna de 5 tiles',             descEn:'Column of 5 tiles',   pts:4,type:'col5'},
+    {id:'obj5',descPt:'Coluna de 7 tiles',             descEn:'Column of 7 tiles',   pts:6,type:'col7'},
+    {id:'obj6',descPt:'2 Pranchas adjacentes',         descEn:'2 adjacent surfboards',pts:4,type:'surf2adj'},
+    {id:'obj7',descPt:'Excursão (2×2 com banhistas)',  descEn:'Excursion (2×2 bathers)',pts:6,type:'excursion'},
+    {id:'obj8',descPt:'5 tiles do mesmo tipo em linha',descEn:'5 same-type in a row', pts:4,type:'same5'},
+  ];
+  for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+  return all;
+}
+
+function pbCheckObjectives(g,playerIdx){
+  const claimed=[];
+  for(const obj of g.revealedObjs){
+    if(obj.claimedBy!==undefined)continue;
+    if(pbEvalObj(g.board,obj)){
+      obj.claimedBy=playerIdx;
+      g.players[playerIdx].objPts+=obj.pts;
+      claimed.push(obj);
+      // reveal next
+      if(g.remainingObjs.length>0) g.revealedObjs.push(g.remainingObjs.shift());
+    }
+  }
+  return claimed;
+}
+
+function pbEvalObj(board,obj){
+  const occ=pbKeys(board);
+  switch(obj.type){
+    case 'square3': {
+      const rs=[...new Set(occ.map(p=>p.r))];
+      for(const r of rs) for(const c of [...new Set(occ.map(p=>p.c))]) {
+        if([0,1,2].every(dr=>[0,1,2].every(dc=>pbGet(board,r+dr,c+dc)))) return true;
+      } return false;
+    }
+    case 'row5':  return [...new Set(occ.map(p=>p.r))].some(r=>occ.filter(p=>p.r===r).length>=5);
+    case 'row7':  return [...new Set(occ.map(p=>p.r))].some(r=>occ.filter(p=>p.r===r).length>=7);
+    case 'col5':  return [...new Set(occ.map(p=>p.c))].some(c=>occ.filter(p=>p.c===c).length>=5);
+    case 'col7':  return [...new Set(occ.map(p=>p.c))].some(c=>occ.filter(p=>p.c===c).length>=7);
+    case 'surf2adj': {
+      const surfs=occ.filter(p=>{const t=pbGet(board,p.r,p.c);return t&&t.type==='surf';});
+      return surfs.some(a=>surfs.some(b=>a!==b&&((Math.abs(a.r-b.r)===1&&a.c===b.c)||(Math.abs(a.c-b.c)===1&&a.r===b.r))));
+    }
+    case 'excursion': {
+      for(const p of occ) {
+        const cells=[[0,0],[0,1],[1,0],[1,1]];
+        if(cells.every(([dr,dc])=>{const t=pbGet(board,p.r+dr,p.c+dc);return t&&t.bathers>=1;})) return true;
+      } return false;
+    }
+    case 'same5': {
+      for(const type of ['normal','surf','rock','sand']){
+        const typed=occ.filter(p=>{const t=pbGet(board,p.r,p.c);return t&&t.type===type;});
+        const rows=[...new Set(typed.map(p=>p.r))];
+        const cols=[...new Set(typed.map(p=>p.c))];
+        if(rows.some(r=>typed.filter(p=>p.r===r).length>=5)) return true;
+        if(cols.some(c=>typed.filter(p=>p.c===c).length>=5)) return true;
+      } return false;
+    }
+    default: return false;
+  }
+}
+
+// ── Game factory ─────────────────────────────────────────────────
+function pbNewGame(names,isSolo){
+  const n=names.length;
+  const deck=pbBuildDeck(n);
+  const objs=pbBuildObjectives();
+  const fichasByN={2:6,3:5,4:4};
+  const fichas=fichasByN[n]||6;
+  const board={};
+  pbSet(board,0,0,{id:0,bathers:1,type:'normal',v:1}); // starting tile
+  return{
+    players:names.map(name=>({name,pts:0,guards:[],fichas,objPts:0})),
+    n, deck, totalDeck:deck.length, board,
+    guards:[], guardIdSeq:1,
+    revealedObjs:objs.slice(0,4), remainingObjs:objs.slice(4), claimedObjs:[],
+    phase:'PLACE_TILE', currentPlayer:0,
+    drawnTile:null, extraTurns:null,
+    turnGen:0, isSolo, lastAction:null,
+    winnerIdx:null, finalScores:null,
+  };
+}
+
+function pbBuildView(g,seat){
+  const boardArr=Object.entries(g.board).map(([k,t])=>{
+    const[r,c]=k.split(',');return{r:+r,c:+c,...t};});
+  let avGuardDirs=null;
+  if(g.phase==='PLACE_GUARD'&&g.currentPlayer===seat&&g.drawnTile){
+    const{r,c}=g.drawnTile._placedAt||{};
+    if(r!==undefined){
+      const t=pbGet(g.board,r,c);
+      avGuardDirs=(t&&t.type!=='rock')?pbGetAvailGuardDirs(g.guards,r,c):{h:false,v:false};
+    }
+  }
+  return{
+    mySeat:seat,
+    players:g.players.map(p=>({name:p.name,pts:p.pts,fichas:p.fichas,objPts:p.objPts})),
+    n:g.n, board:boardArr, guards:g.guards,
+    phase:g.phase, currentPlayer:g.currentPlayer,
+    drawnTile:g.currentPlayer===seat?g.drawnTile:(g.drawnTile?{hidden:true}:null),
+    validPlacements:g.currentPlayer===seat&&g.phase==='PLACE_TILE'?pbValidPlacements(g.board):[],
+    deckSize:g.deck.length, totalDeck:g.totalDeck,
+    revealedObjs:g.revealedObjs, claimedObjs:g.claimedObjs,
+    availableGuardDirs:avGuardDirs,
+    turnGen:g.turnGen, isSolo:g.isSolo,
+    lastAction:g.lastAction,
+    winnerIdx:g.winnerIdx, finalScores:g.finalScores,
+  };
+}
+
+function pbSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
+function pbBroadcast(lobby){
+  const g=lobby.game;if(!g)return;
+  if(lobby.solo) pbSend(lobby.players[0],{type:'GAME_STATE',state:pbBuildView(g,0)});
+  else if(lobby.seatMap) lobby.seatMap.forEach((ls,gs)=>{
+    if(lobby.players[ls]) pbSend(lobby.players[ls],{type:'GAME_STATE',state:pbBuildView(g,gs)});
+  });
+}
+
+function pbLobbyInfo(l){
+  return{id:l.id,name:l.name,solo:l.solo,seated:l.players.filter(Boolean).length,
+    maxH:l.maxH,playing:!!l.game&&l.game.phase!=='GAME_OVER',
+    full:l.solo?false:l.players.filter(Boolean).length>=l.maxH,
+    names:l.names.filter(Boolean)};
+}
+function pbBroadcastLobbies(){
+  const list=Object.values(PERC_LOBBIES).map(pbLobbyInfo);
+  for(const ws of wss.clients){
+    if(!ws._isPerc||ws.readyState!==1)continue;
+    const st=PERC_WS_STATE.get(ws);
+    if(!st||!st.lobbyId) pbSend(ws,{type:'LOBBIES',lobbies:list});
+  }
+}
+function pbMakeLobby(id,name,solo,maxH){
+  const n=solo?1:maxH;
+  return{id,name,solo,maxH,players:new Array(n).fill(null),names:new Array(n).fill(''),
+    tokens:new Array(n).fill(null),graceTimers:new Array(n).fill(null),seatMap:null,game:null};
+}
+for(let i=1;i<=4;i++) PERC_LOBBIES['mp'+i]=pbMakeLobby('mp'+i,'Mesa '+i,false,4);
+PERC_LOBBIES['solo']=pbMakeLobby('solo','Solo (vs Bots)',true,1);
+
+// ── Turn logic ────────────────────────────────────────────────────
+function pbDrawAndStart(lobby){
+  const g=lobby.game;
+  const tile=g.deck.shift();
+  if(!tile){pbEndGame(lobby);return;}
+  g.drawnTile=tile;
+  g.phase='PLACE_TILE';
+  pbBroadcast(lobby);
+  if(g.isSolo&&g.currentPlayer!==0) pbBotTurn(lobby);
+}
+
+function pbAdvanceTurn(lobby){
+  const g=lobby.game;
+  // check extra turns
+  if(g.extraTurns){
+    const rem=g.extraTurns.filter(i=>i!==g.currentPlayer);
+    if(rem.length>0){g.extraTurns=rem;g.currentPlayer=rem[0];pbDrawAndStart(lobby);return;}
+    else{pbEndGame(lobby);return;}
+  }
+  g.currentPlayer=(g.currentPlayer+1)%g.n;
+  g.turnGen++;
+  // check if fichas depleted → extra turns
+  if(g.players.every(p=>p.fichas===0)&&!g.extraTurns){
+    const initiator=g.currentPlayer;
+    const others=Array.from({length:g.n},(_,i)=>i).filter(i=>i!==initiator);
+    g.extraTurns=others;
+    pbBroadcast(lobby);
+    if(others.length===0){pbEndGame(lobby);return;}
+    g.currentPlayer=others[0];
+  }
+  pbDrawAndStart(lobby);
+}
+
+function pbEndGame(lobby){
+  const g=lobby.game;
+  pbComputeFinalScores(g);
+  g.phase='GAME_OVER';
+  g.finalScores=[...g.players].map((p,i)=>({name:p.name,pts:p.pts,objPts:p.objPts,fichas:p.fichas,seat:i}))
+    .sort((a,b)=>b.pts-a.pts);
+  g.winnerIdx=g.players.indexOf(g.players.reduce((best,p)=>p.pts>best.pts?p:best,g.players[0]));
+  pbBroadcast(lobby);pbBroadcastLobbies();
+}
+
+function pbFindGs(lobby,ls){return lobby.seatMap?lobby.seatMap.indexOf(ls):ls;}
+
+// ── Bot AI (Percebes) ─────────────────────────────────────────────
+function pbBotTurn(lobby){
+  const g=lobby.game;
+  if(!g||g.phase!=='PLACE_TILE'||g.currentPlayer===0)return;
+  const bot=g.currentPlayer;
+  setTimeout(()=>{
+    if(!lobby.game||g.phase!=='PLACE_TILE'||g.currentPlayer!==bot)return;
+    const valids=pbValidPlacements(g.board);
+    if(valids.length===0){pbAdvanceTurn(lobby);return;}
+    // Bot strategy: prefer placements that maximise bathers in existing lines
+    let best=valids[0], bestScore=-1;
+    for(const pos of valids){
+      let sc=g.drawnTile.bathers;
+      // bonus for extending a row/col with other tiles
+      const row=pbKeys(g.board).filter(p=>p.r===pos.r).length;
+      const col=pbKeys(g.board).filter(p=>p.c===pos.c).length;
+      sc+=row+col;
+      if(Math.random()<0.2) sc+=Math.random()*2; // slight randomness
+      if(sc>bestScore){bestScore=sc;best=pos;}
+    }
+    // Place tile
+    pbSet(g.board,best.r,best.c,{...g.drawnTile,placedBy:bot});
+    g.drawnTile._placedAt={r:best.r,c:best.c};
+    pbCheckObjectives(g,bot);
+    // Bot places guard if has fichas and tile is not rock/sand
+    const tile=pbGet(g.board,best.r,best.c);
+    if(g.players[bot].fichas>0&&tile.type==='normal'&&Math.random()<0.6){
+      const dirs=pbGetAvailGuardDirs(g.guards,best.r,best.c);
+      const dir=dirs.h&&dirs.v?(Math.random()<0.5?'h':'v'):dirs.h?'h':dirs.v?'v':null;
+      if(dir){
+        g.guards.push({r:best.r,c:best.c,dir,playerIdx:bot,id:g.guardIdSeq++});
+        g.players[bot].fichas--;
+      }
+    }
+    g.drawnTile=null; g.lastAction={type:'place',r:best.r,c:best.c,playerIdx:bot};
+    pbBroadcast(lobby);
+    setTimeout(()=>pbAdvanceTurn(lobby),600);
+  },800+Math.random()*700);
+}
+
+// ── Message handler ───────────────────────────────────────────────
+function pbHandle(ws,msg){
+  if(msg.type==='PING'){pbSend(ws,{type:'PONG'});return;}
+  if(msg.type==='LOBBIES'){pbSend(ws,{type:'LOBBIES',lobbies:Object.values(PERC_LOBBIES).map(pbLobbyInfo)});return;}
+  if(msg.type==='RECONNECT'){
+    const sess=PERC_SESSIONS[msg.token];
+    if(!sess){pbSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const lobby=PERC_LOBBIES[sess.lobbyId];if(!lobby){pbSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const{seat,name}=sess;
+    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
+    lobby.players[seat]=ws;lobby.names[seat]=name;
+    const gs=lobby.seatMap?lobby.seatMap.indexOf(seat):seat;
+    PERC_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,gameSeat:gs,token:msg.token});
+    pbSend(ws,{type:'RECONNECTED',seat,gameSeat:gs,name,solo:lobby.solo});
+    pbBroadcastLobbies();
+    if(lobby.game)pbBroadcast(lobby);
+    else pbSend(ws,{type:'LOBBY_STATE',lobby:pbLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});
+    return;
+  }
+  if(msg.type==='JOIN_LOBBY'){
+    const lobby=PERC_LOBBIES[msg.lobbyId];
+    if(!lobby){pbSend(ws,{type:'ERROR',text:'Mesa não encontrada.'});return;}
+    if(!lobby.solo&&lobby.game&&lobby.game.phase!=='GAME_OVER'){pbSend(ws,{type:'ERROR',text:'Jogo em curso.'});return;}
+    const seat=lobby.players.findIndex(p=>p===null);
+    if(seat===-1){pbSend(ws,{type:'ERROR',text:'Mesa cheia.'});return;}
+    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
+    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
+    PERC_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,gameSeat:seat,token});
+    PERC_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
+    pbSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,solo:lobby.solo,name,lobby:pbLobbyInfo(lobby),names:lobby.names});
+    lobby.players.forEach((p,i)=>{if(p&&i!==seat)pbSend(p,{type:'PLAYER_JOINED',seat,name,lobby:pbLobbyInfo(lobby)});});
+    pbBroadcastLobbies();
+    if(lobby.solo){
+      const s=PERC_WS_STATE.get(ws);if(s)s.gameSeat=0;
+      lobby.game=pbNewGame([name,'Bot Praia 1','Bot Praia 2'],true);
+      pbDrawAndStart(lobby);
+    }
+    return;
+  }
+  const st=PERC_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
+  const lobby=PERC_LOBBIES[st.lobbyId];if(!lobby)return;
+  const ls=st.seat,g=lobby.game;
+
+  if(msg.type==='LEAVE_LOBBY'){
+    lobby.players[ls]=null;lobby.names[ls]='';lobby.tokens[ls]=null;
+    PERC_WS_STATE.delete(ws);
+    pbSend(ws,{type:'LOBBIES',lobbies:Object.values(PERC_LOBBIES).map(pbLobbyInfo)});return;
+  }
+  if(msg.type==='REQUEST_STATE'){
+    if(g)pbSend(ws,{type:'GAME_STATE',state:pbBuildView(g,pbFindGs(lobby,ls))});
+    else pbSend(ws,{type:'LOBBY_STATE',lobby:pbLobbyInfo(lobby),names:lobby.names,myLobbySeat:ls});return;
+  }
+  if(msg.type==='START'){
+    if(lobby.solo||ls!==0||(g&&g.phase!=='GAME_OVER'))return;
+    const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
+    if(active.length<2){pbSend(ws,{type:'ERROR',text:'Precisas de pelo menos 2 jogadores.'});return;}
+    lobby.seatMap=active;
+    lobby.game=pbNewGame(active.map(i=>lobby.names[i]),false);
+    active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=PERC_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
+    pbBroadcastLobbies();pbDrawAndStart(lobby);return;
+  }
+  if(msg.type==='RESTART'){
+    if(!g||g.phase!=='GAME_OVER')return;
+    if(lobby.solo){
+      const s=PERC_WS_STATE.get(ws);if(s)s.gameSeat=0;
+      lobby.game=pbNewGame([lobby.names[0]||'Jogador','Bot Praia 1','Bot Praia 2'],true);
+      pbDrawAndStart(lobby);
+    } else {
+      if(ls!==0)return;
+      const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
+      if(active.length<2)return;
+      lobby.seatMap=active;lobby.game=pbNewGame(active.map(i=>lobby.names[i]),false);
+      active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=PERC_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
+      pbBroadcastLobbies();pbDrawAndStart(lobby);
+    }
+    return;
+  }
+  if(!g||g.phase==='GAME_OVER')return;
+  const gs=pbFindGs(lobby,ls);
+  if(gs!==g.currentPlayer)return; // not your turn
+
+  if(msg.type==='PLACE_TILE'){
+    if(g.phase!=='PLACE_TILE')return;
+    const{r,c}=msg;
+    if(!pbCanPlace(g.board,r,c))return;
+    pbSet(g.board,r,c,{...g.drawnTile,placedBy:gs});
+    g.drawnTile._placedAt={r,c};
+    pbCheckObjectives(g,gs);
+    const tile=pbGet(g.board,r,c);
+    const avDirs=pbGetAvailGuardDirs(g.guards,r,c);
+    const canPlaceGuard=g.players[gs].fichas>0&&tile.type!=='rock'&&tile.type!=='sand'&&(avDirs.h||avDirs.v);
+    g.lastAction={type:'place',r,c,playerIdx:gs,tile:{...tile}};
+    if(canPlaceGuard){g.phase='PLACE_GUARD';pbBroadcast(lobby);}
+    else{g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);}
+    return;
+  }
+  if(msg.type==='PLACE_GUARD'){
+    if(g.phase!=='PLACE_GUARD')return;
+    const{dir}=msg; // 'h' | 'v' | 'skip'
+    if(dir!=='skip'){
+      const placed=g.drawnTile?._placedAt;
+      if(!placed)return;
+      const avDirs=pbGetAvailGuardDirs(g.guards,placed.r,placed.c);
+      if(!avDirs[dir])return;
+      g.guards.push({r:placed.r,c:placed.c,dir,playerIdx:gs,id:g.guardIdSeq++});
+      g.players[gs].fichas--;
+    }
+    g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);return;
+  }
+}

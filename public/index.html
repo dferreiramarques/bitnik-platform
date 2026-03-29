@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bitnik Games — David Marques</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="/i18n.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -762,7 +763,7 @@ const CATALOG = [
   },
   {
     id: 'percebes',
-    name: 'Praia das Percebes',
+    name: 'Praia das Percebes', nameEn: 'Barnacle Beach',
     tagline: 'Tile placement cooperativo e competitivo na praia',
     desc: 'Tabuleiro 7×7 partilhado. Cada turno, tiras um tile e colocas na adjacência. Salva-vidas marcam linhas e colunas — pontua quem tiver mais banhistas no segmento. Objectivos secretos revelados progressivamente.',
     players: '2–4',
@@ -1148,6 +1149,25 @@ document.getElementById('game-overlay').addEventListener('click', e => {
 
 // ── INIT ──────────────────────────────────────────────────────────
 renderCatalog();
+
+function applyIndexLang() {
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = T('lang.toggle');
+  // Update game cards with translated names
+  document.querySelectorAll('.game-card').forEach(card => {
+    const id = card.dataset.id;
+    if (!id) return;
+    const game = CATALOG.find(g => g.id === id);
+    if (!game) return;
+    const lang = getLang();
+    const nameEl = card.querySelector('.game-name');
+    if (nameEl) nameEl.textContent = (lang==='en' && game.nameEn) ? game.nameEn : game.name;
+    const tagEl = card.querySelector('.game-tag');
+    if (tagEl && lang==='en' && game.taglineEn) tagEl.textContent = game.taglineEn;
+  });
+}
+window.addEventListener('langchange', applyIndexLang);
+if (typeof applyIndexLang === 'function') applyIndexLang();
 </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Capivaras — Bitnik Games</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="/i18n.js"></script>
 <style>
 :root{
   --bg:#f8f2e2; --surface:#fff; --panel:#ede8d8; --border:#cfc5a8;
@@ -240,6 +241,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
   <div class="nav-logo">Bitnik <span>Games</span></div>
   <a class="nav-back" href="/">← Catálogo</a>
   <div class="conn" id="conn"></div>
+  <button class="btn-lang" onclick="toggleLang();applyCapLang()" id="btn-lang" style="margin-left:8px;padding:3px 8px;background:transparent;border:1px solid #8a7a5a;border-radius:3px;color:#8a7a5a;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">EN</button>
 </div>
 
 <!-- NAME -->
@@ -788,6 +790,21 @@ document.getElementById('inp-name').addEventListener('keydown', e => {
 
 const saved = sessionStorage.getItem('cap_token');
 if (saved) { myToken = saved; connect(); }
+
+// ── i18n ─────────────────────────────────────────────────────────
+function applyCapLang() {
+  document.getElementById('btn-lang').textContent = T('lang.toggle');
+  document.querySelector('.name-sub').textContent = T('cap.sub');
+  document.getElementById('inp-name').placeholder = T('name.placeholder');
+  document.getElementById('btn-go').textContent = T('btn.enter');
+  const tbl = document.querySelector('.table-section h3');
+  if (tbl) tbl.textContent = T('cap.table.title');
+  const sc = document.querySelector('.scored-section h3');
+  if (sc) sc.textContent = T('cap.scored.title');
+  if (state) renderGame(state);
+}
+window.addEventListener('langchange', applyCapLang);
+applyCapLang();
 
 setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); }, 20000);
 

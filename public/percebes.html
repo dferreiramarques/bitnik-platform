@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Praia das Percebes — Bitnik Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="/i18n.js"></script>
+<style>
+:root{
+  --bg:#f0f7f4; --surface:#fff; --panel:#e4f0eb; --border:#c0d8cc;
+  --ink:#1a2e26; --muted:#5a8070; --accent:#2a7a6e; --gold:#b87c20;
+  --red:#b83020; --sand:#e8d8a8; --surf:#4080c0; --rock:#708060;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* NAV */
+.nav{background:var(--ink);padding:0 16px;height:44px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.nav-logo{font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:#e4f0eb;letter-spacing:1px}
+.nav-logo span{color:var(--gold)}
+.nav-back{color:#5a8070;text-decoration:none;font-size:11px;letter-spacing:1px}
+.nav-back:hover{color:var(--gold)}
+.conn{width:8px;height:8px;border-radius:50%;background:#b83020;margin-left:auto}
+.conn.ok{background:#4a9a6e}
+.btn-lang{margin-left:8px;padding:3px 8px;background:transparent;border:1px solid #5a8070;
+  border-radius:3px;color:#5a8070;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700}
+.btn-lang:hover{border-color:var(--gold);color:var(--gold)}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column}
+.screen.active{display:flex}
+
+/* NAME */
+#s-name{align-items:center;justify-content:center;padding:40px 20px;gap:12px}
+.name-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:28px;letter-spacing:-.5px;text-align:center}
+.name-sub{color:var(--muted);font-size:12px;text-align:center;margin-bottom:8px}
+.name-input{width:280px;padding:12px 16px;border:2px solid var(--border);border-radius:4px;
+  font-family:'Nunito',sans-serif;font-size:14px;background:var(--surface);text-align:center;outline:none}
+.name-input:focus{border-color:var(--accent)}
+.btn-go{padding:12px 32px;background:var(--accent);color:white;border:none;border-radius:4px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;width:280px}
+.btn-go:hover{background:#1f6058}
+
+/* LOBBY */
+#s-lobby{padding:24px;gap:12px;max-width:560px;margin:0 auto;width:100%}
+.lobby-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px}
+.lobby-list{display:flex;flex-direction:column;gap:8px}
+.lobby-row{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.lobby-row:hover{border-color:var(--accent)}
+.lobby-row.full{opacity:.5;cursor:default}
+.lr-badge{font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(42,122,110,.12);color:var(--accent)}
+
+/* WAIT */
+#s-wait{padding:24px;gap:12px;max-width:480px;margin:0 auto;width:100%}
+.wait-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px}
+.wp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:6px}
+.wp-num{width:22px;height:22px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.wp-num.me{background:var(--accent);color:white}
+.btn-start{padding:12px;background:var(--accent);color:white;border:none;border-radius:4px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:4px}
+.btn-start:hover:not(:disabled){background:#1f6058}
+.btn-start:disabled{opacity:.5;cursor:not-allowed}
+.btn-leave{padding:10px;background:transparent;color:var(--muted);border:1px solid var(--border);
+  border-radius:4px;font-size:12px;cursor:pointer;margin-top:4px}
+
+/* GAME */
+#s-game{display:none;flex-direction:row;gap:12px;padding:12px;max-width:1100px;margin:0 auto;width:100%}
+#s-game.active{display:flex}
+.game-left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.game-right{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+
+/* Phase bar */
+.phase-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.phase-badge{font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;
+  letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:3px}
+.phase-PLACE_TILE{background:rgba(42,122,110,.12);color:var(--accent)}
+.phase-PLACE_GUARD{background:rgba(184,124,32,.12);color:var(--gold)}
+.phase-EXTRA_TURNS{background:rgba(79,128,192,.12);color:var(--surf)}
+.phase-GAME_OVER{background:rgba(26,46,38,.08);color:var(--ink)}
+.deck-info{font-size:11px;color:var(--muted)}
+
+/* Players row */
+.players-row{display:flex;gap:8px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:10px 12px;flex:1;min-width:100px}
+.pcard.me{border-color:var(--accent)}
+.pcard.active{border-color:var(--gold);background:#fdf8ee}
+.pcard-name{font-size:11px;color:var(--muted);margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.tag-me{font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(42,122,110,.12);color:var(--accent)}
+.pcard-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;line-height:1.1}
+.pcard-fichas{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* Board */
+.board-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:12px;overflow:auto}
+.board-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.board-grid{display:grid;gap:2px;width:fit-content}
+.cell{width:52px;height:52px;border-radius:4px;border:1.5px solid transparent;
+  position:relative;cursor:default;transition:all .15s;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:10px;overflow:hidden}
+.cell.empty{background:rgba(42,122,110,.04);border-color:rgba(42,122,110,.12)}
+.cell.valid{background:rgba(42,122,110,.12);border-color:var(--accent);cursor:pointer;border-style:dashed}
+.cell.valid:hover{background:rgba(42,122,110,.25);border-style:solid}
+.cell.placed-normal{background:#c8e8d0;border-color:#80b890}
+.cell.placed-surf{background:#b8d0e8;border-color:var(--surf)}
+.cell.placed-rock{background:#c0c8b0;border-color:var(--rock)}
+.cell.placed-sand{background:var(--sand);border-color:#c0a860}
+.cell-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;line-height:1}
+.cell-type{font-size:9px;color:rgba(0,0,0,.4);margin-top:1px}
+.cell-guard{position:absolute;bottom:2px;right:2px;width:10px;height:10px;border-radius:50%}
+.guard-h{background:rgba(42,122,110,.7)}
+.guard-v{background:rgba(184,124,32,.7)}
+.cell.last-placed{outline:2px solid var(--accent);outline-offset:1px}
+
+/* Tile hand */
+.tile-hand{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px}
+.tile-hand h3{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.drawn-tile{width:72px;height:90px;border-radius:6px;border:2px solid var(--accent);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.drawn-tile.surf{border-color:var(--surf);background:#e8f0f8}
+.drawn-tile.rock{border-color:var(--rock);background:#e8ebe0}
+.drawn-tile.sand{border-color:#c0a860;background:var(--sand)}
+.drawn-tile.normal{background:#d8f0e0}
+.dt-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:28px}
+.dt-type{font-size:11px;color:var(--muted)}
+
+/* Guard controls */
+.guard-controls{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px}
+.guard-controls h3{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.guard-btns{display:flex;flex-direction:column;gap:6px}
+.btn-guard{padding:10px 12px;background:var(--panel);border:1px solid var(--border);
+  border-radius:4px;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;
+  cursor:pointer;text-align:left;transition:all .15s}
+.btn-guard:hover{border-color:var(--accent);background:rgba(42,122,110,.1)}
+.btn-guard.skip{color:var(--muted)}
+.btn-guard:disabled{opacity:.4;cursor:not-allowed}
+
+/* Objectives */
+.objectives{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px}
+.objectives h3{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.obj-row{padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.obj-row:last-child{border:none}
+.obj-pts{font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:var(--accent);min-width:24px}
+.obj-desc{font-size:11px;flex:1}
+.obj-claimed{font-size:10px;color:var(--muted)}
+
+/* Status */
+.status-bar{font-size:13px;color:var(--muted);padding:4px 0}
+
+/* Game over */
+.overlay{position:fixed;inset:0;background:rgba(26,46,38,.6);
+  display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:28px;width:100%;max-width:440px}
+.over-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;
+  margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.score-row{display:grid;grid-template-columns:32px 1fr auto;
+  align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+.score-row:last-child{border:none}
+.score-pos{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:var(--muted);text-align:center}
+.score-pos.winner{color:var(--gold)}
+.score-name{font-size:14px;font-weight:700}
+.score-detail{font-size:11px;color:var(--muted)}
+.score-pts{font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;color:var(--accent);text-align:right}
+.winner-badge{font-size:10px;padding:1px 6px;background:rgba(184,124,32,.15);
+  color:var(--gold);border-radius:3px;margin-left:6px;vertical-align:middle}
+.exit-btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn-restart{padding:12px 20px;background:var(--accent);color:white;border:none;border-radius:4px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer}
+.btn-exit{padding:12px 16px;background:transparent;color:var(--muted);border:1px solid var(--border);
+  border-radius:4px;font-family:'Nunito',sans-serif;font-size:12px;cursor:pointer}
+
+/* Rules modal */
+.rules-modal{position:fixed;inset:0;background:rgba(26,46,38,.75);
+  display:none;align-items:flex-end;justify-content:center;z-index:200}
+.rules-modal.open{display:flex}
+.rules-box{background:var(--surface);border-top:1px solid var(--border);
+  border-radius:12px 12px 0 0;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;padding:24px}
+.rules-box h2{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between}
+.rules-box h2 button{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted)}
+.rules-section{margin-bottom:14px}
+.rules-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rules-section p,.rules-section li{font-size:13px;line-height:1.7}
+.rules-section ul{padding-left:18px}
+.btn-rules{position:fixed;bottom:20px;right:20px;padding:9px 16px;
+  background:var(--ink);color:#e4f0eb;border:none;border-radius:20px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;z-index:100;display:none}
+
+/* Tile type colors legend */
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="nav-logo">Bitnik <span>Games</span></div>
+  <a class="nav-back" href="/" data-i18n="nav.catalog">← Catálogo</a>
+  <div class="conn" id="conn"></div>
+  <button class="btn-lang" onclick="toggleLang();applyLang()" id="btn-lang">EN</button>
+</div>
+
+<!-- NAME -->
+<div class="screen active" id="s-name">
+  <div class="name-title" id="game-title">Praia das Percebes</div>
+  <p class="name-sub" data-i18n="perc.sub">Tile placement na praia · 2–4 jogadores</p>
+  <input class="name-input" id="inp-name" data-i18n-ph="name.placeholder" placeholder="O teu nome…" maxlength="20">
+  <button class="btn-go" id="btn-go" onclick="goLobby()" data-i18n="btn.enter">Entrar →</button>
+  <p style="color:var(--red);font-size:12px;min-height:18px" id="name-err"></p>
+</div>
+
+<!-- LOBBY -->
+<div class="screen" id="s-lobby">
+  <div class="lobby-title" data-i18n="perc.title">Praia das Percebes</div>
+  <div class="lobby-list" id="lobby-list"></div>
+</div>
+
+<!-- WAIT -->
+<div class="screen" id="s-wait">
+  <div class="wait-title" id="wait-title">A aguardar…</div>
+  <div id="wait-players"></div>
+  <button class="btn-start" id="btn-start" onclick="startGame()" data-i18n="btn.start">Iniciar jogo</button>
+  <button class="btn-leave" onclick="leaveLobby()" data-i18n="btn.leave">← Sair da mesa</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="s-game">
+  <div class="game-left">
+    <div class="phase-bar">
+      <div class="phase-badge" id="phase-badge">—</div>
+      <div class="deck-info" id="deck-info"></div>
+    </div>
+    <div class="players-row" id="players-row"></div>
+    <div class="board-wrap">
+      <div class="board-label" data-i18n="perc.board">Tabuleiro</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#c8e8d0;border:1px solid #80b890"></div><span data-i18n="perc.tile.normal">Banhistas</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#b8d0e8;border:1px solid #4080c0"></div><span data-i18n="perc.tile.surf">Prancha</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#c0c8b0;border:1px solid #708060"></div><span data-i18n="perc.tile.rock">Rocha</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#e8d8a8;border:1px solid #c0a860"></div><span data-i18n="perc.tile.sand">Areia</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:rgba(42,122,110,.7);border-radius:50%"></div><span>Guard H</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:rgba(184,124,32,.7);border-radius:50%"></div><span>Guard V</span></div>
+      </div>
+      <div style="margin-top:8px"><div class="board-grid" id="board-grid"></div></div>
+    </div>
+    <div class="status-bar" id="status-bar"></div>
+  </div>
+  <div class="game-right">
+    <div class="tile-hand" id="tile-hand">
+      <h3 data-i18n="perc.hand">O teu tile</h3>
+      <div id="drawn-tile-display"></div>
+    </div>
+    <div class="guard-controls" id="guard-controls" style="display:none">
+      <h3 data-i18n="perc.guard.prompt">Colocar salva-vidas?</h3>
+      <div class="guard-btns">
+        <button class="btn-guard" id="btn-guard-h" onclick="placeGuard('h')">⬌ Horizontal</button>
+        <button class="btn-guard" id="btn-guard-v" onclick="placeGuard('v')">⬍ Vertical</button>
+        <button class="btn-guard skip" onclick="placeGuard('skip')" data-i18n="perc.guard.skip">Não colocar</button>
+      </div>
+    </div>
+    <div class="objectives" id="objectives-panel">
+      <h3 data-i18n="perc.objectives">Objectivos</h3>
+      <div id="objectives-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="overlay-over">
+  <div class="overlay-box">
+    <div class="over-title">🏖️ <span data-i18n="gameover.title">Fim de jogo</span></div>
+    <div id="final-scores"></div>
+    <div class="exit-btns">
+      <button class="btn-restart" id="btn-restart" onclick="restart()" data-i18n="btn.restart">Jogar de novo</button>
+      <button class="btn-exit" onclick="goMesas()" data-i18n="btn.mesas">Mesas de jogo</button>
+      <button class="btn-exit" onclick="location.href='/'" data-i18n="btn.catalog">← Catálogo</button>
+    </div>
+  </div>
+</div>
+
+<!-- RULES MODAL -->
+<div class="rules-modal" id="rules-modal" onclick="if(event.target===this)closeRules()">
+  <div class="rules-box">
+    <h2><span id="rules-title" data-i18n="perc.rules.title">Regras</span>
+      <button onclick="closeRules()">✕</button>
+    </h2>
+    <div class="rules-section">
+      <h3 id="r-obj-title">Objectivo</h3>
+      <p id="r-obj-text">Colocar tiles na praia, proteger banhistas com salva-vidas, e completar objectivos. Quem tiver mais pontos no fim ganha.</p>
+    </div>
+    <div class="rules-section">
+      <h3 id="r-turn-title">No teu turno</h3>
+      <ul id="r-turn-list">
+        <li>Tiras uma carta do baralho.</li>
+        <li>Colocas o tile numa célula ortogonalmente adjacente a tiles existentes.</li>
+        <li>Podes colocar um salva-vidas no tile (se tiveres fichas e não for areia/rocha).</li>
+        <li>O salva-vidas marca a sua linha ou coluna — conta os banhistas nesse segmento.</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3 id="r-tiles-title">Tipos de tile</h3>
+      <ul id="r-tiles-list">
+        <li><strong>Banhistas (1–3)</strong> — valem pontos quando um salva-vidas os protege.</li>
+        <li><strong>Prancha de surf</strong> — 1 banhista, tipo especial para objectivos.</li>
+        <li><strong>Rocha</strong> — bloqueia segmentos de salva-vidas.</li>
+        <li><strong>Areia</strong> — sem banhistas, não aceita salva-vidas.</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3 id="r-score-title">Pontuação final</h3>
+      <ul id="r-score-list">
+        <li>Cada salva-vidas vale: banhistas no seu segmento (linha ou coluna).</li>
+        <li>Fichas de salva-vidas não usadas: +2 pts cada.</li>
+        <li>Objectivos completados: +pts indicados no objectivo.</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3 id="r-end-title">Fim do jogo</h3>
+      <p id="r-end-text">Quando o baralho esgotar, os outros jogadores têm um turno extra cada. Depois calcula-se a pontuação final.</p>
+    </div>
+  </div>
+</div>
+
+<button class="btn-rules" id="btn-rules" onclick="openRules()" data-i18n="nav.rules">? Regras</button>
+
+<script>
+// ── i18n setup ────────────────────────────────────────────────────
+function applyLang() {
+  const lang = getLang();
+  document.getElementById('btn-lang').textContent = T('lang.toggle');
+  document.documentElement.lang = lang;
+  // Update data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = T(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = T(el.getAttribute('data-i18n-ph'));
+  });
+  // Update game title based on lang
+  document.getElementById('game-title').textContent = T('perc.title');
+  // Update rules text
+  const isEn = lang === 'en';
+  document.getElementById('rules-title').textContent = T('perc.rules.title');
+  if (isEn) {
+    document.getElementById('r-obj-text').textContent = 'Place tiles on the beach, protect bathers with lifeguards, and complete objectives. Most points wins.';
+    document.getElementById('r-turn-list').innerHTML = '<li>Draw a tile from the deck.</li><li>Place it orthogonally adjacent to existing tiles.</li><li>Optionally place a lifeguard on the tile (if you have tokens and it\'s not sand/rock).</li><li>The lifeguard scores the bathers in its row or column segment.</li>';
+    document.getElementById('r-tiles-list').innerHTML = '<li><strong>Bathers (1–3)</strong> — score points when protected by a lifeguard.</li><li><strong>Surfboard</strong> — 1 bather, special type for objectives.</li><li><strong>Rock</strong> — blocks lifeguard segments.</li><li><strong>Sand</strong> — no bathers, cannot host a lifeguard.</li>';
+    document.getElementById('r-score-list').innerHTML = '<li>Each lifeguard scores: bathers in its segment (row or column).</li><li>Unused lifeguard tokens: +2 pts each.</li><li>Completed objectives: +pts as shown.</li>';
+    document.getElementById('r-end-text').textContent = 'When the deck runs out, each other player gets one extra turn. Then final scoring.';
+  } else {
+    document.getElementById('r-obj-text').textContent = 'Colocar tiles na praia, proteger banhistas com salva-vidas, e completar objectivos. Quem tiver mais pontos no fim ganha.';
+    document.getElementById('r-turn-list').innerHTML = '<li>Tiras uma carta do baralho.</li><li>Colocas o tile numa célula ortogonalmente adjacente a tiles existentes.</li><li>Podes colocar um salva-vidas no tile (se tiveres fichas e não for areia/rocha).</li><li>O salva-vidas marca a sua linha ou coluna — conta os banhistas nesse segmento.</li>';
+    document.getElementById('r-tiles-list').innerHTML = '<li><strong>Banhistas (1–3)</strong> — valem pontos quando um salva-vidas os protege.</li><li><strong>Prancha de surf</strong> — 1 banhista, tipo especial para objectivos.</li><li><strong>Rocha</strong> — bloqueia segmentos de salva-vidas.</li><li><strong>Areia</strong> — sem banhistas, não aceita salva-vidas.</li>';
+    document.getElementById('r-score-list').innerHTML = '<li>Cada salva-vidas vale: banhistas no seu segmento (linha ou coluna).</li><li>Fichas de salva-vidas não usadas: +2 pts cada.</li><li>Objectivos completados: +pts indicados no objectivo.</li>';
+    document.getElementById('r-end-text').textContent = 'Quando o baralho esgotar, os outros jogadores têm um turno extra cada. Depois calcula-se a pontuação final.';
+  }
+  if (state) renderGame(state);
+}
+window.addEventListener('langchange', applyLang);
+applyLang();
+
+// ── State ─────────────────────────────────────────────────────────
+let ws, myName='', myToken='', myLobbyId='', mySeat=-1, myGameSeat=-1;
+let state=null, isSolo=false, isHost=false;
+
+// ── WebSocket ─────────────────────────────────────────────────────
+function connect() {
+  const proto = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/percebes`);
+  ws.onopen = () => {
+    document.getElementById('conn').classList.add('ok');
+    if (myToken) send({type:'RECONNECT',token:myToken});
+    else send({type:'LOBBIES'});
+  };
+  ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch(err){ console.error(err); } };
+  ws.onclose = () => { document.getElementById('conn').classList.remove('ok'); setTimeout(connect,2000); };
+  ws.onerror = () => {};
+}
+function send(msg){ if(ws?.readyState===1) ws.send(JSON.stringify(msg)); }
+
+function handle(msg) {
+  if (msg.type==='LOBBIES')      renderLobbyList(msg.lobbies);
+  if (msg.type==='JOINED')       onJoined(msg);
+  if (msg.type==='RECONNECTED')  { mySeat=msg.seat; myGameSeat=msg.gameSeat; isSolo=msg.solo; isHost=mySeat===0; send({type:'REQUEST_STATE'}); }
+  if (msg.type==='RECONNECT_FAIL') { myToken=''; send({type:'LOBBIES'}); }
+  if (msg.type==='PLAYER_JOINED') send({type:'REQUEST_STATE'});
+  if (msg.type==='LOBBY_STATE')  { if(!isSolo) renderWait(msg); }
+  if (msg.type==='GAME_STATE')   renderGame(msg.state);
+  if (msg.type==='ERROR')        document.getElementById('name-err').textContent = msg.text;
+}
+
+function goLobby() {
+  const n = document.getElementById('inp-name').value.trim();
+  if (!n) { document.getElementById('name-err').textContent = T('error.name'); return; }
+  myName = n; show('s-lobby');
+  if (!ws||ws.readyState>1) connect(); else send({type:'LOBBIES'});
+}
+function joinLobby(id) { myLobbyId=id; send({type:'JOIN_LOBBY',lobbyId:id,playerName:myName}); }
+function startGame() { send({type:'START'}); }
+function leaveLobby() {
+  send({type:'LEAVE_LOBBY'}); sessionStorage.removeItem('perc_token');
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  document.getElementById('btn-start').style.display='';
+  show('s-lobby'); send({type:'LOBBIES'});
+}
+function restart() { document.getElementById('overlay-over').classList.remove('open'); send({type:'RESTART'}); }
+function goMesas() {
+  document.getElementById('overlay-over').classList.remove('open');
+  send({type:'LEAVE_LOBBY'}); sessionStorage.removeItem('perc_token');
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  show('s-lobby'); send({type:'LOBBIES'});
+}
+function openRules() { document.getElementById('rules-modal').classList.add('open'); }
+function closeRules() { document.getElementById('rules-modal').classList.remove('open'); }
+
+function onJoined(msg) {
+  mySeat=msg.seat; myToken=msg.token; myLobbyId=msg.lobbyId;
+  isSolo=msg.solo; isHost=mySeat===0;
+  sessionStorage.setItem('perc_token', myToken);
+  if (isSolo) { send({type:'REQUEST_STATE'}); setTimeout(()=>{ if(!state) send({type:'REQUEST_STATE'}); },1500); return; }
+  show('s-wait'); renderWait({lobby:msg.lobby,names:msg.names,myLobbySeat:mySeat});
+}
+
+function renderLobbyList(list) {
+  show('s-lobby');
+  document.getElementById('lobby-list').innerHTML = (list||[]).map(l => `
+    <div class="lobby-row ${!l.solo&&(l.full||l.playing)?'full':''}" onclick="joinLobby('${l.id}')">
+      <div>
+        <div style="font-weight:700;font-size:13px">${l.solo?'🤖 '+l.name:l.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${l.solo?T('lobby.solo'):l.names.join(', ')||T('lobby.empty')}</div>
+      </div>
+      ${l.solo?'':(`<div style="font-size:11px;color:var(--muted)">${l.seated}/${l.maxH}</div>`)}
+      ${l.solo?`<span style="font-size:10px;color:var(--accent)">${T('lobby.join.solo')}</span>`:
+        l.playing?`<div class="lr-badge">${T('lobby.playing')}</div>`:
+        l.full?`<span style="font-size:10px;color:var(--muted)">${T('lobby.full')}</span>`:
+        `<span style="font-size:10px;color:var(--accent)">${T('lobby.enter')}</span>`}
+    </div>`).join('');
+}
+
+function renderWait(msg) {
+  show('s-wait');
+  const l=msg.lobby, names=msg.names||[];
+  document.getElementById('wait-title').textContent = l.name+' — '+T('lobby.wait.host').split(' ')[0];
+  document.getElementById('wait-players').innerHTML = Array.from({length:l.maxH},(_,i)=>{
+    const name=names[i]; const isMe=i===(msg.myLobbySeat??mySeat);
+    return `<div class="wp-row"><div class="wp-num ${isMe?'me':''}">${i+1}</div>
+      <div style="flex:1;font-size:12px">${name||(isMe?myName:T('lobby.empty'))}</div>
+      ${isMe?`<span style="font-size:10px;color:var(--accent)">tu</span>`:''}
+    </div>`;
+  }).join('');
+  const seated=names.filter(Boolean).length;
+  const btn=document.getElementById('btn-start');
+  btn.disabled=!isHost||seated<2;
+  btn.textContent=isHost?(seated<2?T('lobby.wait.min',{n:2-seated}):T('btn.start')):T('lobby.wait.host');
+}
+
+// ── Game rendering ────────────────────────────────────────────────
+function renderGame(s) {
+  state=s; myGameSeat=s.mySeat;
+  if (s.phase==='GAME_OVER') { show('s-game'); showGameOver(s); return; }
+  show('s-game');
+  document.getElementById('overlay-over').classList.remove('open');
+
+  // Phase badge
+  const badge=document.getElementById('phase-badge');
+  const phaseKey={'PLACE_TILE':'perc.phase.place','PLACE_GUARD':'perc.phase.guard','EXTRA_TURNS':'perc.phase.extra'};
+  badge.className='phase-badge phase-'+s.phase;
+  badge.textContent=T(phaseKey[s.phase]||'perc.phase.place');
+  document.getElementById('deck-info').textContent=T('perc.deck',{n:s.deckSize});
+
+  // Players
+  const pr=document.getElementById('players-row');
+  if(pr.children.length!==(s.players||[]).length){
+    pr.innerHTML=(s.players||[]).map((p,i)=>`
+      <div class="pcard ${i===s.mySeat?'me':''} ${i===s.currentPlayer?'active':''}" data-seat="${i}">
+        <div class="pcard-name">${p.name}${i===s.mySeat?`<span class="tag-me">tu</span>`:''}</div>
+        <div class="pcard-score">${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span></div>
+        <div class="pcard-fichas">🚩 ×${p.fichas}</div>
+      </div>`).join('');
+  } else {
+    (s.players||[]).forEach((p,i)=>{
+      const el=pr.querySelector(`[data-seat="${i}"]`);if(!el)return;
+      el.className=`pcard ${i===s.mySeat?'me':''} ${i===s.currentPlayer?'active':''}`;
+      const sc=el.querySelector('.pcard-score');
+      if(sc) sc.innerHTML=`${p.pts} <span style="font-size:12px;color:var(--muted)">pts</span>`;
+      const fi=el.querySelector('.pcard-fichas');
+      if(fi) fi.textContent=`🚩 ×${p.fichas}`;
+    });
+  }
+
+  // Board
+  renderBoard(s);
+
+  // Drawn tile
+  const tilePanel=document.getElementById('drawn-tile-display');
+  if(s.mySeat===s.currentPlayer&&s.drawnTile&&!s.drawnTile.hidden){
+    const t=s.drawnTile;
+    const typeLabel={'normal':T('perc.tile.normal'),'surf':T('perc.tile.surf'),'rock':T('perc.tile.rock'),'sand':T('perc.tile.sand')}[t.type]||t.type;
+    tilePanel.innerHTML=`<div class="drawn-tile ${t.type}">
+      <div class="dt-bathers">${t.bathers>0?t.bathers:'—'}</div>
+      <div class="dt-type">${typeLabel}</div>
+    </div>`;
+  } else if(s.drawnTile&&s.drawnTile.hidden){
+    tilePanel.innerHTML=`<div style="font-size:12px;color:var(--muted)">Tile oculto</div>`;
+  } else {
+    tilePanel.innerHTML=`<div style="font-size:11px;color:var(--muted)">—</div>`;
+  }
+
+  // Guard controls
+  const gc=document.getElementById('guard-controls');
+  if(s.phase==='PLACE_GUARD'&&s.mySeat===s.currentPlayer&&s.availableGuardDirs){
+    gc.style.display='block';
+    document.getElementById('btn-guard-h').disabled=!s.availableGuardDirs.h;
+    document.getElementById('btn-guard-v').disabled=!s.availableGuardDirs.v;
+  } else { gc.style.display='none'; }
+
+  // Objectives
+  renderObjectives(s.revealedObjs||[]);
+
+  // Status
+  const sb=document.getElementById('status-bar');
+  if(s.phase==='PLACE_TILE'&&s.mySeat===s.currentPlayer)
+    sb.textContent=T('perc.place.prompt');
+  else if(s.phase==='PLACE_GUARD'&&s.mySeat===s.currentPlayer)
+    sb.textContent=T('perc.guard.prompt');
+  else { const cp=s.players[s.currentPlayer]; sb.textContent=cp?`${cp.name}…`:''; }
+}
+
+function renderBoard(s) {
+  const grid=document.getElementById('board-grid');
+  const board=s.board||[];
+  if(!board.length)return;
+  const rows=board.map(t=>t.r); const cols=board.map(t=>t.c);
+  const valids=s.validPlacements||[];
+  // extend range by 1 for valid placements
+  const allR=[...rows,...valids.map(p=>p.r)]; const allC=[...cols,...valids.map(p=>p.c)];
+  const minR=Math.min(...allR,0), maxR=Math.max(...allR,0);
+  const minC=Math.min(...allC,0), maxC=Math.max(...allC,0);
+  const nRows=maxR-minR+1, nCols=maxC-minC+1;
+  grid.style.gridTemplateColumns=`repeat(${nCols},52px)`;
+
+  // Build lookup
+  const placed={};
+  board.forEach(t=>{ placed[`${t.r},${t.c}`]=t; });
+  const validSet=new Set(valids.map(p=>`${p.r},${p.c}`));
+  const guardMap={};
+  (s.guards||[]).forEach(g=>{ guardMap[`${g.r},${g.c}`]=g; });
+
+  // Last placed highlight
+  const lastPlaced=s.lastAction&&s.lastAction.type==='place'?`${s.lastAction.r},${s.lastAction.c}`:'';
+
+  grid.innerHTML='';
+  for(let r=minR;r<=maxR;r++){
+    for(let c=minC;c<=maxC;c++){
+      const key=`${r},${c}`;
+      const tile=placed[key];
+      const isValid=validSet.has(key);
+      const guard=guardMap[key];
+      const div=document.createElement('div');
+      if(tile){
+        div.className=`cell placed-${tile.type}${key===lastPlaced?' last-placed':''}`;
+        const bLabel=tile.bathers>0?`<div class="cell-bathers">${tile.bathers}</div>`:'';
+        const tLabel=`<div class="cell-type">${tile.type[0].toUpperCase()}</div>`;
+        const gDot=guard?`<div class="cell-guard guard-${guard.dir}" title="Guard ${guard.dir} (P${guard.playerIdx+1})"></div>`:'';
+        div.innerHTML=bLabel+tLabel+gDot;
+      } else if(isValid){
+        div.className='cell valid';
+        div.onclick=()=>placeTile(r,c);
+      } else {
+        div.className='cell empty';
+      }
+      grid.appendChild(div);
+    }
+  }
+}
+
+function renderObjectives(objs) {
+  const lang=getLang();
+  document.getElementById('objectives-list').innerHTML=objs.map(obj=>`
+    <div class="obj-row">
+      <div class="obj-pts">${obj.pts}</div>
+      <div class="obj-desc">${lang==='en'&&obj.descEn?obj.descEn:obj.descPt}</div>
+      ${obj.claimedBy!==undefined?`<div class="obj-claimed">✓ P${obj.claimedBy+1}</div>`:''}
+    </div>`).join('');
+}
+
+function placeTile(r,c) {
+  if(!state||state.phase!=='PLACE_TILE'||state.mySeat!==state.currentPlayer)return;
+  send({type:'PLACE_TILE',r,c});
+}
+
+function placeGuard(dir) {
+  if(!state||state.phase!=='PLACE_GUARD'||state.mySeat!==state.currentPlayer)return;
+  send({type:'PLACE_GUARD',dir});
+}
+
+function showGameOver(s) {
+  const el=document.getElementById('final-scores');
+  const scores=s.finalScores||[];
+  const winner=s.winnerIdx;
+  el.innerHTML=scores.map((p,i)=>{
+    const isW=i===0; // finalScores sorted by pts
+    const details=[];
+    if(p.fichas>0) details.push(`+${p.fichas*2} fichas`);
+    if(p.objPts>0) details.push(`+${p.objPts} obj`);
+    return `<div class="score-row">
+      <div class="score-pos ${isW?'winner':''}">${isW?'🥇':(i+1)+'.'}</div>
+      <div>
+        <div class="score-name">${esc(p.name)}${isW?`<span class="winner-badge">${T('gameover.winner')}</span>`:''}</div>
+        <div class="score-detail">${details.join(' · ')||'—'}</div>
+      </div>
+      <div class="score-pts">${p.pts} pts</div>
+    </div>`;
+  }).join('');
+  document.getElementById('btn-restart').style.display=(isSolo||isHost)?'inline-block':'none';
+  document.getElementById('overlay-over').classList.add('open');
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const rb=document.getElementById('btn-rules');
+  if(rb) rb.style.display=(id==='s-game')?'block':'none';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('inp-name').addEventListener('keydown',e=>{ if(e.key==='Enter') goLobby(); });
+const saved=sessionStorage.getItem('perc_token');
+if(saved){ myToken=saved; connect(); }
+setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); },20000);
+</script>
+</body>
+</html>
