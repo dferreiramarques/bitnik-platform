@@ -8,17 +8,31 @@
 <script src="/i18n.js"></script>
 <style>
 :root{
-  --bg:#f0f7f4; --surface:#fff; --panel:#e4f0eb; --border:#c0d8cc;
-  --ink:#1a2e26; --muted:#5a8070; --accent:#2a7a6e; --gold:#b87c20;
-  --red:#b83020; --sand:#e8d8a8; --surf:#4080c0; --rock:#708060;
-  --p0:#2a7a6e; --p1:#c0502a; --p2:#5060c0; --p3:#a06020;
+  /* PICO-8 beach theme */
+  --bg:#FFF1E8;        /* warm cream sand */
+  --surface:#ffffff;
+  --panel:#FFCCAA;     /* peach/dry sand */
+  --border:#AB5236;    /* driftwood brown */
+  --ink:#1D2B53;       /* deep ocean blue */
+  --muted:#5F574F;     /* driftwood grey */
+  --accent:#008751;    /* palm green */
+  --gold:#FFA300;      /* sunset orange */
+  --red:#FF004D;       /* lifeguard red */
+  --sand:#FFEC27;      /* bright sand yellow */
+  --surf:#29ADFF;      /* ocean cyan */
+  --rock:#5F574F;      /* dark rock grey */
+  /* Player colors — PICO-8, distinct */
+  --p0:#00E436;        /* bright green */
+  --p1:#FF004D;        /* red */
+  --p2:#29ADFF;        /* cyan */
+  --p3:#FFA300;        /* orange */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
 body{display:flex;flex-direction:column;min-height:100vh}
 
 /* NAV */
-.nav{background:var(--ink);padding:0 16px;height:44px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.nav{background:#1D2B53;padding:0 16px;height:44px;display:flex;align-items:center;gap:10px;flex-shrink:0}
 .nav-logo{font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:#e4f0eb;letter-spacing:1px}
 .nav-logo span{color:var(--gold)}
 .nav-back{color:#5a8070;text-decoration:none;font-size:11px;letter-spacing:1px}
@@ -40,7 +54,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .name-input{width:280px;padding:12px 16px;border:2px solid var(--border);border-radius:4px;
   font-family:'Nunito',sans-serif;font-size:14px;background:var(--surface);text-align:center;outline:none}
 .name-input:focus{border-color:var(--accent)}
-.btn-go{padding:12px 32px;background:var(--accent);color:white;border:none;border-radius:4px;
+.btn-go{padding:12px 32px;background:#008751;color:white;border:none;border-radius:4px;
   font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;letter-spacing:1px;
   text-transform:uppercase;cursor:pointer;width:280px}
 .btn-go:hover{background:#1f6058}
@@ -108,21 +122,21 @@ body{display:flex;flex-direction:column;min-height:100vh}
   padding:12px;overflow:auto;display:flex;flex-direction:column;align-items:center}
 .board-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .board-grid{display:grid;gap:2px;width:fit-content}
-.cell{width:104px;height:104px;border-radius:4px;border:1.5px solid transparent;
+.cell{width:84px;height:84px;border-radius:2px;border:2px solid transparent;
   position:relative;cursor:default;transition:all .15s;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:10px;overflow:hidden}
 .cell.empty{background:rgba(42,122,110,.04);border-color:rgba(42,122,110,.12)}
-.cell.valid{background:rgba(42,122,110,.12);border-color:var(--accent);cursor:pointer;border-style:dashed}
-.cell.valid:hover{background:rgba(42,122,110,.25);border-style:solid}
-.cell.placed-normal{background:#c8e8d0;border-color:#80b890}
-.cell.placed-surf{background:#b8d0e8;border-color:var(--surf)}
-.cell.placed-rock{background:#c0c8b0;border-color:var(--rock)}
-.cell.placed-sand{background:var(--sand);border-color:#c0a860}
-.cell-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:28px;line-height:1}
-.cell-type{font-size:14px;color:rgba(0,0,0,.4);margin-top:2px}
-.cell-guard{position:absolute;bottom:3px;right:4px;font-size:22px;line-height:1;
-  font-weight:800;text-shadow:0 0 4px rgba(255,255,255,.9)}
-.cell.last-placed{outline:2px solid var(--accent);outline-offset:1px}
+.cell.valid{background:rgba(0,232,54,.15);border-color:#00E436;cursor:pointer;border-style:dashed}
+.cell.valid:hover{background:rgba(0,232,54,.3);border-style:solid}
+.cell.placed-normal{background:#d4f0cc;border-color:#00E436}
+.cell.placed-surf{background:#a8dcff;border-color:#29ADFF}
+.cell.placed-rock{background:#8a8480;border-color:#5F574F;color:#FFF1E8}
+.cell.placed-sand{background:#FFEC27;border-color:#FFA300}
+.cell-bathers{font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;line-height:1}
+.cell-type{font-size:11px;color:rgba(0,0,0,.35);margin-top:1px}
+.cell-guard{position:absolute;bottom:2px;right:3px;font-size:18px;line-height:1;
+  font-weight:800;text-shadow:0 0 3px rgba(255,255,255,.95)}
+.cell.last-placed{outline:3px solid #FFEC27;outline-offset:1px}
 
 /* Tile hand */
 .tile-hand{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px}
@@ -251,7 +265,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="board-label" data-i18n="perc.board">Tabuleiro</div>
       <div class="legend">
         <div class="leg-item"><div class="leg-dot" style="background:#c8e8d0;border:1px solid #80b890"></div><span data-i18n="perc.tile.normal">Banhistas</span></div>
-        <div class="leg-item"><div class="leg-dot" style="background:#b8d0e8;border:1px solid #4080c0"></div><span data-i18n="perc.tile.surf">Prancha ×2</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#a8dcff;border:1px solid #29ADFF"></div><span data-i18n="perc.tile.surf">Prancha ×2</span></div>
         <div class="leg-item"><div class="leg-dot" style="background:#c0c8b0;border:1px solid #708060"></div><span data-i18n="perc.tile.rock">Rocha</span></div>
         <div class="leg-item"><div class="leg-dot" style="background:#e8d8a8;border:1px solid #c0a860"></div><span data-i18n="perc.tile.sand">Areia</span></div>
         <div class="leg-item"><span style="font-size:14px;font-weight:800;color:#2a7a6e">↔</span><span style="margin-left:4px">Guard H (linha)</span></div>
@@ -577,7 +591,7 @@ function renderGame(s) {
 }
 
 // ── Player colors ──────────────────────────────────────────
-const PLAYER_COLORS=['#2a7a6e','#c0502a','#5060c0','#a06020'];
+const PLAYER_COLORS=['#00E436','#FF004D','#29ADFF','#FFA300'];
 
 function renderBoard(s) {
   const grid=document.getElementById('board-grid');
@@ -593,7 +607,7 @@ function renderBoard(s) {
   const minR=Math.min(...allR)-margin, maxR=Math.max(...allR)+margin;
   const minC=Math.min(...allC)-margin, maxC=Math.max(...allC)+margin;
   const nCols=maxC-minC+1;
-  grid.style.gridTemplateColumns=`repeat(${nCols},104px)`;
+  grid.style.gridTemplateColumns=`repeat(${nCols},84px)`;
 
   const placed={};
   board.forEach(t=>{ placed[`${t.r},${t.c}`]=t; });
