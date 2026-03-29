@@ -451,6 +451,7 @@ function log(state, player, action, detail) {
 // ── HTTP server ───────────────────────────────────────────────────
 const MIME = {
   '.html': 'text/html; charset=utf-8',
+  '.mp4': 'video/mp4', '.webm': 'video/webm', '.mp3': 'audio/mpeg',
   '.css':  'text/css',
   '.js':   'application/javascript',
   '.json': 'application/json',
@@ -690,7 +691,12 @@ const CAP_LOBBIES  = {};
 const CAP_SESSIONS = {};
 const CAP_WS_STATE = new WeakMap();
 
-function capMkCard(cap, lilies, bird) { return { cap, lilies:[...lilies], bird }; }
+function capMkCard(cap, lilies, bird, imgOverride) {
+  const l = [...lilies].sort().join('');
+  const img = imgOverride || ('cap' + cap + (l ? '_' + l : '') + (bird ? '_bird' : ''));
+  const fallback = 'cap' + cap;
+  return { cap, lilies:[...lilies], bird, img, fallback };
+}
 const CAP_DECK = [
   capMkCard(1,[],false),capMkCard(1,[],false),capMkCard(1,['R'],false),capMkCard(1,['R'],false),
   capMkCard(1,['B','W'],false),capMkCard(1,['W'],true),
@@ -702,7 +708,7 @@ const CAP_DECK = [
   capMkCard(3,[],false),capMkCard(3,[],false),capMkCard(3,['Y'],false),
   capMkCard(3,['B'],false),capMkCard(3,['B'],false),capMkCard(3,[],true),capMkCard(3,[],true),
   capMkCard(4,[],false),capMkCard(4,[],false),capMkCard(4,[],true),capMkCard(4,[],true),
-  capMkCard(5,[],false),capMkCard(5,[],true),
+  capMkCard(5,[],false),capMkCard(5,[],true,'cap5'),  // cap5_bird missing → fallback
 ];
 function capShuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function capMakeLobby(id,name,solo,maxH){

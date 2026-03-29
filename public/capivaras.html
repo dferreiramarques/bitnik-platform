@@ -146,6 +146,54 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .bird-token.has-holder{border-color:var(--gold);background:#fdf9ee}
 .bird-icon{font-size:18px}
 
+/* Card art */
+.card-art{width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;
+  background:var(--panel);margin-bottom:8px;position:relative;display:flex;
+  align-items:center;justify-content:center}
+.card-art img{width:100%;height:100%;object-fit:cover;display:block}
+.card-art .art-fb{width:100%;height:100%;display:flex;align-items:center;
+  justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:32px;color:var(--muted);background:var(--panel)}
+
+/* Rules modal */
+.rules-modal{position:fixed;inset:0;background:rgba(26,20,16,.75);
+  display:none;align-items:flex-end;justify-content:center;z-index:200;
+  padding:0 0 0 0}
+.rules-modal.open{display:flex}
+.rules-box{background:var(--surface);border-top:1px solid var(--border);
+  border-radius:12px 12px 0 0;width:100%;max-width:680px;max-height:85vh;
+  overflow-y:auto;padding:24px 24px 32px}
+.rules-box h2{font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:18px;margin-bottom:16px;display:flex;align-items:center;
+  justify-content:space-between}
+.rules-box h2 button{background:none;border:none;cursor:pointer;
+  font-size:18px;color:var(--muted);padding:4px}
+.rules-section{margin-bottom:16px}
+.rules-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.rules-section p,.rules-section li{font-size:13px;line-height:1.7;color:var(--ink)}
+.rules-section ul{padding-left:18px}
+.rules-section li{margin-bottom:4px}
+.video-placeholder{background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;aspect-ratio:16/9;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;gap:8px;margin-bottom:16px;
+  cursor:pointer;transition:background .2s;position:relative;overflow:hidden}
+.video-placeholder:hover{background:var(--border)}
+.video-placeholder .play-btn{width:48px;height:48px;border-radius:50%;
+  background:var(--accent);display:flex;align-items:center;justify-content:center}
+.video-placeholder .play-btn::after{content:'';border-style:solid;
+  border-width:8px 0 8px 16px;border-color:transparent transparent transparent #fff;
+  margin-left:3px}
+.video-placeholder p{font-size:12px;color:var(--muted)}
+.video-placeholder video{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:none}
+.btn-rules{position:fixed;bottom:20px;right:20px;padding:10px 16px;
+  background:var(--ink);color:var(--bg);border:none;border-radius:20px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);z-index:100;transition:background .2s}
+.btn-rules:hover{background:#333}
+
 /* Deck info */
 .deck-info{font-size:11px;color:var(--muted);text-align:right}
 
@@ -244,6 +292,53 @@ body{display:flex;flex-direction:column;min-height:100vh}
     </div>
   </div>
 </div>
+
+<!-- Rules modal -->
+<div class="rules-modal" id="rules-modal" onclick="if(event.target===this)closeRules()">
+  <div class="rules-box">
+    <h2>Regras — Capivaras
+      <button onclick="closeRules()">✕</button>
+    </h2>
+    <div class="video-placeholder" id="video-wrap" onclick="playRulesVideo()">
+      <div class="play-btn" id="play-btn"></div>
+      <p id="video-label">Ver vídeo das regras</p>
+      <video id="rules-video" controls></video>
+    </div>
+    <div class="rules-section">
+      <h3>Objectivo</h3>
+      <p>Recolher as cartas com mais capivaras. Bónus por ter o token do pássaro (+5 pts) e por coleccionar os 4 nenúfares (+10 pts).</p>
+    </div>
+    <div class="rules-section">
+      <h3>Como se joga</h3>
+      <ul>
+        <li>Cada ronda, N cartas são viradas ao centro da mesa (N = número de jogadores).</li>
+        <li>Cada jogador escolhe <strong>secretamente</strong> uma carta para apostar.</li>
+        <li>Quando todos apostaram, as apostas são reveladas em simultâneo.</li>
+        <li><strong>Aposta única</strong> — só tu apostaste nessa carta → ganas-a.</li>
+        <li><strong>Empate</strong> — dois ou mais apostaram na mesma → ninguém ganha.</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3>Token do Pássaro</h3>
+      <p>Quem tiver mais cartas com o símbolo do pássaro fica com o token. Em empate, o token não se move. Ao fim do jogo, o detentor ganha +5 pontos.</p>
+    </div>
+    <div class="rules-section">
+      <h3>Pontuação</h3>
+      <ul>
+        <li>Cada carta vale os seus capivaras (1–5 pts).</li>
+        <li>Token do pássaro: +5 pts.</li>
+        <li>Ter os 4 nenúfares (Y/R/W/B): +10 pts.</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3>Fim do Jogo</h3>
+      <p>O baralho percorre 2 passagens completas. Quem tiver mais pontos ganha.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Rules button (visible during game) -->
+<button class="btn-rules" id="btn-rules" onclick="openRules()" style="display:none">? Regras</button>
 
 <script>
 // ── State ─────────────────────────────────────────────────────────
@@ -446,6 +541,7 @@ function renderGame(s) {
     const bird = card.bird ? `<span class="lily lily-bird">🐦 Pássaro</span>` : '';
     div.innerHTML = `
       ${result}
+      ${cardArtHTML(card)}
       <div class="card-pos">${String.fromCharCode(64+pos+1)}</div>
       <div class="card-caps">${card.cap}</div>
       <div class="card-word">${capWord}</div>
@@ -493,10 +589,15 @@ function renderGame(s) {
     scoredEl.innerHTML = me.scored.map(c => {
       const word = c.cap===1?'cap.':'caps.';
       const b    = c.bird?'🐦 ':'';
+      const imgSrc = `/capivaras/cards/${c.img||('cap'+c.cap)}.png`;
       return `<div class="mini-card">
-        <span class="mini-cap">${b}${c.cap}</span>
-        <span style="color:var(--muted);font-size:10px">${word}</span>
-        ${(c.lilies||[]).map(l=>`<span class="lily ${LILY_CLS[l]||''}" style="padding:1px 4px;font-size:9px">${l}</span>`).join('')}
+        <img src="${imgSrc}" alt="${c.cap}" style="width:32px;height:44px;object-fit:cover;border-radius:3px;flex-shrink:0"
+             onerror="this.style.display='none'">
+        <div>
+          <span class="mini-cap">${b}${c.cap}</span>
+          <span style="color:var(--muted);font-size:10px;display:block">${word}</span>
+          <div>${(c.lilies||[]).map(l=>`<span class="lily ${LILY_CLS[l]||''}" style="padding:1px 4px;font-size:9px">${l}</span>`).join('')}</div>
+        </div>
       </div>`;
     }).join('');
   }
@@ -544,9 +645,43 @@ function restart() {
 function goHome() { location.href = '/'; }
 
 // ── Helpers ───────────────────────────────────────────────────────
+// Card art with graceful fallback
+function cardArtHTML(card) {
+  const src = `/capivaras/cards/${card.img||('cap'+card.cap)}.png`;
+  const fb  = card.fallback || ('cap' + card.cap);
+  return `<div class="card-art">
+    <img src="${src}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="art-fb" style="display:none">${card.cap}</div>
+  </div>`;
+}
+
+function openRules() {
+  document.getElementById('rules-modal').classList.add('open');
+}
+function closeRules() {
+  document.getElementById('rules-modal').classList.remove('open');
+  const v = document.getElementById('rules-video');
+  if (v) { v.pause(); v.src=''; v.style.display='none'; }
+  document.getElementById('play-btn').style.display='flex';
+  document.getElementById('video-label').style.display='block';
+}
+function playRulesVideo() {
+  fetch('/capivaras/regras.mp4', {method:'HEAD'}).then(r => {
+    if (!r.ok) return;
+    const v = document.getElementById('rules-video');
+    v.src = '/capivaras/regras.mp4';
+    v.style.display = 'block';
+    document.getElementById('play-btn').style.display = 'none';
+    document.getElementById('video-label').style.display = 'none';
+    v.play().catch(()=>{});
+  }).catch(()=>{});
+}
+
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const rb = document.getElementById('btn-rules');
+  if (rb) rb.style.display = (id === 's-game') ? 'block' : 'none';
 }
 function showErr(msg) {
   document.getElementById('name-err').textContent = msg;

@@ -349,6 +349,37 @@ section { padding: 100px 40px; }
   border-radius: 4px; border: 1px solid var(--border);
   box-shadow: 0 32px 80px rgba(0,0,0,.5); overflow: hidden;
 }
+.gd-video-wrap {
+  background: var(--ink); border-radius: 4px; overflow: hidden;
+  aspect-ratio: 16/9; position: relative; cursor: pointer;
+  display: none; margin-bottom: 20px;
+}
+.gd-video-wrap.has-video { display: block; }
+.gd-video-thumb {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: brightness(0.7);
+}
+.gd-video-play {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+}
+.gd-play-btn {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.gd-play-btn::after {
+  content: ''; border-style: solid;
+  border-width: 10px 0 10px 18px;
+  border-color: transparent transparent transparent #fff;
+  margin-left: 4px;
+}
+.gd-play-label {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(255,255,255,.7);
+}
+.gd-video-player { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
 .gd-header {
   background: var(--ink); padding: 40px; position: relative;
 }
@@ -679,6 +710,13 @@ footer {
       <div class="gd-sub" id="gd-sub">—</div>
     </div>
     <div class="gd-body">
+      <div class="gd-video-wrap" id="gd-video-wrap" onclick="playGameVideo()">
+        <div class="gd-video-play">
+          <button class="gd-play-btn" id="gd-play-btn"></button>
+          <span class="gd-play-label" id="gd-play-label">Ver vídeo das regras</span>
+        </div>
+        <video class="gd-video-player" id="gd-video-player" controls></video>
+      </div>
       <div class="gd-meta" id="gd-meta"></div>
       <div class="gd-desc" id="gd-desc"></div>
       <div class="gd-mechanics">
@@ -787,6 +825,21 @@ function renderCatalog() {
 function openGame(id) {
   currentGame = CATALOG.find(g => g.id === id);
   if (!currentGame) return;
+  // Reset video player
+  const vp = document.getElementById('gd-video-player');
+  if (vp) { vp.pause(); vp.src=''; vp.style.display='none'; }
+  const pb = document.getElementById('gd-play-btn');
+  const pl = document.getElementById('gd-play-label');
+  if (pb) pb.style.display='flex';
+  if (pl) pl.style.display='block';
+  // Check if video exists for this game
+  const videoFile = `/${currentGame.id}/regras.mp4`;
+  const wrap = document.getElementById('gd-video-wrap');
+  if (wrap) {
+    fetch(videoFile, {method:'HEAD'}).then(r => {
+      wrap.classList.toggle('has-video', r.ok);
+    }).catch(() => wrap.classList.remove('has-video'));
+  }
   const g = currentGame;
   document.getElementById('gd-tag').textContent = g.type.join(' · ');
   document.getElementById('gd-title').textContent = g.name;
@@ -807,6 +860,20 @@ function closeGame() { document.getElementById('game-overlay').classList.remove(
 function launchGame() {
   if (!currentGame) return;
   window.open(`/play/${currentGame.id}`, '_blank');
+}
+
+function playGameVideo() {
+  if (!currentGame) return;
+  const videoFile = `/${currentGame.id}/regras.mp4`;
+  fetch(videoFile, {method:'HEAD'}).then(r => {
+    if (!r.ok) return;
+    const v = document.getElementById('gd-video-player');
+    v.src = videoFile;
+    v.style.display = 'block';
+    document.getElementById('gd-play-btn').style.display = 'none';
+    document.getElementById('gd-play-label').style.display = 'none';
+    v.play().catch(()=>{});
+  }).catch(()=>{});
 }
 
 function shareGame() {
