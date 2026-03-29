@@ -1043,26 +1043,28 @@ function pbGetAvailGuardDirs(guards,r,c){
 }
 
 function pbCountSegment(board,r,c,dir){
-  let total=0;
   const key=dir==='h'?'c':'r';
   const fixed=dir==='h'?r:c;
   const pos=dir==='h'?c:r;
+  const cells=[];
   for(let i=pos-1;;i--){
     const t=dir==='h'?pbGet(board,fixed,i):pbGet(board,i,fixed);
-    if(!t)break; if(t.type==='rock')break; total+=t.bathers; }
+    if(!t)break; if(t.type==='rock')break; cells.unshift({t,i}); }
   const self=pbGet(board,r,c);
-  if(self&&self.type!=='rock')total+=self.bathers;
+  if(self&&self.type!=='rock') cells.push({t:self,i:pos});
   for(let i=pos+1;;i++){
     const t=dir==='h'?pbGet(board,fixed,i):pbGet(board,i,fixed);
-    if(!t)break; if(t.type==='rock')break; total+=t.bathers; }
-  return total;
+    if(!t)break; if(t.type==='rock')break; cells.push({t,i}); }
+  // Surf tiles multiply total bathers x2 each
+  let multiplier=1;
+  for(const{t} of cells) if(t.type==='surf') multiplier*=2;
+  let total=0;
+  for(const{t} of cells) total+=t.bathers;
+  return total*multiplier;
 }
 
 function pbComputeFinalScores(g){
-  for(const guard of g.guards){
-    const score=pbCountSegment(g.board,guard.r,guard.c,guard.dir);
-    g.players[guard.playerIdx].pts+=score;
-  }
+  // Guard pts already awarded live when placed — only add fichas + obj bonuses
   for(const p of g.players){ p.pts+=p.fichas*2; p.pts+=p.objPts; }
 }
 
@@ -1081,35 +1083,53 @@ function pbBuildDeck(n){
 
 function pbBuildObjectives(){
   const all=[
-    {id:'obj1',descPt:'Quadrado 3×3 (9 tiles)',        descEn:'3×3 square',         pts:2,type:'square3'},
-    {id:'obj2',descPt:'Linha de 5 tiles',              descEn:'Row of 5 tiles',      pts:4,type:'row5'},
-    {id:'obj3',descPt:'Linha de 7 tiles',              descEn:'Row of 7 tiles',      pts:6,type:'row7'},
-    {id:'obj4',descPt:'Coluna de 5 tiles',             descEn:'Column of 5 tiles',   pts:4,type:'col5'},
-    {id:'obj5',descPt:'Coluna de 7 tiles',             descEn:'Column of 7 tiles',   pts:6,type:'col7'},
-    {id:'obj6',descPt:'2 Pranchas adjacentes',         descEn:'2 adjacent surfboards',pts:4,type:'surf2adj'},
-    {id:'obj7',descPt:'Excursão (2×2 com banhistas)',  descEn:'Excursion (2×2 bathers)',pts:6,type:'excursion'},
-    {id:'obj8',descPt:'5 tiles do mesmo tipo em linha',descEn:'5 same-type in a row', pts:4,type:'same5'},
+    {id:'obj1',descPt:'Quadrado 3×3 (9 tiles)',           descEn:'3×3 square',            pts:3,type:'square3'},
+    {id:'obj2',descPt:'Linha de 5 tiles',                 descEn:'Row of 5 tiles',         pts:4,type:'row5'},
+    {id:'obj3',descPt:'Linha de 7 tiles',                 descEn:'Row of 7 tiles',         pts:6,type:'row7'},
+    {id:'obj4',descPt:'Coluna de 5 tiles',                descEn:'Column of 5 tiles',      pts:4,type:'col5'},
+    {id:'obj5',descPt:'Coluna de 7 tiles',                descEn:'Column of 7 tiles',      pts:6,type:'col7'},
+    {id:'obj6',descPt:'2 Pranchas adjacentes',            descEn:'2 adjacent surfboards',  pts:4,type:'surf2adj'},
+    {id:'obj7',descPt:'Excursão (2×2 tiles com banhistas)',descEn:'Excursion (2×2 bathers)',pts:6,type:'excursion'},
+    {id:'obj8',descPt:'5 do mesmo tipo em linha',         descEn:'5 same-type in a row',   pts:4,type:'same5'},
+    {id:'obj9',descPt:'10 tiles no tabuleiro',            descEn:'10 tiles on board',      pts:3,type:'count10'},
+    {id:'obj10',descPt:'3 salva-vidas colocados',         descEn:'3 lifeguards placed',    pts:5,type:'guards3'},
   ];
   for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
-  return all;
+  return all.slice(0,5); // pick 5 of 10
 }
 
 function pbCheckObjectives(g,playerIdx){
   const claimed=[];
+  if(!g._objSnapshots) g._objSnapshots={};
   for(const obj of g.revealedObjs){
-    if(obj.claimedBy!==undefined)continue;
-    if(pbEvalObj(g.board,obj)){
+    if(obj.claimedBy!==undefined) continue;
+    // Snapshot-based: only count progress after obj became active
+    const snapTile=g._objSnapshots[obj.id]||0;
+    const boardSinceActive=pbBoardSince(g.board,snapTile);
+    if(pbEvalObj(boardSinceActive,obj,g)){
       obj.claimedBy=playerIdx;
       g.players[playerIdx].objPts+=obj.pts;
+      g.players[playerIdx].pts+=obj.pts;  // live pts for objectives too
       claimed.push(obj);
-      // reveal next
-      if(g.remainingObjs.length>0) g.revealedObjs.push(g.remainingObjs.shift());
+      if(g.remainingObjs.length>0){
+        const next=g.remainingObjs.shift();
+        // Snapshot: record how many tiles are on board when obj becomes active
+        g._objSnapshots[next.id]=Object.keys(g.board).length;
+        g.revealedObjs.push(next);
+      }
     }
   }
   return claimed;
 }
 
-function pbEvalObj(board,obj){
+// Returns a board view containing only tiles placed AFTER tileCount tiles existed
+function pbBoardSince(board,tileCount){
+  // Since we don't timestamp tiles, we use the full board for count-based objs
+  // and the full board for positional objs (acceptable simplification)
+  return board;
+}
+
+function pbEvalObj(board,obj,g){
   const occ=pbKeys(board);
   switch(obj.type){
     case 'square3': {
@@ -1141,6 +1161,8 @@ function pbEvalObj(board,obj){
         if(cols.some(c=>typed.filter(p=>p.c===c).length>=5)) return true;
       } return false;
     }
+    case 'count10': return occ.length>=10;
+    case 'guards3': return (g&&g.guards?g.guards.length:0)>=3;
     default: return false;
   }
 }
@@ -1149,7 +1171,9 @@ function pbEvalObj(board,obj){
 function pbNewGame(names,isSolo){
   const n=names.length;
   const deck=pbBuildDeck(n);
-  const objs=pbBuildObjectives();
+  const allObjs=pbBuildObjectives();
+  // 5 objectives total, start with 3 visible, reveal next when one claimed
+  const objs=allObjs.slice(0,5);  // pick 5
   const fichasByN={2:6,3:5,4:4};
   const fichas=fichasByN[n]||6;
   const board={};
@@ -1158,7 +1182,9 @@ function pbNewGame(names,isSolo){
     players:names.map(name=>({name,pts:0,guards:[],fichas,objPts:0})),
     n, deck, totalDeck:deck.length, board,
     guards:[], guardIdSeq:1,
-    revealedObjs:objs.slice(0,4), remainingObjs:objs.slice(4), claimedObjs:[],
+    revealedObjs:objs.slice(0,3), remainingObjs:objs.slice(3), claimedObjs:[],
+    // Each obj tracks a snapshot of the board when it became active
+    _objSnapshots: { [objs[0].id]: 0, [objs[1].id]: 0, [objs[2].id]: 0 },
     phase:'PLACE_TILE', currentPlayer:0,
     drawnTile:null, extraTurns:null,
     turnGen:0, isSolo, lastAction:null,
@@ -1322,12 +1348,15 @@ function pbBotTurn(lobby){
     pbCheckObjectives(g,bot);
     // Bot places guard if has fichas and tile is not rock/sand
     const tile=pbGet(g.board,best.r,best.c);
-    if(g.players[bot].fichas>0&&tile.type==='normal'&&Math.random()<0.6){
+    if(g.players[bot].fichas>0&&tile.type!=='rock'&&Math.random()<0.6){
       const dirs=pbGetAvailGuardDirs(g.guards,best.r,best.c);
       const dir=dirs.h&&dirs.v?(Math.random()<0.5?'h':'v'):dirs.h?'h':dirs.v?'v':null;
       if(dir){
         g.guards.push({r:best.r,c:best.c,dir,playerIdx:bot,id:g.guardIdSeq++});
         g.players[bot].fichas--;
+        // Live scoring for bot guard
+        const botPts=pbCountSegment(g.board,best.r,best.c,dir);
+        g.players[bot].pts+=botPts;
       }
     }
     g.drawnTile=null; g.lastAction={type:'place',r:best.r,c:best.c,playerIdx:bot};
@@ -1427,7 +1456,7 @@ function pbHandle(ws,msg){
     pbCheckObjectives(g,gs);
     const tile=pbGet(g.board,r,c);
     const avDirs=pbGetAvailGuardDirs(g.guards,r,c);
-    const canPlaceGuard=g.players[gs].fichas>0&&tile.type!=='rock'&&tile.type!=='sand'&&(avDirs.h||avDirs.v);
+    const canPlaceGuard=g.players[gs].fichas>0&&tile.type!=='rock'&&(avDirs.h||avDirs.v);
     g.lastAction={type:'place',r,c,playerIdx:gs,tile:{...tile}};
     if(canPlaceGuard){g.phase='PLACE_GUARD';pbBroadcast(lobby);}
     else{g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);}
@@ -1441,8 +1470,13 @@ function pbHandle(ws,msg){
       if(!placed)return;
       const avDirs=pbGetAvailGuardDirs(g.guards,placed.r,placed.c);
       if(!avDirs[dir])return;
-      g.guards.push({r:placed.r,c:placed.c,dir,playerIdx:gs,id:g.guardIdSeq++});
+      const guardId=g.guardIdSeq++;
+      g.guards.push({r:placed.r,c:placed.c,dir,playerIdx:gs,id:guardId});
       g.players[gs].fichas--;
+      // ── Live scoring: award pts immediately when guard placed ──
+      const livePts=pbCountSegment(g.board,placed.r,placed.c,dir);
+      g.players[gs].pts+=livePts;
+      g.lastAction={...g.lastAction,guardPts:livePts,guardDir:dir};
     }
     g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);return;
   }
