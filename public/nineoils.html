@@ -70,8 +70,8 @@ body{display:flex;flex-direction:column}
 
 /* GAME */
 #s-game{flex-direction:column;gap:0}
-.game-sticky{background:var(--bg);padding:10px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
-.game-body{display:flex;flex-direction:row;gap:16px;padding:16px;max-width:1100px;margin:0 auto;width:100%}
+.game-sticky{background:var(--bg);padding:10px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;width:100%}
+.game-body{display:flex;flex-direction:row;gap:16px;padding:16px;width:100%}
 .game-left{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0}
 .game-right{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
 
@@ -91,17 +91,18 @@ body{display:flex;flex-direction:column}
 /* Players */
 .players-row{display:flex;gap:8px}
 .pcard{background:var(--surface);border:1px solid var(--border);border-radius:6px;
-  padding:10px 12px;flex:1;transition:border-color .2s}
+  padding:12px 16px;flex:1;transition:border-color .2s}
 .pcard.active{border-color:var(--gold)}
 .pcard.me{border-left:3px solid var(--accent)}
 .pcard.opp{border-left:3px solid var(--red)}
-.pcard-name{font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:600}
-.tag-me{font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(196,144,48,.2);color:var(--accent);margin-left:4px}
+.pcard-name{font-family:'Crimson Text',serif;font-size:26px;font-weight:600;
+  color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.tag-me{font-size:10px;font-family:'Nunito',sans-serif;font-weight:800;padding:2px 6px;
+  border-radius:2px;background:rgba(196,144,48,.2);color:var(--accent)}
+.pcard-stall{display:flex;gap:3px;margin-top:8px}
 
-/* Stall */
-.stall-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
-.stall-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.stalls-row{display:flex;gap:16px}
+/* Stall now inside pcard — no separate wrap needed */.stall-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.pcard-stall{display:flex;gap:3px;margin-top:8px;flex-wrap:wrap}
 .stall{flex:1}
 .stall-name{font-size:11px;color:var(--muted);margin-bottom:6px;text-align:center}
 .stall-slots{display:flex;gap:4px;justify-content:center}
@@ -110,11 +111,19 @@ body{display:flex;flex-direction:column}
 .slot.empty{background:rgba(160,20,20,.15);border-color:#c03020}
 .slot.empty::after{content:'';width:14px;height:14px;background:#c03020;border-radius:2px;display:block}
 .slot.open{background:rgba(30,18,8,.5);border-color:var(--border)}
-.slot.stocked{background:rgba(196,144,48,.15);border-color:var(--gold)}
+.slot.stocked{background:rgba(40,120,40,.2);border-color:var(--green)}
 .slot.stocked::after{content:'🧪';font-size:20px}
 
 /* Dice */
 .dice-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+@media(max-width:768px){
+  .game-left{display:flex;flex-direction:column}
+  #dice-wrap{order:1}
+  #status-bar{order:3}
+  #actions{order:4}
+  #hand-wrap{order:5}
+  #opp-hand-wrap{order:2}
+}
 .dice-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 .dice-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .die{width:44px;height:44px;border-radius:6px;background:var(--panel);border:1px solid var(--border);
@@ -231,6 +240,25 @@ body{display:flex;flex-direction:column}
 .rules-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .rules-section p,.rules-section li{font-size:13px;line-height:1.7;color:var(--ink)}
 .rules-section ul{padding-left:18px}
+/* ── Mobile layout ── */
+@media (max-width:768px){
+  .game-body{flex-direction:column;padding:8px}
+  .game-right{width:100%;order:10}/* push reference panels to bottom */
+  .game-left{order:1}
+  /* Reorder game-left children via order */
+  .players-row{flex-direction:column;gap:6px}
+  .pcard.opp{order:-1}/* opponent first */
+  .pcard.me{order:1}/* player last */
+  /* Dice between opp and player */
+  .dice-wrap{order:0}
+  /* Hand after player card */
+  .hand-wrap{order:2}
+  .status-bar{order:-2}/* above opp */
+  .game-sticky .players-row{flex-direction:column}
+  /* Stack stall slots on mobile */
+  .pcard-stall{flex-wrap:wrap;gap:4px}
+  .slot{width:28px;height:38px}
+}
 .btn-rules{position:fixed;bottom:20px;right:20px;padding:9px 16px;background:#0a0602;
   color:var(--gold);border:1px solid var(--border);border-radius:20px;font-family:'Nunito',sans-serif;
   font-weight:800;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
@@ -279,11 +307,7 @@ body{display:flex;flex-direction:column}
   </div>
   <div class="game-body">
     <div class="game-left">
-      <!-- Stall -->
-      <div class="stall-wrap">
-        <div class="stall-label">Stalls — Garrafas</div>
-        <div class="stalls-row" id="stalls-row"></div>
-      </div>
+
       <!-- Dice -->
       <div class="dice-wrap" id="dice-wrap">
         <div class="dice-label">9 Dados</div>
@@ -527,28 +551,23 @@ function renderGame(s) {
 
   // Players
   const pr = document.getElementById('players-row');
+  const stallFn = (idx) => (s.stalls[idx]||[]).map(v =>
+    `<div class="slot ${v===0?'empty':v===1?'open':'stocked'}"></div>`).join('');
+
   pr.innerHTML = [
-    {name:s.myName, seat:s.myIdx, hand:s.myHand.length, supply:s.supplies[s.myIdx], isMe:true},
-    {name:s.oppName, seat:1-s.myIdx, hand:s.oppHandCount, supply:s.supplies[1-s.myIdx], isMe:false},
+    {name:s.myName, seat:s.myIdx, hand:s.myHand.length, supply:s.supplies[s.myIdx], isMe:true, stallIdx:s.myIdx},
+    {name:s.oppName, seat:1-s.myIdx, hand:s.oppHandCount, supply:s.supplies[1-s.myIdx], isMe:false, stallIdx:1-s.myIdx},
   ].map(p => `
     <div class="pcard ${p.seat===s.cur?'active':''} ${p.isMe?'me':'opp'}">
       <div class="pcard-name">${esc(p.name)}${p.isMe?`<span class="tag-me">tu</span>`:''}</div>
-      <div style="font-family:'Crimson Text',serif;font-size:28px;font-weight:600;color:var(--gold);line-height:1">${p.supply} <span style="font-size:13px;color:var(--muted)">suprimento</span></div>
-      <div style="font-size:11px;color:var(--muted)">🃏 ×${p.hand}</div>
+      <div style="font-family:'Crimson Text',serif;font-size:22px;font-weight:600;color:var(--gold);line-height:1;margin-bottom:6px">
+        ${p.supply} <span style="font-size:12px;color:var(--muted)">suprimento</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:8px">🃏 ×${p.hand}</span>
+      </div>
+      <div class="pcard-stall">${stallFn(p.stallIdx)}</div>
     </div>`).join('');
 
-  // Stalls
-  const stalls = document.getElementById('stalls-row');
-  stalls.innerHTML = [s.myIdx, 1-s.myIdx].map((idx, i) => {
-    const name = i===0 ? s.myName : s.oppName;
-    const stall = s.stalls[idx];
-    return `<div class="stall">
-      <div class="stall-name">${esc(name)}</div>
-      <div class="stall-slots">
-        ${stall.map(v => `<div class="slot ${v===0?'empty':v===1?'open':'stocked'}"></div>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
+  // Stalls now rendered inside pcard
 
   // Dice
   const diceRow = document.getElementById('dice-row');
