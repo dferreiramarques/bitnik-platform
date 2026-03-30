@@ -95,7 +95,7 @@ body{display:flex;flex-direction:column}
 .pcard.active{border-color:var(--gold)}
 .pcard.me{border-left:3px solid var(--accent)}
 .pcard.opp{border-left:3px solid var(--red)}
-.pcard-name{font-size:11px;color:var(--muted);margin-bottom:2px}
+.pcard-name{font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:600}
 .tag-me{font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(196,144,48,.2);color:var(--accent);margin-left:4px}
 
 /* Stall */
@@ -105,12 +105,13 @@ body{display:flex;flex-direction:column}
 .stall{flex:1}
 .stall-name{font-size:11px;color:var(--muted);margin-bottom:6px;text-align:center}
 .stall-slots{display:flex;gap:4px;justify-content:center}
-.slot{width:32px;height:44px;border-radius:4px;border:1px solid var(--border);
+.slot{width:32px;height:44px;border-radius:4px;border:2px solid var(--border);
   display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .3s}
-.slot.empty{background:rgba(74,48,16,.3)}
-.slot.open{background:rgba(64,128,48,.15);border-color:var(--green)}
-.slot.stocked{background:rgba(196,144,48,.2);border-color:var(--gold)}
-.slot.stocked::after{content:'🍶';font-size:20px}
+.slot.empty{background:rgba(160,20,20,.15);border-color:#c03020}
+.slot.empty::after{content:'';width:14px;height:14px;background:#c03020;border-radius:2px;display:block}
+.slot.open{background:rgba(30,18,8,.5);border-color:var(--border)}
+.slot.stocked{background:rgba(196,144,48,.15);border-color:var(--gold)}
+.slot.stocked::after{content:'🧪';font-size:20px}
 
 /* Dice */
 .dice-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
@@ -183,6 +184,14 @@ body{display:flex;flex-direction:column}
 /* Game Over overlay */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;
   align-items:center;justify-content:center;z-index:100}
+.combo-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;
+  align-items:center;justify-content:center;z-index:90;padding:20px}
+.combo-modal.open{display:flex}
+.combo-modal-box{background:var(--surface);border:1px solid var(--accent);border-radius:8px;
+  padding:24px;width:100%;max-width:420px}
+.combo-modal-title{font-family:'Crimson Text',serif;font-size:22px;color:var(--gold);
+  margin-bottom:4px}
+.combo-modal-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
 .overlay.open{display:flex}
 .overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
   padding:28px;width:100%;max-width:420px}
@@ -322,6 +331,15 @@ body{display:flex;flex-direction:column}
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- COMBO CHOICE MODAL -->
+<div class="combo-modal" id="combo-modal">
+  <div class="combo-modal-box">
+    <div class="combo-modal-title" id="combo-modal-title">Escolher Combo</div>
+    <div class="combo-modal-sub" id="combo-modal-sub"></div>
+    <div class="combo-options" id="combo-modal-options"></div>
   </div>
 </div>
 
@@ -515,7 +533,7 @@ function renderGame(s) {
   ].map(p => `
     <div class="pcard ${p.seat===s.cur?'active':''} ${p.isMe?'me':'opp'}">
       <div class="pcard-name">${esc(p.name)}${p.isMe?`<span class="tag-me">tu</span>`:''}</div>
-      <div style="font-size:18px;font-weight:800;color:var(--gold)">${p.supply} <span style="font-size:12px;color:var(--muted)">suprimento</span></div>
+      <div style="font-family:'Crimson Text',serif;font-size:28px;font-weight:600;color:var(--gold);line-height:1">${p.supply} <span style="font-size:13px;color:var(--muted)">suprimento</span></div>
       <div style="font-size:11px;color:var(--muted)">🃏 ×${p.hand}</div>
     </div>`).join('');
 
@@ -644,37 +662,35 @@ function renderHand(s) {
 }
 
 function renderComboOptions(s) {
-  // Remove existing combo options
-  const existing = document.getElementById('combo-options-wrap');
-  if (existing) existing.remove();
+  const modal = document.getElementById('combo-modal');
+  if (s.phase!=='CHOOSE_COMBO' || !s.isMyTurn || !s.comboOptions) {
+    modal.classList.remove('open');
+    return;
+  }
 
-  if (s.phase!=='CHOOSE_COMBO' || !s.isMyTurn || !s.comboOptions) return;
-
-  const wrap = document.createElement('div');
-  wrap.id='combo-options-wrap';
-  wrap.style.cssText='background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:12px;margin-top:0';
-  const label = document.createElement('div');
-  label.style.cssText='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px';
-  label.textContent=s.comboPickReason==='JOKER'?'🃏 Joker — escolhe qualquer combo:':'Múltiplas opções — escolhe:';
-  wrap.appendChild(label);
-
-  const opts = document.createElement('div');
-  opts.className='combo-options';
   const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',DOUBLE:'Double',SIX_OF_KIND:'Six of a Kind'};
-  const scores={PENTA:'Descarta mão adv.',QUAD:'Abre slot',TRIPLE_DOUBLE:'Engarrafa 1',DOUBLE:'Compra 1 carta',SIX_OF_KIND:'Compra 3 cartas'};
+  const effects={PENTA:'Descarta mão do adversário',QUAD:'Abre um slot bloqueado',
+    TRIPLE_DOUBLE:'Engarrafa 1 🧪',DOUBLE:'Compra 1 carta',SIX_OF_KIND:'Compra 3 cartas'};
+
+  document.getElementById('combo-modal-title').textContent =
+    s.comboPickReason==='JOKER' ? '🃏 Joker — qualquer combo' : 'Múltiplas opções';
+  document.getElementById('combo-modal-sub').textContent =
+    s.comboPickReason==='JOKER'
+      ? 'Rolaste 7 iguais — escolhe qual combo activar:'
+      : 'O teu rolo permite várias combinações — escolhe uma:';
+
+  const opts = document.getElementById('combo-modal-options');
+  opts.innerHTML = '';
   (s.comboOptions||[]).forEach((bundle, i) => {
     const row = document.createElement('div');
     row.className='combo-opt';
     row.innerHTML=`<span class="combo-opt-label">${bundle.map(c=>names[c]||c).join(' + ')}</span>
-      <span class="combo-opt-score">${bundle.map(c=>scores[c]||'').filter(Boolean).join(' + ')}</span>`;
-    row.onclick=()=>send({type:'CHOOSE_COMBO',bundleIdx:i});
+      <span class="combo-opt-score">${bundle.map(c=>effects[c]||'').filter(Boolean).join(' · ')}</span>`;
+    row.onclick=()=>{ modal.classList.remove('open'); send({type:'CHOOSE_COMBO',bundleIdx:i}); };
     opts.appendChild(row);
   });
-  wrap.appendChild(opts);
 
-  // Insert after status-bar
-  const statusBar = document.getElementById('status-bar');
-  statusBar.insertAdjacentElement('afterend', wrap);
+  modal.classList.add('open');
 }
 
 function showGameOver(s) {
