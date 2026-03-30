@@ -317,6 +317,9 @@ body{display:flex;flex-direction:column}
       </div>
       <!-- Actions -->
       <div class="actions" id="actions"></div>
+      <div style="margin-top:8px">
+        <button class="btn-secondary" onclick="leaveGame()" style="font-size:11px;padding:6px 12px">← Sair do jogo</button>
+      </div>
     </div>
     <div class="game-right">
       <!-- Opp hand -->
@@ -461,6 +464,13 @@ function goLobby() {
 function joinLobby(id) { myLobbyId=id; send({type:'JOIN_LOBBY',lobbyId:id,playerName:myName}); }
 function leaveLobby() {
   send({type:'LEAVE_LOBBY'}); sessionStorage.removeItem('no_token');
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  show('s-lobby'); send({type:'LOBBIES'});
+}
+function leaveGame() {
+  if (!confirm('Sair do jogo? A tua posição na mesa será libertada.')) return;
+  send({type:'LEAVE_LOBBY'});
+  sessionStorage.removeItem('no_token');
   myToken=''; myLobbyId=''; mySeat=-1; state=null;
   show('s-lobby'); send({type:'LOBBIES'});
 }
@@ -643,11 +653,19 @@ function renderActions(s) {
     const defendWrap = document.createElement('div');
     defendWrap.className='defend-wrap';
     defendWrap.innerHTML=`<div class="defend-label">👦 ${s.oppName} ataca com ${attacks} Boy${attacks>1?'s':''}!</div><div class="defend-btns">`;
+    // Skip first
+    const skipBtn=document.createElement('button');
+    skipBtn.className='btn-defend';
+    skipBtn.style.cssText='border-color:var(--muted);color:var(--muted)';
+    skipBtn.textContent='Ignorar defesa';
+    skipBtn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:0});
+    defendWrap.querySelector('.defend-btns').appendChild(skipBtn);
+    // Bully blocks
     const max = Math.min(bullies,attacks);
-    for(let b=0;b<=max;b++){
+    for(let b=1;b<=max;b++){
       const btn=document.createElement('button');
       btn.className='btn-defend';
-      btn.textContent=b===0?'Não bloquear':`Bloquear ${b} com ${b===1?'Bully':b+' Bullies'}`;
+      btn.textContent=`Bloquear ${b} com ${b===1?'Bully':b+' Bullies'}`;
       btn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:b});
       defendWrap.querySelector('.defend-btns').appendChild(btn);
     }
