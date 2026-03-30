@@ -500,6 +500,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // /play/nineoils → dedicated Nine Oils client
+  if (url === '/play/nineoils' || url === '/play/nineoils/') {
+    fs.readFile(path.join(PUB_DIR, 'nineoils.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
   // /play/percebes → dedicated Percebes client
   if (url === '/play/percebes' || url === '/play/percebes/') {
     fs.readFile(path.join(PUB_DIR, 'percebes.html'), (err, data) => {
@@ -554,6 +563,25 @@ const wss = new WebSocketServer({ noServer: true });
 const capWss = { get clients() { return [...wss.clients].filter(w=>w._isCap); } }; // alias
 
 wss.on('connection', (ws, req) => {
+  // Route: Nine Oils connections
+  if (ws._isNO) {
+    noSend(ws, { type:'LOBBIES', lobbies: Object.values(NO_LOBBIES).map(noLobbyInfo) });
+    ws.on('message', raw => { try { noHandle(ws, JSON.parse(raw)); } catch {} });
+    ws.on('close', () => {
+      const st = NO_WS_STATE.get(ws); if (!st||!st.lobbyId) return;
+      const lobby = NO_LOBBIES[st.lobbyId]; if (!lobby) return;
+      const {seat} = st;
+      lobby.players[seat] = null;
+      lobby.players.forEach(p => { if(p) noSend(p,{type:'OPPONENT_DISCONNECTED',seat,name:lobby.names[seat]}); });
+      noBroadcastLobbies();
+      lobby.graceTimers[seat] = setTimeout(() => {
+        lobby.names[seat]=''; lobby.tokens[seat]=null;
+        noBroadcastLobbies();
+      }, 45000);
+    });
+    ws.on('error',()=>{});
+    return;
+  }
   // Route: percebes connections
   if (ws._isPerc) {
     pbSend(ws, { type:'LOBBIES', lobbies: Object.values(PERC_LOBBIES).map(pbLobbyInfo) });
@@ -988,6 +1016,7 @@ server.on('upgrade', (req, socket, head) => {
   wss.handleUpgrade(req, socket, head, ws => {
     ws._isCap  = (urlPath === '/ws/capivaras');
     ws._isPerc = (urlPath === '/ws/percebes');
+    ws._isNO   = (urlPath === '/ws/nineoils');
     wss.emit('connection', ws, req);
   });
 });
@@ -1506,5 +1535,478 @@ function pbHandle(ws,msg){
       g.lastAction={...g.lastAction,guardPts:initPts,guardDir:dir};
     }
     g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);return;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  NINE OILS — Servidor embebido
+//  Dice combos, card play, bottle stall · 2 jogadores
+// ═══════════════════════════════════════════════════════════════════
+const NO_LOBBIES  = {};
+const NO_SESSIONS = {};
+const NO_WS_STATE = new WeakMap();
+const NO_DECK     = ['TEMPTRESS','TEMPTRESS','BOY','BOY','BOY','BULLY','BULLY','BULLY','BULLY'];
+
+// ── Combo detection ───────────────────────────────────────────────
+function noEnumBundles(dice){
+  const freq={};
+  dice.forEach(d=>freq[d]=(freq[d]||0)+1);
+  const faces=Object.keys(freq).map(Number).sort((a,b)=>freq[b]-freq[a]);
+  const seen=new Set(), bundles=[];
+  function go(fi,used,cur){
+    const key=[...cur].sort().join('|');
+    if(!seen.has(key)){seen.add(key);bundles.push([...cur]);}
+    for(let i=fi;i<faces.length;i++){
+      const f=faces[i]; if(used.has(f)) continue;
+      const c=freq[f];
+      if(c>=5){used.add(f);go(i+1,used,[...cur,'PENTA']);used.delete(f);}
+      if(c>=4){used.add(f);go(i+1,used,[...cur,'QUAD']);used.delete(f);}
+      if(c>=3){
+        for(let j=0;j<faces.length;j++){
+          if(j===i) continue;
+          const f2=faces[j];
+          if(used.has(f2)||freq[f2]<2) continue;
+          used.add(f);used.add(f2);go(i+1,used,[...cur,'TRIPLE_DOUBLE']);used.delete(f);used.delete(f2);
+        }
+      }
+      if(c>=2){used.add(f);go(i+1,used,[...cur,'DOUBLE']);used.delete(f);}
+    }
+  }
+  go(0,new Set(),[]);
+  return bundles.filter(b=>b.length>0).map(b=>[...b].sort());
+}
+
+const NO_BUNDLE_SCORE={PENTA:100,QUAD:80,TRIPLE_DOUBLE:60,SIX_OF_KIND:50,DOUBLE:10};
+function noBundleScore(b){return b.reduce((s,c)=>s+(NO_BUNDLE_SCORE[c]||0),0);}
+
+function noAnalyseRoll(dice){
+  const freq={};
+  dice.forEach(d=>freq[d]=(freq[d]||0)+1);
+  const max=Math.max(...Object.values(freq),0);
+  if(max===9) return {conflict:false,special:'INSTANT_WIN',combos:['INSTANT_WIN'],freq};
+  if(max===8) return {conflict:false,special:'DOUBLE_QUAD',combos:['DOUBLE_QUAD'],freq};
+  if(max===7) return {conflict:true,special:'JOKER',
+    bundles:[['DOUBLE'],['TRIPLE_DOUBLE'],['QUAD'],['PENTA'],['SIX_OF_KIND']],combos:['DOUBLE'],freq};
+  if(max===6) return {conflict:false,special:'SIX_OF_KIND',combos:['SIX_OF_KIND'],freq};
+  const bundles=noEnumBundles(dice);
+  bundles.sort((a,b)=>noBundleScore(b)-noBundleScore(a));
+  if(!bundles.length) return {conflict:false,special:null,combos:[],freq};
+  if(bundles.length===1) return {conflict:false,special:null,combos:bundles[0],freq};
+  return {conflict:true,special:null,bundles,combos:bundles[0],freq};
+}
+
+function noDescribeRoll(dice){
+  const freq={};
+  dice.forEach(d=>freq[d]=(freq[d]||0)+1);
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1])
+    .map(([v,c])=>c===1?`one ${v}`:`${['','','two','three','four','five','six','seven','eight','nine'][c]||c+'×'} ${v}s`).join(', ');
+}
+
+// ── Game state ────────────────────────────────────────────────────
+function noShuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+function noDeal(g){if(!g.deck.length){if(!g.discard.length)return null;g.deck=noShuffle([...g.discard]);g.discard=[];}return g.deck.pop()||null;}
+function noTrash(g,c){if(c)g.discard.push(c);}
+
+function noNewGame(nameA,nameB,isSolo){
+  const deck=noShuffle([...NO_DECK]);
+  const g={
+    players:[
+      {name:nameA,stall:[0,0,1,1,1,1],hand:[],supply:6},
+      {name:nameB,stall:[0,0,1,1,1,1],hand:[],supply:6},
+    ],
+    deck,discard:[],
+    dice:Array(9).fill(0),
+    cur:Math.floor(Math.random()*2),
+    phase:'CARD_PLAY',
+    sel:[],temptCount:0,
+    status:'',combos:[],comboOptions:null,
+    rollExplain:'',winnerIdx:null,
+    isSolo:!!isSolo,turnGen:0,
+    _pendingAnalysis:null,_jokerRoll:false,_boysAttacking:0,
+  };
+  const c0=noDeal(g);if(c0)g.players[0].hand.push(c0);
+  const c1=noDeal(g);if(c1)g.players[1].hand.push(c1);
+  g.status=`${g.players[g.cur].name} goes first!`;
+  return g;
+}
+
+function noBuildView(g,seat){
+  const displayCombos=(g.phase==='ROLL_PAUSE'&&g._pendingAnalysis&&!g._pendingAnalysis.conflict)
+    ?g._pendingAnalysis.combos:g.combos;
+  return{
+    myIdx:seat, myName:g.players[seat].name, oppName:g.players[1-seat].name,
+    myHand:g.players[seat].hand, oppHandCount:g.players[1-seat].hand.length,
+    stalls:g.players.map(p=>p.stall), supplies:g.players.map(p=>p.supply),
+    dice:g.dice, phase:g.phase, cur:g.cur, isMyTurn:g.cur===seat,
+    status:g.status, combos:displayCombos, comboOptions:g.comboOptions,
+    comboPickReason:g._jokerRoll?'JOKER':'CONFLICT',
+    rollExplain:g.rollExplain, sel:g.cur===seat?g.sel:[],
+    winnerIdx:g.winnerIdx, isSolo:g.isSolo,
+    boysAttacking:g._boysAttacking||0,
+    deckCount:g.deck.length+g.discard.length, deckRemaining:g.deck.length,
+  };
+}
+
+function noSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
+function noBroadcast(lobby){
+  const g=lobby.game;if(!g)return;
+  [0,1].forEach(seat=>{if(lobby.players[seat])noSend(lobby.players[seat],{type:'GAME_STATE',state:noBuildView(g,seat)});});
+}
+function noLobbyInfo(l){
+  return{id:l.id,name:l.name,solo:l.solo,
+    seated:l.players.filter(Boolean).length,maxH:2,
+    playing:!!l.game&&l.game.phase!=='GAME_OVER',
+    names:l.names.filter(Boolean)};
+}
+function noBroadcastLobbies(){
+  const list=Object.values(NO_LOBBIES).map(noLobbyInfo);
+  for(const ws of wss.clients){
+    if(!ws._isNO||ws.readyState!==1)continue;
+    const st=NO_WS_STATE.get(ws);
+    if(!st||!st.lobbyId)noSend(ws,{type:'LOBBIES',lobbies:list});
+  }
+}
+
+// Init lobbies
+for(let i=1;i<=4;i++) NO_LOBBIES['mp'+i]={id:'mp'+i,name:'Mesa '+i,solo:false,players:[null,null],names:['',''],tokens:[null,null],graceTimers:[null,null],game:null};
+NO_LOBBIES['solo']={id:'solo',name:'Solo vs Peddler',solo:true,players:[null,null],names:['',''],tokens:[null,null],graceTimers:[null,null],game:null};
+
+// ── Game actions ──────────────────────────────────────────────────
+function noDoSteal(g){
+  const opp=g.players[1-g.cur];
+  const slots=opp.stall.map((s,i)=>s===2?i:-1).filter(i=>i>=0);
+  if(!slots.length)return;
+  opp.stall[slots[slots.length-1]]=1;opp.supply++;
+  g.status=`${g.players[g.cur].name} steals a bottle!`;
+}
+
+function noRollAndResolve(lobby){
+  const g=lobby.game;
+  g.dice=Array.from({length:9},()=>Math.ceil(Math.random()*6));
+  g.rollExplain=noDescribeRoll(g.dice);
+  g._pendingAnalysis=noAnalyseRoll(g.dice);
+  g.phase='ROLL_PAUSE';g.combos=[];g.comboOptions=null;
+  const a=g._pendingAnalysis;
+  const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',DOUBLE:'Double',SIX_OF_KIND:'Six'};
+  if(a.conflict){
+    const best=a.bundles[0].map(c=>names[c]||c).join('+');
+    g.status=`${g.players[g.cur].name} rolled! Best: ${best} — click Continue to choose.`;
+  } else if(a.combos.length){
+    g.status=`${g.players[g.cur].name} rolled ${a.combos.map(c=>names[c]||c).join('+')}! Continue to resolve.`;
+  } else {
+    g.status=`${g.players[g.cur].name} rolled — no combos. Continue.`;
+  }
+  noBroadcast(lobby);
+  if(g.isSolo&&g.cur===1){
+    const gen=g.turnGen;
+    setTimeout(()=>{if(g.turnGen===gen&&g.phase==='ROLL_PAUSE')noResolvePause(lobby);},2200);
+  }
+}
+
+function noResolvePause(lobby){
+  const g=lobby.game;if(!g||g.phase!=='ROLL_PAUSE')return;
+  const a=g._pendingAnalysis;g._pendingAnalysis=null;
+  if(a.special==='INSTANT_WIN'){noApplyCombos(lobby,['INSTANT_WIN']);return;}
+  if(a.conflict){
+    g.phase='CHOOSE_COMBO';g.comboOptions=a.bundles;g.combos=[];
+    g._jokerRoll=a.special==='JOKER';
+    g.status=g._jokerRoll
+      ?`${g.players[g.cur].name} rolled 7 of a kind — Joker! Choose any combo:`
+      :`${g.players[g.cur].name} rolled! Multiple options — choose:`;
+    noBroadcast(lobby);
+    if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1000);
+  } else {
+    g._jokerRoll=false;g.comboOptions=null;
+    noApplyCombos(lobby,a.combos);
+  }
+}
+
+function noApplyCombos(lobby,combos){
+  const g=lobby.game;g.combos=combos;
+  const p=g.players[g.cur],opp=g.players[1-g.cur];
+  const msgs=[];
+  if(combos.includes('INSTANT_WIN')){
+    g.phase='GAME_OVER';g.winnerIdx=g.cur;
+    g.status=`${p.name} rolled NINE of a kind — instant victory!`;
+    noBroadcast(lobby);return;
+  }
+  if(combos.includes('DOUBLE_QUAD')){
+    let removed=0;
+    for(let i=0;i<2;i++){const slot=p.stall.findIndex(s=>s===0);if(slot>=0){p.stall[slot]=1;removed++;}}
+    msgs.push(removed?`Eight of a kind — ${removed} blocker${removed>1?'s':''} removed!`:`Eight of a kind — no blockers left`);
+  }
+  if(combos.includes('SIX_OF_KIND')){
+    let drawn=0;
+    for(let i=0;i<3;i++){const c=noDeal(g);if(c){p.hand.push(c);drawn++;}}
+    msgs.push(drawn?`Six of a kind — drew ${drawn} card${drawn>1?'s':''}!`:`Six of a kind — deck empty`);
+  }
+  if(combos.includes('DOUBLE')){
+    const n=combos.filter(c=>c==='DOUBLE').length;
+    for(let i=0;i<n;i++){const c=noDeal(g);if(c){p.hand.push(c);msgs.push(`Double — drew ${c[0]+c.slice(1).toLowerCase()}`);}else msgs.push('Double — deck empty');}
+  }
+  if(combos.includes('QUAD')){
+    const slot=p.stall.findIndex(s=>s===0);
+    if(slot>=0){p.stall[slot]=1;msgs.push(`Quad — slot opened!`);}else msgs.push('Quad — all slots open');
+  }
+  if(combos.includes('TRIPLE_DOUBLE')){
+    const total=1+g.temptCount;let placed=0;
+    for(let b=0;b<total;b++){
+      const slot=p.stall.findIndex(s=>s===1);
+      if(slot>=0&&p.supply>0){p.stall[slot]=2;p.supply--;placed++;}
+    }
+    msgs.push(placed?`Triple+Double — ${placed} bottle${placed>1?'s':''} stocked${g.temptCount?` (Temptress bonus!)`:''}`:`Triple+Double — no free slots`);
+  }
+  g.temptCount=0;
+  if(combos.includes('PENTA')){
+    opp.hand.forEach(c=>noTrash(g,c));opp.hand=[];
+    msgs.push(`Penta — ${opp.name} discards their entire hand!`);
+  }
+  if(!combos.length)msgs.push('No combos this roll.');
+  g.status=msgs.join(' · ');
+  if(p.stall.filter(s=>s===2).length===6){
+    g.phase='GAME_OVER';g.winnerIdx=g.cur;
+    g.status=`${p.name} stocks their 6th bottle — victory!`;
+    noBroadcast(lobby);return;
+  }
+  if(p.hand.length>3){
+    g.phase='DISCARD';noBroadcast(lobby);
+    if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1000);
+    return;
+  }
+  noEndTurn(g,lobby);
+}
+
+function noEndTurn(g,lobby){
+  g.cur=1-g.cur;g.phase='CARD_PLAY';g.sel=[];g.combos=[];
+  g.comboOptions=null;g.rollExplain='';g.turnGen++;
+  g.status=`${g.players[g.cur].name}'s turn — play cards or roll.`;
+  noBroadcast(lobby);
+  if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1600);
+}
+
+function noProcessCards(lobby){
+  const g=lobby.game;
+  const p=g.players[g.cur],opp=g.players[1-g.cur];
+  const indices=[...g.sel].sort((a,b)=>b-a);
+  const played=indices.map(i=>p.hand[i]);
+  indices.forEach(i=>p.hand.splice(i,1));
+  g.sel=[];
+  const tempt=played.filter(c=>c==='TEMPTRESS').length;
+  const boys=played.filter(c=>c==='BOY').length;
+  const bullies=played.filter(c=>c==='BULLY').length;
+  g.temptCount=tempt;
+  for(let t=0;t<tempt;t++)noTrash(g,'TEMPTRESS');
+  if(bullies>=2&&!boys){
+    for(let b=0;b<bullies;b++)noTrash(g,'BULLY');
+    if(g.isSolo&&g.cur===1){g.status='The Peddler cracks knuckles menacingly.';noRollAndResolve(lobby);return;}
+    if(opp.hand.length){
+      g.phase='BLIND_PICK';
+      g.status=`${p.name} plays 2 Bullies! Pick a card blindly from ${opp.name}'s hand.`;
+      noBroadcast(lobby);return;
+    }
+    g.status=`Bullies flex — but ${opp.name}'s hand is empty!`;noRollAndResolve(lobby);return;
+  }
+  for(let b=0;b<bullies;b++)noTrash(g,'BULLY');
+  if(boys){
+    for(let b=0;b<boys;b++)noTrash(g,'BOY');
+    const stallBottles=opp.stall.filter(s=>s===2).length;
+    if(!stallBottles){g.status=`The Boy reaches out — ${opp.name}'s stall is bare!`;noRollAndResolve(lobby);return;}
+    const bulliesAvail=opp.hand.filter(c=>c==='BULLY').length;
+    g._boysAttacking=boys;
+    if(!bulliesAvail){
+      const steals=Math.min(boys,stallBottles);
+      for(let i=0;i<steals;i++)noDoSteal(g);
+      g.status=`${p.name} plays ${boys===1?'The Boy':boys+' Boys'} — steals ${steals} bottle${steals>1?'s':''}!`;
+      g._boysAttacking=0;noRollAndResolve(lobby);return;
+    }
+    g.phase='BOY_DEFEND';
+    const maxBlock=Math.min(bulliesAvail,boys);
+    g.status=`${p.name} plays ${boys===1?'The Boy':boys+' Boys'}! ${opp.name}, use Bullies to block (up to ${maxBlock}).`;
+    noBroadcast(lobby);
+    if(g.isSolo&&1-g.cur===1)setTimeout(()=>noBotDefend(lobby),1400);
+    return;
+  }
+  noRollAndResolve(lobby);
+}
+
+// ── Bot AI ────────────────────────────────────────────────────────
+function noScheduleBot(lobby,delay){
+  const g=lobby.game;const gen=g.turnGen;
+  setTimeout(()=>{if(!g||g.turnGen!==gen||g.cur!==1||!g.isSolo||g.winnerIdx!==null)return;noBotTurn(lobby);},delay||1400);
+}
+function noBotTurn(lobby){
+  const g=lobby.game;
+  if(!g||g.winnerIdx!==null||g.cur!==1||!g.isSolo)return;
+  if(g.phase==='CARD_PLAY'){
+    const bot=g.players[1],opp=g.players[0];g.sel=[];
+    bot.hand.forEach((c,i)=>{if(c==='TEMPTRESS')g.sel.push(i);});
+    if(!g.sel.length){const bi=bot.hand.indexOf('BOY');if(bi>=0&&opp.stall.some(s=>s===2))g.sel.push(bi);}
+    noBroadcast(lobby);
+    const gen=g.turnGen;
+    setTimeout(()=>{if(g.turnGen!==gen||g.cur!==1||g.phase!=='CARD_PLAY')return;noProcessCards(lobby);},1400);
+    return;
+  }
+  if(g.phase==='CHOOSE_COMBO'){
+    let bestIdx=0,bestScore=-1;
+    (g.comboOptions||[]).forEach((b,i)=>{const s=noBundleScore(b);if(s>bestScore){bestScore=s;bestIdx=i;}});
+    const gen=g.turnGen;
+    setTimeout(()=>{if(g.turnGen!==gen||g.cur!==1||g.phase!=='CHOOSE_COMBO')return;
+      g.comboOptions=null;g._jokerRoll=false;
+      noApplyCombos(lobby,(NO_LOBBIES[lobby.id]?.game?.comboOptions||[[]])[bestIdx]||[]);},900);
+    return;
+  }
+  if(g.phase==='DISCARD'){
+    const gen=g.turnGen;
+    setTimeout(()=>{
+      if(g.turnGen!==gen||g.cur!==1||g.phase!=='DISCARD')return;
+      const p=g.players[1];if(p.hand.length<=3){noEndTurn(g,lobby);return;}
+      const pri={'BULLY':3,'BOY':2,'TEMPTRESS':1};
+      let di=0,lp=99;
+      p.hand.forEach((c,i)=>{const v=pri[c]||0;if(v<lp){lp=v;di=i;}});
+      noTrash(g,p.hand.splice(di,1)[0]);
+      if(p.hand.length<=3)noEndTurn(g,lobby);else{noBroadcast(lobby);noBotTurn(lobby);}
+    },900);
+    return;
+  }
+}
+function noBotDefend(lobby){
+  const g=lobby.game;if(!g||g.phase!=='BOY_DEFEND'||g.cur!==0)return;
+  const bot=g.players[1];
+  const attacks=g._boysAttacking||1;
+  const avail=bot.hand.filter(c=>c==='BULLY').length;
+  const block=Math.min(avail,attacks);
+  let spent=0;
+  while(spent<block){const bi=bot.hand.indexOf('BULLY');if(bi<0)break;bot.hand.splice(bi,1);noTrash(g,'BULLY');spent++;}
+  const steals=attacks-block;
+  const stallBottles=g.players[0].stall.filter(s=>s===2).length;
+  const actual=Math.min(steals,stallBottles);
+  for(let i=0;i<actual;i++)noDoSteal(g);
+  const parts=[];
+  if(block)parts.push(`${bot.name} blocks ${block} attack${block>1?'s':''}`);
+  if(actual)parts.push(`${g.players[0].name} steals ${actual} bottle${actual>1?'s':''}`);
+  if(!parts.length)parts.push(`Attacks fizzle out`);
+  g.status=parts.join(' — ')+'!';g._boysAttacking=0;
+  noRollAndResolve(lobby);
+}
+
+// ── WS message handler ────────────────────────────────────────────
+function noHandle(ws,msg){
+  if(msg.type==='PING'){noSend(ws,{type:'PONG'});return;}
+  if(msg.type==='LOBBIES'){noSend(ws,{type:'LOBBIES',lobbies:Object.values(NO_LOBBIES).map(noLobbyInfo)});return;}
+  if(msg.type==='RECONNECT'){
+    const sess=NO_SESSIONS[msg.token];
+    if(!sess){noSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const lobby=NO_LOBBIES[sess.lobbyId];if(!lobby){noSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const{seat,name}=sess;
+    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
+    lobby.players[seat]=ws;lobby.names[seat]=name;
+    NO_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,token:msg.token});
+    noSend(ws,{type:'RECONNECTED',seat,name,solo:lobby.solo});
+    noBroadcastLobbies();
+    if(lobby.game)noBroadcast(lobby);
+    else noSend(ws,{type:'LOBBY_STATE',lobby:noLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});
+    return;
+  }
+  if(msg.type==='JOIN_LOBBY'){
+    const lobby=NO_LOBBIES[msg.lobbyId];
+    if(!lobby){noSend(ws,{type:'ERROR',text:'Mesa não encontrada.'});return;}
+    const seat=lobby.players.findIndex(p=>p===null);
+    if(seat<0){noSend(ws,{type:'ERROR',text:'Mesa cheia.'});return;}
+    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
+    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
+    NO_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,token});
+    NO_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
+    noSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,solo:lobby.solo,name,lobby:noLobbyInfo(lobby),names:lobby.names});
+    lobby.players.forEach((p,i)=>{if(p&&i!==seat)noSend(p,{type:'PLAYER_JOINED',seat,name,lobby:noLobbyInfo(lobby)});});
+    noBroadcastLobbies();
+    if(lobby.solo){
+      lobby.game=noNewGame(name,'The Peddler',true);
+      if(lobby.game.cur===1)noScheduleBot(lobby,2000);
+      else noBroadcast(lobby);
+    }
+    return;
+  }
+  const st=NO_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
+  const lobby=NO_LOBBIES[st.lobbyId];if(!lobby)return;
+  const seat=st.seat,g=lobby.game;
+
+  if(msg.type==='LEAVE_LOBBY'){
+    lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;
+    NO_WS_STATE.delete(ws);noBroadcastLobbies();return;
+  }
+  if(msg.type==='REQUEST_STATE'){
+    if(g)noSend(ws,{type:'GAME_STATE',state:noBuildView(g,seat)});
+    else noSend(ws,{type:'LOBBY_STATE',lobby:noLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});return;
+  }
+  if(msg.type==='START'){
+    if(lobby.solo||seat!==0)return;
+    const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
+    if(active.length<2){noSend(ws,{type:'ERROR',text:'Precisas de 2 jogadores.'});return;}
+    lobby.game=noNewGame(lobby.names[0],lobby.names[1],false);
+    noBroadcastLobbies();noBroadcast(lobby);return;
+  }
+  if(msg.type==='RESTART'){
+    if(!g||g.phase!=='GAME_OVER')return;
+    if(lobby.solo){lobby.game=noNewGame(lobby.names[0],'The Peddler',true);if(lobby.game.cur===1)noScheduleBot(lobby,2000);else noBroadcast(lobby);}
+    else{if(seat!==0)return;lobby.game=noNewGame(lobby.names[0],lobby.names[1],false);noBroadcast(lobby);}
+    return;
+  }
+  if(!g||g.phase==='GAME_OVER')return;
+
+  // Action routing
+  if(msg.type==='PLAY_CARDS'){
+    if(g.cur!==seat||g.phase!=='CARD_PLAY')return;
+    g.sel=Array.isArray(msg.sel)?msg.sel.filter(i=>i>=0&&i<g.players[seat].hand.length):[];
+    noBroadcast(lobby);return;
+  }
+  if(msg.type==='CONFIRM_CARDS'){
+    if(g.cur!==seat||g.phase!=='CARD_PLAY')return;
+    noProcessCards(lobby);return;
+  }
+  if(msg.type==='CONTINUE'){
+    if(g.cur!==seat||g.phase!=='ROLL_PAUSE')return;
+    noResolvePause(lobby);return;
+  }
+  if(msg.type==='CHOOSE_COMBO'){
+    if(g.cur!==seat||g.phase!=='CHOOSE_COMBO')return;
+    const bundle=(g.comboOptions||[])[msg.bundleIdx||0]||g.comboOptions?.[0]||[];
+    g.comboOptions=null;g._jokerRoll=false;
+    noApplyCombos(lobby,bundle);return;
+  }
+  if(msg.type==='BOY_DEFEND'){
+    if(g.phase!=='BOY_DEFEND'||seat===g.cur)return;
+    const played=Math.min(Math.max(0,msg.bulliesPlayed||0),g._boysAttacking||0,g.players[seat].hand.filter(c=>c==='BULLY').length);
+    let spent=0;
+    while(spent<played){const bi=g.players[seat].hand.indexOf('BULLY');if(bi<0)break;g.players[seat].hand.splice(bi,1);noTrash(g,'BULLY');spent++;}
+    const steals=g._boysAttacking-played;
+    const actual=Math.min(steals,g.players[g.cur].stall.filter(s=>s===2).length);
+    // Note: stealing is done by attacker (g.cur), not defender
+    for(let i=0;i<actual;i++){
+      const opp=g.players[seat];
+      const slots=opp.stall.map((s,i)=>s===2?i:-1).filter(i=>i>=0);
+      if(slots.length){opp.stall[slots[slots.length-1]]=1;opp.supply++;}
+    }
+    const parts=[];
+    if(played)parts.push(`${g.players[seat].name} blocks ${played} attack${played>1?'s':''}`);
+    if(actual)parts.push(`${g.players[g.cur].name} steals ${actual} bottle${actual>1?'s':''}`);
+    if(!parts.length)parts.push("The Boy finds nothing");
+    g.status=parts.join(' — ')+'!';g._boysAttacking=0;
+    noRollAndResolve(lobby);return;
+  }
+  if(msg.type==='BLIND_PICK'){
+    if(g.phase!=='BLIND_PICK'||seat!==g.cur)return;
+    const opp=g.players[1-g.cur];
+    if(msg.cardIdx<0||msg.cardIdx>=opp.hand.length)return;
+    noTrash(g,opp.hand.splice(msg.cardIdx,1)[0]);
+    g.status=`${g.players[g.cur].name} blindly picks a card from ${opp.name}'s hand!`;
+    noRollAndResolve(lobby);return;
+  }
+  if(msg.type==='DISCARD'){
+    if(g.phase!=='DISCARD'||seat!==g.cur)return;
+    const p=g.players[g.cur];
+    if(msg.cardIdx<0||msg.cardIdx>=p.hand.length)return;
+    noTrash(g,p.hand.splice(msg.cardIdx,1)[0]);
+    if(p.hand.length<=3)noEndTurn(g,lobby);else noBroadcast(lobby);return;
   }
 }
