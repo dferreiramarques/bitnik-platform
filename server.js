@@ -1693,21 +1693,33 @@ function noRollAndResolve(lobby){
   g.dice=Array.from({length:9},()=>Math.ceil(Math.random()*6));
   g.rollExplain=noDescribeRoll(g.dice);
   g._pendingAnalysis=noAnalyseRoll(g.dice);
-  g.phase='ROLL_PAUSE';g.combos=[];g.comboOptions=null;
   const a=g._pendingAnalysis;
   const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',DOUBLE:'Double',SIX_OF_KIND:'Six'};
   if(a.conflict){
-    const best=a.bundles[0].map(c=>names[c]||c).join('+');
-    g.status=`${g.players[g.cur].name} rolled! Best: ${best} — click Continue to choose.`;
+    // Show dice with CHOOSE_COMBO immediately — no ROLL_PAUSE
+    g.phase='CHOOSE_COMBO';g.comboOptions=a.bundles;g.combos=[];
+    g._jokerRoll=a.special==='JOKER';
+    g.status=g._jokerRoll
+      ?`${g.players[g.cur].name} rolled 7 of a kind — Joker! Choose:`
+      :`${g.players[g.cur].name} rolled! Choose your combo:`;
+    g._pendingAnalysis=null;
+    noBroadcast(lobby);
+    if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1000);
   } else if(a.combos.length){
-    g.status=`${g.players[g.cur].name} rolled ${a.combos.map(c=>names[c]||c).join('+')}! Continue to resolve.`;
-  } else {
-    g.status=`${g.players[g.cur].name} rolled — no combos. Continue.`;
-  }
-  noBroadcast(lobby);
-  if(g.isSolo&&g.cur===1){
+    // Show dice briefly, then auto-resolve
+    g.phase='ROLL_PAUSE';g.combos=[];g.comboOptions=null;
+    g.status=`${g.players[g.cur].name} rolled ${a.combos.map(c=>names[c]||c).join('+')}!`;
+    noBroadcast(lobby);
     const gen=g.turnGen;
-    setTimeout(()=>{if(g.turnGen===gen&&g.phase==='ROLL_PAUSE')noResolvePause(lobby);},2200);
+    const delay=g.isSolo&&g.cur===1?1800:1500;
+    setTimeout(()=>{if(g.turnGen===gen&&g.phase==='ROLL_PAUSE')noResolvePause(lobby);},delay);
+  } else {
+    // No combos — show briefly then end turn
+    g.phase='ROLL_PAUSE';g.combos=[];g.comboOptions=null;
+    g.status=`${g.players[g.cur].name} rolled — no combos.`;
+    noBroadcast(lobby);
+    const gen=g.turnGen;
+    setTimeout(()=>{if(g.turnGen===gen&&g.phase==='ROLL_PAUSE')noResolvePause(lobby);},3000);
   }
 }
 
@@ -1871,10 +1883,11 @@ function noBotTurn(lobby){
   if(g.phase==='CHOOSE_COMBO'){
     let bestIdx=0,bestScore=-1;
     (g.comboOptions||[]).forEach((b,i)=>{const s=noBundleScore(b);if(s>bestScore){bestScore=s;bestIdx=i;}});
+    const chosenBundle=(g.comboOptions||[])[bestIdx]||[]; // capture before nulling
     const gen=g.turnGen;
     setTimeout(()=>{if(g.turnGen!==gen||g.cur!==1||g.phase!=='CHOOSE_COMBO')return;
       g.comboOptions=null;g._jokerRoll=false;
-      noApplyCombos(lobby,(NO_LOBBIES[lobby.id]?.game?.comboOptions||[[]])[bestIdx]||[]);},900);
+      noApplyCombos(lobby,chosenBundle);},900);
     return;
   }
   if(g.phase==='DISCARD'){
