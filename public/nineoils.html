@@ -70,7 +70,8 @@ body{display:flex;flex-direction:column}
 
 /* GAME */
 #s-game{flex-direction:column;gap:0}
-.game-sticky{background:var(--bg);padding:10px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;width:100%}
+.game-sticky{background:var(--bg);padding:0;border-bottom:1px solid var(--border);flex-shrink:0;width:100%}
+.game-sticky-inner{padding:10px 16px 8px;max-width:1100px;margin:0 auto;width:100%}
 .game-body{display:flex;flex-direction:row;gap:16px;padding:16px;max-width:1100px;margin:0 auto;width:100%}
 .game-left{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0}
 .game-right{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
@@ -299,11 +300,13 @@ body{display:flex;flex-direction:column}
 <!-- GAME -->
 <div class="screen" id="s-game">
   <div class="game-sticky">
+    <div class="game-sticky-inner">
     <div class="phase-bar">
       <div class="phase-badge" id="phase-badge">—</div>
       <div class="deck-info" id="deck-info"></div>
     </div>
     <div class="players-row" style="margin-top:8px" id="players-row"></div>
+    </div>
   </div>
   <div class="game-body">
     <div class="game-left">
