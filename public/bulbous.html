@@ -687,7 +687,9 @@ function renderTrick(s) {
 
 function renderHand(s) {
   const el = document.getElementById('hand-cards');
-  const canSelect = ['PLAYER_ACTIONS'].includes(s.phase) && s.trick && s.trick.actionOrder[s.trick.currentActorIdx]===s.myIdx && s.trick.waitingForDiscard===-1;
+  const isMyTurn = s.phase==='PLAYER_ACTIONS' && s.trick &&
+    s.trick.actionOrder[s.trick.currentActorIdx]===s.myIdx &&
+    s.trick.waitingForDiscard===-1;
   const canDiscard = s.phase==='PLAYER_ACTIONS' && s.trick && s.trick.waitingForDiscard===s.myIdx;
   const tBaelf = s.trick && (() => {
     const tp = s.players[s.trick.targetPlayerIdx];
@@ -698,10 +700,15 @@ function renderHand(s) {
   el.innerHTML = '';
   (s.myHand||[]).forEach((card, i) => {
     const isSelected = selectedCards.includes(card.id);
-    const isPlayable = tBaelf && canSelect && bCanPlayCard(card, tBaelf);
+    const isPlayable = tBaelf && bCanPlayCard(card, tBaelf);
     const div = document.createElement('div');
     div.className = `card ${card.type} ${card.color||''} ${isSelected?'selected':''}`;
-    if (canSelect && !isPlayable) div.classList.add('dimmed');
+    // Only dim non-playable if in BET mode (has selected playable cards or choosing bet)
+    const inBetMode = isMyTurn && selectedCards.some(id=>{
+      const c=(s.myHand||[]).find(c=>c.id===id);
+      return c && tBaelf && bCanPlayCard(c,tBaelf);
+    });
+    if (isMyTurn && inBetMode && !isPlayable && !isSelected) div.classList.add('dimmed');
 
     let html = '';
     if (card.type==='joker') {
@@ -711,9 +718,21 @@ function renderHand(s) {
     } else {
       html = `<div class="card-val" style="color:${COLOR_CSS[card.color]}">${card.value}</div><div class="card-col" style="color:${COLOR_CSS[card.color]}">${card.color}</div>`;
     }
+    // Show card image if available
+    const imgName = card.type==='joker'
+      ? `joker_${card.symbol}`
+      : card.type==='double'
+      ? `${card.color}_double`
+      : `${card.color}_${card.value}`;
+    div.innerHTML = `<img src="/bulbous/cards/${imgName}.png" style="width:100%;height:100%;object-fit:contain;border-radius:4px;display:none"
+      onload="this.style.display='block';this.nextElementSibling.style.display='none'"
+      onerror="this.style.display='none'">${html.replace('<div','<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:100%"').slice(0,-6)}`;
+    // Simpler: just set image as background attempt
     div.innerHTML = html;
+    div.dataset.imgSrc = `/bulbous/cards/${imgName}.png`;
 
-    if (canSelect && isPlayable) {
+    if (isMyTurn) {
+      div.style.cursor='pointer';
       div.onclick = () => {
         const idx = selectedCards.indexOf(card.id);
         if (idx>=0) selectedCards.splice(idx,1); else selectedCards.push(card.id);
@@ -724,6 +743,13 @@ function renderHand(s) {
       div.style.cursor='pointer'; div.title='Clica para descartar';
     }
     el.appendChild(div);
+  });
+
+  // Load card images where available
+  el.querySelectorAll('.card[data-img-src]').forEach(div => {
+    const img = new Image();
+    img.onload = () => { div.style.backgroundImage=`url(${div.dataset.imgSrc})`; div.style.backgroundSize='cover'; div.style.backgroundPosition='center'; };
+    img.src = div.dataset.imgSrc;
   });
 }
 
@@ -810,22 +836,41 @@ function renderActions(s) {
       return bi!==null ? tp.baelfungious[bi] : null;
     })();
 
-    // BET button
+    // BET
     if (selectedCards.length) {
-      const btn = document.createElement('button');
-      btn.className='btn-action';
-      btn.textContent=`BET (${selectedCards.length} carta${selectedCards.length>1?'s':''})`;
-      btn.onclick=()=>{ send({type:'BET',cardIds:[...selectedCards]}); selectedCards=[]; };
-      el.appendChild(btn);
+      const hasBetCards = selectedCards.some(id=>{
+        const c=(s.myHand||[]).find(c=>c.id===id);
+        return c && tBaelf && bCanPlayCard(c,tBaelf);
+      });
+      if (hasBetCards) {
+        const betBtn2 = document.createElement('button');
+        betBtn2.className='btn-action';
+        betBtn2.textContent=`BET (${selectedCards.length} carta${selectedCards.length>1?'s':''})`;
+        betBtn2.onclick=()=>{ send({type:'BET',cardIds:[...selectedCards]}); selectedCards=[]; };
+        el.appendChild(betBtn2);
+      }
+      // SWAP with selected cards
+      if (selectedCards.length >= 1 && selectedCards.length <= 2) {
+        const swapSelBtn = document.createElement('button');
+        swapSelBtn.className='btn-action';
+        swapSelBtn.textContent=`SWAP selecionadas (${selectedCards.length})`;
+        swapSelBtn.onclick=()=>{ send({type:'SWAP',cardIds:[...selectedCards]}); selectedCards=[]; };
+        el.appendChild(swapSelBtn);
+      }
     }
 
-    // SWAP
-    const swapBtn = document.createElement('button');
-    swapBtn.className='btn-action';
-    swapBtn.disabled = selectedCards.length===0 || selectedCards.length>2;
-    swapBtn.textContent=selectedCards.length?`SWAP (${selectedCards.length})`:'SWAP (selecciona 1-2)';
-    swapBtn.onclick=()=>{ send({type:'SWAP',cardIds:[...selectedCards]}); selectedCards=[]; };
-    el.appendChild(swapBtn);
+    // SWAP lowest card (quick action — always available)
+    const swapQuickBtn = document.createElement('button');
+    swapQuickBtn.className='btn-action';
+    swapQuickBtn.textContent='SWAP (pior carta)';
+    swapQuickBtn.title='Descarta automaticamente a carta de menor valor';
+    swapQuickBtn.onclick=()=>{
+      // Find lowest value card
+      const hand = s.myHand||[];
+      const sorted = [...hand].sort((a,b)=>(a.value||0)-(b.value||0));
+      if (sorted.length) { send({type:'SWAP',cardIds:[sorted[0].id]}); selectedCards=[]; }
+    };
+    el.appendChild(swapQuickBtn);
 
     // PASS
     const passBtn = document.createElement('button');
