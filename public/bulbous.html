@@ -718,18 +718,22 @@ function renderHand(s) {
     } else {
       html = `<div class="card-val" style="color:${COLOR_CSS[card.color]}">${card.value}</div><div class="card-col" style="color:${COLOR_CSS[card.color]}">${card.color}</div>`;
     }
-    // Show card image if available
+    // Card image — shown if file exists, fallback to text
     const imgName = card.type==='joker'
       ? `joker_${card.symbol}`
       : card.type==='double'
       ? `${card.color}_double`
       : `${card.color}_${card.value}`;
-    div.innerHTML = `<img src="/bulbous/cards/${imgName}.png" style="width:100%;height:100%;object-fit:contain;border-radius:4px;display:none"
-      onload="this.style.display='block';this.nextElementSibling.style.display='none'"
-      onerror="this.style.display='none'">${html.replace('<div','<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:100%"').slice(0,-6)}`;
-    // Simpler: just set image as background attempt
-    div.innerHTML = html;
-    div.dataset.imgSrc = `/bulbous/cards/${imgName}.png`;
+    const imgSrc = `/bulbous/cards/${imgName}.png`;
+    // Build card: image fills card, text fallback shown until image loads
+    div.innerHTML = `
+      <img src="${imgSrc}"
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:4px;z-index:1"
+        onload="this.style.opacity=1;this.nextElementSibling.style.display='none'"
+        onerror="this.style.display='none'"
+        loading="lazy">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:100%;position:relative;z-index:0">${html}</div>`;
+    div.style.position='relative';
 
     if (isMyTurn) {
       div.style.cursor='pointer';
@@ -745,12 +749,7 @@ function renderHand(s) {
     el.appendChild(div);
   });
 
-  // Load card images where available
-  el.querySelectorAll('.card[data-img-src]').forEach(div => {
-    const img = new Image();
-    img.onload = () => { div.style.backgroundImage=`url(${div.dataset.imgSrc})`; div.style.backgroundSize='cover'; div.style.backgroundPosition='center'; };
-    img.src = div.dataset.imgSrc;
-  });
+
 }
 
 function bCanPlayCard(card, baelf) {
