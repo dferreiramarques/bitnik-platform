@@ -119,10 +119,10 @@ body{display:flex;flex-direction:column}
 .dice-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
 @media(max-width:768px){
   .game-left{display:flex;flex-direction:column}
-  #dice-wrap{order:1}
-  #status-bar{order:3}
+  #status-bar{order:1}
+  #dice-wrap{order:2}
+  #hand-wrap{order:3}
   #actions{order:4}
-  #hand-wrap{order:5}
   #opp-hand-wrap{order:2}
 }
 .dice-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
@@ -131,7 +131,6 @@ body{display:flex;flex-direction:column}
   display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;
   font-weight:800;font-size:20px;color:var(--ink);transition:all .3s}
 .die.combo-hi{background:rgba(196,144,48,.25);border-color:var(--gold);color:var(--gold)}
-.dice-explain{font-size:11px;color:var(--muted);margin-bottom:8px}
 .combo-badges{display:flex;gap:6px;flex-wrap:wrap}
 .combo-badge{padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;
   background:rgba(196,144,48,.2);color:var(--gold);border:1px solid rgba(196,144,48,.3)}
@@ -311,22 +310,21 @@ body{display:flex;flex-direction:column}
   <div class="game-body">
     <div class="game-left">
 
+      <!-- Status -->
+      <div class="status-bar" id="status-bar">—</div>
       <!-- Dice -->
       <div class="dice-wrap" id="dice-wrap">
         <div class="dice-label">9 Dados</div>
         <div class="dice-row" id="dice-row"></div>
-        <div class="dice-explain" id="dice-explain"></div>
         <div class="combo-badges" id="combo-badges"></div>
       </div>
-      <!-- Status -->
-      <div class="status-bar" id="status-bar">—</div>
-      <!-- Actions -->
-      <div class="actions" id="actions"></div>
       <!-- Hand -->
       <div class="hand-wrap" id="hand-wrap">
         <div class="hand-label">A tua mão</div>
         <div class="hand-cards" id="hand-cards"></div>
       </div>
+      <!-- Actions -->
+      <div class="actions" id="actions"></div>
     </div>
     <div class="game-right">
       <!-- Opp hand -->
@@ -581,7 +579,7 @@ function renderGame(s) {
   diceRow.innerHTML = (s.dice||[]).map(d =>
     `<div class="die ${freq[d]===maxFreq&&maxFreq>1?'combo-hi':''}">${d||'?'}</div>`
   ).join('');
-  document.getElementById('dice-explain').textContent = s.rollExplain||'';
+  // dice-explain removed
   const comboNames = {PENTA:'PENTA',QUAD:'QUAD',TRIPLE_DOUBLE:'TRIPLE+DOUBLE',DOUBLE:'DOUBLE',
     SIX_OF_KIND:'SIX',INSTANT_WIN:'NINE!',DOUBLE_QUAD:'DOUBLE QUAD'};
   comboBadges.innerHTML = (s.combos||[]).map(c =>
