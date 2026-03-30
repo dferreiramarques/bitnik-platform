@@ -610,6 +610,32 @@ function renderGame(s) {
 function renderActions(s) {
   const el = document.getElementById('actions');
   el.innerHTML = '';
+
+  // BOY_DEFEND: show buttons to the DEFENDER (who is NOT the current player)
+  if (s.phase==='BOY_DEFEND' && !s.isMyTurn) {
+    const bullies = (s.myHand||[]).filter(c=>c==='BULLY').length;
+    const attacks = s.boysAttacking||1;
+    const defendWrap = document.createElement('div');
+    defendWrap.className='defend-wrap';
+    defendWrap.innerHTML=`<div class="defend-label">👦 ${s.oppName} ataca com ${attacks} Boy${attacks>1?'s':''}!</div><div class="defend-btns">`;
+    const skipBtn=document.createElement('button');
+    skipBtn.className='btn-defend';
+    skipBtn.style.cssText='border-color:var(--muted);color:var(--muted)';
+    skipBtn.textContent='Ignorar defesa';
+    skipBtn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:0});
+    defendWrap.querySelector('.defend-btns').appendChild(skipBtn);
+    const max = Math.min(bullies,attacks);
+    for(let b=1;b<=max;b++){
+      const btn=document.createElement('button');
+      btn.className='btn-defend';
+      btn.textContent=`Bloquear ${b} com ${b===1?'Bully':b+' Bullies'}`;
+      btn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:b});
+      defendWrap.querySelector('.defend-btns').appendChild(btn);
+    }
+    el.appendChild(defendWrap);
+    return;
+  }
+
   if (!s.isMyTurn) return;
 
   const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',
@@ -646,30 +672,6 @@ function renderActions(s) {
       grid.appendChild(row);
     });
     el.appendChild(grid);
-  }
-  if (s.phase==='BOY_DEFEND' && !s.isMyTurn) {
-    const bullies = (s.myHand||[]).filter(c=>c==='BULLY').length;
-    const attacks = s.boysAttacking||1;
-    const defendWrap = document.createElement('div');
-    defendWrap.className='defend-wrap';
-    defendWrap.innerHTML=`<div class="defend-label">👦 ${s.oppName} ataca com ${attacks} Boy${attacks>1?'s':''}!</div><div class="defend-btns">`;
-    // Skip first
-    const skipBtn=document.createElement('button');
-    skipBtn.className='btn-defend';
-    skipBtn.style.cssText='border-color:var(--muted);color:var(--muted)';
-    skipBtn.textContent='Ignorar defesa';
-    skipBtn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:0});
-    defendWrap.querySelector('.defend-btns').appendChild(skipBtn);
-    // Bully blocks
-    const max = Math.min(bullies,attacks);
-    for(let b=1;b<=max;b++){
-      const btn=document.createElement('button');
-      btn.className='btn-defend';
-      btn.textContent=`Bloquear ${b} com ${b===1?'Bully':b+' Bullies'}`;
-      btn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:b});
-      defendWrap.querySelector('.defend-btns').appendChild(btn);
-    }
-    el.appendChild(defendWrap);
   }
 }
 

@@ -320,6 +320,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
   </div>
 </div>
 
+  <div style="padding:4px 0">
+    <button class="btn-leave" onclick="leaveGame()" style="font-size:11px;padding:6px 12px">← Sair do jogo</button>
+  </div>
   </div><!-- /game-scroll -->
 <!-- Rules modal -->
 <div class="rules-modal" id="rules-modal" onclick="if(event.target===this)closeRules()">
@@ -732,6 +735,14 @@ function restart() {
   send({type:'RESTART'});
 }
 function goHome() { location.href = '/'; }
+function leaveGame() {
+  if (!confirm('Sair do jogo? A tua posição na mesa será libertada.')) return;
+  _prevBetCount=-1; _prevBirdHolder=-99;
+  send({type:'LEAVE_LOBBY'});
+  sessionStorage.removeItem('cap_token');
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  showScreen('screen-lobby'); send({type:'LOBBIES'});
+}
 function goMesas() {
   document.getElementById('overlay-over').classList.remove('open');
   send({type:'LEAVE_LOBBY'});

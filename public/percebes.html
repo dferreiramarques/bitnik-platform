@@ -471,6 +471,13 @@ function leaveLobby() {
   show('s-lobby'); send({type:'LOBBIES'});
 }
 function restart() { document.getElementById('overlay-over').classList.remove('open'); send({type:'RESTART'}); }
+function leaveGame() {
+  if (!confirm('Sair do jogo? A tua posição na mesa será libertada.')) return;
+  send({type:'LEAVE_LOBBY'});
+  sessionStorage.removeItem('perc_token');
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  show('s-lobby'); send({type:'LOBBIES'});
+}
 function goMesas() {
   document.getElementById('overlay-over').classList.remove('open');
   send({type:'LEAVE_LOBBY'}); sessionStorage.removeItem('perc_token');
