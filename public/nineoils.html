@@ -195,7 +195,7 @@ body{display:flex;flex-direction:column}
   align-items:center;justify-content:center;z-index:100}
 .overlay.open{display:flex}
 .overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:28px;width:100%;max-width:420px}
+  padding:28px;width:100%;max-width:560px}
 .over-title{font-family:'Crimson Text',serif;font-weight:600;font-size:26px;color:var(--gold);
   margin-bottom:4px}
 .over-winner{font-size:13px;color:var(--muted);margin-bottom:20px}
@@ -354,7 +354,7 @@ body{display:flex;flex-direction:column}
 <!-- GAME OVER -->
 <div class="overlay" id="overlay-over">
   <div class="overlay-box">
-    <div class="over-title">🍶 Fim de Jogo</div>
+    <div class="over-title">⚗️ Fim de Jogo</div>
     <div class="over-winner" id="over-winner"></div>
     <div id="over-stalls"></div>
     <div class="exit-btns">
@@ -696,11 +696,55 @@ function renderComboOptions(s) {
 }
 
 function showGameOver(s) {
-  const winner = s.winnerIdx===s.myIdx ? s.myName : s.oppName;
   const isWin = s.winnerIdx===s.myIdx;
-  document.getElementById('over-winner').textContent =
-    isWin ? '🎉 Vitória!' : `${esc(winner)} venceu!`;
-  document.getElementById('btn-restart').style.display = (isSolo||isHost)?'block':'none';
+  const winner = isWin ? s.myName : s.oppName;
+  const loser  = isWin ? s.oppName : s.myName;
+
+  // Winner header
+  document.getElementById('over-winner').innerHTML = isWin
+    ? `<span style="color:var(--gold);font-size:15px">🎉 Vitória, ${esc(s.myName)}!</span>`
+    : `<span style="color:var(--muted);font-size:15px">🏆 ${esc(winner)} venceu!</span>`;
+
+  // Stats summary
+  const el = document.getElementById('over-stalls');
+  const stats = s.stats;
+  const myStats  = stats ? stats[s.myIdx]   : null;
+  const oppStats = stats ? stats[1-s.myIdx] : null;
+  const COMBO_LABELS = {DOUBLE:'Double',TRIPLE_DOUBLE:'Triple+Double',QUAD:'Quad',
+    PENTA:'Penta',SIX_OF_KIND:'Six of a Kind',DOUBLE_QUAD:'Double Quad'};
+
+  function statsBlock(name, st, highlight) {
+    if (!st) return '';
+    const topCombos = Object.entries(st.combos||{})
+      .filter(([,n])=>n>0)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,4)
+      .map(([k,n])=>`<span style="color:var(--muted);font-size:11px">${COMBO_LABELS[k]||k} <strong style="color:var(--ink)">×${n}</strong></span>`)
+      .join('  ');
+    return `<div style="border:1px solid ${highlight?'var(--accent)':'var(--border)'};border-radius:6px;
+      padding:12px;margin-bottom:8px;background:${highlight?'rgba(196,144,48,.05)':'transparent'}">
+      <div style="font-family:'Crimson Text',serif;font-size:18px;color:${highlight?'var(--gold)':'var(--ink)'};margin-bottom:6px">
+        ${highlight?'🏆 ':''}${esc(name)}</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px">
+        <div><span style="color:var(--muted);font-size:11px">Turnos</span><br>
+          <strong style="font-size:18px;color:var(--gold)">${st.turns||0}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Garrafas</span><br>
+          <strong style="font-size:18px;color:var(--green)">${st.bottlesStocked||0} 🧪</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Roubadas</span><br>
+          <strong style="font-size:18px;color:var(--red)">${st.bottlesStolen||0}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Cartas</span><br>
+          <strong style="font-size:18px;color:var(--ink)">${st.cardsPlayed||0}</strong></div>
+      </div>
+      ${topCombos?`<div style="display:flex;gap:8px;flex-wrap:wrap">${topCombos}</div>`:''}
+    </div>`;
+  }
+
+  const winnerIdx = s.winnerIdx;
+  const myIsWinner = s.myIdx === winnerIdx;
+  el.innerHTML = statsBlock(s.myName, myStats, myIsWinner)
+               + statsBlock(s.oppName, oppStats, !myIsWinner);
+
+  document.getElementById('btn-restart').style.display = (isSolo||isHost)?'inline-flex':'none';
   document.getElementById('overlay-over').classList.add('open');
 }
 
