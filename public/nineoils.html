@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nine Oils — Bitnik Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Crimson+Text:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<script src="/i18n.js"></script>
+<style>
+:root{
+  --bg:#120a02; --surface:#1e1208; --panel:#2a1a08;
+  --border:#4a3010; --ink:#f0d890; --muted:#8a6030;
+  --accent:#c49030; --gold:#f0b830; --red:#c03020;
+  --green:#408030; --teal:#208870; --blue:#2060a0;
+  --card-temptress:#8030a0; --card-boy:#c04020; --card-bully:#3060a0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;min-height:100vh}
+body{display:flex;flex-direction:column}
+
+/* NAV */
+.nav{background:#0a0602;padding:0 16px;height:44px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);flex-shrink:0}
+.nav-logo{font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:var(--ink);letter-spacing:1px}
+.nav-logo span{color:var(--gold)}
+.nav-back{color:var(--muted);text-decoration:none;font-size:11px;letter-spacing:1px}
+.nav-back:hover{color:var(--gold)}
+.conn{width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:auto}
+.conn.ok{background:var(--green)}
+.btn-lang{margin-left:8px;padding:3px 8px;background:transparent;border:1px solid var(--muted);
+  border-radius:3px;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700}
+.btn-lang:hover{border-color:var(--gold);color:var(--gold)}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column}
+.screen.active{display:flex}
+
+/* NAME */
+#s-name{align-items:center;justify-content:center;padding:40px 20px;gap:14px}
+.name-title{font-family:'Crimson Text',serif;font-weight:600;font-size:40px;color:var(--gold);
+  text-align:center;letter-spacing:1px}
+.name-sub{color:var(--muted);font-size:12px;text-align:center}
+.name-input{width:280px;padding:12px 16px;border:1px solid var(--border);border-radius:4px;
+  font-family:'Nunito',sans-serif;font-size:14px;background:var(--panel);color:var(--ink);
+  text-align:center;outline:none}
+.name-input:focus{border-color:var(--accent)}
+.name-input::placeholder{color:var(--muted)}
+.btn-primary{padding:12px 32px;background:var(--accent);color:#120a02;border:none;border-radius:4px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;width:280px;transition:background .2s}
+.btn-primary:hover{background:var(--gold)}
+
+/* LOBBY */
+#s-lobby{padding:24px;gap:12px;max-width:560px;margin:0 auto;width:100%}
+.lobby-title{font-family:'Crimson Text',serif;font-weight:600;font-size:24px;color:var(--gold)}
+.lobby-row{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.lobby-row:hover{border-color:var(--accent)}
+.lobby-row.full{opacity:.4;cursor:not-allowed}
+.lr-name{font-weight:700;font-size:13px;flex:1}
+.lr-status{font-size:11px;color:var(--muted)}
+
+/* WAIT */
+#s-wait{padding:24px;gap:12px;max-width:480px;margin:0 auto;width:100%}
+.wait-title{font-family:'Crimson Text',serif;font-weight:600;font-size:22px;color:var(--gold)}
+.wp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:6px}
+.btn-secondary{padding:10px;background:transparent;color:var(--muted);border:1px solid var(--border);
+  border-radius:4px;font-size:12px;cursor:pointer;margin-top:4px;font-family:'Nunito',sans-serif}
+
+/* GAME */
+#s-game{flex-direction:column;gap:0}
+.game-sticky{background:var(--bg);padding:10px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.game-body{display:flex;flex-direction:row;gap:16px;padding:16px;max-width:1100px;margin:0 auto;width:100%}
+.game-left{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+.game-right{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+
+/* Phase bar */
+.phase-bar{display:flex;align-items:center;justify-content:space-between}
+.phase-badge{font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;letter-spacing:1.5px;
+  text-transform:uppercase;padding:3px 10px;border-radius:3px}
+.phase-CARD_PLAY{background:rgba(196,144,48,.15);color:var(--accent)}
+.phase-ROLL_PAUSE{background:rgba(64,128,48,.15);color:var(--green)}
+.phase-CHOOSE_COMBO{background:rgba(240,184,48,.15);color:var(--gold)}
+.phase-BOY_DEFEND{background:rgba(192,48,32,.15);color:var(--red)}
+.phase-BLIND_PICK{background:rgba(128,48,160,.15);color:var(--card-temptress)}
+.phase-DISCARD{background:rgba(138,96,48,.15);color:var(--muted)}
+.phase-GAME_OVER{background:rgba(240,216,144,.1);color:var(--gold)}
+.deck-info{font-size:11px;color:var(--muted)}
+
+/* Players */
+.players-row{display:flex;gap:8px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:10px 12px;flex:1;transition:border-color .2s}
+.pcard.active{border-color:var(--gold)}
+.pcard.me{border-left:3px solid var(--accent)}
+.pcard.opp{border-left:3px solid var(--red)}
+.pcard-name{font-size:11px;color:var(--muted);margin-bottom:2px}
+.tag-me{font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(196,144,48,.2);color:var(--accent);margin-left:4px}
+
+/* Stall */
+.stall-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.stall-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.stalls-row{display:flex;gap:16px}
+.stall{flex:1}
+.stall-name{font-size:11px;color:var(--muted);margin-bottom:6px;text-align:center}
+.stall-slots{display:flex;gap:4px;justify-content:center}
+.slot{width:32px;height:44px;border-radius:4px;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .3s}
+.slot.empty{background:rgba(74,48,16,.3)}
+.slot.open{background:rgba(64,128,48,.15);border-color:var(--green)}
+.slot.stocked{background:rgba(196,144,48,.2);border-color:var(--gold)}
+.slot.stocked::after{content:'🍶';font-size:20px}
+
+/* Dice */
+.dice-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.dice-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.dice-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.die{width:44px;height:44px;border-radius:6px;background:var(--panel);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;
+  font-weight:800;font-size:20px;color:var(--ink);transition:all .3s}
+.die.combo-hi{background:rgba(196,144,48,.25);border-color:var(--gold);color:var(--gold)}
+.dice-explain{font-size:11px;color:var(--muted);margin-bottom:8px}
+.combo-badges{display:flex;gap:6px;flex-wrap:wrap}
+.combo-badge{padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;
+  background:rgba(196,144,48,.2);color:var(--gold);border:1px solid rgba(196,144,48,.3)}
+
+/* Status */
+.status-bar{font-size:13px;color:var(--ink);padding:8px 14px;background:var(--panel);
+  border:1px solid var(--border);border-radius:6px;line-height:1.5;min-height:40px}
+
+/* Actions */
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-action{padding:10px 18px;border:1px solid var(--accent);border-radius:4px;
+  background:rgba(196,144,48,.1);color:var(--accent);font-family:'Nunito',sans-serif;
+  font-weight:700;font-size:12px;letter-spacing:.5px;cursor:pointer;transition:all .2s}
+.btn-action:hover{background:rgba(196,144,48,.2)}
+.btn-action.danger{border-color:var(--red);background:rgba(192,48,32,.1);color:var(--red)}
+.btn-action.danger:hover{background:rgba(192,48,32,.2)}
+.btn-action:disabled{opacity:.3;cursor:not-allowed}
+
+/* Hand */
+.hand-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+.hand-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.hand-cards{display:flex;gap:8px;flex-wrap:wrap}
+.card{width:72px;height:96px;border-radius:6px;border:2px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  cursor:pointer;transition:all .2s;position:relative;user-select:none}
+.card:hover{border-color:var(--accent);transform:translateY(-4px)}
+.card.selected{border-color:var(--gold);background:rgba(240,184,48,.15);transform:translateY(-6px)}
+.card.TEMPTRESS{background:rgba(128,48,160,.15);border-color:var(--card-temptress)}
+.card.TEMPTRESS.selected{background:rgba(128,48,160,.3)}
+.card.BOY{background:rgba(192,64,32,.15);border-color:var(--card-boy)}
+.card.BOY.selected{background:rgba(192,64,32,.3)}
+.card.BULLY{background:rgba(48,96,160,.15);border-color:var(--card-bully)}
+.card.BULLY.selected{background:rgba(48,96,160,.3)}
+.card-icon{font-size:24px}
+.card-name{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;text-align:center}
+.card.TEMPTRESS .card-name{color:var(--card-temptress)}
+.card.BOY .card-name{color:var(--card-boy)}
+.card.BULLY .card-name{color:var(--card-bully)}
+.opp-hand{display:flex;gap:4px;align-items:center}
+.opp-card{width:32px;height:44px;border-radius:3px;background:var(--panel);border:1px solid var(--border);cursor:pointer;transition:all .15s}
+.opp-card:hover{border-color:var(--red);transform:translateY(-2px)}
+
+/* Combo options */
+.combo-options{display:flex;flex-direction:column;gap:6px}
+.combo-opt{padding:10px 14px;border:1px solid var(--border);border-radius:4px;cursor:pointer;
+  background:var(--panel);transition:all .2s;display:flex;align-items:center;gap:10px}
+.combo-opt:hover{border-color:var(--gold);background:rgba(196,144,48,.1)}
+.combo-opt-label{font-weight:700;font-size:13px;color:var(--gold)}
+.combo-opt-score{font-size:10px;color:var(--muted);margin-left:auto}
+
+/* Boy defend */
+.defend-wrap{background:var(--panel);border:1px solid var(--red);border-radius:6px;padding:12px}
+.defend-label{font-size:12px;color:var(--red);font-weight:700;margin-bottom:8px}
+.defend-btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn-defend{padding:8px 14px;border-radius:4px;border:1px solid var(--card-bully);
+  background:rgba(48,96,160,.15);color:#90b0f0;font-family:'Nunito',sans-serif;
+  font-weight:700;font-size:12px;cursor:pointer;transition:all .2s}
+.btn-defend:hover{background:rgba(48,96,160,.3)}
+
+/* Game Over overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;
+  align-items:center;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:28px;width:100%;max-width:420px}
+.over-title{font-family:'Crimson Text',serif;font-weight:600;font-size:26px;color:var(--gold);
+  margin-bottom:4px}
+.over-winner{font-size:13px;color:var(--muted);margin-bottom:20px}
+.exit-btns{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.btn-exit{padding:10px 16px;background:transparent;color:var(--muted);
+  border:1px solid var(--border);border-radius:4px;font-family:'Nunito',sans-serif;font-size:12px;cursor:pointer}
+
+/* Right panel */
+.panel-box{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px}
+.panel-title{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.combo-ref{display:flex;flex-direction:column;gap:3px}
+.combo-ref-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(74,48,16,.5)}
+.combo-ref-row:last-child{border:none}
+.combo-ref-name{color:var(--ink);font-weight:600}
+.combo-ref-effect{color:var(--muted);font-size:10px;text-align:right;max-width:120px}
+.card-ref{display:flex;flex-direction:column;gap:4px}
+.card-ref-row{display:flex;align-items:flex-start;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(74,48,16,.5)}
+.card-ref-row:last-child{border:none}
+.card-ref-icon{font-size:16px;flex-shrink:0}
+.card-ref-info{flex:1}
+.card-ref-name{font-weight:700}
+.card-ref-effect{color:var(--muted);font-size:10px;margin-top:1px}
+
+/* Rules modal */
+.rules-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;
+  align-items:center;justify-content:center;z-index:200;padding:20px}
+.rules-modal.open{display:flex}
+.rules-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  width:90vw;max-width:90vw;height:90vh;overflow-y:auto;padding:28px 32px;position:relative}
+.rules-box h2{font-family:'Crimson Text',serif;font-size:24px;color:var(--gold);margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between}
+.rules-box h2 button{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted)}
+.rules-section{margin-bottom:16px}
+.rules-section h3{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rules-section p,.rules-section li{font-size:13px;line-height:1.7;color:var(--ink)}
+.rules-section ul{padding-left:18px}
+.btn-rules{position:fixed;bottom:20px;right:20px;padding:9px 16px;background:#0a0602;
+  color:var(--gold);border:1px solid var(--border);border-radius:20px;font-family:'Nunito',sans-serif;
+  font-weight:800;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+  z-index:100;display:none}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="nav-logo">Bitnik <span>Games</span></div>
+  <a class="nav-back" href="/">← Catálogo</a>
+  <div class="conn" id="conn"></div>
+  <button class="btn-lang" onclick="toggleLang()" id="btn-lang">EN</button>
+</div>
+
+<!-- NAME -->
+<div class="screen active" id="s-name">
+  <div class="name-title">Nine Oils</div>
+  <p class="name-sub">Dice combos & card play · 2 jogadores</p>
+  <input class="name-input" id="inp-name" placeholder="O teu nome…" maxlength="20">
+  <button class="btn-primary" onclick="goLobby()">Entrar →</button>
+  <p style="color:var(--red);font-size:12px;min-height:18px" id="name-err"></p>
+</div>
+
+<!-- LOBBY -->
+<div class="screen" id="s-lobby">
+  <div class="lobby-title">Nine Oils</div>
+  <div id="lobby-list" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+
+<!-- WAIT -->
+<div class="screen" id="s-wait">
+  <div class="wait-title" id="wait-title">A aguardar…</div>
+  <div id="wait-players"></div>
+  <button class="btn-primary" id="btn-start" onclick="send({type:'START'})" style="margin-top:4px">Iniciar jogo</button>
+  <button class="btn-secondary" onclick="leaveLobby()">← Sair da mesa</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="s-game">
+  <div class="game-sticky">
+    <div class="phase-bar">
+      <div class="phase-badge" id="phase-badge">—</div>
+      <div class="deck-info" id="deck-info"></div>
+    </div>
+    <div class="players-row" style="margin-top:8px" id="players-row"></div>
+  </div>
+  <div class="game-body">
+    <div class="game-left">
+      <!-- Stall -->
+      <div class="stall-wrap">
+        <div class="stall-label">Stalls — Garrafas</div>
+        <div class="stalls-row" id="stalls-row"></div>
+      </div>
+      <!-- Dice -->
+      <div class="dice-wrap" id="dice-wrap">
+        <div class="dice-label">9 Dados</div>
+        <div class="dice-row" id="dice-row"></div>
+        <div class="dice-explain" id="dice-explain"></div>
+        <div class="combo-badges" id="combo-badges"></div>
+      </div>
+      <!-- Status -->
+      <div class="status-bar" id="status-bar">—</div>
+      <!-- Actions -->
+      <div class="actions" id="actions"></div>
+      <!-- Hand -->
+      <div class="hand-wrap" id="hand-wrap">
+        <div class="hand-label">A tua mão</div>
+        <div class="hand-cards" id="hand-cards"></div>
+      </div>
+    </div>
+    <div class="game-right">
+      <!-- Opp hand -->
+      <div class="panel-box" id="opp-hand-wrap" style="display:none">
+        <div class="panel-title" id="opp-hand-title">Mão do adversário</div>
+        <div class="opp-hand" id="opp-hand"></div>
+      </div>
+      <!-- Combo reference -->
+      <div class="panel-box">
+        <div class="panel-title">Combos</div>
+        <div class="combo-ref">
+          <div class="combo-ref-row"><span class="combo-ref-name">Double</span><span class="combo-ref-effect">Comprar 1 carta</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Triple+Double</span><span class="combo-ref-effect">Engarrafar 1</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Quad</span><span class="combo-ref-effect">Remover bloqueador</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Penta</span><span class="combo-ref-effect">Adv. descarta mão</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Six of a Kind</span><span class="combo-ref-effect">Comprar 3 cartas</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Joker (7×)</span><span class="combo-ref-effect">Escolher qualquer</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Double Quad (8×)</span><span class="combo-ref-effect">Remover 2 bloq.</span></div>
+          <div class="combo-ref-row"><span class="combo-ref-name">Nine of a Kind</span><span class="combo-ref-effect">Vitória imediata!</span></div>
+        </div>
+      </div>
+      <!-- Card reference -->
+      <div class="panel-box">
+        <div class="panel-title">Cartas</div>
+        <div class="card-ref">
+          <div class="card-ref-row"><span class="card-ref-icon">🌹</span><div class="card-ref-info"><div class="card-ref-name" style="color:var(--card-temptress)">Temptress</div><div class="card-ref-effect">Bónus extra no próximo Triple+Double</div></div></div>
+          <div class="card-ref-row"><span class="card-ref-icon">👦</span><div class="card-ref-info"><div class="card-ref-name" style="color:var(--card-boy)">Boy</div><div class="card-ref-effect">Roubar garrafa (adv. pode bloquear com Bully)</div></div></div>
+          <div class="card-ref-row"><span class="card-ref-icon">💪</span><div class="card-ref-info"><div class="card-ref-name" style="color:var(--card-bully)">Bully</div><div class="card-ref-effect">Bloquear Boy, ou 2× = roubar carta às cegas</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="overlay-over">
+  <div class="overlay-box">
+    <div class="over-title">🍶 Fim de Jogo</div>
+    <div class="over-winner" id="over-winner"></div>
+    <div id="over-stalls"></div>
+    <div class="exit-btns">
+      <button class="btn-primary" id="btn-restart" onclick="send({type:'RESTART'})" style="width:auto;padding:10px 18px;font-size:12px">Jogar de novo</button>
+      <button class="btn-exit" onclick="goMesas()">Mesas</button>
+      <button class="btn-exit" onclick="location.href='/'">← Catálogo</button>
+    </div>
+  </div>
+</div>
+
+<!-- RULES MODAL -->
+<div class="rules-modal" id="rules-modal" onclick="if(event.target===this)closeRules()">
+  <div class="rules-box">
+    <h2>Nine Oils — Regras <button onclick="closeRules()">✕</button></h2>
+    <div class="rules-section">
+      <h3>Objectivo</h3>
+      <p>Ser o primeiro a encher 6 garrafas no teu stall. Cada turno rolas 9 dados d6 — os combos determinam o que ganhas.</p>
+    </div>
+    <div class="rules-section">
+      <h3>Stall</h3>
+      <p>Cada jogador tem 6 slots: 2 bloqueados (cubos), 4 abertos. Para engarrafar (Triple+Double), o slot tem de estar aberto. Para abrir um slot bloqueado, usa Quad.</p>
+    </div>
+    <div class="rules-section">
+      <h3>Turno</h3>
+      <ul>
+        <li>Podes jogar cartas da tua mão antes de rolar.</li>
+        <li>Rolas os 9 dados e vês os combos.</li>
+        <li>Se houver múltiplas opções, escolhes qual activar.</li>
+        <li>No fim do turno, se tiveres mais de 3 cartas, descartas até 3.</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3>Combos</h3>
+      <ul>
+        <li><strong>Double (2 iguais)</strong> → comprar 1 carta do baralho</li>
+        <li><strong>Triple+Double (3+2)</strong> → engarrafar 1 garrafa (ou mais com Temptress)</li>
+        <li><strong>Quad (4 iguais)</strong> → remover 1 cubo bloqueador</li>
+        <li><strong>Penta (5 iguais)</strong> → adversário descarta a mão inteira</li>
+        <li><strong>Six of a Kind</strong> → comprar 3 cartas</li>
+        <li><strong>Joker (7 iguais)</strong> → escolhes qualquer combo</li>
+        <li><strong>Double Quad (8 iguais)</strong> → remover 2 bloqueadores</li>
+        <li><strong>Nine of a Kind</strong> → vitória imediata!</li>
+      </ul>
+    </div>
+    <div class="rules-section">
+      <h3>Cartas</h3>
+      <ul>
+        <li><strong>🌹 Temptress</strong> — o próximo Triple+Double engarrafa uma garrafa extra</li>
+        <li><strong>👦 Boy</strong> — roubar uma garrafa do adversário (ele pode bloquear com Bully)</li>
+        <li><strong>💪 Bully (1)</strong> — bloquear um ataque de Boy</li>
+        <li><strong>💪💪 Bully (2×)</strong> — roubar uma carta aleatória da mão adversária</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<button class="btn-rules" id="btn-rules" onclick="openRules()">? Regras</button>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let ws, myName='', myToken='', myLobbyId='', mySeat=-1;
+let state=null, isSolo=false, isHost=false;
+
+// ── i18n ──────────────────────────────────────────────────────────
+function applyLang() {
+  if (typeof T === 'undefined') return;
+  document.getElementById('btn-lang').textContent = T('lang.toggle');
+}
+window.addEventListener('langchange', applyLang);
+if (typeof T !== 'undefined') applyLang();
+
+// ── WS ────────────────────────────────────────────────────────────
+function connect() {
+  const proto = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/nineoils`);
+  ws.onopen = () => {
+    document.getElementById('conn').classList.add('ok');
+    if (myToken) send({type:'RECONNECT',token:myToken});
+    else if (myName) send({type:'LOBBIES'});
+  };
+  ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch(err){ console.error(err); } };
+  ws.onclose = () => { document.getElementById('conn').classList.remove('ok'); setTimeout(connect,2000); };
+  ws.onerror = () => {};
+}
+function send(msg) { if(ws?.readyState===1) ws.send(JSON.stringify(msg)); }
+
+function handle(msg) {
+  if (msg.type==='LOBBIES')      renderLobbyList(msg.lobbies);
+  if (msg.type==='JOINED')       onJoined(msg);
+  if (msg.type==='RECONNECTED')  { mySeat=msg.seat; isSolo=msg.solo; isHost=mySeat===0; send({type:'REQUEST_STATE'}); }
+  if (msg.type==='RECONNECT_FAIL') { myToken=''; send({type:'LOBBIES'}); }
+  if (msg.type==='PLAYER_JOINED') send({type:'REQUEST_STATE'});
+  if (msg.type==='LOBBY_STATE') renderWait(msg);
+  if (msg.type==='GAME_STATE')   renderGame(msg.state);
+  if (msg.type==='ERROR')        document.getElementById('name-err').textContent = msg.text;
+}
+
+function goLobby() {
+  const n = document.getElementById('inp-name').value.trim();
+  if (!n) { document.getElementById('name-err').textContent = 'Precisas de um nome!'; return; }
+  myName = n; show('s-lobby');
+  if (!ws||ws.readyState>1) connect(); else send({type:'LOBBIES'});
+}
+function joinLobby(id) { myLobbyId=id; send({type:'JOIN_LOBBY',lobbyId:id,playerName:myName}); }
+function leaveLobby() {
+  send({type:'LEAVE_LOBBY'}); sessionStorage.removeItem('no_token');
+  myToken=''; myLobbyId=''; mySeat=-1; state=null;
+  show('s-lobby'); send({type:'LOBBIES'});
+}
+function goMesas() {
+  document.getElementById('overlay-over').classList.remove('open');
+  leaveLobby();
+}
+function openRules() { document.getElementById('rules-modal').classList.add('open'); }
+function closeRules() { document.getElementById('rules-modal').classList.remove('open'); }
+
+function onJoined(msg) {
+  mySeat=msg.seat; myToken=msg.token; myLobbyId=msg.lobbyId;
+  isSolo=msg.solo; isHost=mySeat===0;
+  sessionStorage.setItem('no_token', myToken);
+  if (isSolo) { send({type:'REQUEST_STATE'}); return; }
+  show('s-wait'); renderWait({lobby:msg.lobby,names:msg.names,myLobbySeat:mySeat});
+}
+
+function renderLobbyList(list) {
+  if (myName) show('s-lobby');
+  document.getElementById('lobby-list').innerHTML = (list||[]).map(l => {
+    const full = !l.solo && l.seated >= 2;
+    const playing = l.playing;
+    return `<div class="lobby-row ${full||playing?'full':''}" onclick="if(!${full||playing}) joinLobby('${l.id}')">
+      <div>
+        <div class="lr-name">${l.solo?'🤖 ':''} ${l.name}</div>
+        <div class="lr-status">${l.solo?'Solo vs Bot':l.names.join(', ')||'(vazia)'}</div>
+      </div>
+      <div style="font-size:10px;color:var(--accent)">${l.solo?'Jogar solo →':playing?'A jogar':full?'Cheia':'Entrar →'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderWait(msg) {
+  show('s-wait');
+  const l=msg.lobby, names=msg.names||[];
+  document.getElementById('wait-title').textContent = l.name;
+  document.getElementById('wait-players').innerHTML = Array.from({length:l.maxH||2},(_,i) => {
+    const name=names[i]; const isMe=i===(msg.myLobbySeat??mySeat);
+    return `<div class="wp-row">
+      <div style="width:22px;height:22px;border-radius:50%;background:${isMe?'var(--accent)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px">${i+1}</div>
+      <div style="flex:1;font-size:12px">${name||(isMe?myName:'(vazio)')}</div>
+      ${isMe?`<span style="font-size:10px;color:var(--accent)">tu</span>`:''}
+    </div>`;
+  }).join('');
+  const btn = document.getElementById('btn-start');
+  const seated = names.filter(Boolean).length;
+  btn.style.display = isHost ? 'block' : 'none';
+  btn.disabled = seated < 2;
+  btn.textContent = seated < 2 ? `Aguardar ${2-seated} jogador(es)` : 'Iniciar jogo';
+}
+
+// ── Rendering ─────────────────────────────────────────────────────
+const CARD_ICONS = {TEMPTRESS:'🌹', BOY:'👦', BULLY:'💪'};
+
+function renderGame(s) {
+  state=s;
+  if (s.phase==='GAME_OVER') { show('s-game'); showGameOver(s); return; }
+  show('s-game');
+  document.getElementById('overlay-over').classList.remove('open');
+
+  // Phase
+  const phaseLabels = {
+    CARD_PLAY:'A Jogar Cartas', ROLL_PAUSE:'Dados Rolados',
+    CHOOSE_COMBO:'Escolher Combo', BOY_DEFEND:'Defender Boy',
+    BLIND_PICK:'Escolha Cega', DISCARD:'Descartar',
+  };
+  const badge = document.getElementById('phase-badge');
+  badge.className = 'phase-badge phase-'+s.phase;
+  badge.textContent = phaseLabels[s.phase]||s.phase;
+  document.getElementById('deck-info').textContent = `${s.deckCount} cartas no baralho`;
+
+  // Players
+  const pr = document.getElementById('players-row');
+  pr.innerHTML = [
+    {name:s.myName, seat:s.myIdx, hand:s.myHand.length, supply:s.supplies[s.myIdx], isMe:true},
+    {name:s.oppName, seat:1-s.myIdx, hand:s.oppHandCount, supply:s.supplies[1-s.myIdx], isMe:false},
+  ].map(p => `
+    <div class="pcard ${p.seat===s.cur?'active':''} ${p.isMe?'me':'opp'}">
+      <div class="pcard-name">${esc(p.name)}${p.isMe?`<span class="tag-me">tu</span>`:''}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--gold)">${p.supply} <span style="font-size:12px;color:var(--muted)">suprimento</span></div>
+      <div style="font-size:11px;color:var(--muted)">🃏 ×${p.hand}</div>
+    </div>`).join('');
+
+  // Stalls
+  const stalls = document.getElementById('stalls-row');
+  stalls.innerHTML = [s.myIdx, 1-s.myIdx].map((idx, i) => {
+    const name = i===0 ? s.myName : s.oppName;
+    const stall = s.stalls[idx];
+    return `<div class="stall">
+      <div class="stall-name">${esc(name)}</div>
+      <div class="stall-slots">
+        ${stall.map(v => `<div class="slot ${v===0?'empty':v===1?'open':'stocked'}"></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Dice
+  const diceRow = document.getElementById('dice-row');
+  const comboBadges = document.getElementById('combo-badges');
+  const freq = {};
+  (s.dice||[]).forEach(d => freq[d]=(freq[d]||0)+1);
+  const maxFreq = Math.max(...Object.values(freq),0);
+  diceRow.innerHTML = (s.dice||[]).map(d =>
+    `<div class="die ${freq[d]===maxFreq&&maxFreq>1?'combo-hi':''}">${d||'?'}</div>`
+  ).join('');
+  document.getElementById('dice-explain').textContent = s.rollExplain||'';
+  const comboNames = {PENTA:'PENTA',QUAD:'QUAD',TRIPLE_DOUBLE:'TRIPLE+DOUBLE',DOUBLE:'DOUBLE',
+    SIX_OF_KIND:'SIX',INSTANT_WIN:'NINE!',DOUBLE_QUAD:'DOUBLE QUAD'};
+  comboBadges.innerHTML = (s.combos||[]).map(c =>
+    `<div class="combo-badge">${comboNames[c]||c}</div>`).join('');
+
+  // Status
+  document.getElementById('status-bar').textContent = s.status||'—';
+
+  // Actions
+  renderActions(s);
+
+  // Hand
+  renderHand(s);
+
+  // Opp hand (for BLIND_PICK)
+  const oppWrap = document.getElementById('opp-hand-wrap');
+  const oppHand = document.getElementById('opp-hand');
+  if (s.phase==='BLIND_PICK' && s.isMyTurn) {
+    oppWrap.style.display='block';
+    document.getElementById('opp-hand-title').textContent = `${esc(s.oppName)} (escolhe uma):`;
+    oppHand.innerHTML = Array.from({length:s.oppHandCount},(_,i) =>
+      `<div class="opp-card" onclick="send({type:'BLIND_PICK',cardIdx:${i}})" title="Carta ${i+1}"></div>`
+    ).join('');
+  } else { oppWrap.style.display='none'; }
+
+  // Combo options
+  renderComboOptions(s);
+}
+
+function renderActions(s) {
+  const el = document.getElementById('actions');
+  el.innerHTML = '';
+  if (!s.isMyTurn) return;
+
+  if (s.phase==='CARD_PLAY') {
+    const btn = document.createElement('button');
+    btn.className='btn-action';
+    btn.textContent='▶ Rolar dados';
+    btn.onclick=()=>send({type:'CONFIRM_CARDS'});
+    el.appendChild(btn);
+  }
+  if (s.phase==='ROLL_PAUSE') {
+    const btn = document.createElement('button');
+    btn.className='btn-action';
+    btn.textContent='▶ Continuar';
+    btn.onclick=()=>send({type:'CONTINUE'});
+    el.appendChild(btn);
+  }
+  if (s.phase==='BOY_DEFEND' && !s.isMyTurn) {
+    // Defender - show bully buttons
+    const bullies = (s.myHand||[]).filter(c=>c==='BULLY').length;
+    const attacks = s.boysAttacking||1;
+    const defendWrap = document.createElement('div');
+    defendWrap.className='defend-wrap';
+    defendWrap.innerHTML=`<div class="defend-label">👦 ${s.oppName} ataca com ${attacks} Boy${attacks>1?'s':''}!</div><div class="defend-btns">`;
+    const max = Math.min(bullies,attacks);
+    for(let b=0;b<=max;b++){
+      const btn=document.createElement('button');
+      btn.className='btn-defend';
+      btn.textContent=b===0?'Não bloquear':`Bloquear ${b} com ${b===1?'Bully':b+' Bullies'}`;
+      btn.onclick=()=>send({type:'BOY_DEFEND',bulliesPlayed:b});
+      defendWrap.querySelector('.defend-btns').appendChild(btn);
+    }
+    el.appendChild(defendWrap);
+  }
+}
+
+function renderHand(s) {
+  const el = document.getElementById('hand-cards');
+  const isMyTurn = s.isMyTurn;
+  const canPlay = s.phase==='CARD_PLAY' && isMyTurn;
+  const canDiscard = s.phase==='DISCARD' && isMyTurn;
+
+  el.innerHTML = '';
+  (s.myHand||[]).forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className=`card ${card} ${(s.sel||[]).includes(i)?'selected':''}`;
+    div.innerHTML=`<div class="card-icon">${CARD_ICONS[card]||'🃏'}</div><div class="card-name">${card}</div>`;
+    if (canPlay) {
+      div.onclick = () => {
+        const newSel = [...(s.sel||[])];
+        const idx = newSel.indexOf(i);
+        if(idx>=0) newSel.splice(idx,1); else newSel.push(i);
+        send({type:'PLAY_CARDS', sel:newSel});
+        state.sel=newSel;
+        renderGame(state);
+      };
+    } else if (canDiscard) {
+      div.onclick = () => send({type:'DISCARD', cardIdx:i});
+      div.style.cursor='pointer';
+      div.title='Clica para descartar';
+    }
+    el.appendChild(div);
+  });
+
+  if (s.phase==='DISCARD' && isMyTurn) {
+    document.getElementById('status-bar').textContent =
+      `Tens ${s.myHand.length} cartas — descarta até ficar com 3. (Clica nas cartas)`;
+  }
+}
+
+function renderComboOptions(s) {
+  // Remove existing combo options
+  const existing = document.getElementById('combo-options-wrap');
+  if (existing) existing.remove();
+
+  if (s.phase!=='CHOOSE_COMBO' || !s.isMyTurn || !s.comboOptions) return;
+
+  const wrap = document.createElement('div');
+  wrap.id='combo-options-wrap';
+  wrap.style.cssText='background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:12px;margin-top:0';
+  const label = document.createElement('div');
+  label.style.cssText='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px';
+  label.textContent=s.comboPickReason==='JOKER'?'🃏 Joker — escolhe qualquer combo:':'Múltiplas opções — escolhe:';
+  wrap.appendChild(label);
+
+  const opts = document.createElement('div');
+  opts.className='combo-options';
+  const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',DOUBLE:'Double',SIX_OF_KIND:'Six of a Kind'};
+  const scores={PENTA:'Descarta mão adv.',QUAD:'Abre slot',TRIPLE_DOUBLE:'Engarrafa 1',DOUBLE:'Compra 1 carta',SIX_OF_KIND:'Compra 3 cartas'};
+  (s.comboOptions||[]).forEach((bundle, i) => {
+    const row = document.createElement('div');
+    row.className='combo-opt';
+    row.innerHTML=`<span class="combo-opt-label">${bundle.map(c=>names[c]||c).join(' + ')}</span>
+      <span class="combo-opt-score">${bundle.map(c=>scores[c]||'').filter(Boolean).join(' + ')}</span>`;
+    row.onclick=()=>send({type:'CHOOSE_COMBO',bundleIdx:i});
+    opts.appendChild(row);
+  });
+  wrap.appendChild(opts);
+
+  // Insert after status-bar
+  const statusBar = document.getElementById('status-bar');
+  statusBar.insertAdjacentElement('afterend', wrap);
+}
+
+function showGameOver(s) {
+  const winner = s.winnerIdx===s.myIdx ? s.myName : s.oppName;
+  const isWin = s.winnerIdx===s.myIdx;
+  document.getElementById('over-winner').textContent =
+    isWin ? '🎉 Vitória!' : `${esc(winner)} venceu!`;
+  document.getElementById('btn-restart').style.display = (isSolo||isHost)?'block':'none';
+  document.getElementById('overlay-over').classList.add('open');
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const rb=document.getElementById('btn-rules');
+  if(rb) rb.style.display=(id==='s-game')?'block':'none';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('inp-name').addEventListener('keydown',e=>{ if(e.key==='Enter') goLobby(); });
+const saved=sessionStorage.getItem('no_token');
+if(saved){ myToken=saved; }
+connect();
+setInterval(()=>{ if(ws?.readyState===1) send({type:'PING'}); },20000);
+</script>
+</body>
+</html>
