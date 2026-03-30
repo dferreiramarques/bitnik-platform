@@ -131,7 +131,7 @@ body{display:flex;flex-direction:column}
 .cell{width:var(--cell-px,84px);height:var(--cell-px,84px);border-radius:2px;border:2px solid transparent;
   position:relative;cursor:default;transition:all .15s;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:10px;overflow:hidden}
-.cell.empty{background:rgba(42,122,110,.04);border-color:rgba(42,122,110,.12)}
+.cell.empty{background:transparent;border-color:transparent}
 .cell.valid{background:rgba(0,232,54,.15);border-color:#00E436;cursor:pointer;border-style:dashed}
 .cell.valid:hover{background:rgba(0,232,54,.3);border-style:solid}
 .cell.placed-normal{background:#d4f0cc;border-color:#00E436}
@@ -613,13 +613,12 @@ function renderBoard(s) {
   if(!board.length)return;
   const rows=board.map(t=>t.r); const cols=board.map(t=>t.c);
   const valids=s.validPlacements||[];
-  // Always keep 0,0 visible — starting tile anchor
-  // Add ±1 margin around all tiles for breathing room
-  const margin=1;
-  const allR=[...rows,...valids.map(p=>p.r),0];
-  const allC=[...cols,...valids.map(p=>p.c),0];
-  const minR=Math.min(...allR)-margin, maxR=Math.max(...allR)+margin;
-  const minC=Math.min(...allC)-margin, maxC=Math.max(...allC)+margin;
+  // Show placed tiles + valid placements only — no empty border
+  const allR=[...rows,...valids.map(p=>p.r)];
+  const allC=[...cols,...valids.map(p=>p.c)];
+  if(!allR.length) return; // nothing to render yet
+  const minR=Math.min(...allR), maxR=Math.max(...allR);
+  const minC=Math.min(...allC), maxC=Math.max(...allC);
   const nCols=maxC-minC+1;
   // Always use 84px — 7×84 + 6×3px gap = 606px, fits any modern screen
   const cellPx=84;
@@ -663,7 +662,8 @@ function renderBoard(s) {
         div.className='cell valid';
         div.onclick=()=>placeTile(r,c);
       } else {
-        div.className='cell empty';
+        // Non-valid empty cell: transparent spacer to maintain grid
+        div.className='cell empty'; div.style.opacity='0'; div.style.pointerEvents='none';
       }
       grid.appendChild(div);
     }
