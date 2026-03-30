@@ -741,7 +741,7 @@ const CAP_DECK = [
   capMkCard(3,[],false),capMkCard(3,[],false),capMkCard(3,['Y'],false),
   capMkCard(3,['B'],false),capMkCard(3,['B'],false),capMkCard(3,[],true),capMkCard(3,[],true),
   capMkCard(4,[],false),capMkCard(4,[],false),capMkCard(4,[],true),capMkCard(4,[],true),
-  capMkCard(5,[],false),capMkCard(5,[],true,'cap5'),  // cap5_bird missing → fallback
+  capMkCard(5,[],false),capMkCard(5,[],true),            // img: cap5_bird
 ];
 function capShuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function capMakeLobby(id,name,solo,maxH){
