@@ -193,14 +193,6 @@ body{display:flex;flex-direction:column}
 /* Game Over overlay */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;
   align-items:center;justify-content:center;z-index:100}
-.combo-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;
-  align-items:center;justify-content:center;z-index:90;padding:20px}
-.combo-modal.open{display:flex}
-.combo-modal-box{background:var(--surface);border:1px solid var(--accent);border-radius:8px;
-  padding:24px;width:100%;max-width:420px}
-.combo-modal-title{font-family:'Crimson Text',serif;font-size:22px;color:var(--gold);
-  margin-bottom:4px}
-.combo-modal-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
 .overlay.open{display:flex}
 .overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
   padding:28px;width:100%;max-width:420px}
@@ -356,15 +348,6 @@ body{display:flex;flex-direction:column}
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- COMBO CHOICE MODAL -->
-<div class="combo-modal" id="combo-modal">
-  <div class="combo-modal-box">
-    <div class="combo-modal-title" id="combo-modal-title">Escolher Combo</div>
-    <div class="combo-modal-sub" id="combo-modal-sub"></div>
-    <div class="combo-options" id="combo-modal-options"></div>
   </div>
 </div>
 
@@ -614,6 +597,11 @@ function renderActions(s) {
   el.innerHTML = '';
   if (!s.isMyTurn) return;
 
+  const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',
+    DOUBLE:'Double',SIX_OF_KIND:'Six of a Kind'};
+  const effects={PENTA:'Descarta mão do adversário',QUAD:'Abre slot bloqueado',
+    TRIPLE_DOUBLE:'Engarrafa 1 🧪',DOUBLE:'Compra 1 carta',SIX_OF_KIND:'Compra 3 cartas'};
+
   if (s.phase==='CARD_PLAY') {
     const btn = document.createElement('button');
     btn.className='btn-action';
@@ -628,8 +616,25 @@ function renderActions(s) {
     btn.onclick=()=>send({type:'CONTINUE'});
     el.appendChild(btn);
   }
+  if (s.phase==='CHOOSE_COMBO' && s.comboOptions) {
+    // Show combo options inline — no modal
+    const label = document.createElement('div');
+    label.style.cssText='font-size:11px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px';
+    label.textContent = s.comboPickReason==='JOKER'
+      ? '🃏 Joker — escolhe qualquer combo:'
+      : 'Múltiplas opções — escolhe:';
+    el.appendChild(label);
+    (s.comboOptions||[]).forEach((bundle, i) => {
+      const row = document.createElement('div');
+      row.className='combo-opt';
+      row.style.cssText='cursor:pointer';
+      row.innerHTML=`<span class="combo-opt-label">${bundle.map(c=>names[c]||c).join(' + ')}</span>
+        <span class="combo-opt-score">${bundle.map(c=>effects[c]||'').filter(Boolean).join(' · ')}</span>`;
+      row.onclick=()=>send({type:'CHOOSE_COMBO',bundleIdx:i});
+      el.appendChild(row);
+    });
+  }
   if (s.phase==='BOY_DEFEND' && !s.isMyTurn) {
-    // Defender - show bully buttons
     const bullies = (s.myHand||[]).filter(c=>c==='BULLY').length;
     const attacks = s.boysAttacking||1;
     const defendWrap = document.createElement('div');
@@ -682,35 +687,8 @@ function renderHand(s) {
 }
 
 function renderComboOptions(s) {
-  const modal = document.getElementById('combo-modal');
-  if (s.phase!=='CHOOSE_COMBO' || !s.isMyTurn || !s.comboOptions) {
-    modal.classList.remove('open');
-    return;
-  }
-
-  const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',DOUBLE:'Double',SIX_OF_KIND:'Six of a Kind'};
-  const effects={PENTA:'Descarta mão do adversário',QUAD:'Abre um slot bloqueado',
-    TRIPLE_DOUBLE:'Engarrafa 1 🧪',DOUBLE:'Compra 1 carta',SIX_OF_KIND:'Compra 3 cartas'};
-
-  document.getElementById('combo-modal-title').textContent =
-    s.comboPickReason==='JOKER' ? '🃏 Joker — qualquer combo' : 'Múltiplas opções';
-  document.getElementById('combo-modal-sub').textContent =
-    s.comboPickReason==='JOKER'
-      ? 'Rolaste 7 iguais — escolhe qual combo activar:'
-      : 'O teu rolo permite várias combinações — escolhe uma:';
-
-  const opts = document.getElementById('combo-modal-options');
-  opts.innerHTML = '';
-  (s.comboOptions||[]).forEach((bundle, i) => {
-    const row = document.createElement('div');
-    row.className='combo-opt';
-    row.innerHTML=`<span class="combo-opt-label">${bundle.map(c=>names[c]||c).join(' + ')}</span>
-      <span class="combo-opt-score">${bundle.map(c=>effects[c]||'').filter(Boolean).join(' · ')}</span>`;
-    row.onclick=()=>{ modal.classList.remove('open'); send({type:'CHOOSE_COMBO',bundleIdx:i}); };
-    opts.appendChild(row);
-  });
-
-  modal.classList.add('open');
+  // Combo options render inline in the actions area — no modal needed
+  // Called from renderActions which has access to state
 }
 
 function showGameOver(s) {
