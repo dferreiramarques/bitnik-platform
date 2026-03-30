@@ -1766,7 +1766,7 @@ function noApplyCombos(lobby,combos){
   if(combos.includes('DOUBLE')){
     const n=combos.filter(c=>c==='DOUBLE').length;
     if(st)st.combos.DOUBLE=(st.combos.DOUBLE||0)+n;
-    for(let i=0;i<n;i++){const c=noDeal(g);if(c){p.hand.push(c);msgs.push(`Double — drew ${c[0]+c.slice(1).toLowerCase()}`);}else msgs.push('Double — deck empty');}
+    for(let i=0;i<n;i++){const c=noDeal(g);if(c){p.hand.push(c);msgs.push(`Double — drew a card`);}else msgs.push('Double — deck empty');}
   }
   if(combos.includes('QUAD')){
     const quadCount=combos.filter(c=>c==='QUAD').length;
