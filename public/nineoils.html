@@ -618,21 +618,25 @@ function renderActions(s) {
   }
   if (s.phase==='CHOOSE_COMBO' && s.comboOptions) {
     // Show combo options inline — no modal
+    // Show combo options inline — flex wrap grid
     const label = document.createElement('div');
     label.style.cssText='font-size:11px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px';
     label.textContent = s.comboPickReason==='JOKER'
       ? '🃏 Joker — escolhe qualquer combo:'
       : 'Múltiplas opções — escolhe:';
     el.appendChild(label);
+    const grid = document.createElement('div');
+    grid.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
     (s.comboOptions||[]).forEach((bundle, i) => {
       const row = document.createElement('div');
       row.className='combo-opt';
-      row.style.cssText='cursor:pointer';
+      row.style.cssText='cursor:pointer;flex:0 1 auto';
       row.innerHTML=`<span class="combo-opt-label">${bundle.map(c=>names[c]||c).join(' + ')}</span>
         <span class="combo-opt-score">${bundle.map(c=>effects[c]||'').filter(Boolean).join(' · ')}</span>`;
       row.onclick=()=>send({type:'CHOOSE_COMBO',bundleIdx:i});
-      el.appendChild(row);
+      grid.appendChild(row);
     });
+    el.appendChild(grid);
   }
   if (s.phase==='BOY_DEFEND' && !s.isMyTurn) {
     const bullies = (s.myHand||[]).filter(c=>c==='BULLY').length;
