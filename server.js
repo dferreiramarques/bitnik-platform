@@ -509,6 +509,15 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // /play/bulbous → dedicated Bulbous client
+  if (url === '/play/bulbous' || url === '/play/bulbous/') {
+    fs.readFile(path.join(PUB_DIR, 'bulbous.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
   // /play/percebes → dedicated Percebes client
   if (url === '/play/percebes' || url === '/play/percebes/') {
     fs.readFile(path.join(PUB_DIR, 'percebes.html'), (err, data) => {
@@ -563,6 +572,24 @@ const wss = new WebSocketServer({ noServer: true });
 const capWss = { get clients() { return [...wss.clients].filter(w=>w._isCap); } }; // alias
 
 wss.on('connection', (ws, req) => {
+  // Route: Bulbous connections
+  if (ws._isBU) {
+    const _buH = globalThis._buHandle;
+    const _buL = globalThis._BU_LOBBIES;
+    if (ws.readyState===1) ws.send(JSON.stringify({
+      type:'LOBBIES',
+      lobbies: Object.values(_buL).map(l=>({id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,
+        seated:l.players.filter(Boolean).length,
+        playing:!!l.game&&l.game.phase!=='GAME_OVER',
+        names:l.names.filter(Boolean)}))
+    }));
+    ws.on('message', raw => { try { _buH(ws, JSON.parse(raw)); } catch(e) { console.error('BU err',e); } });
+    ws.on('close', () => {
+      // Graceful disconnect handled inside buHandle session tracking
+    });
+    ws.on('error', ()=>{});
+    return;
+  }
   // Route: Nine Oils connections
   if (ws._isNO) {
     noSend(ws, { type:'LOBBIES', lobbies: Object.values(NO_LOBBIES).map(noLobbyInfo) });
@@ -1017,6 +1044,7 @@ server.on('upgrade', (req, socket, head) => {
     ws._isCap  = (urlPath === '/ws/capivaras');
     ws._isPerc = (urlPath === '/ws/percebes');
     ws._isNO   = (urlPath === '/ws/nineoils');
+    ws._isBU   = (urlPath === '/ws/bulbous');
     wss.emit('connection', ws, req);
   });
 });
@@ -2044,4 +2072,398 @@ function noHandle(ws,msg){
     noTrash(g,p.hand.splice(msg.cardIdx,1)[0]);
     if(p.hand.length<=3)noEndTurn(g,lobby);else noBroadcast(lobby);return;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BULBOUS — Servidor embebido
+//  Trick-taking com Baelfungious · 2p e 4p
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Inline engine (copy of bulbous_engine.js) ─────────────────────
+{
+const BCOLORS      = ['red','blue','green','yellow'];
+const BSYMBOL_OF   = {red:'triangle',yellow:'triangle',blue:'circle',green:'circle'};
+const B_TRICKS_PER = 4;
+const B_TIE_MS     = 20000;
+
+function bShuf(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+
+let _bcid=0;
+function bBuildDeck(){_bcid=0;const d=[];for(const col of BCOLORS){for(const v of[3,4,5,6,7,8,9])d.push({id:++_bcid,type:'numeric',color:col,symbol:null,value:v});d.push({id:++_bcid,type:'double',color:col,symbol:null,value:null});}d.push({id:++_bcid,type:'joker',color:null,symbol:'circle',value:null});d.push({id:++_bcid,type:'joker',color:null,symbol:'triangle',value:null});return d;}
+
+function bMakeBaelfs(colors,ownerIdx){const r=[];for(const col of colors)for(const slots of[1,2,3,4])r.push({color:col,symbol:BSYMBOL_OF[col],slots,bulbs:[],complete:false,owner:ownerIdx});return r;}
+
+function bNewGame(lobbyPlayers,mode){
+  const is2p=mode==='2p',n=lobbyPlayers.length,handLimit=is2p?9:7,numSlots=is2p?2:1;
+  const deck=bShuf(bBuildDeck());
+  let colorAssign;
+  if(is2p){const syms=bShuf(['triangle','circle']);colorAssign=syms.map(s=>s==='triangle'?'red':'blue');}
+  else{colorAssign=bShuf([...BCOLORS]).slice(0,n);}
+  const players=lobbyPlayers.map((lp,i)=>{
+    const color=colorAssign[i],symbol=BSYMBOL_OF[color];
+    const bcolors=is2p?(symbol==='triangle'?['red','yellow']:['blue','green']):[color];
+    return{name:lp.name,isBot:!!lp.isBot,color,symbol,hand:deck.splice(0,handLimit),handLimit,baelfungious:bMakeBaelfs(bcolors,i),activeSlots:Array(numSlots).fill(null),endgameTriggered:false};
+  });
+  const replaceNeeded=[];
+  for(let pi=0;pi<n;pi++)for(let si=0;si<numSlots;si++)replaceNeeded.push({playerIdx:pi,slotIdx:si});
+  return{mode,n,players,deck,discard:[],handLimit,numSlots,phase:'CHOOSE_BAELFUNGIOUS',governorIdx:Math.floor(Math.random()*n),roundNum:1,endgameFired:false,turnGen:0,replaceNeeded,trick:null,trickNum:0,contestedThisRound:[],anyCompletedThisRound:false,lastTrickResult:null,finalScores:null,tieBreakDeadline:null,tieBreakTimer:null};
+}
+
+function bRefill(g){if(!g.deck.length&&g.discard.length){g.deck=bShuf([...g.discard]);g.discard=[];}}
+function bDrawN(g,n){const d=[];let r=n;while(r>0){bRefill(g);if(!g.deck.length)break;const b=g.deck.splice(0,Math.min(r,g.deck.length));d.push(...b);r-=b.length;if(r>0&&!g.deck.length&&!g.discard.length)break;}return d;}
+function bGetActives(g){const out=[];for(let pi=0;pi<g.n;pi++){const p=g.players[pi];for(let si=0;si<g.numSlots;si++){const bi=p.activeSlots[si];if(bi!==null)out.push({playerIdx:pi,slotIdx:si,baelfIdx:bi,baelf:p.baelfungious[bi]});}}return out;}
+function bGetUncontested(g){return bGetActives(g).filter(a=>!g.contestedThisRound.some(c=>c.playerIdx===a.playerIdx&&c.slotIdx===a.slotIdx));}
+function bCanPlay(card,baelf){if(card.type==='joker')return card.symbol===baelf.symbol;return card.color===baelf.color;}
+function bScoreBet(cards,baelf){if(!cards||!cards.length)return{total:0,jokerWin:false};if(cards.find(c=>c.type==='joker'))return{total:Infinity,jokerWin:true};let sum=0,hasD=false;for(const c of cards){if(c.type==='numeric')sum+=c.value;if(c.type==='double'&&c.color===baelf.color)hasD=true;}return{total:hasD?sum*2:sum,jokerWin:false};}
+function bTrickBaelf(g){const t=g.trick,tp=g.players[t.targetPlayerIdx];return tp.baelfungious[tp.activeSlots[t.targetSlotIdx]];}
+function bDescCard(c){if(c.type==='joker')return`Joker ${c.symbol==='circle'?'⭕':'▲'}`;if(c.type==='double')return`×2 ${c.color}`;return`${c.value} ${c.color}`;}
+
+function bChooseBaelf(g,playerIdx,baelfIdx){
+  if(g.phase!=='CHOOSE_BAELFUNGIOUS')return{error:'Fase incorrecta'};
+  const pi2=g.replaceNeeded.findIndex(r=>r.playerIdx===playerIdx);
+  if(pi2===-1)return{error:'Sem escolha pendente'};
+  const{slotIdx}=g.replaceNeeded[pi2];
+  const p=g.players[playerIdx],baelf=p.baelfungious[baelfIdx];
+  if(!baelf)return{error:'Índice inválido'};
+  if(baelf.complete)return{error:'Já completa'};
+  if(p.activeSlots.includes(baelfIdx))return{error:'Já activa'};
+  p.activeSlots[slotIdx]=baelfIdx;
+  g.replaceNeeded.splice(pi2,1);
+  const still=g.replaceNeeded.filter(r=>r.playerIdx===playerIdx);
+  if(!still.length&&!p.endgameTriggered){
+    const aSet=new Set(p.activeSlots.filter(s=>s!==null));
+    const res=p.baelfungious.filter((b,bi)=>!b.complete&&!aSet.has(bi));
+    if(!res.length){p.endgameTriggered=true;g.endgameFired=true;}
+  }
+  if(!g.replaceNeeded.length){g.contestedThisRound=[];g.anyCompletedThisRound=false;g.trickNum=0;g.trick=null;g.phase='CHOOSE_TARGET';}
+  return{ok:true};
+}
+
+function bChooseTarget(g,playerIdx,targetPlayerIdx,targetSlotIdx){
+  if(g.phase!=='CHOOSE_TARGET')return{error:'Fase incorrecta'};
+  if(playerIdx!==g.governorIdx)return{error:'Não és o Governante'};
+  const valid=bGetUncontested(g);
+  const found=valid.find(u=>u.playerIdx===targetPlayerIdx&&u.slotIdx===targetSlotIdx);
+  if(!found)return{error:'Alvo inválido'};
+  const order=Array.from({length:g.n},(_,i)=>(g.governorIdx+i)%g.n);
+  g.trick={targetPlayerIdx,targetSlotIdx,actionOrder:order,currentActorIdx:0,bets:Array(g.n).fill(null),actionTypes:Array(g.n).fill(null),revealed:false,tiedPlayers:[],tieBreakCards:Array(g.n).fill(null),tieBreakSubmitted:Array(g.n).fill(false),waitingForDiscard:-1,discardExcess:0};
+  g.phase='PLAYER_ACTIONS';
+  return{ok:true};
+}
+
+function bPlayerAct(g,playerIdx,action){
+  if(g.phase!=='PLAYER_ACTIONS')return{error:'Fase incorrecta'};
+  const t=g.trick;
+  if(t.waitingForDiscard!==-1){if(playerIdx!==t.waitingForDiscard)return{error:'Aguarda descarte'};return{error:'Usa DISCARD_EXCESS'};}
+  const expected=t.actionOrder[t.currentActorIdx];
+  if(playerIdx!==expected)return{error:'Não é a tua vez'};
+  const p=g.players[playerIdx],baelf=bTrickBaelf(g);
+  if(action.type==='BET'){
+    const{cardIds}=action;
+    if(!Array.isArray(cardIds)||!cardIds.length)return{error:'Aposta pelo menos 1 carta'};
+    const cards=cardIds.map(id=>p.hand.find(c=>c.id===id)).filter(Boolean);
+    if(cards.length!==cardIds.length)return{error:'Carta(s) não encontrada(s)'};
+    for(const c of cards)if(!bCanPlay(c,baelf))return{error:`${bDescCard(c)} não pode jogar aqui`};
+    for(const c of cards)p.hand.splice(p.hand.indexOf(c),1);
+    t.bets[playerIdx]=cards;t.actionTypes[playerIdx]='bet';
+  }else if(action.type==='SWAP'){
+    const{cardIds}=action;
+    if(!Array.isArray(cardIds)||cardIds.length<1||cardIds.length>2)return{error:'Troca 1 ou 2 cartas'};
+    const cards=cardIds.map(id=>p.hand.find(c=>c.id===id)).filter(Boolean);
+    if(cards.length!==cardIds.length)return{error:'Carta(s) não encontrada(s)'};
+    for(const c of cards)p.hand.splice(p.hand.indexOf(c),1);
+    g.discard.push(...cards);p.hand.push(...bDrawN(g,cards.length));
+    t.bets[playerIdx]=[];t.actionTypes[playerIdx]='swap';
+  }else if(action.type==='PASS'){
+    p.hand.push(...bDrawN(g,1));
+    t.bets[playerIdx]=[];t.actionTypes[playerIdx]='pass';
+    if(p.hand.length>p.handLimit){t.waitingForDiscard=playerIdx;t.discardExcess=p.hand.length-p.handLimit;return{ok:true};}
+  }else return{error:'Tipo desconhecido'};
+  bAdvanceActor(g);
+  return{ok:true};
+}
+
+function bDiscardExcess(g,playerIdx,cardIds){
+  if(g.phase!=='PLAYER_ACTIONS')return{error:'Fase incorrecta'};
+  const t=g.trick;
+  if(t.waitingForDiscard!==playerIdx)return{error:'Não é a tua vez de descartar'};
+  const excess=t.discardExcess;
+  if(!Array.isArray(cardIds)||cardIds.length!==excess)return{error:`Descarta ${excess} carta(s)`};
+  const p=g.players[playerIdx];
+  const cards=cardIds.map(id=>p.hand.find(c=>c.id===id)).filter(Boolean);
+  if(cards.length!==cardIds.length)return{error:'Carta(s) não encontrada(s)'};
+  for(const c of cards)p.hand.splice(p.hand.indexOf(c),1);
+  g.discard.push(...cards);t.waitingForDiscard=-1;t.discardExcess=0;
+  bAdvanceActor(g);return{ok:true};
+}
+
+function bTieBreakAct(g,playerIdx,cardId){
+  if(g.phase!=='TIE_BREAK')return{error:'Não estamos em tie-break'};
+  const t=g.trick;
+  if(!t.tiedPlayers.includes(playerIdx))return{error:'Não estás empatado'};
+  if(t.tieBreakSubmitted[playerIdx])return{error:'Já submeteste'};
+  if(cardId!==null){
+    const p=g.players[playerIdx],baelf=bTrickBaelf(g);
+    const card=p.hand.find(c=>c.id===cardId);
+    if(!card)return{error:'Carta não encontrada'};
+    if(card.color!==baelf.color)return{error:'Só cartas da mesma cor'};
+    p.hand.splice(p.hand.indexOf(card),1);t.tieBreakCards[playerIdx]=card;
+  }
+  t.tieBreakSubmitted[playerIdx]=true;
+  if(t.tiedPlayers.every(i=>t.tieBreakSubmitted[i]))bResolveTieBreak(g);
+  return{ok:true};
+}
+
+function bTieBreakTimeout(g){
+  if(g.phase!=='TIE_BREAK')return;
+  const t=g.trick;
+  for(const pi of t.tiedPlayers)if(!t.tieBreakSubmitted[pi])t.tieBreakSubmitted[pi]=true;
+  bResolveTieBreak(g);
+}
+
+function bAdvanceActor(g){g.trick.currentActorIdx++;if(g.trick.currentActorIdx>=g.n)bRevealTrick(g);}
+
+function bRevealTrick(g){
+  const t=g.trick;t.revealed=true;
+  const baelf=bTrickBaelf(g);
+  const scores=g.players.map((_,i)=>{if(t.actionTypes[i]==='bet'&&t.bets[i]&&t.bets[i].length)return bScoreBet(t.bets[i],baelf);return null;});
+  const bettors=scores.map((s,i)=>s?i:-1).filter(i=>i!==-1);
+  const result={trickTargetPlayerIdx:t.targetPlayerIdx,trickTargetSlotIdx:t.targetSlotIdx,bets:t.bets,actionTypes:t.actionTypes,scores,winner:null,tied:false,tiedPlayers:[]};
+  if(!bettors.length){g.lastTrickResult=result;bFinishTrick(g);return;}
+  const jokerW=bettors.filter(i=>scores[i].jokerWin);
+  let winners;
+  if(jokerW.length)winners=jokerW;
+  else{const mx=Math.max(...bettors.map(i=>scores[i].total));winners=bettors.filter(i=>scores[i].total===mx);}
+  if(winners.length===1){bPlaceBulb(g,winners[0]);bDiscardBets(g);result.winner=winners[0];g.lastTrickResult=result;bFinishTrick(g);}
+  else{result.tied=true;result.tiedPlayers=winners;t.tiedPlayers=winners;g.lastTrickResult=result;g.phase='TIE_BREAK';g.tieBreakDeadline=Date.now()+B_TIE_MS;}
+}
+
+function bResolveTieBreak(g){
+  const t=g.trick;
+  const played=t.tiedPlayers.filter(i=>t.tieBreakCards[i]!==null);
+  for(const i of played)g.discard.push(t.tieBreakCards[i]);
+  let winner=null;
+  if(played.length){
+    const tots=played.map(i=>{const orig=g.lastTrickResult.scores[i].total;const extra=t.tieBreakCards[i]?.value||0;return{i,total:orig===Infinity?Infinity:orig+extra};});
+    const mx=Math.max(...tots.map(x=>x.total));
+    const wins=tots.filter(x=>x.total===mx).map(x=>x.i);
+    if(wins.length===1)winner=wins[0];
+  }
+  g.lastTrickResult.tieWinner=winner;g.lastTrickResult.tieBreakCards=[...t.tieBreakCards];
+  if(winner!==null)bPlaceBulb(g,winner);
+  bDiscardBets(g);g.tieBreakDeadline=null;
+  if(g.tieBreakTimer){clearTimeout(g.tieBreakTimer);g.tieBreakTimer=null;}
+  bFinishTrick(g);
+}
+
+function bPlaceBulb(g,wi){const b=bTrickBaelf(g);b.bulbs.push(wi);if(b.bulbs.length>=b.slots){b.complete=true;g.anyCompletedThisRound=true;}}
+function bDiscardBets(g){const t=g.trick;for(let i=0;i<g.n;i++)if(t.bets[i]&&t.bets[i].length)g.discard.push(...t.bets[i]);}
+function bFinishTrick(g){g.contestedThisRound.push({playerIdx:g.trick.targetPlayerIdx,slotIdx:g.trick.targetSlotIdx});g.trickNum++;if(g.trickNum>=B_TRICKS_PER){bEndRound(g);}else{g.trick=null;g.phase='CHOOSE_TARGET';}}
+
+function bEndRound(g){
+  g.trick=null;g.trickNum=0;
+  if(g.anyCompletedThisRound)for(const p of g.players){const need=p.handLimit-p.hand.length;if(need>0)p.hand.push(...bDrawN(g,need));}
+  if(g.endgameFired){g.finalScores=bCalcScore(g);g.phase='GAME_OVER';return;}
+  g.governorIdx=(g.governorIdx+1)%g.n;g.roundNum++;g.contestedThisRound=[];g.anyCompletedThisRound=false;g.turnGen++;
+  const rn=[];
+  for(let pi=0;pi<g.n;pi++){const p=g.players[pi];for(let si=0;si<g.numSlots;si++){const bi=p.activeSlots[si];if(bi===null||!p.baelfungious[bi].complete)continue;p.activeSlots[si]=null;const aSet=new Set(p.activeSlots.filter(s=>s!==null));const avail=p.baelfungious.filter((b,i)=>!b.complete&&!aSet.has(i));if(avail.length)rn.push({playerIdx:pi,slotIdx:si});}}
+  if(rn.length){g.replaceNeeded=rn;g.phase='CHOOSE_BAELFUNGIOUS';}else{g.replaceNeeded=[];g.phase='CHOOSE_TARGET';}
+}
+
+function bCalcScore(g){
+  const s=g.players.map((p,i)=>({idx:i,name:p.name,color:p.color,bulbs:0,majority:0,collection:0,total:0,controlled:{colors:new Set(),symbols:new Set()}}));
+  const all=g.players.flatMap(p=>p.baelfungious);
+  for(const b of all)for(const wi of b.bulbs)if(s[wi])s[wi].bulbs++;
+  for(const b of all){if(!b.complete)continue;const cnt={};for(const wi of b.bulbs)cnt[wi]=(cnt[wi]||0)+1;const vals=Object.values(cnt);if(!vals.length)continue;const mx=Math.max(...vals);const lds=Object.keys(cnt).filter(k=>cnt[k]===mx).map(Number);if(lds.length===1)s[lds[0]].majority+=3;else for(const li of lds)s[li].majority+=1;for(const li of lds){s[li].controlled.colors.add(b.color);s[li].controlled.symbols.add(b.symbol);}}
+  for(const sc of s){if(sc.controlled.colors.size>=4)sc.collection+=5;if(sc.controlled.symbols.size>=2)sc.collection+=5;sc.total=sc.bulbs+sc.majority+sc.collection;sc.controlled.colors=[...sc.controlled.colors];sc.controlled.symbols=[...sc.controlled.symbols];}
+  return s.sort((a,b)=>b.total-a.total||b.bulbs-a.bulbs);
+}
+
+function bBuildView(g,playerIdx){
+  const me=g.players[playerIdx],t=g.trick;
+  let tv=null;
+  if(t){tv={targetPlayerIdx:t.targetPlayerIdx,targetSlotIdx:t.targetSlotIdx,actionOrder:t.actionOrder,currentActorIdx:t.currentActorIdx,actionTypes:t.actionTypes,bets:t.bets.map((b,i)=>{if(i===playerIdx)return b;if(t.revealed)return b;return b!==null?[]:null;}),revealed:t.revealed,tiedPlayers:t.tiedPlayers,tieBreakSubmitted:t.tieBreakSubmitted,tieBreakCards:t.tieBreakCards.map((c,i)=>{if(i===playerIdx)return c;if(t.revealed)return c;return c!==null?{}:null;}),waitingForDiscard:t.waitingForDiscard,discardExcess:t.discardExcess};}
+  return{myIdx:playerIdx,phase:g.phase,roundNum:g.roundNum,governorIdx:g.governorIdx,endgameFired:g.endgameFired,players:g.players.map((p,i)=>({name:p.name,color:p.color,symbol:p.symbol,isBot:p.isBot,handSize:p.hand.length,activeSlots:p.activeSlots,baelfungious:p.baelfungious,endgameTriggered:p.endgameTriggered})),myHand:me.hand,deckSize:g.deck.length,discardTop:g.discard.length?g.discard[g.discard.length-1]:null,discardSize:g.discard.length,trick:tv,replaceNeeded:g.replaceNeeded||[],anyCompletedThisRound:g.anyCompletedThisRound,lastTrickResult:g.lastTrickResult,finalScores:g.finalScores,tieBreakDeadline:g.tieBreakDeadline||null};
+}
+
+function bBotAct(g){
+  if(g.phase==='CHOOSE_BAELFUNGIOUS'){
+    for(const r of(g.replaceNeeded||[])){
+      if(g.players[r.playerIdx].isBot){
+        const p=g.players[r.playerIdx];const aSet=new Set(p.activeSlots.filter(s=>s!==null));
+        const avail=p.baelfungious.map((b,i)=>({b,i})).filter(({b,i})=>!b.complete&&!aSet.has(i));
+        if(!avail.length)continue;
+        const rv=Math.random();
+        let bi;
+        if(rv<0.4){avail.sort((a,b2)=>a.b.slots-b2.b.slots);bi=avail[0].i;}
+        else if(rv<0.7){avail.sort((a,b2)=>b2.b.slots-a.b.slots);bi=avail[0].i;}
+        else bi=avail[Math.floor(Math.random()*avail.length)].i;
+        return{playerIdx:r.playerIdx,msg:{type:'CHOOSE_BAELF',baelfIdx:bi}};
+      }
+    }
+  }
+  if(g.phase==='CHOOSE_TARGET'&&g.players[g.governorIdx].isBot){
+    const opts=bGetUncontested(g);if(!opts.length)return null;
+    opts.sort((a,b)=>a.baelf.slots-b.baelf.slots);
+    return{playerIdx:g.governorIdx,msg:{type:'CHOOSE_TARGET',targetPlayerIdx:opts[0].playerIdx,targetSlotIdx:opts[0].slotIdx}};
+  }
+  if(g.phase==='PLAYER_ACTIONS'&&g.trick){
+    const t=g.trick;
+    if(t.waitingForDiscard!==-1&&g.players[t.waitingForDiscard].isBot){
+      const p=g.players[t.waitingForDiscard];
+      const sorted=[...p.hand].sort((a,b)=>(a.value||0)-(b.value||0)).slice(0,t.discardExcess);
+      return{playerIdx:t.waitingForDiscard,msg:{type:'DISCARD_EXCESS',cardIds:sorted.map(c=>c.id)}};
+    }
+    const exp=t.actionOrder[t.currentActorIdx];
+    if(exp!==undefined&&g.players[exp].isBot){
+      const p=g.players[exp],baelf=bTrickBaelf(g);
+      const valid=p.hand.filter(c=>bCanPlay(c,baelf)).sort((a,b)=>(b.value||0)-(a.value||0));
+      let action;
+      if(!valid.length){action=p.hand.length?{type:'SWAP',cardIds:[p.hand[Math.floor(Math.random()*p.hand.length)].id]}:{type:'PASS'};}
+      else{const r=Math.random();if(r<0.65){const jkr=valid.find(c=>c.type==='joker');if(jkr)action={type:'BET',cardIds:[jkr.id]};else{const num=Math.min(valid.length,Math.floor(Math.random()*2)+1);action={type:'BET',cardIds:bShuf(valid).slice(0,num).map(c=>c.id)};}}else if(r<0.85&&p.hand.length){const srt=[...p.hand].sort((a,b)=>(a.value||0)-(b.value||0));const num=Math.random()<0.5?1:Math.min(2,srt.length);action={type:'SWAP',cardIds:srt.slice(0,num).map(c=>c.id)};}else action={type:'PASS'};}
+      return{playerIdx:exp,msg:{type:'PLAYER_ACT',...action}};
+    }
+  }
+  if(g.phase==='TIE_BREAK'&&g.trick){
+    for(const pi of g.trick.tiedPlayers){
+      if(g.players[pi].isBot&&!g.trick.tieBreakSubmitted[pi]){
+        const p=g.players[pi],baelf=bTrickBaelf(g);
+        const elig=p.hand.filter(c=>c.color===baelf.color&&c.type==='numeric').sort((a,b)=>b.value-a.value);
+        const cardId=(elig.length&&Math.random()<0.6)?elig[0].id:null;
+        return{playerIdx:pi,msg:{type:'TIE_BREAK',cardId}};
+      }
+    }
+  }
+  return null;
+}
+
+function bHandleAction(g,playerIdx,msg){
+  switch(msg.type){
+    case 'CHOOSE_BAELF':   return bChooseBaelf(g,playerIdx,msg.baelfIdx);
+    case 'CHOOSE_TARGET':  return bChooseTarget(g,playerIdx,msg.targetPlayerIdx,msg.targetSlotIdx);
+    case 'PLAYER_ACT': case 'BET': case 'SWAP': case 'PASS': return bPlayerAct(g,playerIdx,msg);
+    case 'DISCARD_EXCESS': return bDiscardExcess(g,playerIdx,msg.cardIds);
+    case 'TIE_BREAK':      return bTieBreakAct(g,playerIdx,msg.cardId??null);
+    default: return{error:'Acção desconhecida: '+msg.type};
+  }
+}
+
+// ── Lobby state ────────────────────────────────────────────────
+const BU_LOBBIES  = {};
+const BU_SESSIONS = {};
+const BU_WS_STATE = new WeakMap();
+
+// Init: 3 mesas 4p, 3 mesas 2p, 1 solo 4p, 1 solo 2p
+for(let i=1;i<=3;i++) BU_LOBBIES[`b4p${i}`]={id:`b4p${i}`,name:`Mesa ${i}`,mode:'4p',solo:false,maxP:4,players:Array(4).fill(null),names:Array(4).fill(''),tokens:Array(4).fill(null),graceTimers:Array(4).fill(null),game:null};
+for(let i=1;i<=3;i++) BU_LOBBIES[`b2p${i}`]={id:`b2p${i}`,name:`Mesa ${i}`,mode:'2p',solo:false,maxP:2,players:Array(2).fill(null),names:Array(2).fill(''),tokens:Array(2).fill(null),graceTimers:Array(2).fill(null),game:null};
+BU_LOBBIES['bsolo4p']={id:'bsolo4p',name:'Solo 4 jogadores',mode:'4p',solo:true,maxP:1,players:[null],names:[''],tokens:[null],graceTimers:[null],game:null};
+BU_LOBBIES['bsolo2p']={id:'bsolo2p',name:'Solo 2 jogadores',mode:'2p',solo:true,maxP:1,players:[null],names:[''],tokens:[null],graceTimers:[null],game:null};
+
+function buLobbyInfo(l){return{id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,seated:l.players.filter(Boolean).length,playing:!!l.game&&l.game.phase!=='GAME_OVER',names:l.names.filter(Boolean)};}
+function buSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
+function buBroadcastGame(lobby){const g=lobby.game;if(!g)return;const maxSeat=lobby.solo?1:lobby.maxP;for(let s=0;s<maxSeat;s++){if(lobby.players[s])buSend(lobby.players[s],{type:'GAME_STATE',state:bBuildView(g,s)});}}
+function buBroadcastLobbies(){const list=Object.values(BU_LOBBIES).map(buLobbyInfo);for(const ws of wss.clients){if(ws._isBU&&ws.readyState===1){const st=BU_WS_STATE.get(ws);if(!st||!st.lobbyId)buSend(ws,{type:'LOBBIES',lobbies:list});}}}
+
+function buScheduleBot(lobby,delay){
+  const g=lobby.game;if(!g)return;
+  const gen=g.turnGen;
+  // Also schedule tie-break timer if needed
+  if(g.phase==='TIE_BREAK'&&g.tieBreakDeadline&&!g.tieBreakTimer){
+    const ms=Math.max(0,g.tieBreakDeadline-Date.now());
+    g.tieBreakTimer=setTimeout(()=>{if(lobby.game===g&&g.phase==='TIE_BREAK'){bTieBreakTimeout(g);buBroadcastGame(lobby);buScheduleBot(lobby,600);}},ms);
+  }
+  setTimeout(()=>{
+    if(!lobby.game||lobby.game.turnGen!==gen)return;
+    const action=bBotAct(g);
+    if(!action)return;
+    const r=bHandleAction(g,action.playerIdx,action.msg);
+    if(r?.ok){buBroadcastGame(lobby);buScheduleBot(lobby,1200);}
+  },delay||1200);
+}
+
+function buHandle(ws,msg){
+  if(msg.type==='PING'){buSend(ws,{type:'PONG'});return;}
+  if(msg.type==='LOBBIES'){buSend(ws,{type:'LOBBIES',lobbies:Object.values(BU_LOBBIES).map(buLobbyInfo)});return;}
+  if(msg.type==='RECONNECT'){
+    const sess=BU_SESSIONS[msg.token];if(!sess){buSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const lobby=BU_LOBBIES[sess.lobbyId];if(!lobby){buSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const{seat,name}=sess;
+    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
+    lobby.players[seat]=ws;lobby.names[seat]=name;
+    BU_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,token:msg.token});
+    buSend(ws,{type:'RECONNECTED',seat,name,mode:lobby.mode,solo:lobby.solo});
+    buBroadcastLobbies();
+    if(lobby.game)buSend(ws,{type:'GAME_STATE',state:bBuildView(lobby.game,seat)});
+    else buSend(ws,{type:'LOBBY_STATE',lobby:buLobbyInfo(lobby),names:lobby.names,mySeat:seat});
+    return;
+  }
+  if(msg.type==='JOIN_LOBBY'){
+    const lobby=BU_LOBBIES[msg.lobbyId];if(!lobby){buSend(ws,{type:'ERROR',text:'Mesa não encontrada'});return;}
+    const seat=lobby.players.findIndex(p=>p===null);if(seat<0){buSend(ws,{type:'ERROR',text:'Mesa cheia'});return;}
+    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
+    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
+    BU_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,token});
+    BU_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
+    buSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,mode:lobby.mode,solo:lobby.solo,name,lobby:buLobbyInfo(lobby),names:lobby.names});
+    lobby.players.forEach((p,i)=>{if(p&&i!==seat)buSend(p,{type:'PLAYER_JOINED',seat,name,lobby:buLobbyInfo(lobby)});});
+    buBroadcastLobbies();
+    if(lobby.solo){
+      const bots=[];
+      if(lobby.mode==='4p') for(let b=1;b<=3;b++) bots.push({name:`Bot ${b}`,isBot:true});
+      else bots.push({name:'The Rival',isBot:true});
+      const allPlayers=[{name,isBot:false},...bots];
+      lobby.game=bNewGame(allPlayers,lobby.mode);
+      buBroadcastGame(lobby);
+      buScheduleBot(lobby,1500);
+    }
+    return;
+  }
+  const st=BU_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
+  const lobby=BU_LOBBIES[st.lobbyId];if(!lobby)return;
+  const seat=st.seat,g=lobby.game;
+
+  if(msg.type==='LEAVE_LOBBY'){
+    lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;
+    BU_WS_STATE.delete(ws);buBroadcastLobbies();return;
+  }
+  if(msg.type==='REQUEST_STATE'){
+    if(g)buSend(ws,{type:'GAME_STATE',state:bBuildView(g,seat)});
+    else buSend(ws,{type:'LOBBY_STATE',lobby:buLobbyInfo(lobby),names:lobby.names,mySeat:seat});
+    return;
+  }
+  if(msg.type==='START'){
+    if(lobby.solo||seat!==0)return;
+    const seated=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
+    if(seated.length<lobby.maxP){buSend(ws,{type:'ERROR',text:`Precisas de ${lobby.maxP} jogadores.`});return;}
+    const lps=lobby.names.map((n,i)=>({name:n||`Jogador ${i+1}`,isBot:false}));
+    lobby.game=bNewGame(lps,lobby.mode);buBroadcastLobbies();buBroadcastGame(lobby);return;
+  }
+  if(msg.type==='RESTART'){
+    if(!g||g.phase!=='GAME_OVER')return;
+    if(lobby.solo){
+      const bots=lobby.mode==='4p'?[{name:'Bot 1',isBot:true},{name:'Bot 2',isBot:true},{name:'Bot 3',isBot:true}]:[{name:'The Rival',isBot:true}];
+      lobby.game=bNewGame([{name:lobby.names[0],isBot:false},...bots],lobby.mode);
+      buBroadcastGame(lobby);buScheduleBot(lobby,1500);
+    }else{
+      if(seat!==0)return;
+      const lps=lobby.names.map((n,i)=>({name:n||`Jogador ${i+1}`,isBot:false}));
+      lobby.game=bNewGame(lps,lobby.mode);buBroadcastGame(lobby);
+    }
+    return;
+  }
+  if(!g||g.phase==='GAME_OVER')return;
+
+  const r=bHandleAction(g,seat,msg);
+  if(r?.ok){
+    buBroadcastGame(lobby);
+    if(g.phase!=='GAME_OVER')buScheduleBot(lobby,1000);
+  }else if(r?.error){
+    buSend(ws,{type:'ERROR',text:r.error});
+  }
+}
+
+// Expose for routing
+globalThis._buHandle  = buHandle;
+globalThis._BU_LOBBIES = BU_LOBBIES;
 }
