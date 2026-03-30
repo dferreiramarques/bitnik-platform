@@ -1623,6 +1623,12 @@ function noNewGame(nameA,nameB,isSolo){
     rollExplain:'',winnerIdx:null,
     isSolo:!!isSolo,turnGen:0,
     _pendingAnalysis:null,_jokerRoll:false,_boysAttacking:0,
+    stats:[
+      {turns:0,cardsPlayed:0,bottlesStocked:0,bottlesStolen:0,
+       combos:{DOUBLE:0,TRIPLE_DOUBLE:0,QUAD:0,PENTA:0,SIX_OF_KIND:0,DOUBLE_QUAD:0}},
+      {turns:0,cardsPlayed:0,bottlesStocked:0,bottlesStolen:0,
+       combos:{DOUBLE:0,TRIPLE_DOUBLE:0,QUAD:0,PENTA:0,SIX_OF_KIND:0,DOUBLE_QUAD:0}},
+    ],
   };
   const c0=noDeal(g);if(c0)g.players[0].hand.push(c0);
   const c1=noDeal(g);if(c1)g.players[1].hand.push(c1);
@@ -1644,6 +1650,7 @@ function noBuildView(g,seat){
     winnerIdx:g.winnerIdx, isSolo:g.isSolo,
     boysAttacking:g._boysAttacking||0,
     deckCount:g.deck.length+g.discard.length, deckRemaining:g.deck.length,
+    stats:g.stats||null,
   };
 }
 
@@ -1677,6 +1684,7 @@ function noDoSteal(g){
   const slots=opp.stall.map((s,i)=>s===2?i:-1).filter(i=>i>=0);
   if(!slots.length)return;
   opp.stall[slots[slots.length-1]]=1;opp.supply++;
+  if(g.stats)g.stats[g.cur].bottlesStolen=(g.stats[g.cur].bottlesStolen||0)+1;
   g.status=`${g.players[g.cur].name} steals a bottle!`;
 }
 
@@ -1724,6 +1732,7 @@ function noResolvePause(lobby){
 function noApplyCombos(lobby,combos){
   const g=lobby.game;g.combos=combos;
   const p=g.players[g.cur],opp=g.players[1-g.cur];
+  const st=g.stats[g.cur];
   const msgs=[];
   if(combos.includes('INSTANT_WIN')){
     g.phase='GAME_OVER';g.winnerIdx=g.cur;
@@ -1731,33 +1740,44 @@ function noApplyCombos(lobby,combos){
     noBroadcast(lobby);return;
   }
   if(combos.includes('DOUBLE_QUAD')){
+    if(st)st.combos.DOUBLE_QUAD=(st.combos.DOUBLE_QUAD||0)+1;
     let removed=0;
     for(let i=0;i<2;i++){const slot=p.stall.findIndex(s=>s===0);if(slot>=0){p.stall[slot]=1;removed++;}}
     msgs.push(removed?`Eight of a kind — ${removed} blocker${removed>1?'s':''} removed!`:`Eight of a kind — no blockers left`);
   }
   if(combos.includes('SIX_OF_KIND')){
+    if(st)st.combos.SIX_OF_KIND=(st.combos.SIX_OF_KIND||0)+1;
     let drawn=0;
     for(let i=0;i<3;i++){const c=noDeal(g);if(c){p.hand.push(c);drawn++;}}
     msgs.push(drawn?`Six of a kind — drew ${drawn} card${drawn>1?'s':''}!`:`Six of a kind — deck empty`);
   }
   if(combos.includes('DOUBLE')){
     const n=combos.filter(c=>c==='DOUBLE').length;
+    if(st)st.combos.DOUBLE=(st.combos.DOUBLE||0)+n;
     for(let i=0;i<n;i++){const c=noDeal(g);if(c){p.hand.push(c);msgs.push(`Double — drew ${c[0]+c.slice(1).toLowerCase()}`);}else msgs.push('Double — deck empty');}
   }
   if(combos.includes('QUAD')){
-    const slot=p.stall.findIndex(s=>s===0);
-    if(slot>=0){p.stall[slot]=1;msgs.push(`Quad — slot opened!`);}else msgs.push('Quad — all slots open');
+    const quadCount=combos.filter(c=>c==='QUAD').length;
+    if(st)st.combos.QUAD=(st.combos.QUAD||0)+quadCount;
+    let opened=0;
+    for(let q=0;q<quadCount;q++){
+      const slot=p.stall.findIndex(s=>s===0);
+      if(slot>=0){p.stall[slot]=1;opened++;}
+    }
+    msgs.push(opened?`Quad — ${opened} slot${opened>1?'s':''} opened!`:'Quad — all slots open');
   }
   if(combos.includes('TRIPLE_DOUBLE')){
     const total=1+g.temptCount;let placed=0;
+    if(st)st.combos.TRIPLE_DOUBLE=(st.combos.TRIPLE_DOUBLE||0)+1;
     for(let b=0;b<total;b++){
       const slot=p.stall.findIndex(s=>s===1);
-      if(slot>=0&&p.supply>0){p.stall[slot]=2;p.supply--;placed++;}
+      if(slot>=0&&p.supply>0){p.stall[slot]=2;p.supply--;placed++;if(st)st.bottlesStocked++;}
     }
     msgs.push(placed?`Triple+Double — ${placed} bottle${placed>1?'s':''} stocked${g.temptCount?` (Temptress bonus!)`:''}`:`Triple+Double — no free slots`);
   }
   g.temptCount=0;
   if(combos.includes('PENTA')){
+    if(st)st.combos.PENTA=(st.combos.PENTA||0)+1;
     opp.hand.forEach(c=>noTrash(g,c));opp.hand=[];
     msgs.push(`Penta — ${opp.name} discards their entire hand!`);
   }
@@ -1777,6 +1797,7 @@ function noApplyCombos(lobby,combos){
 }
 
 function noEndTurn(g,lobby){
+  if(g.stats)g.stats[g.cur].turns=(g.stats[g.cur].turns||0)+1;
   g.cur=1-g.cur;g.phase='CARD_PLAY';g.sel=[];g.combos=[];
   g.comboOptions=null;g.rollExplain='';g.turnGen++;
   g.status=`${g.players[g.cur].name}'s turn — play cards or roll.`;
@@ -1791,6 +1812,7 @@ function noProcessCards(lobby){
   const played=indices.map(i=>p.hand[i]);
   indices.forEach(i=>p.hand.splice(i,1));
   g.sel=[];
+  if(g.stats)g.stats[g.cur].cardsPlayed=(g.stats[g.cur].cardsPlayed||0)+played.length;
   const tempt=played.filter(c=>c==='TEMPTRESS').length;
   const boys=played.filter(c=>c==='BOY').length;
   const bullies=played.filter(c=>c==='BULLY').length;
