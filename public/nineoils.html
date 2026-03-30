@@ -546,9 +546,14 @@ function renderGame(s) {
       <div class="pcard-name">${esc(p.name)}${p.isMe?`<span class="tag-me">tu</span>`:''}</div>
       <div style="font-family:'Crimson Text',serif;font-size:22px;font-weight:600;color:var(--gold);line-height:1;margin-bottom:6px">
         ${p.supply} <span style="font-size:12px;color:var(--muted)">suprimento</span>
-        <span style="font-size:12px;color:var(--muted);margin-left:8px">🃏 ×${p.hand}</span>
       </div>
-      <div class="pcard-stall">${stallFn(p.stallIdx)}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div class="pcard-stall">${stallFn(p.stallIdx)}</div>
+        <div style="display:flex;gap:2px;align-items:center;margin-left:4px">
+          ${Array.from({length:p.hand},(_,i)=>`<div style="width:18px;height:26px;border-radius:2px;background:var(--panel);border:1px solid var(--border)"></div>`).join('')}
+          ${p.hand===0?`<span style="font-size:10px;color:var(--muted)">sem cartas</span>`:''}
+        </div>
+      </div>
     </div>`).join('');
 
   // Stalls now rendered inside pcard
@@ -609,13 +614,7 @@ function renderActions(s) {
     btn.onclick=()=>send({type:'CONFIRM_CARDS'});
     el.appendChild(btn);
   }
-  if (s.phase==='ROLL_PAUSE') {
-    const btn = document.createElement('button');
-    btn.className='btn-action';
-    btn.textContent='▶ Continuar';
-    btn.onclick=()=>send({type:'CONTINUE'});
-    el.appendChild(btn);
-  }
+  // ROLL_PAUSE: auto-resolves server-side, no button needed
   if (s.phase==='CHOOSE_COMBO' && s.comboOptions) {
     // Show combo options inline — no modal
     // Show combo options inline — flex wrap grid
