@@ -636,7 +636,7 @@ input  { font: inherit; }
         <ul>
           <li><strong>Bolbos:</strong> 1 ponto por bolbo (completo ou incompleto)</li>
           <li><strong>Maioria numa completa:</strong> +3 pts (ou +1 pts cada em empate)</li>
-          <li><strong>Coleção de cores:</strong> +5 pts por ter ≥1 completa de cada uma das 4 cores</li>
+          <li><strong>Coleção de cores:</strong> +5 pts por ter maioria em ≥1 completa de cada uma das 4 cores</li>
           <li><strong>Coleção de símbolos:</strong> +5 pts por ter ≥1 completa ⭕ e ≥1 completa ▲</li>
         </ul>
         <div class="rule-box">
@@ -759,7 +759,7 @@ input  { font: inherit; }
     <table class="score-table">
       <thead>
         <tr>
-          <th>Jogador</th><th>Bolbos</th><th>Maioria</th><th>Col. Cores</th><th>Col. Slots</th><th>Total</th>
+          <th>Jogador</th><th>Bolbos</th><th>Maioria</th><th>Col. Cores</th><th>Col. Tipos</th><th>Total</th>
         </tr>
       </thead>
       <tbody id="score-tbody"></tbody>
@@ -1335,7 +1335,9 @@ function renderMyBaelfs(st) {
   for (let bi = 0; bi < me.baelfungious.length; bi++) {
     const baelf    = me.baelfungious[bi];
     const isActive = aset.has(bi);
-    const isAvail  = myPending && !isActive && !baelf.complete;
+    const activeColors = new Set([...aset].map(s => me.baelfungious[s]?.color).filter(Boolean));
+    const colorBlocked = st.mode === '2p' && activeColors.has(baelf.color);
+    const isAvail  = myPending && !isActive && !baelf.complete && !colorBlocked;
     const isSel    = _selBaelf && _selBaelf.baelfIdx === bi;
 
     const wrap = ce('div','my-baelf-wrap');
