@@ -462,6 +462,53 @@ const MIME = {
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
 
+  // API: proxy to Anthropic (avoids CORS)
+  if (url === '/api/generate-bge' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', async () => {
+      try {
+        const { prompt } = JSON.parse(body);
+        if (!prompt) { res.writeHead(400); res.end(JSON.stringify({error:'Missing prompt'})); return; }
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) { res.writeHead(500); res.end(JSON.stringify({error:'ANTHROPIC_API_KEY not set on server'})); return; }
+        const https = require('https');
+        const payload = JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4000,
+          messages: [{ role: 'user', content: prompt }]
+        });
+        const options = {
+          hostname: 'api.anthropic.com',
+          path: '/v1/messages',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Length': Buffer.byteLength(payload),
+          }
+        };
+        const apiReq = https.request(options, apiRes => {
+          let data = '';
+          apiRes.on('data', c => { data += c; });
+          apiRes.on('end', () => {
+            res.writeHead(apiRes.statusCode, { 'Content-Type': 'application/json' });
+            res.end(data);
+          });
+        });
+        apiReq.on('error', err => {
+          res.writeHead(502); res.end(JSON.stringify({error: err.message}));
+        });
+        apiReq.write(payload);
+        apiReq.end();
+      } catch(e) {
+        res.writeHead(500); res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
   // API: list games
   if (url === '/api/games') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
