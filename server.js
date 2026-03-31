@@ -464,11 +464,14 @@ const server = http.createServer((req, res) => {
 
   // API: proxy to Anthropic (avoids CORS)
   if (url === '/api/generate-bge' && req.method === 'POST') {
-    let body = '';
-    req.on('data', c => { body += c; });
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
     req.on('end', async () => {
       try {
-        const { prompt } = JSON.parse(body);
+        const body = Buffer.concat(chunks).toString();
+        let parsed;
+        try { parsed = JSON.parse(body); } catch { res.writeHead(400); res.end(JSON.stringify({error:'Invalid JSON body'})); return; }
+        const { prompt } = parsed;
         if (!prompt) { res.writeHead(400); res.end(JSON.stringify({error:'Missing prompt'})); return; }
         const apiKey = process.env.ANTHROPIC_API_KEY;
         if (!apiKey) { res.writeHead(500); res.end(JSON.stringify({error:'ANTHROPIC_API_KEY not set on server'})); return; }
@@ -490,11 +493,11 @@ const server = http.createServer((req, res) => {
           }
         };
         const apiReq = https.request(options, apiRes => {
-          let data = '';
-          apiRes.on('data', c => { data += c; });
+          const chunks2 = [];
+          apiRes.on('data', c => chunks2.push(c));
           apiRes.on('end', () => {
             res.writeHead(apiRes.statusCode, { 'Content-Type': 'application/json' });
-            res.end(data);
+            res.end(Buffer.concat(chunks2).toString());
           });
         });
         apiReq.on('error', err => {
