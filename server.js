@@ -2291,11 +2291,38 @@ function bEndRound(g){
 }
 
 function bCalcScore(g){
-  const s=g.players.map((p,i)=>({idx:i,name:p.name,color:p.color,bulbs:0,majority:0,collection:0,total:0,controlled:{colors:new Set(),symbols:new Set()}}));
+  const s=g.players.map((p,i)=>({idx:i,name:p.name,color:p.color,
+    bulbs:0,majority:0,colColors:0,colSlots:0,collection:0,total:0,
+    controlled:{colors:new Set(),slots:new Set()}}));
   const all=g.players.flatMap(p=>p.baelfungious);
+  // 1. Bulbs
   for(const b of all)for(const wi of b.bulbs)if(s[wi])s[wi].bulbs++;
-  for(const b of all){if(!b.complete)continue;const cnt={};for(const wi of b.bulbs)cnt[wi]=(cnt[wi]||0)+1;const vals=Object.values(cnt);if(!vals.length)continue;const mx=Math.max(...vals);const lds=Object.keys(cnt).filter(k=>cnt[k]===mx).map(Number);if(lds.length===1)s[lds[0]].majority+=3;else for(const li of lds)s[li].majority+=1;for(const li of lds){s[li].controlled.colors.add(b.color);s[li].controlled.symbols.add(b.symbol);}}
-  for(const sc of s){if(sc.controlled.colors.size>=4)sc.collection+=5;if(sc.controlled.symbols.size>=2)sc.collection+=5;sc.total=sc.bulbs+sc.majority+sc.collection;sc.controlled.colors=[...sc.controlled.colors];sc.controlled.symbols=[...sc.controlled.symbols];}
+  // 2. Majority on complete baelfs + track controlled colors & slot sizes
+  for(const b of all){
+    if(!b.complete)continue;
+    const cnt={};
+    for(const wi of b.bulbs)cnt[wi]=(cnt[wi]||0)+1;
+    const vals=Object.values(cnt);if(!vals.length)continue;
+    const mx=Math.max(...vals);
+    const lds=Object.keys(cnt).filter(k=>cnt[k]===mx).map(Number);
+    if(lds.length===1)s[lds[0]].majority+=3;
+    else for(const li of lds)s[li].majority+=1;
+    // Track which colors and slot-sizes this player has majority in
+    for(const li of lds){
+      s[li].controlled.colors.add(b.color);
+      s[li].controlled.slots.add(b.slots);
+    }
+  }
+  // 3. Collection bonuses
+  for(const sc of s){
+    // +5 if majority in at least 1 complete baelf of each of the 4 colors
+    if(sc.controlled.colors.size>=4){sc.colColors=5;sc.collection+=5;}
+    // +5 if majority in at least 1 complete baelf of each slot size (1,2,3,4)
+    if(sc.controlled.slots.size>=4){sc.colSlots=5;sc.collection+=5;}
+    sc.total=sc.bulbs+sc.majority+sc.collection;
+    sc.controlled.colors=[...sc.controlled.colors];
+    sc.controlled.slots=[...sc.controlled.slots].sort();
+  }
   return s.sort((a,b)=>b.total-a.total||b.bulbs-a.bulbs);
 }
 
