@@ -885,6 +885,13 @@ function dispatch(msg) {
     case 'PLAYER_JOINED':
       send({ type:'REQUEST_STATE' });
       break;
+    case 'GAME_ABORTED':
+      toast(msg.reason || 'Jogo cancelado.', 5000);
+      _gs = null; closeOverlays();
+      myLobbyId = ''; mySeat = -1;
+      showScreen('screen-lobby');
+      send({ type:'LOBBIES' });
+      break;
     case 'OPPONENT_LEFT':
       toast('Um jogador saiu da mesa.');
       send({ type:'REQUEST_STATE' });
