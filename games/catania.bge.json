@@ -1,0 +1,148 @@
+{
+  "_format": "bge",
+  "_version": "0.4",
+  "_comment": "Catania — spinoff do Catan por David Marques (CC BY 4.0). Gestão de recursos com torre numérica e fundação de aldeias.",
+  "game": {
+    "name": "Catania",
+    "players": { "min": 2, "max": 4 }
+  },
+  "swimlanes": [
+    { "id": "sl1", "name": "Setup",     "color": "#f5a623", "y": 0,    "h": 320, "collapsed": false },
+    { "id": "sl2", "name": "Game Loop", "color": "#2ec4a4", "y": 320,  "h": 1100,"collapsed": false },
+    { "id": "sl3", "name": "End Game",  "color": "#f87171", "y": 1420, "h": 360, "collapsed": false }
+  ],
+  "nodes": [
+    {
+      "id": "n01", "node": "GAME_START", "label": "Game Start",
+      "x": 60, "y": 60,
+      "config": {
+        "maxPlayers": 4,
+        "notes": "2-4 jogadores. O jogo passa-se no século VIII na fundação de Catânia. Cada jogador é um cidadão de Magna Grécia que funda aldeias e gere recursos. Ganha quem tiver mais pontos após fundar 3 aldeias."
+      }
+    },
+    {
+      "id": "n02", "node": "BOARD", "label": "Tabuleiro hexagonal",
+      "x": 300, "y": 60,
+      "config": {
+        "notes": "10 hexágonos de território (2 de cada recurso: argila, pedra, trigo, lã, madeira). 1 hexágono de deserto no centro (Sicelos aqui). Com 2 jogadores: remover 2 hexágonos. Com 3 jogadores: remover 1 hexágono aleatório. Garantir ≥2 hexágonos adjacentes ao deserto."
+      }
+    },
+    {
+      "id": "n03", "node": "DECK", "label": "Cartas de recurso (95)",
+      "x": 540, "y": 60,
+      "config": {
+        "notes": "95 cartas de recurso: 19 de cada tipo (argila, pedra, trigo, lã, madeira). Separadas em pilhas por tipo. Cada pilha recebe um disco numérico — o primeiro jogador retira discos da torre até cada pilha ter um número."
+      }
+    },
+    {
+      "id": "n04", "node": "STRUCTURE", "label": "Torre de discos numéricos (18)",
+      "x": 780, "y": 60,
+      "config": {
+        "slots": "9-12",
+        "notes": "18 discos numerados (9 a 12, com valores repetidos; discos vermelhos têm efeito especial dos Sicelos). Torre ordenada: menor valor em baixo, maior em cima. O valor do disco no topo de cada pilha de recursos determina a pontuação final. Coleccionar 2 cartas reduz o valor (disco da torre vai para o topo da pilha)."
+      }
+    },
+    {
+      "id": "n05", "node": "PIECE", "label": "Tokens por jogador",
+      "x": 60, "y": 200,
+      "config": {
+        "notes": "Cada jogador tem 1 token de cidade (marcador de ordem de recolha de recursos) e 3 tokens de aldeia. O token de cidade é colocado no hexágono onde o jogador recolhe recursos."
+      }
+    },
+    {
+      "id": "n06", "node": "ROLE", "label": "Sicelos (Ladrões)",
+      "x": 300, "y": 200,
+      "config": {
+        "notes": "1 peça Sicelos colocada no deserto no início. Move-se 1 tile para posição adjacente sempre que um disco vermelho é colocado numa pilha de recursos. O hexágono de destino não pode estar ocupado por jogadores, mas os Sicelos PODEM ocupar hexágono com jogador."
+      }
+    },
+    {
+      "id": "n07", "node": "TURN_BLOCK", "label": "Turno do jogador",
+      "x": 60, "y": 420,
+      "config": {
+        "tb": {
+          "constraint": "choose_one_or_both",
+          "actions": [
+            { "id": "a1", "type": "Recolher recursos (A)", "mand": false },
+            { "id": "a2", "type": "Fundar aldeia (B)", "mand": false }
+          ]
+        },
+        "notes": "Em cada turno, o jogador pode: (A) Ordenar recolha de recursos, e/ou (B) Fundar uma aldeia. As acções não são mutuamente exclusivas."
+      }
+    },
+    {
+      "id": "n08", "node": "PLAY_CARD", "label": "(A) Recolher recursos",
+      "x": 60, "y": 580,
+      "config": {
+        "notes": "O jogador coloca o seu token de cidade num hexágono livre à sua escolha (não pode ser: deserto, Sicelos, ou hexágono ocupado por outro jogador). Escolha: recolher 1 carta (valor do recurso mantém-se) OU recolher 2 cartas e colocar o disco do topo da torre numérica sobre o disco actual da pilha desse recurso (valor desce). Exemplo: recolhe 1 pedra (valor mantém) e 2 argila (valor desce para 9)."
+      }
+    },
+    {
+      "id": "n09", "node": "CHECK_COND", "label": "Disco vermelho colocado?",
+      "x": 300, "y": 580,
+      "config": {
+        "cond": "placed_disc.color === 'red'",
+        "notes": "Sempre que um disco vermelho da torre é colocado sobre uma pilha de recursos (ao recolher 2 cartas), os Sicelos movem-se automaticamente 1 tile adjacente."
+      }
+    },
+    {
+      "id": "n10", "node": "MOVE_PIECE", "label": "Mover Sicelos",
+      "x": 540, "y": 580,
+      "config": {
+        "notes": "O jogador activo move os Sicelos 1 tile adjacente. Restrições: não pode ser um hexágono actualmente ocupado por outro jogador. Pode ser colocado em hexágono com jogador (a regra é assimétrica — podem entrar mas não podem ser colocados em hexágono ocupado)."
+      }
+    },
+    {
+      "id": "n11", "node": "PLAY_CARD", "label": "(B) Fundar aldeia",
+      "x": 60, "y": 760,
+      "config": {
+        "notes": "Requisito: ter 2 ou mais TIPOS de recursos na mão. O jogador joga cartas na mesa. O recurso com maior quantidade é a maioria — coloca o token de aldeia sobre essas cartas. Se houver empate de maioria, o jogador escolhe qual manter. Os restantes tipos são descartados: para cada tipo descartado, o jogador retira o disco do topo da pilha correspondente e devolve-o à torre numérica. Se o disco devolvido for menor que o do topo da torre, reordenar a torre (menor em baixo). Se só restar 1 disco na pilha, a devolução não tem efeito."
+      }
+    },
+    {
+      "id": "n12", "node": "SCORE_PTS", "label": "Actualizar valor dos recursos",
+      "x": 300, "y": 760,
+      "config": {
+        "notes": "Quando cartas são descartadas ao fundar aldeia: disco do topo de cada pilha descartada volta à torre. Valor do recurso sobe (disco removido da pilha). As cartas da maioria ficam face-up na mesa até ao fim do jogo — representam a aldeia fundada."
+      }
+    },
+    {
+      "id": "n13", "node": "CHECK_VICTORY", "label": "3ª aldeia fundada?",
+      "x": 60, "y": 940,
+      "config": {
+        "cond": "villages_founded >= 3",
+        "notes": "Quando um jogador funda a sua 3ª aldeia, o jogo entra em modo fim. Os restantes jogadores completam o seu turno final (last round)."
+      }
+    },
+    {
+      "id": "n14", "node": "GAME_END", "label": "Contagem final",
+      "x": 60, "y": 1480,
+      "config": {
+        "notes": "Cada jogador multiplica as cartas que recolheu ao longo do jogo pelo valor do disco no topo da respectiva pilha de recursos. Total de pontos = soma de (cartas_de_recurso_X × valor_disco_X) para todos os recursos. O jogador com mais pontos ganha."
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e01", "fromNode": "n01", "fromPort": "next", "toNode": "n02", "toPort": "in" },
+    { "id": "e02", "fromNode": "n02", "fromPort": "next", "toNode": "n03", "toPort": "in" },
+    { "id": "e03", "fromNode": "n03", "fromPort": "next", "toNode": "n04", "toPort": "in" },
+    { "id": "e04", "fromNode": "n04", "fromPort": "next", "toNode": "n05", "toPort": "in" },
+    { "id": "e05", "fromNode": "n05", "fromPort": "next", "toNode": "n06", "toPort": "in" },
+    { "id": "e06", "fromNode": "n06", "fromPort": "next", "toNode": "n07", "toPort": "start" },
+    { "id": "e07", "fromNode": "n07", "fromPort": "a1",   "toNode": "n08", "toPort": "in" },
+    { "id": "e08", "fromNode": "n08", "fromPort": "next", "toNode": "n09", "toPort": "in" },
+    { "id": "e09", "fromNode": "n09", "fromPort": "yes",  "toNode": "n10", "toPort": "trigger" },
+    { "id": "e10", "fromNode": "n09", "fromPort": "no",   "toNode": "n13", "toPort": "in" },
+    { "id": "e11", "fromNode": "n10", "fromPort": "next", "toNode": "n13", "toPort": "in" },
+    { "id": "e12", "fromNode": "n07", "fromPort": "a2",   "toNode": "n11", "toPort": "in" },
+    { "id": "e13", "fromNode": "n11", "fromPort": "next", "toNode": "n12", "toPort": "in" },
+    { "id": "e14", "fromNode": "n12", "fromPort": "next", "toNode": "n13", "toPort": "in" },
+    { "id": "e15", "fromNode": "n13", "fromPort": "no",   "toNode": "n07", "toPort": "start" },
+    { "id": "e16", "fromNode": "n13", "fromPort": "yes",  "toNode": "n14", "toPort": "prev" }
+  ],
+  "engine_nodes_used": [
+    "GAME_START", "BOARD", "DECK", "STRUCTURE", "PIECE", "ROLE",
+    "TURN_BLOCK", "PLAY_CARD", "CHECK_COND", "MOVE_PIECE",
+    "SCORE_PTS", "CHECK_VICTORY", "GAME_END"
+  ]
+}
