@@ -585,7 +585,27 @@ wss.on('connection', (ws, req) => {
     }));
     ws.on('message', raw => { try { _buH(ws, JSON.parse(raw)); } catch(e) { console.error('BU err',e); } });
     ws.on('close', () => {
-      // Graceful disconnect handled inside buHandle session tracking
+      const st = globalThis._BU_WS_STATE?.get(ws);
+      if (!st || !st.lobbyId) return;
+      const lobby = globalThis._BU_LOBBIES[st.lobbyId];
+      if (!lobby) return;
+      const { seat } = st;
+      lobby.players[seat] = null;
+      // Grace period: 45s to reconnect before clearing seat
+      lobby.graceTimers[seat] = setTimeout(() => {
+        lobby.names[seat] = ''; lobby.tokens[seat] = null;
+        const tok = st.token; if (tok && globalThis._BU_SESSIONS?.[tok]) delete globalThis._BU_SESSIONS[tok];
+        // Notify remaining players
+        lobby.players.forEach(p => { if(p) p.send && p.send(JSON.stringify({type:'OPPONENT_DISCONNECTED',seat,name:lobby.names[seat]})); });
+        // Abort game if non-solo and game in progress
+        if (lobby.game && !lobby.solo) {
+          lobby.game = null;
+          lobby.players.forEach(p => { if(p) p.send && p.send(JSON.stringify({type:'GAME_ABORTED',reason:'Adversário desligou.'})); });
+        }
+        // Re-expose session maps for reconnect handler
+        buBroadcastLobbies();
+      }, 45000);
+      buBroadcastLobbies();
     });
     ws.on('error', ()=>{});
     return;
@@ -2424,8 +2444,22 @@ function buHandle(ws,msg){
   const seat=st.seat,g=lobby.game;
 
   if(msg.type==='LEAVE_LOBBY'){
-    lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;
-    BU_WS_STATE.delete(ws);buBroadcastLobbies();return;
+    // Clear grace timer
+    if (lobby.graceTimers[seat]) { clearTimeout(lobby.graceTimers[seat]); lobby.graceTimers[seat]=null; }
+    // Remove from session store
+    const tok = lobby.tokens[seat];
+    if (tok && BU_SESSIONS[tok]) delete BU_SESSIONS[tok];
+    // Clear seat
+    const leftName = lobby.names[seat];
+    lobby.players[seat]=null; lobby.names[seat]=''; lobby.tokens[seat]=null;
+    BU_WS_STATE.delete(ws);
+    // If game was running, abort it
+    if (lobby.game && !lobby.solo) {
+      lobby.game = null;
+      lobby.players.forEach(p => { if(p) buSend(p, {type:'GAME_ABORTED', reason:`${leftName} saiu do jogo.`}); });
+    }
+    buBroadcastLobbies();
+    return;
   }
   if(msg.type==='REQUEST_STATE'){
     if(g)buSend(ws,{type:'GAME_STATE',state:bBuildView(g,seat)});
@@ -2465,5 +2499,7 @@ function buHandle(ws,msg){
 
 // Expose for routing
 globalThis._buHandle  = buHandle;
+globalThis._buBroadcastLobbies = buBroadcastLobbies;
+globalThis._BU_SESSIONS = BU_SESSIONS;
 globalThis._BU_LOBBIES = BU_LOBBIES;
 }
