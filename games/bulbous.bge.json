@@ -49,7 +49,7 @@
       "config": {
         "maxPlayers": 4,
         "modes": "2p / 4p",
-        "notes": "4p: cada jogador tem 1 cor e 4 Baelfungious. 2p: cada jogador tem 2 cores e 8 Baelfungious."
+        "notes": "Dois modos estruturalmente diferentes:\n4p: 4 jogadores, 1 cor cada, 4 Baelfungious por jogador, mão 7, 1 slot activo.\n2p: 2 jogadores, 2 cores cada (por símbolo: △→red+yellow, ○→blue+green), 8 Baelfungious por jogador, mão 9, 2 slots activos (1 por cor, obrigatoriamente diferentes).\nImplementação: mode='4p'|'2p' propaga handLimit, numSlots, colorAssign, bcolors, e regras de chooseBaelf."
       }
     },
     {
@@ -105,7 +105,7 @@
       "y": 60,
       "config": {
         "wait": "all",
-        "notes": "Fase inicial: cada jogador escolhe qual Baelfungious colocar no slot activo. Simultâneo — todos escolhem independentemente. Barrier: cada jogador escolhe independentemente, avança quando todos submetem.",
+        "notes": "Fase inicial e mid-game: cada jogador escolhe qual Baelfungious colocar no slot activo. Simultâneo — todos escolhem independentemente, avança quando todos submetem.\nREGRA 2p: os 2 slots activos de cada jogador devem ter cores diferentes (ex: círculo controla blue+green → 1 slot blue, 1 slot green). Validação: rejeitar escolha se activeSlots já contém Baelfungious da mesma cor.",
         "waitFor": "all",
         "timeout_ms": 0
       }
@@ -234,7 +234,7 @@
       "config": {
         "ms": 20000,
         "onexp": "auto_submit",
-        "notes": "Jogadores empatados têm 20s para jogar 1 carta da cor da Baelfungious alvo. Quem não jogar passa. Ao expirar, tieBreakTimeout() é chamado automaticamente."
+        "notes": "Jogadores empatados têm 20s (TIE_BREAK_MS=20000) para jogar 1 carta da cor da Baelfungious alvo. Quem não jogar passa. Ao expirar, tieBreakTimeout() é chamado automaticamente pelo servidor.\nImplementação: servidor guarda tieBreakDeadline (timestamp). Cliente mostra countdown com setInterval. Servidor usa setTimeout → tieBreakTimeout(g) que marca todos não-submetidos como passed e resolve."
       }
     },
     {
@@ -351,7 +351,7 @@
       "config": {
         "n": 4,
         "pts": 5,
-        "notes": "Jogador que controla maioria em Baelfungious de todas as 4 cores ganha +5 pts. Jogador que controla ambos os símbolos ganha +5 pts. Podem acumular."
+        "notes": "Dois bónus independentes, acumuláveis:\n+5 pts: ter maioria em ≥1 Baelfungious completa de cada uma das 4 cores.\n+5 pts (Coleção de Tipos): ter maioria em ≥1 Baelfungious completa de cada tipologia de slots (1, 2, 3 e 4).\nNotas de implementação: tracked via controlled.colors (Set) e controlled.slots (Set) em calcFinalScore."
       }
     },
     {
@@ -550,23 +550,24 @@
     }
   ],
   "engine_nodes_used": [
-    "GAME_START",
-    "DECK",
-    "DRAW_CARD",
-    "STRUCTURE",
-    "ROLE",
     "BARRIER",
-    "ROUND_START",
-    "TURN_BLOCK",
-    "NOTIFY_ALL",
     "CHECK_COND",
-    "TIMER",
-    "SCORE_PTS",
     "CHECK_VICTORY",
-    "ON_COND",
-    "MAJORITY",
     "COLL_BONUS",
-    "GAME_END"
+    "DECK",
+    "DISCARD_EXCESS",
+    "DRAW_CARD",
+    "GAME_END",
+    "GAME_START",
+    "MAJORITY",
+    "NOTIFY_ALL",
+    "ON_COND",
+    "ROLE",
+    "ROUND_START",
+    "SCORE_PTS",
+    "STRUCTURE",
+    "TIMER",
+    "TURN_BLOCK"
   ],
   "_stress_test": {
     "new_nodes_required": [
