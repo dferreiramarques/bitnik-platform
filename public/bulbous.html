@@ -759,7 +759,7 @@ input  { font: inherit; }
     <table class="score-table">
       <thead>
         <tr>
-          <th>Jogador</th><th>Bolbos</th><th>Maioria</th><th>Coleção</th><th>Total</th>
+          <th>Jogador</th><th>Bolbos</th><th>Maioria</th><th>Col. Cores</th><th>Col. Slots</th><th>Total</th>
         </tr>
       </thead>
       <tbody id="score-tbody"></tbody>
@@ -1069,15 +1069,7 @@ function mkBaelf(baelf, opts = {}) {
   div.appendChild(img);
 
 
-  // Color label at top
-  const colorLabel = ce('div');
-  const colHex = COLOR_HEX[baelf.color] || '#aaa';
-  const symIcon = { circle: '⭕', triangle: '▲' }[baelf.symbol] || '';
-  colorLabel.style.cssText = `position:absolute;top:0;left:0;right:0;padding:2px 4px;
-    background:rgba(0,0,0,.6);font-size:.58rem;font-weight:700;color:${colHex};
-    text-align:center;letter-spacing:.05em;z-index:2;border-radius:5px 5px 0 0`;
-  colorLabel.textContent = baelf.color.toUpperCase();
-  div.appendChild(colorLabel);
+  // No color label — image speaks for itself
 
   // Semi-transparent overlay at bottom with symbol + slots
   const overlay = ce('div', 'baelf-overlay');
@@ -1709,8 +1701,12 @@ function handleGameOver(st) {
     const nameEl = ce('td', null, (s.total === maxPts ? '🏆 ' : '') + s.name);
     nameEl.style.color = COLOR_HEX[s.color] || '#aaa';
     tr.append(
-      nameEl, ce('td',null,s.bulbs), ce('td',null,s.majority),
-      ce('td',null,s.collection), ce('td',null, String(s.total)),
+      nameEl,
+      ce('td',null,s.bulbs),
+      ce('td',null,s.majority),
+      ce('td',null,s.colColors != null ? (s.colColors ? `+${s.colColors} ✓` : '—') : (s.collection ? `+${s.collection}` : '—')),
+      ce('td',null,s.colSlots  != null ? (s.colSlots  ? `+${s.colSlots} ✓` : '—') : '—'),
+      ce('td',null, String(s.total)),
     );
     tbody.appendChild(tr);
   }
