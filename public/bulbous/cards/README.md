@@ -1,44 +1,24 @@
-# Bulbous — Card Image Naming Convention
+# Bulbous — Card Image Naming
 
-All images: PNG, placed in this `/public/bulbous/cards/` folder.
-Served at `/bulbous/cards/{filename}.png`
+All images: PNG, served at `/bulbous/cards/{filename}.png`
 
-## Naming format
+## Charm cards (34 total)
+### Numeric (28): `card_{color}_{value}.png`
+`card_red_3.png` … `card_red_9.png`  
+`card_blue_3.png` … `card_blue_9.png`  
+`card_green_3.png` … `card_green_9.png`  
+`card_yellow_3.png` … `card_yellow_9.png`
 
-### Numeric cards (28 total — values 3–9, 4 colours)
-`{color}_{value}.png`
-- Colours: `red`, `blue`, `green`, `yellow`
-- Values: `3`, `4`, `5`, `6`, `7`, `8`, `9`
-- Example: `red_3.png`, `blue_7.png`, `yellow_9.png`
+### Double ×2 (4): `card_{color}_x2.png`
+`card_red_x2.png`, `card_blue_x2.png`, `card_green_x2.png`, `card_yellow_x2.png`
 
-### Double cards (4 total — 1 per colour)
-`{color}_double.png`
-- Example: `red_double.png`, `green_double.png`
+### Joker (2): `card_joker_{symbol}.png`
+`card_joker_circle.png`, `card_joker_triangle.png`
 
-### Joker cards (2 total)
-`joker_circle.png`   ← circle symbol (⭕)
-`joker_triangle.png` ← triangle symbol (▲)
+## Baelfungious images (16 total): `baelf_{color}_{slots}.png`
+`baelf_red_1.png` … `baelf_red_4.png`  
+`baelf_blue_1.png` … `baelf_blue_4.png`  
+`baelf_green_1.png` … `baelf_green_4.png`  
+`baelf_yellow_1.png` … `baelf_yellow_4.png`
 
-## Full list (34 cards)
-
-| Filename           | Type    | Colour  | Value |
-|--------------------|---------|---------|-------|
-| `red_3.png`        | numeric | red     | 3     |
-| `red_4.png`        | numeric | red     | 4     |
-| `red_5.png`        | numeric | red     | 5     |
-| `red_6.png`        | numeric | red     | 6     |
-| `red_7.png`        | numeric | red     | 7     |
-| `red_8.png`        | numeric | red     | 8     |
-| `red_9.png`        | numeric | red     | 9     |
-| `red_double.png`   | double  | red     | ×2    |
-| `blue_3.png`       | numeric | blue    | 3     |
-| ...                | ...     | ...     | ...   |
-| `blue_double.png`  | double  | blue    | ×2    |
-| `green_3.png`      | numeric | green   | 3     |
-| ...                | ...     | ...     | ...   |
-| `green_double.png` | double  | green   | ×2    |
-| `yellow_3.png`     | numeric | yellow  | 3     |
-| ...                | ...     | ...     | ...   |
-| `yellow_double.png`| double  | yellow  | ×2    |
-| `joker_circle.png` | joker   | —       | ⭕    |
-| `joker_triangle.png`| joker  | —       | ▲     |
+> Files already in this folder use the correct naming ✓
