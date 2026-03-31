@@ -2147,6 +2147,11 @@ function bChooseBaelf(g,playerIdx,baelfIdx){
   if(!baelf)return{error:'Índice inválido'};
   if(baelf.complete)return{error:'Já completa'};
   if(p.activeSlots.includes(baelfIdx))return{error:'Já activa'};
+  // 2p: active slots must have different colors
+  if(g.mode==='2p'){
+    const activeColors=p.activeSlots.filter(s=>s!==null).map(s=>p.baelfungious[s].color);
+    if(activeColors.includes(baelf.color))return{error:'Já tens um Baelfungious desta cor activo — escolhe a outra cor.'};
+  }
   p.activeSlots[slotIdx]=baelfIdx;
   g.replaceNeeded.splice(pi2,1);
   const still=g.replaceNeeded.filter(r=>r.playerIdx===playerIdx);
@@ -2338,7 +2343,8 @@ function bBotAct(g){
     for(const r of(g.replaceNeeded||[])){
       if(g.players[r.playerIdx].isBot){
         const p=g.players[r.playerIdx];const aSet=new Set(p.activeSlots.filter(s=>s!==null));
-        const avail=p.baelfungious.map((b,i)=>({b,i})).filter(({b,i})=>!b.complete&&!aSet.has(i));
+        const activeColors=new Set([...aSet].map(s=>p.baelfungious[s].color));
+        const avail=p.baelfungious.map((b,i)=>({b,i})).filter(({b,i})=>!b.complete&&!aSet.has(i)&&(g.mode!=='2p'||!activeColors.has(b.color)));
         if(!avail.length)continue;
         const rv=Math.random();
         let bi;
