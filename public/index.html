@@ -173,6 +173,7 @@ section { padding: 100px 40px; }
   padding: 3px 8px; border-radius: 2px;
 }
 .status-ready { background: rgba(42,107,110,.1); color: var(--teal); }
+.status-bge   { background: #6366f1; color: #fff; font-size: .65rem; }
 .status-draft { background: rgba(200,151,58,.1); color: var(--gold); }
 .card-play {
   margin-top: 16px; width: 100%; padding: 10px;
@@ -543,7 +544,7 @@ footer {
         <div>43-node Taxonomy</div>
         <div style="margin-top:16px;color:#c8973a">Jogos validados</div>
         <div>Bulbous · Capivaras</div>
-        <div>Praia das Percebes · Nine Oils</div>
+        <div>Praia das Percebes · Nine Oils · Catania</div>
       </div>
     </div>
   </div>
@@ -785,6 +786,18 @@ const CATALOG = [
     status: 'ready',
     bge: 'nine-oils.bge.json',
   },
+  {
+    id: 'catania',
+    name: 'Catania',
+    tagline: 'Funda aldeias na Sicília do século VIII',
+    desc: 'Spinoff do Catan por David Marques. Gere recursos num tabuleiro hexagonal, recolhe cartas e funda aldeias. A torre numérica faz os valores dos recursos subir e descer ao longo do jogo. Quem fundar 3 aldeias desencadeia o fim — pontuação = cartas × valor do disco.',
+    players: '2–4',
+    duration: '30–60 min',
+    complexity: 'Médio',
+    type: ['Tabuleiro', 'Gestão', 'Família'],
+    status: 'bge',
+    bge: 'catania.bge.json',
+  },
 ];
 
 let currentGame = null;
@@ -797,8 +810,8 @@ function renderCatalog() {
   const grid = document.getElementById('game-grid');
   let html = CATALOG.map(g => `
     <div class="game-card" onclick="openGame('${g.id}')">
-      <div class="card-status ${g.status === 'ready' ? 'status-ready' : 'status-draft'}">
-        ${g.status === 'ready' ? 'Online' : 'Draft'}
+      <div class="card-status ${g.status === 'ready' ? 'status-ready' : g.status === 'bge' ? 'status-bge' : 'status-draft'}">
+        ${g.status === 'ready' ? 'Online' : g.status === 'bge' ? 'BGE' : 'Draft'}
       </div>
       <div class="card-tag">${g.type.join(' · ')}</div>
       <div class="card-title">${g.name}</div>
@@ -849,7 +862,7 @@ function openGame(id) {
     <div class="gd-meta-item"><div class="gd-meta-label">Jogadores</div><div class="gd-meta-val">${g.players}</div></div>
     <div class="gd-meta-item"><div class="gd-meta-label">Duração</div><div class="gd-meta-val">${g.duration}</div></div>
     <div class="gd-meta-item"><div class="gd-meta-label">Complexidade</div><div class="gd-meta-val">${g.complexity}</div></div>
-    <div class="gd-meta-item"><div class="gd-meta-label">Estado</div><div class="gd-meta-val" style="color:var(--teal)">${g.status === 'ready' ? '● Online' : '○ Draft'}</div></div>
+    <div class="gd-meta-item"><div class="gd-meta-label">Estado</div><div class="gd-meta-val" style="color:var(--teal)">${g.status === 'ready' ? '● Online' : g.status === 'bge' ? '◎ BGE — sem implementação digital' : '○ Draft'}</div></div>
   `;
   document.getElementById('gd-desc').textContent = g.desc;
   document.getElementById('gd-mechs').innerHTML = g.type.map(t => `<span class="mech-tag">${t}</span>`).join('');
@@ -860,6 +873,10 @@ function closeGame() { document.getElementById('game-overlay').classList.remove(
 
 function launchGame() {
   if (!currentGame) return;
+  if (currentGame.status !== 'ready') {
+    showToast('Este jogo ainda não está disponível online.');
+    return;
+  }
   window.open(`/play/${currentGame.id}`, '_blank');
 }
 
