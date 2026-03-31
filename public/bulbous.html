@@ -1062,6 +1062,16 @@ function mkBaelf(baelf, opts = {}) {
   div.appendChild(img);
 
 
+  // Color label at top
+  const colorLabel = ce('div');
+  const colHex = COLOR_HEX[baelf.color] || '#aaa';
+  const symIcon = { circle: '⭕', triangle: '▲' }[baelf.symbol] || '';
+  colorLabel.style.cssText = `position:absolute;top:0;left:0;right:0;padding:2px 4px;
+    background:rgba(0,0,0,.6);font-size:.58rem;font-weight:700;color:${colHex};
+    text-align:center;letter-spacing:.05em;z-index:2;border-radius:5px 5px 0 0`;
+  colorLabel.textContent = `${baelf.color.toUpperCase()} ${symIcon}`;
+  div.appendChild(colorLabel);
+
   // Semi-transparent overlay at bottom with symbol + slots
   const overlay = ce('div', 'baelf-overlay');
 
@@ -1087,6 +1097,7 @@ function mkMiniBaelf(baelf, isActive) {
   const div = ce('div','mini-baelf' + (isActive?' active-slot':'') + (baelf.complete?' complete':''));
   div.style.borderColor = COLOR_HEX[baelf.color] || '#555';
   div.style.background  = COLOR_DIM[baelf.color] || '#222';
+  div.title = `${baelf.color} (${baelf.slots} slots)`;
 
   // Slot dots — filled ones show the owner's colour
   const dots = ce('div','mini-slot-dots');
