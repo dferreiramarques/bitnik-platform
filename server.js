@@ -559,6 +559,23 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // /play/catania → dedicated Catania client
+  if (url === '/play/catania' || url === '/play/catania/') {
+    fs.readFile(path.join(PUB_DIR, 'catania.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
+  if (url === '/play/catania' || url === '/play/catania/') {
+    fs.readFile(path.join(PUB_DIR, 'catania.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
   // /play/bulbous → dedicated Bulbous client
   if (url === '/play/bulbous' || url === '/play/bulbous/') {
     fs.readFile(path.join(PUB_DIR, 'bulbous.html'), (err, data) => {
@@ -567,6 +584,15 @@ const server = http.createServer((req, res) => {
       res.end(data);
     });
     return;
+  // /play/catania → Catania client
+  if (url === '/play/catania' || url === '/play/catania/') {
+    fs.readFile(path.join(PUB_DIR, 'catania.html'), (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
   }
   // /play/percebes → dedicated Percebes client
   if (url === '/play/percebes' || url === '/play/percebes/') {
@@ -618,6 +644,376 @@ const server = http.createServer((req, res) => {
 });
 
 // ── WebSocket server ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// CATANIA — in-process game
+// Resources: cereais/vinho/peixe/calcario/azeite
+// Village rule: keep majority, ONE chosen minority gets top tower disc
+// ═══════════════════════════════════════════════════════════════
+{
+const CAT_RES=['cereais','vinho','peixe','calcario','azeite'];
+const CAT_PT={cereais:'Cereais',vinho:'Vinho',peixe:'Peixe',calcario:'Calcário',azeite:'Azeite'};
+
+// Tower: black=12,11,11,10,10,8,8,6,6,4,4,2,2 (13) + red=9,7,5,3,1 (5) = 18
+const BLACK_DISCS=[12,11,11,10,10,8,8,6,6,4,4,2,2];
+const RED_DISCS=[9,7,5,3,1];
+const RED_SET=new Set(RED_DISCS);
+
+function catMkTower(){
+  const all=[...BLACK_DISCS,...RED_DISCS];
+  all.sort((a,b)=>a-b);
+  return all; // index 0=bottom, last=top
+}
+
+// Hex layout 2-4-3-2 pointy-top (col offset for odd rows)
+// R=62 → W3=sqrt(3)*62 ≈ 107.4
+const R=62, W3=Math.sqrt(3)*62;
+const CAT_LAYOUT=[{row:0,count:2,colStart:1},{row:1,count:4,colStart:0},{row:2,count:3,colStart:0},{row:3,count:2,colStart:1}];
+const VOL_ROW=1, VOL_COLIDX=1; // volcano = row1, 2nd hex (col=1)
+
+function h2p(col,row){
+  return{x:W3*col+(row&1?W3/2:0), y:R*1.5*row};
+}
+
+function catBuildHexes(){
+  const pool=[];
+  CAT_RES.forEach(r=>pool.push(r,r)); // 10 resource tiles
+  catShuf(pool);
+  const hexes=[]; let id=0,ri=0;
+  CAT_LAYOUT.forEach(({row,count,colStart})=>{
+    for(let ci=0;ci<count;ci++){
+      const col=colStart+ci;
+      const isVol=(row===VOL_ROW&&ci===VOL_COLIDX);
+      const type=isVol?'vulcao':pool[ri++];
+      hexes.push({id:id++,row,col,ci,type,px:h2p(col,row),tokens:[]});
+    }
+  });
+  return hexes;
+}
+
+function catNeighbors(hexId,hexes){
+  const h=hexes.find(x=>x.id===hexId); if(!h)return[];
+  const thr=W3*1.2;
+  return hexes.filter(x=>x.id!==hexId).filter(x=>{const dx=x.px.x-h.px.x,dy=x.px.y-h.px.y;return Math.sqrt(dx*dx+dy*dy)<thr;}).map(x=>x.id);
+}
+
+function catShuf(a){for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function catNewGame(lobbyPlayers){
+  const tower=catMkTower();
+  const hexes=catBuildHexes();
+  // Draw 5 discs from top for initial pile values
+  const drawn=[];for(let i=0;i<5;i++)drawn.push(tower.pop());
+  catShuf(drawn);
+  const piles={};
+  CAT_RES.forEach((r,i)=>{piles[r]={disc:drawn[i],totalCollected:0};});
+  const players=lobbyPlayers.map((lp,idx)=>{
+    const h={};CAT_RES.forEach(r=>h[r]=0);
+    const col={};CAT_RES.forEach(r=>col[r]=0);
+    return{name:lp.name,isBot:!!lp.isBot,colorIdx:idx,hand:h,collected:col,villages:[],turn:{collects:0,foundDone:false,sicelPending:false,thisHexes:[]}};
+  });
+  return{n:lobbyPlayers.length,players,hexes,tower,piles,
+    sicel:hexes.find(h=>h.type==='vulcao').id,
+    cur:0,round:1,phase:'ACTION',trigP:null,log:[]};
+}
+
+function catInitTurn(g,seat){
+  g.hexes.forEach(h=>{h.tokens=h.tokens.filter(pi=>pi!==seat);});
+  g.players[seat].turn={collects:0,foundDone:false,sicelPending:false,thisHexes:[]};
+}
+
+function catHandle(g,seat,msg){
+  if(g.phase==='GAME_OVER')return{error:'Jogo terminado'};
+  const p=g.players[seat];
+  const t=p.turn;
+
+  if(msg.type==='CAT_COLLECT'){
+    if(g.cur!==seat)return{error:'Não é a tua vez'};
+    if(t.sicelPending)return{error:'Move os Sicelos primeiro'};
+    if(t.collects>=2)return{error:'Já fizeste 2 recolhas este turno'};
+    const{hexIdx,take2}=msg;
+    const hex=g.hexes[hexIdx];
+    if(!hex||hex.type==='vulcao')return{error:'Hexágono inválido'};
+    if(g.sicel===hexIdx)return{error:'Os Sicelos bloqueiam esse território'};
+    if(hex.tokens.some(pi=>pi!==seat))return{error:'Território ocupado por outro jogador'};
+    if(t.thisHexes.includes(hexIdx))return{error:'Já recolheste neste hex este turno'};
+    if(take2&&g.tower.length===0)return{error:'Torre de discos vazia'};
+    const r=hex.type;
+    if(!hex.tokens.includes(seat))hex.tokens.push(seat);
+    t.thisHexes.push(hexIdx);
+    const amt=take2?2:1;
+    p.hand[r]+=amt; p.collected[r]+=amt; g.piles[r].totalCollected+=amt;
+    t.collects++;
+    if(take2){
+      const nd=g.tower.pop();
+      const wasRed=RED_SET.has(nd);
+      g.piles[r].disc=nd;
+      catLog(g,`${p.name} recolheu 2 ${CAT_PT[r]} → disco ${nd}${wasRed?' 🔴':''}`);
+      if(wasRed){t.sicelPending=true;return{ok:true,needSicels:true};}
+    }else{
+      catLog(g,`${p.name} recolheu 1 ${CAT_PT[r]}`);
+    }
+    return{ok:true};
+  }
+
+  if(msg.type==='CAT_SICELS'){
+    if(g.cur!==seat||!p.turn.sicelPending)return{error:'Fase incorrecta'};
+    const{hexIdx}=msg;
+    if(!catNeighbors(g.sicel,g.hexes).includes(hexIdx))return{error:'Hex não é adjacente aos Sicelos'};
+    g.sicel=hexIdx;
+    p.turn.sicelPending=false;
+    catLog(g,'💀 Sicelos moveram-se!');
+    return{ok:true};
+  }
+
+  // VILLAGE: keep majority, ONE chosen minority gets top tower disc
+  // msg.keepRes = majority resource to keep
+  // msg.affectRes = minority resource that gets the tower's top disc (optional if only 1 minority)
+  if(msg.type==='CAT_VILLAGE'){
+    if(g.cur!==seat)return{error:'Não é a tua vez'};
+    if(t.collects<1)return{error:'Faz pelo menos 1 recolha primeiro'};
+    if(t.foundDone)return{error:'Já fundaste uma aldeia este turno'};
+    const{keepRes,affectRes}=msg;
+    // Validate
+    const types=CAT_RES.filter(r=>p.hand[r]>0);
+    if(types.length<2)return{error:'Precisas de 2+ tipos de recursos'};
+    if(!p.hand[keepRes]||p.hand[keepRes]===0)return{error:'Não tens esse recurso'};
+    const maxCount=Math.max(...types.map(r=>p.hand[r]));
+    if(p.hand[keepRes]<maxCount)return{error:'O recurso de maioria tem que ser o mais numeroso'};
+    const minorities=types.filter(r=>r!==keepRes);
+    if(minorities.length>1&&!affectRes)return{error:'Escolhe qual minoria afeta a torre'};
+    const chosenMinority=minorities.length===1?minorities[0]:(affectRes||minorities[0]);
+    if(!minorities.includes(chosenMinority))return{error:'Minoria inválida'};
+    // Execute: keep majority cards in village
+    const keptCount=p.hand[keepRes];
+    p.hand[keepRes]=0;
+    // Discard minorities from hand
+    minorities.forEach(r=>{p.hand[r]=0;});
+    // Apply tower disc to chosen minority pile
+    if(g.tower.length>0){
+      g.piles[chosenMinority].disc=g.tower.pop();
+    }
+    // Record village
+    p.villages.push({res:keepRes,cards:keptCount});
+    t.foundDone=true;
+    catLog(g,`🏘 ${p.name} fundou aldeia (${CAT_PT[keepRes]} ×${keptCount}), afetou ${CAT_PT[chosenMinority]}`);
+    if(p.villages.length>=3&&g.phase==='ACTION'){
+      g.phase='LAST_ROUND'; g.trigP=seat;
+      catLog(g,`🏛 ${p.name} fundou a 3ª aldeia! Última ronda!`);
+    }
+    return{ok:true};
+  }
+
+  if(msg.type==='CAT_END_TURN'){
+    if(g.cur!==seat)return{error:'Não é a tua vez'};
+    if(p.turn.sicelPending)return{error:'Move os Sicelos antes de terminar'};
+    if(p.turn.collects<1)return{error:'Faz pelo menos 1 recolha'};
+    const next=(seat+1)%g.n;
+    if(g.phase==='LAST_ROUND'&&next===g.trigP){catEndGame(g);return{ok:true};}
+    g.cur=next; if(next===0)g.round++;
+    catInitTurn(g,next);
+    return{ok:true};
+  }
+
+  return{error:'Acção desconhecida'};
+}
+
+function catEndGame(g){
+  g.phase='GAME_OVER';
+  g.players.forEach(p=>{
+    p.score=CAT_RES.reduce((s,r)=>s+(p.collected[r]||0)*(g.piles[r]?.disc||1),0);
+  });
+  catLog(g,'⚑ Jogo terminado! A contar pontos...');
+}
+
+function catBot(g){
+  if(g.phase==='GAME_OVER')return null;
+  const seat=g.cur; const p=g.players[seat];
+  if(!p.isBot)return null;
+  const t=p.turn;
+
+  if(t.sicelPending){
+    const adj=catNeighbors(g.sicel,g.hexes).filter(id=>!g.hexes.find(h=>h.id===id)?.tokens.some(pi=>!g.players[pi].isBot));
+    const allAdj=catNeighbors(g.sicel,g.hexes);
+    const choices=adj.length?adj:allAdj;
+    return{type:'CAT_SICELS',hexIdx:choices[0|Math.random()*choices.length]};
+  }
+
+  if(t.collects<1||(t.collects<2&&Math.random()<0.55)){
+    const avail=g.hexes.filter(h=>h.type!=='vulcao'&&g.sicel!==h.id&&!h.tokens.some(pi=>pi!==seat)&&!t.thisHexes.includes(h.id));
+    if(avail.length){
+      avail.sort((a,b)=>(g.piles[a.type]?.disc||99)-(g.piles[b.type]?.disc||99));
+      const h=avail[0];
+      const take2=g.tower.length>2&&Math.random()<0.38;
+      return{type:'CAT_COLLECT',hexIdx:h.id,take2};
+    }
+  }
+
+  if(t.collects>=1&&!t.foundDone){
+    const types=CAT_RES.filter(r=>p.hand[r]>0);
+    if(types.length>=2&&Math.random()<0.48){
+      const maxC=Math.max(...types.map(r=>p.hand[r]));
+      const majs=types.filter(r=>p.hand[r]===maxC);
+      const keepRes=majs[0|Math.random()*majs.length];
+      const minorities=types.filter(r=>r!==keepRes);
+      const affectRes=minorities[0|Math.random()*minorities.length];
+      return{type:'CAT_VILLAGE',keepRes,affectRes};
+    }
+  }
+
+  return{type:'CAT_END_TURN'};
+}
+
+function catLog(g,msg){g.log.unshift(msg);if(g.log.length>20)g.log.pop();}
+
+function catView(g,seat){
+  const me=g.players[seat];
+  const adj=catNeighbors(g.sicel,g.hexes);
+  return{
+    n:g.n,cur:g.cur,myIdx:seat,round:g.round,phase:g.phase,
+    players:g.players.map((p,i)=>({
+      name:p.name,colorIdx:p.colorIdx,isBot:p.isBot,
+      handTotal:Object.values(p.hand).reduce((a,b)=>a+b,0),
+      villages:p.villages,score:p.score||0,
+      turn:i===seat?p.turn:null,
+    })),
+    myHand:me.hand,
+    hexes:g.hexes.map(h=>({...h})),
+    piles:g.piles,
+    tower:g.tower,
+    sicel:g.sicel,
+    sicelAdj:adj,
+    log:g.log,
+  };
+}
+
+// ── Lobby ─────────────────────────────────────────────────────
+const CAT_LOBBY_DEFS=[
+  {id:'cat-4p-1',name:'Mesa 4J — 1',mode:'4p',maxP:4,solo:false},
+  {id:'cat-4p-2',name:'Mesa 4J — 2',mode:'4p',maxP:4,solo:false},
+  {id:'cat-4p-3',name:'Mesa 4J — 3',mode:'4p',maxP:4,solo:false},
+  {id:'cat-2p-1',name:'Mesa 2J — 1',mode:'2p',maxP:2,solo:false},
+  {id:'cat-2p-2',name:'Mesa 2J — 2',mode:'2p',maxP:2,solo:false},
+  {id:'cat-solo-3',name:'Solo vs 3 Bots',mode:'4p',maxP:1,solo:true,bots:3},
+  {id:'cat-solo-1',name:'Solo vs 1 Bot',mode:'2p',maxP:1,solo:true,bots:1},
+];
+const CAT_LOBBIES={};
+CAT_LOBBY_DEFS.forEach(d=>{
+  CAT_LOBBIES[d.id]={...d,players:Array(d.maxP).fill(null),names:Array(d.maxP).fill(''),
+    tokens:Array(d.maxP).fill(null),game:null,graceTimers:Array(d.maxP).fill(null),botTimer:null};
+});
+const CAT_SESSIONS={};
+const CAT_WS=new WeakMap();
+
+function catSend(ws,obj){if(ws?.readyState===1)ws.send(JSON.stringify(obj));}
+function catLobbyInfo(l){return{id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,bots:l.bots||0,
+  seated:l.players.filter(Boolean).length,playing:!!l.game&&l.game.phase!=='GAME_OVER',
+  names:l.names.filter(Boolean)};}
+function catBroadcastLobbies(){
+  const list=Object.values(CAT_LOBBIES).map(catLobbyInfo);
+  for(const ws of globalThis._catWss?.clients||[]){
+    const st=CAT_WS.get(ws);if(!st?.lobbyId)catSend(ws,{type:'LOBBIES',lobbies:list});
+  }
+}
+function catBroadcastGame(lobby){
+  const g=lobby.game;if(!g)return;
+  lobby.players.forEach((ws,i)=>{if(ws)catSend(ws,{type:'GAME_STATE',state:catView(g,i)});});
+}
+function catSendLobbyState(lobby,ws,seat){
+  catSend(ws,{type:'LOBBY_STATE',lobby:catLobbyInfo(lobby),names:lobby.names,mySeat:seat});
+}
+function catScheduleBots(lobby){
+  if(lobby.botTimer)return;
+  lobby.botTimer=setTimeout(()=>{
+    lobby.botTimer=null;
+    const g=lobby.game;if(!g||g.phase==='GAME_OVER')return;
+    const p=g.players[g.cur];if(!p?.isBot)return;
+    const action=catBot(g);
+    if(action){
+      const result=catHandle(g,g.cur,action);
+      catBroadcastGame(lobby);
+      if(!result?.error&&g.phase!=='GAME_OVER')catScheduleBots(lobby);
+    }
+  },800+Math.random()*600);
+}
+
+function catHandleMsg(ws,msg){
+  if(msg.type==='PING'){catSend(ws,{type:'PONG'});return;}
+  if(msg.type==='LOBBIES'){catSend(ws,{type:'LOBBIES',lobbies:Object.values(CAT_LOBBIES).map(catLobbyInfo)});return;}
+  if(msg.type==='RECONNECT'){
+    const sess=CAT_SESSIONS[msg.token];
+    if(!sess){catSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const lobby=CAT_LOBBIES[sess.lobbyId];if(!lobby){catSend(ws,{type:'RECONNECT_FAIL'});return;}
+    const{seat}=sess;clearTimeout(lobby.graceTimers[seat]);
+    lobby.players[seat]=ws;CAT_WS.set(ws,{lobbyId:lobby.id,seat,token:msg.token});
+    catSend(ws,{type:'RECONNECTED',seat,solo:lobby.solo});
+    if(lobby.game)catSend(ws,{type:'GAME_STATE',state:catView(lobby.game,seat)});
+    else catSendLobbyState(lobby,ws,seat);
+    catBroadcastLobbies();return;
+  }
+  if(msg.type==='JOIN_LOBBY'){
+    const lobby=CAT_LOBBIES[msg.lobbyId];if(!lobby){catSend(ws,{type:'ERROR',text:'Mesa inválida'});return;}
+    const seat=lobby.players.findIndex(p=>p===null);if(seat===-1){catSend(ws,{type:'ERROR',text:'Mesa cheia'});return;}
+    const token=Math.random().toString(36).slice(2)+Date.now().toString(36);
+    lobby.players[seat]=ws;lobby.names[seat]=msg.playerName;lobby.tokens[seat]=token;
+    CAT_SESSIONS[token]={lobbyId:lobby.id,seat,name:msg.playerName};
+    CAT_WS.set(ws,{lobbyId:lobby.id,seat,token});
+    catSend(ws,{type:'JOINED',seat,token,lobbyId:lobby.id,solo:lobby.solo,lobby:catLobbyInfo(lobby),names:lobby.names});
+    lobby.players.forEach((p,i)=>{if(p&&i!==seat)catSend(p,{type:'PLAYER_JOINED',name:msg.playerName});});
+    catBroadcastLobbies();
+    if(lobby.solo){
+      const botNames=['Bot Arquimedes','Bot Pitágoras','Bot Euclides'].slice(0,lobby.bots||3);
+      const lps=[{name:msg.playerName,isBot:false},...botNames.map(n=>({name:n,isBot:true}))];
+      lobby.game=catNewGame(lps);
+      catInitTurn(lobby.game,0);
+      catBroadcastGame(lobby);catScheduleBots(lobby);
+    }
+    return;
+  }
+  const st=CAT_WS.get(ws);if(!st){catSend(ws,{type:'ERROR',text:'Não estás numa mesa'});return;}
+  const lobby=CAT_LOBBIES[st.lobbyId];if(!lobby)return;
+  const{seat}=st;
+  if(msg.type==='LEAVE_LOBBY'){
+    clearTimeout(lobby.graceTimers[seat]);
+    if(CAT_SESSIONS[lobby.tokens[seat]])delete CAT_SESSIONS[lobby.tokens[seat]];
+    const name=lobby.names[seat];
+    lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;CAT_WS.delete(ws);
+    if(lobby.game&&!lobby.solo){lobby.game=null;lobby.players.forEach(p=>{if(p)catSend(p,{type:'GAME_ABORTED',reason:`${name} saiu.`});});}
+    catBroadcastLobbies();return;
+  }
+  if(msg.type==='REQUEST_STATE'){
+    if(lobby.game)catSend(ws,{type:'GAME_STATE',state:catView(lobby.game,seat)});
+    else catSendLobbyState(lobby,ws,seat);return;
+  }
+  if(msg.type==='START'){
+    if(seat!==0&&!lobby.solo){catSend(ws,{type:'ERROR',text:'Só o anfitrião pode iniciar'});return;}
+    const seated=lobby.players.map((p,i)=>p?i:-1).filter(i=>i!==-1);
+    if(!lobby.solo&&seated.length<lobby.maxP){catSend(ws,{type:'ERROR',text:`Precisas de ${lobby.maxP} jogadores`});return;}
+    const lps=seated.map(i=>({name:lobby.names[i],isBot:false}));
+    lobby.game=catNewGame(lps);
+    catInitTurn(lobby.game,0);
+    catBroadcastGame(lobby);catScheduleBots(lobby);return;
+  }
+  if(msg.type==='RESTART'){
+    lobby.game=null;lobby.players.forEach((p,i)=>{if(p)catSendLobbyState(lobby,p,i);});catBroadcastLobbies();return;
+  }
+  const g=lobby.game;if(!g){catSend(ws,{type:'ERROR',text:'Sem jogo em curso'});return;}
+  const result=catHandle(g,seat,msg);
+  if(result&&result.error){catSend(ws,{type:'ERROR',text:result.error});return;}
+  catBroadcastGame(lobby);
+  if(g.phase!=='GAME_OVER')catScheduleBots(lobby);
+}
+
+globalThis._catHandleMsg=catHandleMsg;
+globalThis._catBroadcastLobbies=catBroadcastLobbies;
+globalThis._CAT_LOBBIES=CAT_LOBBIES;
+globalThis._CAT_WS=CAT_WS;
+globalThis._CAT_SESSIONS=CAT_SESSIONS;
+}
+
+
+
 const wss = new WebSocketServer({ noServer: true });
 const capWss = { get clients() { return [...wss.clients].filter(w=>w._isCap); } }; // alias
 
@@ -679,6 +1075,52 @@ wss.on('connection', (ws, req) => {
     ws.on('error',()=>{});
     return;
   }
+  // Route: Catania connections
+  if (ws._isCAT) {
+    globalThis._catWss = wss;
+    catSend(ws, {type:'LOBBIES', lobbies:Object.values(globalThis._CAT_LOBBIES).map(l=>({
+      id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,
+      seated:l.players.filter(Boolean).length,
+      playing:!!l.game&&l.game.phase!=='GAME_OVER',
+      names:l.names.filter(Boolean)}))});
+    ws.on('message', raw => { try { globalThis._catHandleMsg(ws,JSON.parse(raw)); } catch(e){console.error('CAT err',e);} });
+    ws.on('close', () => {
+      const st=globalThis._CAT_WS?.get(ws);if(!st?.lobbyId)return;
+      const lobby=globalThis._CAT_LOBBIES?.[st.lobbyId];if(!lobby)return;
+      const{seat}=st;lobby.players[seat]=null;
+      lobby.graceTimers[seat]=setTimeout(()=>{
+        lobby.names[seat]='';lobby.tokens[seat]=null;
+        if(globalThis._CAT_SESSIONS?.[st.token])delete globalThis._CAT_SESSIONS[st.token];
+        if(lobby.game&&!lobby.solo){lobby.game=null;lobby.players.forEach(p=>{if(p)try{p.send(JSON.stringify({type:'GAME_ABORTED',reason:'Adversário desligou.'}));}catch{}});}
+        if(globalThis._catBroadcastLobbies)globalThis._catBroadcastLobbies();
+        if(globalThis._catBroadcastLobbies)globalThis._catBroadcastLobbies();
+      },45000);
+      if(globalThis._catBroadcastLobbies)globalThis._catBroadcastLobbies();
+    });
+    ws.on('error',()=>{});
+    return;
+  }
+  // Route: Catania
+  if (ws._isCAT) {
+    globalThis._catWss = wss;
+    const _cl = Object.values(globalThis._CAT_LOBBIES||{}).map(l=>({id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,bots:l.bots||0,seated:l.players.filter(Boolean).length,playing:!!l.game&&l.game.phase!=='GAME_OVER',names:l.names.filter(Boolean)}));
+    if(ws.readyState===1)ws.send(JSON.stringify({type:'LOBBIES',lobbies:_cl}));
+    ws.on('message',raw=>{try{(globalThis._catHandleMsg)(ws,JSON.parse(raw));}catch(e){console.error('CAT',e);}});
+    ws.on('close',()=>{
+      const st=globalThis._CAT_WS?.get(ws);if(!st?.lobbyId)return;
+      const lobby=globalThis._CAT_LOBBIES?.[st.lobbyId];if(!lobby)return;
+      const{seat}=st;lobby.players[seat]=null;
+      lobby.graceTimers[seat]=setTimeout(()=>{
+        lobby.names[seat]='';lobby.tokens[seat]=null;
+        if(globalThis._CAT_SESSIONS?.[st.token])delete globalThis._CAT_SESSIONS[st.token];
+        if(lobby.game&&!lobby.solo){lobby.game=null;lobby.players.forEach(p=>{if(p)try{p.send(JSON.stringify({type:'GAME_ABORTED',reason:'Adversário desligou.'}));}catch{}});}
+        if(globalThis._catBcast)globalThis._catBcast();
+      },45000);
+      if(globalThis._catBcast)globalThis._catBcast();
+    });
+    ws.on('error',()=>{});
+    return;
+  }
   // Route: percebes connections
   if (ws._isPerc) {
     pbSend(ws, { type:'LOBBIES', lobbies: Object.values(PERC_LOBBIES).map(pbLobbyInfo) });
@@ -704,6 +1146,38 @@ wss.on('connection', (ws, req) => {
     return;
   }
   // Route: capivaras connections go to dedicated handler
+  if (ws._isCat) {
+    // Catania WebSocket
+    const _catH = globalThis._catHandle;
+    const _catL = globalThis._CAT_LOBBIES;
+    if (ws.readyState===1) ws.send(JSON.stringify({
+      type:'LOBBIES',
+      lobbies: Object.values(_catL).map(l=>({id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,
+        seated:l.players.filter(Boolean).length,
+        playing:!!l.game&&l.game.phase!=='GAME_OVER',
+        names:l.names.filter(Boolean)}))
+    }));
+    ws.on('message', raw => { try { _catH(ws, JSON.parse(raw)); } catch(e){console.error('CAT err',e);} });
+    ws.on('close', () => {
+      const st = globalThis._CAT_WS_STATE?.get(ws);
+      if (!st) return;
+      const lobby = globalThis._CAT_LOBBIES?.[st.lobbyId];
+      if (!lobby) return;
+      lobby.players[st.seat] = null;
+      lobby.graceTimers[st.seat] = setTimeout(() => {
+        lobby.names[st.seat]=''; lobby.tokens[st.seat]=null;
+        if(st.token&&globalThis._CAT_SESSIONS?.[st.token]) delete globalThis._CAT_SESSIONS[st.token];
+        if(lobby.game&&!lobby.solo){
+          lobby.game=null;
+          lobby.players.forEach(p=>{if(p)p.send&&p.send(JSON.stringify({type:'GAME_ABORTED',reason:'Adversário desligou.'}));});
+        }
+        if(globalThis._catBroadcastLobbies) globalThis._catBroadcastLobbies();
+      }, 45000);
+      if(globalThis._catBroadcastLobbies) globalThis._catBroadcastLobbies();
+    });
+    return;
+  }
+
   if (ws._isCap) {
     capSend(ws, { type:'LOBBIES', lobbies: Object.values(CAP_LOBBIES).map(capLobbyInfo) });
     ws.on('message', raw => { try { capHandle(ws, JSON.parse(raw)); } catch {} });
@@ -1103,1486 +1577,5 @@ function capHandle(ws,msg){
 }
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Bitnik] Server on http://0.0.0.0:${PORT}`);
-  console.log(`[Bitnik] Games: ${Object.keys(GAME_REGISTRY).join(', ') || 'none'}`);
+  console.log(`[Bitnik] Server running on port ${PORT}`);
 });
-
-// ALL WebSocket upgrades routed here — single wss, path-based routing
-server.on('upgrade', (req, socket, head) => {
-  const urlPath = (req.url || '').split('?')[0];
-  wss.handleUpgrade(req, socket, head, ws => {
-    ws._isCap  = (urlPath === '/ws/capivaras');
-    ws._isPerc = (urlPath === '/ws/percebes');
-    ws._isNO   = (urlPath === '/ws/nineoils');
-    ws._isBU   = (urlPath === '/ws/bulbous');
-    wss.emit('connection', ws, req);
-  });
-});
-
-setInterval(() => {
-  for (const ws of wss.clients) if (ws.readyState === 1) ws.ping();
-}, 25000);
-
-// ── Serve /play/:gameId → play.html ──────────────────────────────
-// Note: this is already handled by the SPA fallback above,
-// but we add explicit routing for clarity.
-// The play.html reads gameKey from location.pathname client-side.
-
-// ═══════════════════════════════════════════════════════════════════
-//  PRAIA DAS PERCEBES — Servidor embebido
-//  Tile placement 7×7, salva-vidas, objectivos, fichas
-// ═══════════════════════════════════════════════════════════════════
-const PERC_LOBBIES  = {};
-const PERC_SESSIONS = {};
-const PERC_WS_STATE = new WeakMap();
-
-// ── Board helpers ─────────────────────────────────────────────────
-function pbGet(board,r,c){return board[`${r},${c}`]||null;}
-function pbSet(board,r,c,tile){board[`${r},${c}`]=tile;}
-function pbKeys(board){return Object.keys(board).map(k=>{const[r,c]=k.split(',');return{r:+r,c:+c};});}
-
-function pbCanPlace(board,r,c){
-  if(pbGet(board,r,c))return false;
-  const occ=pbKeys(board);
-  if(occ.length===0)return true;
-  // must be orthogonally adjacent to existing tile
-  if(!occ.some(p=>(p.r===r&&Math.abs(p.c-c)===1)||(p.c===c&&Math.abs(p.r-r)===1)))return false;
-  // Board is constrained to a 7×7 bounding box
-  // Check that adding this tile doesn't push the bounding box beyond 7 in either dimension
-  const allR=occ.map(p=>p.r).concat(r);
-  const allC=occ.map(p=>p.c).concat(c);
-  if(Math.max(...allR)-Math.min(...allR)>=7)return false; // >6 span = >7 tiles wide
-  if(Math.max(...allC)-Math.min(...allC)>=7)return false;
-  return true;
-}
-
-function pbValidPlacements(board){
-  const occ=pbKeys(board);
-  const cands=new Set();
-  for(const p of occ){
-    for(const n of [{r:p.r-1,c:p.c},{r:p.r+1,c:p.c},{r:p.r,c:p.c-1},{r:p.r,c:p.c+1}])
-      cands.add(`${n.r},${n.c}`);
-  }
-  return [...cands].filter(k=>{const[r,c]=k.split(',');return pbCanPlace(board,+r,+c);}).map(k=>{const[r,c]=k.split(',');return{r:+r,c:+c};});
-}
-
-function pbGetAvailGuardDirs(guards,r,c){
-  const usedH=guards.some(g=>g.r===r&&g.dir==='h');
-  const usedV=guards.some(g=>g.c===c&&g.dir==='v');
-  return{h:!usedH,v:!usedV};
-}
-
-function pbCountSegment(board,r,c,dir){
-  const key=dir==='h'?'c':'r';
-  const fixed=dir==='h'?r:c;
-  const pos=dir==='h'?c:r;
-  const cells=[];
-  for(let i=pos-1;;i--){
-    const t=dir==='h'?pbGet(board,fixed,i):pbGet(board,i,fixed);
-    if(!t)break; if(t.type==='rock')break; cells.unshift({t,i}); }
-  const self=pbGet(board,r,c);
-  if(self&&self.type!=='rock') cells.push({t:self,i:pos});
-  for(let i=pos+1;;i++){
-    const t=dir==='h'?pbGet(board,fixed,i):pbGet(board,i,fixed);
-    if(!t)break; if(t.type==='rock')break; cells.push({t,i}); }
-  // Surf tiles multiply total bathers x2 each
-  let multiplier=1;
-  for(const{t} of cells) if(t.type==='surf') multiplier*=2;
-  let total=0;
-  for(const{t} of cells) total+=t.bathers;
-  return total*multiplier;
-}
-
-// Recalculate all guard contributions — call after every board change
-// Each guard stores awardedPts so we only add the DELTA to player scores
-function pbRecalcGuardScores(g){
-  for(const guard of g.guards){
-    const newScore=pbCountSegment(g.board,guard.r,guard.c,guard.dir);
-    const prev=guard.awardedPts||0;
-    const delta=newScore-prev;
-    if(delta>0){
-      g.players[guard.playerIdx].pts+=delta;
-      guard.awardedPts=newScore;
-    }
-  }
-}
-
-function pbComputeFinalScores(g){
-  // Final guard scores already tracked live via pbRecalcGuardScores
-  // Only add fichas bonuses and objective pts
-  for(const p of g.players){ p.pts+=p.fichas*2; p.pts+=p.objPts; }
-}
-
-// ── Deck & Objectives ─────────────────────────────────────────────
-function pbBuildDeck(n){
-  const tiles=[]; let id=1;
-  for(let i=0;i<8; i++) tiles.push({id:id++,bathers:1,type:'normal',v:i+1});
-  for(let i=0;i<12;i++) tiles.push({id:id++,bathers:2,type:'normal',v:i+1});
-  for(let i=0;i<6; i++) tiles.push({id:id++,bathers:3,type:'normal',v:i+1});
-  for(let i=0;i<4; i++) tiles.push({id:id++,bathers:1,type:'surf',  v:i+1});
-  for(let i=0;i<2; i++) tiles.push({id:id++,bathers:0,type:'rock',  v:i+1});
-  for(let i=0;i<12;i++) tiles.push({id:id++,bathers:0,type:'sand',  v:i+1});
-  for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
-  return tiles.slice(0,n===3?42:44);
-}
-
-function pbBuildObjectives(){
-  // Original 8 objectives — pick 5 at random each game
-  const all=[
-    {id:'obj1',descPt:'Quadrado 3×3 (9 tiles)',              descEn:'3×3 square (9 tiles)',          pts:2,type:'square3'},
-    {id:'obj2',descPt:'Linha de 5 tiles',                    descEn:'Row of 5 tiles',                pts:4,type:'row5'},
-    {id:'obj3',descPt:'Linha de 7 tiles',                    descEn:'Row of 7 tiles',                pts:6,type:'row7'},
-    {id:'obj4',descPt:'Quadrado 5×5 (25 tiles)',             descEn:'5×5 square (25 tiles)',         pts:2,type:'square5'},
-    {id:'obj5',descPt:'Coluna de 5 tiles',                   descEn:'Column of 5 tiles',             pts:4,type:'col5'},
-    {id:'obj6',descPt:'Coluna de 7 tiles',                   descEn:'Column of 7 tiles',             pts:6,type:'col7'},
-    {id:'obj7',descPt:'2 Pranchas adjacentes',               descEn:'2 adjacent surfboards',         pts:4,type:'surf2adj'},
-    {id:'obj8',descPt:'Excursão (2×2 tiles com 3 banhistas)',descEn:'Excursion (2×2 tiles, 3 each)', pts:6,type:'excursion'},
-  ];
-  for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
-  return all.slice(0,5);
-}
-
-function pbCheckObjectives(g,playerIdx){
-  const claimed=[];
-  if(!g._objSnapshots) g._objSnapshots={};
-  for(const obj of g.revealedObjs){
-    if(obj.claimedBy!==undefined) continue;
-    // Snapshot-based: only count progress after obj became active
-    const snapTile=g._objSnapshots[obj.id]||0;
-    const boardSinceActive=pbBoardSince(g.board,snapTile);
-    if(pbEvalObj(boardSinceActive,obj,g)){
-      obj.claimedBy=playerIdx;
-      g.players[playerIdx].objPts+=obj.pts;
-      g.players[playerIdx].pts+=obj.pts;  // live pts for objectives too
-      claimed.push(obj);
-      if(g.remainingObjs.length>0){
-        const next=g.remainingObjs.shift();
-        // Snapshot: record how many tiles are on board when obj becomes active
-        g._objSnapshots[next.id]=Object.keys(g.board).length;
-        g.revealedObjs.push(next);
-      }
-    }
-  }
-  return claimed;
-}
-
-// Returns a board view containing only tiles placed AFTER tileCount tiles existed
-function pbBoardSince(board,tileCount){
-  // Since we don't timestamp tiles, we use the full board for count-based objs
-  // and the full board for positional objs (acceptable simplification)
-  return board;
-}
-
-function pbEvalObj(board,obj,g){
-  const occ=pbKeys(board);
-  switch(obj.type){
-    case 'square3': {
-      const rs=[...new Set(occ.map(p=>p.r))];
-      for(const r of rs) for(const c of [...new Set(occ.map(p=>p.c))]) {
-        if([0,1,2].every(dr=>[0,1,2].every(dc=>pbGet(board,r+dr,c+dc)))) return true;
-      } return false;
-    }
-    case 'square5': {
-      const rs=[...new Set(occ.map(p=>p.r))];
-      for(const r of rs) for(const c of [...new Set(occ.map(p=>p.c))]) {
-        let ok=true;
-        outer: for(let dr=0;dr<5;dr++) for(let dc=0;dc<5;dc++) {
-          if(!pbGet(board,r+dr,c+dc)){ok=false;break outer;}
-        }
-        if(ok) return true;
-      } return false;
-    }
-    case 'row5':  return [...new Set(occ.map(p=>p.r))].some(r=>occ.filter(p=>p.r===r).length>=5);
-    case 'row7':  return [...new Set(occ.map(p=>p.r))].some(r=>occ.filter(p=>p.r===r).length>=7);
-    case 'col5':  return [...new Set(occ.map(p=>p.c))].some(c=>occ.filter(p=>p.c===c).length>=5);
-    case 'col7':  return [...new Set(occ.map(p=>p.c))].some(c=>occ.filter(p=>p.c===c).length>=7);
-    case 'surf2adj': {
-      const surfs=occ.filter(p=>{const t=pbGet(board,p.r,p.c);return t&&t.type==='surf';});
-      return surfs.some(a=>surfs.some(b=>a!==b&&((Math.abs(a.r-b.r)===1&&a.c===b.c)||(Math.abs(a.c-b.c)===1&&a.r===b.r))));
-    }
-    case 'excursion': {
-      for(const p of occ) {
-        const cells=[[0,0],[0,1],[1,0],[1,1]];
-        if(cells.every(([dr,dc])=>{const t=pbGet(board,p.r+dr,p.c+dc);return t&&t.bathers>=1;})) return true;
-      } return false;
-    }
-    case 'same5': {
-      for(const type of ['normal','surf','rock','sand']){
-        const typed=occ.filter(p=>{const t=pbGet(board,p.r,p.c);return t&&t.type===type;});
-        const rows=[...new Set(typed.map(p=>p.r))];
-        const cols=[...new Set(typed.map(p=>p.c))];
-        if(rows.some(r=>typed.filter(p=>p.r===r).length>=5)) return true;
-        if(cols.some(c=>typed.filter(p=>p.c===c).length>=5)) return true;
-      } return false;
-    }
-    default: return false;
-  }
-}
-
-// ── Game factory ─────────────────────────────────────────────────
-function pbNewGame(names,isSolo){
-  const n=names.length;
-  const deck=pbBuildDeck(n);
-  const allObjs=pbBuildObjectives();
-  // 5 objectives total, start with 3 visible, reveal next when one claimed
-  const objs=allObjs.slice(0,5);  // pick 5
-  const fichasByN={2:6,3:5,4:4};
-  const fichas=fichasByN[n]||6;
-  const board={};
-  pbSet(board,0,0,{id:0,bathers:1,type:'normal',v:1}); // starting tile
-  return{
-    players:names.map(name=>({name,pts:0,guards:[],fichas,objPts:0})),
-    n, deck, totalDeck:deck.length, board,
-    guards:[], guardIdSeq:1,
-    revealedObjs:objs.slice(0,3), remainingObjs:objs.slice(3), claimedObjs:[],
-    // Each obj tracks a snapshot of the board when it became active
-    _objSnapshots: { [objs[0].id]: 0, [objs[1].id]: 0, [objs[2].id]: 0 },
-    phase:'PLACE_TILE', currentPlayer:0,
-    drawnTile:null, extraTurns:null,
-    turnGen:0, isSolo, lastAction:null,
-    winnerIdx:null, finalScores:null,
-  };
-}
-
-// ── Visibility framework ─────────────────────────────────────────
-// Three visibility levels for any piece of game state:
-//   PUBLIC   — all players see the real value (board, scores, guards)
-//   HIDDEN   — other players see only {hidden:true}, owner sees real value
-//   SECRET   — only owner sees it; others see nothing (or a masked count)
-//
-// Usage: pbVisible(value, ownerSeat, viewerSeat, level)
-function pbVisible(value, ownerSeat, viewerSeat, level='public') {
-  if (level === 'public')  return value;
-  if (level === 'hidden')  return ownerSeat === viewerSeat ? value : { hidden: true };
-  if (level === 'secret')  return ownerSeat === viewerSeat ? value : null;
-  return value;
-}
-
-// Filter player data by visibility:
-//   name, pts, fichas, objPts → PUBLIC
-//   drawnTile → HIDDEN (others know you drew, but not what)
-//   hand cards (future) → SECRET
-function pbPlayerView(player, playerIdx, viewerSeat) {
-  return {
-    name:   player.name,          // public
-    pts:    player.pts,           // public
-    fichas: player.fichas,        // public (count of remaining tokens)
-    objPts: player.objPts,        // public at game end; could be hidden mid-game
-  };
-}
-
-function pbBuildView(g,seat){
-  const boardArr=Object.entries(g.board).map(([k,t])=>{
-    const[r,c]=k.split(',');return{r:+r,c:+c,...t};});
-  let avGuardDirs=null;
-  if(g.phase==='PLACE_GUARD'&&g.currentPlayer===seat&&g.drawnTile){
-    const{r,c}=g.drawnTile._placedAt||{};
-    if(r!==undefined){
-      const t=pbGet(g.board,r,c);
-      avGuardDirs=(t&&t.type!=='rock')?pbGetAvailGuardDirs(g.guards,r,c):{h:false,v:false};
-    }
-  }
-  return{
-    mySeat:seat,
-    players:g.players.map((p,i)=>pbPlayerView(p,i,seat)),
-    n:g.n, board:boardArr, guards:g.guards,
-    phase:g.phase, currentPlayer:g.currentPlayer,
-    drawnTile:pbVisible(g.drawnTile, g.currentPlayer, seat, 'hidden'),
-    validPlacements:g.currentPlayer===seat&&g.phase==='PLACE_TILE'?pbValidPlacements(g.board):[],
-    deckSize:g.deck.length, totalDeck:g.totalDeck,
-    revealedObjs:g.revealedObjs, claimedObjs:g.claimedObjs,
-    availableGuardDirs:avGuardDirs,
-    turnGen:g.turnGen, isSolo:g.isSolo,
-    lastAction:g.lastAction,
-    winnerIdx:g.winnerIdx, finalScores:g.finalScores,
-  };
-}
-
-function pbSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
-function pbBroadcast(lobby){
-  const g=lobby.game;if(!g)return;
-  if(lobby.solo) pbSend(lobby.players[0],{type:'GAME_STATE',state:pbBuildView(g,0)});
-  else if(lobby.seatMap) lobby.seatMap.forEach((ls,gs)=>{
-    if(lobby.players[ls]) pbSend(lobby.players[ls],{type:'GAME_STATE',state:pbBuildView(g,gs)});
-  });
-}
-
-function pbLobbyInfo(l){
-  return{id:l.id,name:l.name,solo:l.solo,seated:l.players.filter(Boolean).length,
-    maxH:l.maxH,playing:!!l.game&&l.game.phase!=='GAME_OVER',
-    full:l.solo?false:l.players.filter(Boolean).length>=l.maxH,
-    names:l.names.filter(Boolean)};
-}
-function pbBroadcastLobbies(){
-  const list=Object.values(PERC_LOBBIES).map(pbLobbyInfo);
-  for(const ws of wss.clients){
-    if(!ws._isPerc||ws.readyState!==1)continue;
-    const st=PERC_WS_STATE.get(ws);
-    if(!st||!st.lobbyId) pbSend(ws,{type:'LOBBIES',lobbies:list});
-  }
-}
-function pbMakeLobby(id,name,solo,maxH){
-  const n=solo?1:maxH;
-  return{id,name,solo,maxH,players:new Array(n).fill(null),names:new Array(n).fill(''),
-    tokens:new Array(n).fill(null),graceTimers:new Array(n).fill(null),seatMap:null,game:null};
-}
-for(let i=1;i<=4;i++) PERC_LOBBIES['mp'+i]=pbMakeLobby('mp'+i,'Mesa '+i,false,4);
-PERC_LOBBIES['solo']=pbMakeLobby('solo','Solo (vs Bots)',true,1);
-
-// ── Turn logic ────────────────────────────────────────────────────
-function pbDrawAndStart(lobby){
-  const g=lobby.game;
-  const tile=g.deck.shift();
-  if(!tile){pbEndGame(lobby);return;}
-  g.drawnTile=tile;
-  g.phase='PLACE_TILE';
-  pbBroadcast(lobby);
-  if(g.isSolo&&g.currentPlayer!==0) pbBotTurn(lobby);
-}
-
-function pbAdvanceTurn(lobby){
-  const g=lobby.game;
-  // check extra turns
-  if(g.extraTurns){
-    const rem=g.extraTurns.filter(i=>i!==g.currentPlayer);
-    if(rem.length>0){g.extraTurns=rem;g.currentPlayer=rem[0];pbDrawAndStart(lobby);return;}
-    else{pbEndGame(lobby);return;}
-  }
-  g.currentPlayer=(g.currentPlayer+1)%g.n;
-  g.turnGen++;
-  // check if fichas depleted → extra turns
-  if(g.players.every(p=>p.fichas===0)&&!g.extraTurns){
-    const initiator=g.currentPlayer;
-    const others=Array.from({length:g.n},(_,i)=>i).filter(i=>i!==initiator);
-    g.extraTurns=others;
-    pbBroadcast(lobby);
-    if(others.length===0){pbEndGame(lobby);return;}
-    g.currentPlayer=others[0];
-  }
-  pbDrawAndStart(lobby);
-}
-
-function pbEndGame(lobby){
-  const g=lobby.game;
-  pbComputeFinalScores(g);
-  g.phase='GAME_OVER';
-  g.finalScores=[...g.players].map((p,i)=>({name:p.name,pts:p.pts,objPts:p.objPts,fichas:p.fichas,seat:i}))
-    .sort((a,b)=>b.pts-a.pts);
-  g.winnerIdx=g.players.indexOf(g.players.reduce((best,p)=>p.pts>best.pts?p:best,g.players[0]));
-  pbBroadcast(lobby);pbBroadcastLobbies();
-}
-
-function pbFindGs(lobby,ls){return lobby.seatMap?lobby.seatMap.indexOf(ls):ls;}
-
-// ── Bot AI (Percebes) ─────────────────────────────────────────────
-function pbBotTurn(lobby){
-  const g=lobby.game;
-  if(!g||g.phase!=='PLACE_TILE'||g.currentPlayer===0)return;
-  const bot=g.currentPlayer;
-  setTimeout(()=>{
-    if(!lobby.game||g.phase!=='PLACE_TILE'||g.currentPlayer!==bot)return;
-    const valids=pbValidPlacements(g.board);
-    if(valids.length===0){pbAdvanceTurn(lobby);return;}
-    // Bot strategy: prefer placements that maximise bathers in existing lines
-    let best=valids[0], bestScore=-1;
-    for(const pos of valids){
-      let sc=g.drawnTile.bathers;
-      // bonus for extending a row/col with other tiles
-      const row=pbKeys(g.board).filter(p=>p.r===pos.r).length;
-      const col=pbKeys(g.board).filter(p=>p.c===pos.c).length;
-      sc+=row+col;
-      if(Math.random()<0.2) sc+=Math.random()*2; // slight randomness
-      if(sc>bestScore){bestScore=sc;best=pos;}
-    }
-    // Place tile
-    pbSet(g.board,best.r,best.c,{...g.drawnTile,placedBy:bot});
-    g.drawnTile._placedAt={r:best.r,c:best.c};
-    pbRecalcGuardScores(g);
-    pbCheckObjectives(g,bot);
-    // Bot places guard if has fichas and tile is not rock/sand
-    const tile=pbGet(g.board,best.r,best.c);
-    if(g.players[bot].fichas>0&&tile.type!=='rock'&&Math.random()<0.6){
-      const dirs=pbGetAvailGuardDirs(g.guards,best.r,best.c);
-      const dir=dirs.h&&dirs.v?(Math.random()<0.5?'h':'v'):dirs.h?'h':dirs.v?'v':null;
-      if(dir){
-        const botInitPts=pbCountSegment(g.board,best.r,best.c,dir);
-        g.guards.push({r:best.r,c:best.c,dir,playerIdx:bot,id:g.guardIdSeq++,awardedPts:botInitPts});
-        g.players[bot].fichas--;
-        g.players[bot].pts+=botInitPts;
-      }
-    }
-    g.drawnTile=null; g.lastAction={type:'place',r:best.r,c:best.c,playerIdx:bot};
-    pbBroadcast(lobby);
-    setTimeout(()=>pbAdvanceTurn(lobby),600);
-  },800+Math.random()*700);
-}
-
-// ── Message handler ───────────────────────────────────────────────
-function pbHandle(ws,msg){
-  if(msg.type==='PING'){pbSend(ws,{type:'PONG'});return;}
-  if(msg.type==='LOBBIES'){pbSend(ws,{type:'LOBBIES',lobbies:Object.values(PERC_LOBBIES).map(pbLobbyInfo)});return;}
-  if(msg.type==='RECONNECT'){
-    const sess=PERC_SESSIONS[msg.token];
-    if(!sess){pbSend(ws,{type:'RECONNECT_FAIL'});return;}
-    const lobby=PERC_LOBBIES[sess.lobbyId];if(!lobby){pbSend(ws,{type:'RECONNECT_FAIL'});return;}
-    const{seat,name}=sess;
-    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
-    lobby.players[seat]=ws;lobby.names[seat]=name;
-    const gs=lobby.seatMap?lobby.seatMap.indexOf(seat):seat;
-    PERC_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,gameSeat:gs,token:msg.token});
-    pbSend(ws,{type:'RECONNECTED',seat,gameSeat:gs,name,solo:lobby.solo});
-    pbBroadcastLobbies();
-    if(lobby.game)pbBroadcast(lobby);
-    else pbSend(ws,{type:'LOBBY_STATE',lobby:pbLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});
-    return;
-  }
-  if(msg.type==='JOIN_LOBBY'){
-    const lobby=PERC_LOBBIES[msg.lobbyId];
-    if(!lobby){pbSend(ws,{type:'ERROR',text:'Mesa não encontrada.'});return;}
-    if(!lobby.solo&&lobby.game&&lobby.game.phase!=='GAME_OVER'){pbSend(ws,{type:'ERROR',text:'Jogo em curso.'});return;}
-    const seat=lobby.players.findIndex(p=>p===null);
-    if(seat===-1){pbSend(ws,{type:'ERROR',text:'Mesa cheia.'});return;}
-    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
-    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
-    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
-    PERC_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,gameSeat:seat,token});
-    PERC_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
-    pbSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,solo:lobby.solo,name,lobby:pbLobbyInfo(lobby),names:lobby.names});
-    lobby.players.forEach((p,i)=>{if(p&&i!==seat)pbSend(p,{type:'PLAYER_JOINED',seat,name,lobby:pbLobbyInfo(lobby)});});
-    pbBroadcastLobbies();
-    if(lobby.solo){
-      const s=PERC_WS_STATE.get(ws);if(s)s.gameSeat=0;
-      lobby.game=pbNewGame([name,'Bot Praia 1','Bot Praia 2'],true);
-      pbDrawAndStart(lobby);
-    }
-    return;
-  }
-  const st=PERC_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
-  const lobby=PERC_LOBBIES[st.lobbyId];if(!lobby)return;
-  const ls=st.seat,g=lobby.game;
-
-  if(msg.type==='LEAVE_LOBBY'){
-    lobby.players[ls]=null;lobby.names[ls]='';lobby.tokens[ls]=null;
-    PERC_WS_STATE.delete(ws);
-    pbSend(ws,{type:'LOBBIES',lobbies:Object.values(PERC_LOBBIES).map(pbLobbyInfo)});return;
-  }
-  if(msg.type==='REQUEST_STATE'){
-    if(g)pbSend(ws,{type:'GAME_STATE',state:pbBuildView(g,pbFindGs(lobby,ls))});
-    else pbSend(ws,{type:'LOBBY_STATE',lobby:pbLobbyInfo(lobby),names:lobby.names,myLobbySeat:ls});return;
-  }
-  if(msg.type==='START'){
-    if(lobby.solo||ls!==0||(g&&g.phase!=='GAME_OVER'))return;
-    const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
-    if(active.length<2){pbSend(ws,{type:'ERROR',text:'Precisas de pelo menos 2 jogadores.'});return;}
-    lobby.seatMap=active;
-    lobby.game=pbNewGame(active.map(i=>lobby.names[i]),false);
-    active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=PERC_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
-    pbBroadcastLobbies();pbDrawAndStart(lobby);return;
-  }
-  if(msg.type==='RESTART'){
-    if(!g||g.phase!=='GAME_OVER')return;
-    if(lobby.solo){
-      const s=PERC_WS_STATE.get(ws);if(s)s.gameSeat=0;
-      lobby.game=pbNewGame([lobby.names[0]||'Jogador','Bot Praia 1','Bot Praia 2'],true);
-      pbDrawAndStart(lobby);
-    } else {
-      if(ls!==0)return;
-      const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
-      if(active.length<2)return;
-      lobby.seatMap=active;lobby.game=pbNewGame(active.map(i=>lobby.names[i]),false);
-      active.forEach((li,gi)=>{const w=lobby.players[li];if(w){const s=PERC_WS_STATE.get(w);if(s)s.gameSeat=gi;}});
-      pbBroadcastLobbies();pbDrawAndStart(lobby);
-    }
-    return;
-  }
-  if(!g||g.phase==='GAME_OVER')return;
-  const gs=pbFindGs(lobby,ls);
-  if(gs!==g.currentPlayer)return; // not your turn
-
-  if(msg.type==='PLACE_TILE'){
-    if(g.phase!=='PLACE_TILE')return;
-    const{r,c}=msg;
-    if(!pbCanPlace(g.board,r,c))return;
-    pbSet(g.board,r,c,{...g.drawnTile,placedBy:gs});
-    g.drawnTile._placedAt={r,c};
-    // Recalculate all guard scores — new tile may extend existing segments
-    pbRecalcGuardScores(g);
-    pbCheckObjectives(g,gs);
-    const tile=pbGet(g.board,r,c);
-    const avDirs=pbGetAvailGuardDirs(g.guards,r,c);
-    const canPlaceGuard=g.players[gs].fichas>0&&tile.type!=='rock'&&(avDirs.h||avDirs.v);
-    g.lastAction={type:'place',r,c,playerIdx:gs,tile:{...tile}};
-    if(canPlaceGuard){g.phase='PLACE_GUARD';pbBroadcast(lobby);}
-    else{g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);}
-    return;
-  }
-  if(msg.type==='PLACE_GUARD'){
-    if(g.phase!=='PLACE_GUARD')return;
-    const{dir}=msg; // 'h' | 'v' | 'skip'
-    if(dir!=='skip'){
-      const placed=g.drawnTile?._placedAt;
-      if(!placed)return;
-      const avDirs=pbGetAvailGuardDirs(g.guards,placed.r,placed.c);
-      if(!avDirs[dir])return;
-      const guardId=g.guardIdSeq++;
-      const initPts=pbCountSegment(g.board,placed.r,placed.c,dir);
-      g.guards.push({r:placed.r,c:placed.c,dir,playerIdx:gs,id:guardId,awardedPts:initPts});
-      g.players[gs].fichas--;
-      // Award initial pts when guard placed
-      g.players[gs].pts+=initPts;
-      g.lastAction={...g.lastAction,guardPts:initPts,guardDir:dir};
-    }
-    g.drawnTile=null;pbBroadcast(lobby);pbAdvanceTurn(lobby);return;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  NINE OILS — Servidor embebido
-//  Dice combos, card play, bottle stall · 2 jogadores
-// ═══════════════════════════════════════════════════════════════════
-const NO_LOBBIES  = {};
-const NO_SESSIONS = {};
-const NO_WS_STATE = new WeakMap();
-const NO_DECK     = ['TEMPTRESS','TEMPTRESS','BOY','BOY','BOY','BULLY','BULLY','BULLY','BULLY'];
-
-// ── Combo detection ───────────────────────────────────────────────
-function noEnumBundles(dice){
-  const freq={};
-  dice.forEach(d=>freq[d]=(freq[d]||0)+1);
-  const faces=Object.keys(freq).map(Number).sort((a,b)=>freq[b]-freq[a]);
-  const seen=new Set(), bundles=[];
-  function go(fi,used,cur){
-    const key=[...cur].sort().join('|');
-    if(!seen.has(key)){seen.add(key);bundles.push([...cur]);}
-    for(let i=fi;i<faces.length;i++){
-      const f=faces[i]; if(used.has(f)) continue;
-      const c=freq[f];
-      if(c>=5){used.add(f);go(i+1,used,[...cur,'PENTA']);used.delete(f);}
-      if(c>=4){used.add(f);go(i+1,used,[...cur,'QUAD']);used.delete(f);}
-      if(c>=3){
-        for(let j=0;j<faces.length;j++){
-          if(j===i) continue;
-          const f2=faces[j];
-          if(used.has(f2)||freq[f2]<2) continue;
-          used.add(f);used.add(f2);go(i+1,used,[...cur,'TRIPLE_DOUBLE']);used.delete(f);used.delete(f2);
-        }
-      }
-      if(c>=2){used.add(f);go(i+1,used,[...cur,'DOUBLE']);used.delete(f);}
-    }
-  }
-  go(0,new Set(),[]);
-  return bundles.filter(b=>b.length>0).map(b=>[...b].sort());
-}
-
-const NO_BUNDLE_SCORE={PENTA:100,QUAD:80,TRIPLE_DOUBLE:60,SIX_OF_KIND:50,DOUBLE:10};
-function noBundleScore(b){return b.reduce((s,c)=>s+(NO_BUNDLE_SCORE[c]||0),0);}
-
-function noAnalyseRoll(dice){
-  const freq={};
-  dice.forEach(d=>freq[d]=(freq[d]||0)+1);
-  const max=Math.max(...Object.values(freq),0);
-  if(max===9) return {conflict:false,special:'INSTANT_WIN',combos:['INSTANT_WIN'],freq};
-  if(max===8) return {conflict:false,special:'DOUBLE_QUAD',combos:['DOUBLE_QUAD'],freq};
-  if(max===7) return {conflict:true,special:'JOKER',
-    bundles:[['DOUBLE'],['TRIPLE_DOUBLE'],['QUAD'],['PENTA'],['SIX_OF_KIND']],combos:['DOUBLE'],freq};
-  if(max===6) return {conflict:false,special:'SIX_OF_KIND',combos:['SIX_OF_KIND'],freq};
-  const bundles=noEnumBundles(dice);
-  bundles.sort((a,b)=>noBundleScore(b)-noBundleScore(a));
-  if(!bundles.length) return {conflict:false,special:null,combos:[],freq};
-  if(bundles.length===1) return {conflict:false,special:null,combos:bundles[0],freq};
-  return {conflict:true,special:null,bundles,combos:bundles[0],freq};
-}
-
-function noDescribeRoll(dice){
-  const freq={};
-  dice.forEach(d=>freq[d]=(freq[d]||0)+1);
-  return Object.entries(freq).sort((a,b)=>b[1]-a[1])
-    .map(([v,c])=>c===1?`one ${v}`:`${['','','two','three','four','five','six','seven','eight','nine'][c]||c+'×'} ${v}s`).join(', ');
-}
-
-// ── Game state ────────────────────────────────────────────────────
-function noShuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
-function noDeal(g){if(!g.deck.length){if(!g.discard.length)return null;g.deck=noShuffle([...g.discard]);g.discard=[];}return g.deck.pop()||null;}
-function noTrash(g,c){if(c)g.discard.push(c);}
-
-function noNewGame(nameA,nameB,isSolo){
-  const deck=noShuffle([...NO_DECK]);
-  const g={
-    players:[
-      {name:nameA,stall:[0,0,1,1,1,1],hand:[],supply:6},
-      {name:nameB,stall:[0,0,1,1,1,1],hand:[],supply:6},
-    ],
-    deck,discard:[],
-    dice:Array(9).fill(0),
-    cur:Math.floor(Math.random()*2),
-    phase:'CARD_PLAY',
-    sel:[],temptCount:0,
-    status:'',combos:[],comboOptions:null,
-    rollExplain:'',winnerIdx:null,
-    isSolo:!!isSolo,turnGen:0,
-    _pendingAnalysis:null,_jokerRoll:false,_boysAttacking:0,
-    stats:[
-      {turns:0,cardsPlayed:0,bottlesStocked:0,bottlesStolen:0,
-       combos:{DOUBLE:0,TRIPLE_DOUBLE:0,QUAD:0,PENTA:0,SIX_OF_KIND:0,DOUBLE_QUAD:0}},
-      {turns:0,cardsPlayed:0,bottlesStocked:0,bottlesStolen:0,
-       combos:{DOUBLE:0,TRIPLE_DOUBLE:0,QUAD:0,PENTA:0,SIX_OF_KIND:0,DOUBLE_QUAD:0}},
-    ],
-  };
-  const c0=noDeal(g);if(c0)g.players[0].hand.push(c0);
-  const c1=noDeal(g);if(c1)g.players[1].hand.push(c1);
-  g.status=`${g.players[g.cur].name} goes first!`;
-  return g;
-}
-
-function noBuildView(g,seat){
-  const displayCombos=(g.phase==='ROLL_PAUSE'&&g._pendingAnalysis&&!g._pendingAnalysis.conflict)
-    ?g._pendingAnalysis.combos:g.combos;
-  return{
-    myIdx:seat, myName:g.players[seat].name, oppName:g.players[1-seat].name,
-    myHand:g.players[seat].hand, oppHandCount:g.players[1-seat].hand.length,
-    stalls:g.players.map(p=>p.stall), supplies:g.players.map(p=>p.supply),
-    dice:g.dice, phase:g.phase, cur:g.cur, isMyTurn:g.cur===seat,
-    status:g.status, combos:displayCombos, comboOptions:g.comboOptions,
-    comboPickReason:g._jokerRoll?'JOKER':'CONFLICT',
-    rollExplain:g.rollExplain, sel:g.cur===seat?g.sel:[],
-    winnerIdx:g.winnerIdx, isSolo:g.isSolo,
-    boysAttacking:g._boysAttacking||0,
-    deckCount:g.deck.length+g.discard.length, deckRemaining:g.deck.length,
-    stats:g.stats||null,
-  };
-}
-
-function noSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
-function noBroadcast(lobby){
-  const g=lobby.game;if(!g)return;
-  [0,1].forEach(seat=>{if(lobby.players[seat])noSend(lobby.players[seat],{type:'GAME_STATE',state:noBuildView(g,seat)});});
-}
-function noLobbyInfo(l){
-  return{id:l.id,name:l.name,solo:l.solo,
-    seated:l.players.filter(Boolean).length,maxH:2,
-    playing:!!l.game&&l.game.phase!=='GAME_OVER',
-    names:l.names.filter(Boolean)};
-}
-function noBroadcastLobbies(){
-  const list=Object.values(NO_LOBBIES).map(noLobbyInfo);
-  for(const ws of wss.clients){
-    if(!ws._isNO||ws.readyState!==1)continue;
-    const st=NO_WS_STATE.get(ws);
-    if(!st||!st.lobbyId)noSend(ws,{type:'LOBBIES',lobbies:list});
-  }
-}
-
-// Init lobbies
-for(let i=1;i<=4;i++) NO_LOBBIES['mp'+i]={id:'mp'+i,name:'Mesa '+i,solo:false,players:[null,null],names:['',''],tokens:[null,null],graceTimers:[null,null],game:null};
-NO_LOBBIES['solo']={id:'solo',name:'Solo vs Peddler',solo:true,players:[null,null],names:['',''],tokens:[null,null],graceTimers:[null,null],game:null};
-
-// ── Game actions ──────────────────────────────────────────────────
-function noDoSteal(g){
-  const opp=g.players[1-g.cur];
-  const slots=opp.stall.map((s,i)=>s===2?i:-1).filter(i=>i>=0);
-  if(!slots.length)return;
-  opp.stall[slots[slots.length-1]]=1;opp.supply++;
-  if(g.stats)g.stats[g.cur].bottlesStolen=(g.stats[g.cur].bottlesStolen||0)+1;
-  g.status=`${g.players[g.cur].name} steals a bottle!`;
-}
-
-function noRollAndResolve(lobby){
-  const g=lobby.game;
-  g.dice=Array.from({length:9},()=>Math.ceil(Math.random()*6));
-  g.rollExplain=noDescribeRoll(g.dice);
-  g._pendingAnalysis=noAnalyseRoll(g.dice);
-  const a=g._pendingAnalysis;
-  const names={PENTA:'Penta',QUAD:'Quad',TRIPLE_DOUBLE:'Triple+Double',DOUBLE:'Double',SIX_OF_KIND:'Six'};
-  if(a.conflict){
-    // Show dice with CHOOSE_COMBO immediately — no ROLL_PAUSE
-    g.phase='CHOOSE_COMBO';g.comboOptions=a.bundles;g.combos=[];
-    g._jokerRoll=a.special==='JOKER';
-    g.status=g._jokerRoll
-      ?`${g.players[g.cur].name} rolled 7 of a kind — Joker! Choose:`
-      :`${g.players[g.cur].name} rolled! Choose your combo:`;
-    g._pendingAnalysis=null;
-    noBroadcast(lobby);
-    if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1000);
-  } else if(a.combos.length){
-    // Show dice briefly, then auto-resolve
-    g.phase='ROLL_PAUSE';g.combos=[];g.comboOptions=null;
-    g.status=`${g.players[g.cur].name} rolled ${a.combos.map(c=>names[c]||c).join('+')}!`;
-    noBroadcast(lobby);
-    const gen=g.turnGen;
-    const delay=g.isSolo&&g.cur===1?1800:1500;
-    setTimeout(()=>{if(g.turnGen===gen&&g.phase==='ROLL_PAUSE')noResolvePause(lobby);},delay);
-  } else {
-    // No combos — show briefly then end turn
-    g.phase='ROLL_PAUSE';g.combos=[];g.comboOptions=null;
-    g.status=`${g.players[g.cur].name} rolled — no combos.`;
-    noBroadcast(lobby);
-    const gen=g.turnGen;
-    setTimeout(()=>{if(g.turnGen===gen&&g.phase==='ROLL_PAUSE')noResolvePause(lobby);},3000);
-  }
-}
-
-function noResolvePause(lobby){
-  const g=lobby.game;if(!g||g.phase!=='ROLL_PAUSE')return;
-  const a=g._pendingAnalysis;g._pendingAnalysis=null;
-  if(a.special==='INSTANT_WIN'){noApplyCombos(lobby,['INSTANT_WIN']);return;}
-  if(a.conflict){
-    g.phase='CHOOSE_COMBO';g.comboOptions=a.bundles;g.combos=[];
-    g._jokerRoll=a.special==='JOKER';
-    g.status=g._jokerRoll
-      ?`${g.players[g.cur].name} rolled 7 of a kind — Joker! Choose any combo:`
-      :`${g.players[g.cur].name} rolled! Multiple options — choose:`;
-    noBroadcast(lobby);
-    if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1000);
-  } else {
-    g._jokerRoll=false;g.comboOptions=null;
-    noApplyCombos(lobby,a.combos);
-  }
-}
-
-function noApplyCombos(lobby,combos){
-  const g=lobby.game;g.combos=combos;
-  const p=g.players[g.cur],opp=g.players[1-g.cur];
-  const st=g.stats[g.cur];
-  const msgs=[];
-  if(combos.includes('INSTANT_WIN')){
-    g.phase='GAME_OVER';g.winnerIdx=g.cur;
-    g.status=`${p.name} rolled NINE of a kind — instant victory!`;
-    noBroadcast(lobby);return;
-  }
-  if(combos.includes('DOUBLE_QUAD')){
-    if(st)st.combos.DOUBLE_QUAD=(st.combos.DOUBLE_QUAD||0)+1;
-    let removed=0;
-    for(let i=0;i<2;i++){const slot=p.stall.findIndex(s=>s===0);if(slot>=0){p.stall[slot]=1;removed++;}}
-    msgs.push(removed?`Eight of a kind — ${removed} blocker${removed>1?'s':''} removed!`:`Eight of a kind — no blockers left`);
-  }
-  if(combos.includes('SIX_OF_KIND')){
-    if(st)st.combos.SIX_OF_KIND=(st.combos.SIX_OF_KIND||0)+1;
-    let drawn=0;
-    for(let i=0;i<3;i++){const c=noDeal(g);if(c){p.hand.push(c);drawn++;}}
-    msgs.push(drawn?`Six of a kind — drew ${drawn} card${drawn>1?'s':''}!`:`Six of a kind — deck empty`);
-  }
-  if(combos.includes('DOUBLE')){
-    const n=combos.filter(c=>c==='DOUBLE').length;
-    if(st)st.combos.DOUBLE=(st.combos.DOUBLE||0)+n;
-    for(let i=0;i<n;i++){const c=noDeal(g);if(c){p.hand.push(c);msgs.push(`Double — drew a card`);}else msgs.push('Double — deck empty');}
-  }
-  if(combos.includes('QUAD')){
-    const quadCount=combos.filter(c=>c==='QUAD').length;
-    if(st)st.combos.QUAD=(st.combos.QUAD||0)+quadCount;
-    let opened=0;
-    for(let q=0;q<quadCount;q++){
-      const slot=p.stall.findIndex(s=>s===0);
-      if(slot>=0){p.stall[slot]=1;opened++;}
-    }
-    msgs.push(opened?`Quad — ${opened} slot${opened>1?'s':''} opened!`:'Quad — all slots open');
-  }
-  if(combos.includes('TRIPLE_DOUBLE')){
-    const total=1+g.temptCount;let placed=0;
-    if(st)st.combos.TRIPLE_DOUBLE=(st.combos.TRIPLE_DOUBLE||0)+1;
-    for(let b=0;b<total;b++){
-      const slot=p.stall.findIndex(s=>s===1);
-      if(slot>=0&&p.supply>0){p.stall[slot]=2;p.supply--;placed++;if(st)st.bottlesStocked++;}
-    }
-    msgs.push(placed?`Triple+Double — ${placed} bottle${placed>1?'s':''} stocked${g.temptCount?` (Temptress bonus!)`:''}`:`Triple+Double — no free slots`);
-  }
-  g.temptCount=0;
-  if(combos.includes('PENTA')){
-    if(st)st.combos.PENTA=(st.combos.PENTA||0)+1;
-    opp.hand.forEach(c=>noTrash(g,c));opp.hand=[];
-    msgs.push(`Penta — ${opp.name} discards their entire hand!`);
-  }
-  if(!combos.length)msgs.push('No combos this roll.');
-  g.status=msgs.join(' · ');
-  if(p.stall.filter(s=>s===2).length===6){
-    g.phase='GAME_OVER';g.winnerIdx=g.cur;
-    g.status=`${p.name} stocks their 6th bottle — victory!`;
-    noBroadcast(lobby);return;
-  }
-  if(p.hand.length>3){
-    g.phase='DISCARD';noBroadcast(lobby);
-    if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1000);
-    return;
-  }
-  noEndTurn(g,lobby);
-}
-
-function noEndTurn(g,lobby){
-  if(g.stats)g.stats[g.cur].turns=(g.stats[g.cur].turns||0)+1;
-  g.cur=1-g.cur;g.phase='CARD_PLAY';g.sel=[];g.combos=[];
-  g.comboOptions=null;g.rollExplain='';g.turnGen++;
-  g.status=`${g.players[g.cur].name}'s turn — play cards or roll.`;
-  noBroadcast(lobby);
-  if(g.isSolo&&g.cur===1)noScheduleBot(lobby,1600);
-}
-
-function noProcessCards(lobby){
-  const g=lobby.game;
-  const p=g.players[g.cur],opp=g.players[1-g.cur];
-  const indices=[...g.sel].sort((a,b)=>b-a);
-  const played=indices.map(i=>p.hand[i]);
-  indices.forEach(i=>p.hand.splice(i,1));
-  g.sel=[];
-  if(g.stats)g.stats[g.cur].cardsPlayed=(g.stats[g.cur].cardsPlayed||0)+played.length;
-  const tempt=played.filter(c=>c==='TEMPTRESS').length;
-  const boys=played.filter(c=>c==='BOY').length;
-  const bullies=played.filter(c=>c==='BULLY').length;
-  g.temptCount=tempt;
-  for(let t=0;t<tempt;t++)noTrash(g,'TEMPTRESS');
-  if(bullies>=2&&!boys){
-    for(let b=0;b<bullies;b++)noTrash(g,'BULLY');
-    if(g.isSolo&&g.cur===1){g.status='The Peddler cracks knuckles menacingly.';noRollAndResolve(lobby);return;}
-    if(opp.hand.length){
-      g.phase='BLIND_PICK';
-      g.status=`${p.name} plays 2 Bullies! Pick a card blindly from ${opp.name}'s hand.`;
-      noBroadcast(lobby);return;
-    }
-    g.status=`Bullies flex — but ${opp.name}'s hand is empty!`;noRollAndResolve(lobby);return;
-  }
-  for(let b=0;b<bullies;b++)noTrash(g,'BULLY');
-  if(boys){
-    for(let b=0;b<boys;b++)noTrash(g,'BOY');
-    const stallBottles=opp.stall.filter(s=>s===2).length;
-    if(!stallBottles){g.status=`The Boy reaches out — ${opp.name}'s stall is bare!`;noRollAndResolve(lobby);return;}
-    const bulliesAvail=opp.hand.filter(c=>c==='BULLY').length;
-    g._boysAttacking=boys;
-    if(!bulliesAvail){
-      const steals=Math.min(boys,stallBottles);
-      for(let i=0;i<steals;i++)noDoSteal(g);
-      g.status=`${p.name} plays ${boys===1?'The Boy':boys+' Boys'} — steals ${steals} bottle${steals>1?'s':''}!`;
-      g._boysAttacking=0;noRollAndResolve(lobby);return;
-    }
-    g.phase='BOY_DEFEND';
-    const maxBlock=Math.min(bulliesAvail,boys);
-    g.status=`${p.name} plays ${boys===1?'The Boy':boys+' Boys'}! ${opp.name}, use Bullies to block (up to ${maxBlock}).`;
-    noBroadcast(lobby);
-    if(g.isSolo&&1-g.cur===1)setTimeout(()=>noBotDefend(lobby),1400);
-    return;
-  }
-  noRollAndResolve(lobby);
-}
-
-// ── Bot AI ────────────────────────────────────────────────────────
-function noScheduleBot(lobby,delay){
-  const g=lobby.game;const gen=g.turnGen;
-  setTimeout(()=>{if(!g||g.turnGen!==gen||g.cur!==1||!g.isSolo||g.winnerIdx!==null)return;noBotTurn(lobby);},delay||1400);
-}
-function noBotTurn(lobby){
-  const g=lobby.game;
-  if(!g||g.winnerIdx!==null||g.cur!==1||!g.isSolo)return;
-  if(g.phase==='CARD_PLAY'){
-    const bot=g.players[1],opp=g.players[0];g.sel=[];
-    bot.hand.forEach((c,i)=>{if(c==='TEMPTRESS')g.sel.push(i);});
-    if(!g.sel.length){const bi=bot.hand.indexOf('BOY');if(bi>=0&&opp.stall.some(s=>s===2))g.sel.push(bi);}
-    noBroadcast(lobby);
-    const gen=g.turnGen;
-    setTimeout(()=>{if(g.turnGen!==gen||g.cur!==1||g.phase!=='CARD_PLAY')return;noProcessCards(lobby);},1400);
-    return;
-  }
-  if(g.phase==='CHOOSE_COMBO'){
-    let bestIdx=0,bestScore=-1;
-    (g.comboOptions||[]).forEach((b,i)=>{const s=noBundleScore(b);if(s>bestScore){bestScore=s;bestIdx=i;}});
-    const chosenBundle=(g.comboOptions||[])[bestIdx]||[]; // capture before nulling
-    const gen=g.turnGen;
-    setTimeout(()=>{if(g.turnGen!==gen||g.cur!==1||g.phase!=='CHOOSE_COMBO')return;
-      g.comboOptions=null;g._jokerRoll=false;
-      noApplyCombos(lobby,chosenBundle);},900);
-    return;
-  }
-  if(g.phase==='DISCARD'){
-    const gen=g.turnGen;
-    setTimeout(()=>{
-      if(g.turnGen!==gen||g.cur!==1||g.phase!=='DISCARD')return;
-      const p=g.players[1];if(p.hand.length<=3){noEndTurn(g,lobby);return;}
-      const pri={'BULLY':3,'BOY':2,'TEMPTRESS':1};
-      let di=0,lp=99;
-      p.hand.forEach((c,i)=>{const v=pri[c]||0;if(v<lp){lp=v;di=i;}});
-      noTrash(g,p.hand.splice(di,1)[0]);
-      if(p.hand.length<=3)noEndTurn(g,lobby);else{noBroadcast(lobby);noBotTurn(lobby);}
-    },900);
-    return;
-  }
-}
-function noBotDefend(lobby){
-  const g=lobby.game;if(!g||g.phase!=='BOY_DEFEND'||g.cur!==0)return;
-  const bot=g.players[1];
-  const attacks=g._boysAttacking||1;
-  const avail=bot.hand.filter(c=>c==='BULLY').length;
-  const block=Math.min(avail,attacks);
-  let spent=0;
-  while(spent<block){const bi=bot.hand.indexOf('BULLY');if(bi<0)break;bot.hand.splice(bi,1);noTrash(g,'BULLY');spent++;}
-  const steals=attacks-block;
-  const stallBottles=g.players[0].stall.filter(s=>s===2).length;
-  const actual=Math.min(steals,stallBottles);
-  for(let i=0;i<actual;i++)noDoSteal(g);
-  const parts=[];
-  if(block)parts.push(`${bot.name} blocks ${block} attack${block>1?'s':''}`);
-  if(actual)parts.push(`${g.players[0].name} steals ${actual} bottle${actual>1?'s':''}`);
-  if(!parts.length)parts.push(`Attacks fizzle out`);
-  g.status=parts.join(' — ')+'!';g._boysAttacking=0;
-  noRollAndResolve(lobby);
-}
-
-// ── WS message handler ────────────────────────────────────────────
-function noHandle(ws,msg){
-  if(msg.type==='PING'){noSend(ws,{type:'PONG'});return;}
-  if(msg.type==='LOBBIES'){noSend(ws,{type:'LOBBIES',lobbies:Object.values(NO_LOBBIES).map(noLobbyInfo)});return;}
-  if(msg.type==='RECONNECT'){
-    const sess=NO_SESSIONS[msg.token];
-    if(!sess){noSend(ws,{type:'RECONNECT_FAIL'});return;}
-    const lobby=NO_LOBBIES[sess.lobbyId];if(!lobby){noSend(ws,{type:'RECONNECT_FAIL'});return;}
-    const{seat,name}=sess;
-    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
-    lobby.players[seat]=ws;lobby.names[seat]=name;
-    NO_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,token:msg.token});
-    noSend(ws,{type:'RECONNECTED',seat,name,solo:lobby.solo});
-    noBroadcastLobbies();
-    if(lobby.game)noBroadcast(lobby);
-    else noSend(ws,{type:'LOBBY_STATE',lobby:noLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});
-    return;
-  }
-  if(msg.type==='JOIN_LOBBY'){
-    const lobby=NO_LOBBIES[msg.lobbyId];
-    if(!lobby){noSend(ws,{type:'ERROR',text:'Mesa não encontrada.'});return;}
-    const seat=lobby.players.findIndex(p=>p===null);
-    if(seat<0){noSend(ws,{type:'ERROR',text:'Mesa cheia.'});return;}
-    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
-    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
-    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
-    NO_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,token});
-    NO_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
-    noSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,solo:lobby.solo,name,lobby:noLobbyInfo(lobby),names:lobby.names});
-    lobby.players.forEach((p,i)=>{if(p&&i!==seat)noSend(p,{type:'PLAYER_JOINED',seat,name,lobby:noLobbyInfo(lobby)});});
-    noBroadcastLobbies();
-    if(lobby.solo){
-      lobby.game=noNewGame(name,'The Peddler',true);
-      if(lobby.game.cur===1)noScheduleBot(lobby,2000);
-      else noBroadcast(lobby);
-    }
-    return;
-  }
-  const st=NO_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
-  const lobby=NO_LOBBIES[st.lobbyId];if(!lobby)return;
-  const seat=st.seat,g=lobby.game;
-
-  if(msg.type==='LEAVE_LOBBY'){
-    lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;
-    NO_WS_STATE.delete(ws);noBroadcastLobbies();return;
-  }
-  if(msg.type==='REQUEST_STATE'){
-    if(g)noSend(ws,{type:'GAME_STATE',state:noBuildView(g,seat)});
-    else noSend(ws,{type:'LOBBY_STATE',lobby:noLobbyInfo(lobby),names:lobby.names,myLobbySeat:seat});return;
-  }
-  if(msg.type==='START'){
-    if(lobby.solo||seat!==0)return;
-    const active=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
-    if(active.length<2){noSend(ws,{type:'ERROR',text:'Precisas de 2 jogadores.'});return;}
-    lobby.game=noNewGame(lobby.names[0],lobby.names[1],false);
-    noBroadcastLobbies();noBroadcast(lobby);return;
-  }
-  if(msg.type==='RESTART'){
-    if(!g||g.phase!=='GAME_OVER')return;
-    if(lobby.solo){lobby.game=noNewGame(lobby.names[0],'The Peddler',true);if(lobby.game.cur===1)noScheduleBot(lobby,2000);else noBroadcast(lobby);}
-    else{if(seat!==0)return;lobby.game=noNewGame(lobby.names[0],lobby.names[1],false);noBroadcast(lobby);}
-    return;
-  }
-  if(!g||g.phase==='GAME_OVER')return;
-
-  // Action routing
-  if(msg.type==='PLAY_CARDS'){
-    if(g.cur!==seat||g.phase!=='CARD_PLAY')return;
-    g.sel=Array.isArray(msg.sel)?msg.sel.filter(i=>i>=0&&i<g.players[seat].hand.length):[];
-    noBroadcast(lobby);return;
-  }
-  if(msg.type==='CONFIRM_CARDS'){
-    if(g.cur!==seat||g.phase!=='CARD_PLAY')return;
-    noProcessCards(lobby);return;
-  }
-  if(msg.type==='CONTINUE'){
-    if(g.cur!==seat||g.phase!=='ROLL_PAUSE')return;
-    noResolvePause(lobby);return;
-  }
-  if(msg.type==='CHOOSE_COMBO'){
-    if(g.cur!==seat||g.phase!=='CHOOSE_COMBO')return;
-    const bundle=(g.comboOptions||[])[msg.bundleIdx||0]||g.comboOptions?.[0]||[];
-    g.comboOptions=null;g._jokerRoll=false;
-    noApplyCombos(lobby,bundle);return;
-  }
-  if(msg.type==='BOY_DEFEND'){
-    if(g.phase!=='BOY_DEFEND'||seat===g.cur)return;
-    const played=Math.min(Math.max(0,msg.bulliesPlayed||0),g._boysAttacking||0,g.players[seat].hand.filter(c=>c==='BULLY').length);
-    let spent=0;
-    while(spent<played){const bi=g.players[seat].hand.indexOf('BULLY');if(bi<0)break;g.players[seat].hand.splice(bi,1);noTrash(g,'BULLY');spent++;}
-    const steals=g._boysAttacking-played;
-    const actual=Math.min(steals,g.players[g.cur].stall.filter(s=>s===2).length);
-    // Note: stealing is done by attacker (g.cur), not defender
-    for(let i=0;i<actual;i++){
-      const opp=g.players[seat];
-      const slots=opp.stall.map((s,i)=>s===2?i:-1).filter(i=>i>=0);
-      if(slots.length){opp.stall[slots[slots.length-1]]=1;opp.supply++;}
-    }
-    const parts=[];
-    if(played)parts.push(`${g.players[seat].name} blocks ${played} attack${played>1?'s':''}`);
-    if(actual)parts.push(`${g.players[g.cur].name} steals ${actual} bottle${actual>1?'s':''}`);
-    if(!parts.length)parts.push("The Boy finds nothing");
-    g.status=parts.join(' — ')+'!';g._boysAttacking=0;
-    noRollAndResolve(lobby);return;
-  }
-  if(msg.type==='BLIND_PICK'){
-    if(g.phase!=='BLIND_PICK'||seat!==g.cur)return;
-    const opp=g.players[1-g.cur];
-    if(msg.cardIdx<0||msg.cardIdx>=opp.hand.length)return;
-    noTrash(g,opp.hand.splice(msg.cardIdx,1)[0]);
-    g.status=`${g.players[g.cur].name} blindly picks a card from ${opp.name}'s hand!`;
-    noRollAndResolve(lobby);return;
-  }
-  if(msg.type==='DISCARD'){
-    if(g.phase!=='DISCARD'||seat!==g.cur)return;
-    const p=g.players[g.cur];
-    if(msg.cardIdx<0||msg.cardIdx>=p.hand.length)return;
-    noTrash(g,p.hand.splice(msg.cardIdx,1)[0]);
-    if(p.hand.length<=3)noEndTurn(g,lobby);else noBroadcast(lobby);return;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  BULBOUS — Servidor embebido
-//  Trick-taking com Baelfungious · 2p e 4p
-// ═══════════════════════════════════════════════════════════════════
-
-// ── Inline engine (copy of bulbous_engine.js) ─────────────────────
-{
-const BCOLORS      = ['red','blue','green','yellow'];
-const BSYMBOL_OF   = {red:'triangle',yellow:'triangle',blue:'circle',green:'circle'};
-const B_TRICKS_PER = 4;
-const B_TIE_MS     = 20000;
-
-function bShuf(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
-
-let _bcid=0;
-function bBuildDeck(){_bcid=0;const d=[];for(const col of BCOLORS){for(const v of[3,4,5,6,7,8,9])d.push({id:++_bcid,type:'numeric',color:col,symbol:null,value:v});d.push({id:++_bcid,type:'double',color:col,symbol:null,value:null});}d.push({id:++_bcid,type:'joker',color:null,symbol:'circle',value:null});d.push({id:++_bcid,type:'joker',color:null,symbol:'triangle',value:null});return d;}
-
-function bMakeBaelfs(colors,ownerIdx){const r=[];for(const col of colors)for(const slots of[1,2,3,4])r.push({color:col,symbol:BSYMBOL_OF[col],slots,bulbs:[],complete:false,owner:ownerIdx});return r;}
-
-function bNewGame(lobbyPlayers,mode){
-  const is2p=mode==='2p',n=lobbyPlayers.length,handLimit=is2p?9:7,numSlots=is2p?2:1;
-  const deck=bShuf(bBuildDeck());
-  let colorAssign;
-  if(is2p){const syms=bShuf(['triangle','circle']);colorAssign=syms.map(s=>s==='triangle'?'red':'blue');}
-  else{colorAssign=bShuf([...BCOLORS]).slice(0,n);}
-  const players=lobbyPlayers.map((lp,i)=>{
-    const color=colorAssign[i],symbol=BSYMBOL_OF[color];
-    const bcolors=is2p?(symbol==='triangle'?['red','yellow']:['blue','green']):[color];
-    return{name:lp.name,isBot:!!lp.isBot,color,symbol,hand:deck.splice(0,handLimit),handLimit,baelfungious:bMakeBaelfs(bcolors,i),activeSlots:Array(numSlots).fill(null),endgameTriggered:false};
-  });
-  const replaceNeeded=[];
-  for(let pi=0;pi<n;pi++)for(let si=0;si<numSlots;si++)replaceNeeded.push({playerIdx:pi,slotIdx:si});
-  return{mode,n,players,deck,discard:[],handLimit,numSlots,phase:'CHOOSE_BAELFUNGIOUS',governorIdx:Math.floor(Math.random()*n),roundNum:1,endgameFired:false,turnGen:0,replaceNeeded,trick:null,trickNum:0,contestedThisRound:[],anyCompletedThisRound:false,lastTrickResult:null,finalScores:null,tieBreakDeadline:null,tieBreakTimer:null};
-}
-
-function bRefill(g){if(!g.deck.length&&g.discard.length){g.deck=bShuf([...g.discard]);g.discard=[];}}
-function bDrawN(g,n){const d=[];let r=n;while(r>0){bRefill(g);if(!g.deck.length)break;const b=g.deck.splice(0,Math.min(r,g.deck.length));d.push(...b);r-=b.length;if(r>0&&!g.deck.length&&!g.discard.length)break;}return d;}
-function bGetActives(g){const out=[];for(let pi=0;pi<g.n;pi++){const p=g.players[pi];for(let si=0;si<g.numSlots;si++){const bi=p.activeSlots[si];if(bi!==null)out.push({playerIdx:pi,slotIdx:si,baelfIdx:bi,baelf:p.baelfungious[bi]});}}return out;}
-function bGetUncontested(g){return bGetActives(g).filter(a=>!g.contestedThisRound.some(c=>c.playerIdx===a.playerIdx&&c.slotIdx===a.slotIdx));}
-function bCanPlay(card,baelf){if(card.type==='joker')return card.symbol===baelf.symbol;return card.color===baelf.color;}
-function bScoreBet(cards,baelf){if(!cards||!cards.length)return{total:0,jokerWin:false};if(cards.find(c=>c.type==='joker'))return{total:Infinity,jokerWin:true};let sum=0,hasD=false;for(const c of cards){if(c.type==='numeric')sum+=c.value;if(c.type==='double'&&c.color===baelf.color)hasD=true;}return{total:hasD?sum*2:sum,jokerWin:false};}
-function bTrickBaelf(g){const t=g.trick,tp=g.players[t.targetPlayerIdx];return tp.baelfungious[tp.activeSlots[t.targetSlotIdx]];}
-function bDescCard(c){if(c.type==='joker')return`Joker ${c.symbol==='circle'?'⭕':'▲'}`;if(c.type==='double')return`×2 ${c.color}`;return`${c.value} ${c.color}`;}
-
-function bChooseBaelf(g,playerIdx,baelfIdx){
-  if(g.phase!=='CHOOSE_BAELFUNGIOUS')return{error:'Fase incorrecta'};
-  const pi2=g.replaceNeeded.findIndex(r=>r.playerIdx===playerIdx);
-  if(pi2===-1)return{error:'Sem escolha pendente'};
-  const{slotIdx}=g.replaceNeeded[pi2];
-  const p=g.players[playerIdx],baelf=p.baelfungious[baelfIdx];
-  if(!baelf)return{error:'Índice inválido'};
-  if(baelf.complete)return{error:'Já completa'};
-  if(p.activeSlots.includes(baelfIdx))return{error:'Já activa'};
-  // 2p: active slots must have different colors
-  if(g.mode==='2p'){
-    const activeColors=p.activeSlots.filter(s=>s!==null).map(s=>p.baelfungious[s].color);
-    if(activeColors.includes(baelf.color))return{error:'Já tens um Baelfungious desta cor activo — escolhe a outra cor.'};
-  }
-  p.activeSlots[slotIdx]=baelfIdx;
-  g.replaceNeeded.splice(pi2,1);
-  const still=g.replaceNeeded.filter(r=>r.playerIdx===playerIdx);
-  if(!still.length&&!p.endgameTriggered){
-    const aSet=new Set(p.activeSlots.filter(s=>s!==null));
-    const res=p.baelfungious.filter((b,bi)=>!b.complete&&!aSet.has(bi));
-    if(!res.length){p.endgameTriggered=true;g.endgameFired=true;}
-  }
-  if(!g.replaceNeeded.length){g.contestedThisRound=[];g.anyCompletedThisRound=false;g.trickNum=0;g.trick=null;g.phase='CHOOSE_TARGET';}
-  return{ok:true};
-}
-
-function bChooseTarget(g,playerIdx,targetPlayerIdx,targetSlotIdx){
-  if(g.phase!=='CHOOSE_TARGET')return{error:'Fase incorrecta'};
-  if(playerIdx!==g.governorIdx)return{error:'Não és o Governante'};
-  const valid=bGetUncontested(g);
-  const found=valid.find(u=>u.playerIdx===targetPlayerIdx&&u.slotIdx===targetSlotIdx);
-  if(!found)return{error:'Alvo inválido'};
-  const order=Array.from({length:g.n},(_,i)=>(g.governorIdx+i)%g.n);
-  g.trick={targetPlayerIdx,targetSlotIdx,actionOrder:order,currentActorIdx:0,bets:Array(g.n).fill(null),actionTypes:Array(g.n).fill(null),revealed:false,tiedPlayers:[],tieBreakCards:Array(g.n).fill(null),tieBreakSubmitted:Array(g.n).fill(false),waitingForDiscard:-1,discardExcess:0};
-  g.phase='PLAYER_ACTIONS';
-  return{ok:true};
-}
-
-function bPlayerAct(g,playerIdx,action){
-  if(g.phase!=='PLAYER_ACTIONS')return{error:'Fase incorrecta'};
-  const t=g.trick;
-  if(t.waitingForDiscard!==-1){if(playerIdx!==t.waitingForDiscard)return{error:'Aguarda descarte'};return{error:'Usa DISCARD_EXCESS'};}
-  const expected=t.actionOrder[t.currentActorIdx];
-  if(playerIdx!==expected)return{error:'Não é a tua vez'};
-  const p=g.players[playerIdx],baelf=bTrickBaelf(g);
-  if(action.type==='BET'){
-    const{cardIds}=action;
-    if(!Array.isArray(cardIds)||!cardIds.length)return{error:'Aposta pelo menos 1 carta'};
-    const cards=cardIds.map(id=>p.hand.find(c=>c.id===id)).filter(Boolean);
-    if(cards.length!==cardIds.length)return{error:'Carta(s) não encontrada(s)'};
-    for(const c of cards)if(!bCanPlay(c,baelf))return{error:`${bDescCard(c)} não pode jogar aqui`};
-    for(const c of cards)p.hand.splice(p.hand.indexOf(c),1);
-    t.bets[playerIdx]=cards;t.actionTypes[playerIdx]='bet';
-  }else if(action.type==='SWAP'){
-    const{cardIds}=action;
-    if(!Array.isArray(cardIds)||cardIds.length<1||cardIds.length>2)return{error:'Troca 1 ou 2 cartas'};
-    const cards=cardIds.map(id=>p.hand.find(c=>c.id===id)).filter(Boolean);
-    if(cards.length!==cardIds.length)return{error:'Carta(s) não encontrada(s)'};
-    for(const c of cards)p.hand.splice(p.hand.indexOf(c),1);
-    g.discard.push(...cards);p.hand.push(...bDrawN(g,cards.length));
-    t.bets[playerIdx]=[];t.actionTypes[playerIdx]='swap';
-  }else if(action.type==='PASS'){
-    p.hand.push(...bDrawN(g,1));
-    t.bets[playerIdx]=[];t.actionTypes[playerIdx]='pass';
-    if(p.hand.length>p.handLimit){t.waitingForDiscard=playerIdx;t.discardExcess=p.hand.length-p.handLimit;return{ok:true};}
-  }else return{error:'Tipo desconhecido'};
-  bAdvanceActor(g);
-  return{ok:true};
-}
-
-function bDiscardExcess(g,playerIdx,cardIds){
-  if(g.phase!=='PLAYER_ACTIONS')return{error:'Fase incorrecta'};
-  const t=g.trick;
-  if(t.waitingForDiscard!==playerIdx)return{error:'Não é a tua vez de descartar'};
-  const excess=t.discardExcess;
-  if(!Array.isArray(cardIds)||cardIds.length!==excess)return{error:`Descarta ${excess} carta(s)`};
-  const p=g.players[playerIdx];
-  const cards=cardIds.map(id=>p.hand.find(c=>c.id===id)).filter(Boolean);
-  if(cards.length!==cardIds.length)return{error:'Carta(s) não encontrada(s)'};
-  for(const c of cards)p.hand.splice(p.hand.indexOf(c),1);
-  g.discard.push(...cards);t.waitingForDiscard=-1;t.discardExcess=0;
-  bAdvanceActor(g);return{ok:true};
-}
-
-function bTieBreakAct(g,playerIdx,cardId){
-  if(g.phase!=='TIE_BREAK')return{error:'Não estamos em tie-break'};
-  const t=g.trick;
-  if(!t.tiedPlayers.includes(playerIdx))return{error:'Não estás empatado'};
-  if(t.tieBreakSubmitted[playerIdx])return{error:'Já submeteste'};
-  if(cardId!==null){
-    const p=g.players[playerIdx],baelf=bTrickBaelf(g);
-    const card=p.hand.find(c=>c.id===cardId);
-    if(!card)return{error:'Carta não encontrada'};
-    if(card.color!==baelf.color)return{error:'Só cartas da mesma cor'};
-    p.hand.splice(p.hand.indexOf(card),1);t.tieBreakCards[playerIdx]=card;
-  }
-  t.tieBreakSubmitted[playerIdx]=true;
-  if(t.tiedPlayers.every(i=>t.tieBreakSubmitted[i]))bResolveTieBreak(g);
-  return{ok:true};
-}
-
-function bTieBreakTimeout(g){
-  if(g.phase!=='TIE_BREAK')return;
-  const t=g.trick;
-  for(const pi of t.tiedPlayers)if(!t.tieBreakSubmitted[pi])t.tieBreakSubmitted[pi]=true;
-  bResolveTieBreak(g);
-}
-
-function bAdvanceActor(g){g.trick.currentActorIdx++;if(g.trick.currentActorIdx>=g.n)bRevealTrick(g);}
-
-function bRevealTrick(g){
-  const t=g.trick;t.revealed=true;
-  const baelf=bTrickBaelf(g);
-  const scores=g.players.map((_,i)=>{if(t.actionTypes[i]==='bet'&&t.bets[i]&&t.bets[i].length)return bScoreBet(t.bets[i],baelf);return null;});
-  const bettors=scores.map((s,i)=>s?i:-1).filter(i=>i!==-1);
-  const result={trickTargetPlayerIdx:t.targetPlayerIdx,trickTargetSlotIdx:t.targetSlotIdx,bets:t.bets,actionTypes:t.actionTypes,scores,winner:null,tied:false,tiedPlayers:[]};
-  if(!bettors.length){g.lastTrickResult=result;bFinishTrick(g);return;}
-  const jokerW=bettors.filter(i=>scores[i].jokerWin);
-  let winners;
-  if(jokerW.length)winners=jokerW;
-  else{const mx=Math.max(...bettors.map(i=>scores[i].total));winners=bettors.filter(i=>scores[i].total===mx);}
-  if(winners.length===1){bPlaceBulb(g,winners[0]);bDiscardBets(g);result.winner=winners[0];g.lastTrickResult=result;bFinishTrick(g);}
-  else{result.tied=true;result.tiedPlayers=winners;t.tiedPlayers=winners;g.lastTrickResult=result;g.phase='TIE_BREAK';g.tieBreakDeadline=Date.now()+B_TIE_MS;}
-}
-
-function bResolveTieBreak(g){
-  const t=g.trick;
-  const played=t.tiedPlayers.filter(i=>t.tieBreakCards[i]!==null);
-  for(const i of played)g.discard.push(t.tieBreakCards[i]);
-  let winner=null;
-  if(played.length){
-    const tots=played.map(i=>{const orig=g.lastTrickResult.scores[i].total;const extra=t.tieBreakCards[i]?.value||0;return{i,total:orig===Infinity?Infinity:orig+extra};});
-    const mx=Math.max(...tots.map(x=>x.total));
-    const wins=tots.filter(x=>x.total===mx).map(x=>x.i);
-    if(wins.length===1)winner=wins[0];
-  }
-  g.lastTrickResult.tieWinner=winner;g.lastTrickResult.tieBreakCards=[...t.tieBreakCards];
-  if(winner!==null)bPlaceBulb(g,winner);
-  bDiscardBets(g);g.tieBreakDeadline=null;
-  if(g.tieBreakTimer){clearTimeout(g.tieBreakTimer);g.tieBreakTimer=null;}
-  bFinishTrick(g);
-}
-
-function bPlaceBulb(g,wi){const b=bTrickBaelf(g);b.bulbs.push(wi);if(b.bulbs.length>=b.slots){b.complete=true;g.anyCompletedThisRound=true;}}
-function bDiscardBets(g){const t=g.trick;for(let i=0;i<g.n;i++)if(t.bets[i]&&t.bets[i].length)g.discard.push(...t.bets[i]);}
-function bFinishTrick(g){g.contestedThisRound.push({playerIdx:g.trick.targetPlayerIdx,slotIdx:g.trick.targetSlotIdx});g.trickNum++;if(g.trickNum>=B_TRICKS_PER){bEndRound(g);}else{g.trick=null;g.phase='CHOOSE_TARGET';}}
-
-function bEndRound(g){
-  g.trick=null;g.trickNum=0;
-  if(g.anyCompletedThisRound)for(const p of g.players){const need=p.handLimit-p.hand.length;if(need>0)p.hand.push(...bDrawN(g,need));}
-  if(g.endgameFired){g.finalScores=bCalcScore(g);g.phase='GAME_OVER';return;}
-  g.governorIdx=(g.governorIdx+1)%g.n;g.roundNum++;g.contestedThisRound=[];g.anyCompletedThisRound=false;g.turnGen++;
-  const rn=[];
-  for(let pi=0;pi<g.n;pi++){const p=g.players[pi];for(let si=0;si<g.numSlots;si++){const bi=p.activeSlots[si];if(bi===null||!p.baelfungious[bi].complete)continue;p.activeSlots[si]=null;const aSet=new Set(p.activeSlots.filter(s=>s!==null));const avail=p.baelfungious.filter((b,i)=>!b.complete&&!aSet.has(i));if(avail.length)rn.push({playerIdx:pi,slotIdx:si});}}
-  if(rn.length){g.replaceNeeded=rn;g.phase='CHOOSE_BAELFUNGIOUS';}else{g.replaceNeeded=[];g.phase='CHOOSE_TARGET';}
-}
-
-function bCalcScore(g){
-  const s=g.players.map((p,i)=>({idx:i,name:p.name,color:p.color,
-    bulbs:0,majority:0,colColors:0,colSlots:0,collection:0,total:0,
-    controlled:{colors:new Set(),slots:new Set()}}));
-  const all=g.players.flatMap(p=>p.baelfungious);
-  // 1. Bulbs
-  for(const b of all)for(const wi of b.bulbs)if(s[wi])s[wi].bulbs++;
-  // 2. Majority on complete baelfs + track controlled colors & slot sizes
-  for(const b of all){
-    if(!b.complete)continue;
-    const cnt={};
-    for(const wi of b.bulbs)cnt[wi]=(cnt[wi]||0)+1;
-    const vals=Object.values(cnt);if(!vals.length)continue;
-    const mx=Math.max(...vals);
-    const lds=Object.keys(cnt).filter(k=>cnt[k]===mx).map(Number);
-    if(lds.length===1)s[lds[0]].majority+=3;
-    else for(const li of lds)s[li].majority+=1;
-    // Track which colors and slot-sizes this player has majority in
-    for(const li of lds){
-      s[li].controlled.colors.add(b.color);
-      s[li].controlled.slots.add(b.slots);
-    }
-  }
-  // 3. Collection bonuses
-  for(const sc of s){
-    // +5 if majority in at least 1 complete baelf of each of the 4 colors
-    if(sc.controlled.colors.size>=4){sc.colColors=5;sc.collection+=5;}
-    // +5 if majority in at least 1 complete baelf of each slot size (1,2,3,4)
-    if(sc.controlled.slots.size>=4){sc.colSlots=5;sc.collection+=5;}
-    sc.total=sc.bulbs+sc.majority+sc.collection;
-    sc.controlled.colors=[...sc.controlled.colors];
-    sc.controlled.slots=[...sc.controlled.slots].sort();
-  }
-  return s.sort((a,b)=>b.total-a.total||b.bulbs-a.bulbs);
-}
-
-function bBuildView(g,playerIdx){
-  const me=g.players[playerIdx],t=g.trick;
-  let tv=null;
-  if(t){tv={targetPlayerIdx:t.targetPlayerIdx,targetSlotIdx:t.targetSlotIdx,actionOrder:t.actionOrder,currentActorIdx:t.currentActorIdx,actionTypes:t.actionTypes,bets:t.bets.map((b,i)=>{if(i===playerIdx)return b;if(t.revealed)return b;return b!==null?[]:null;}),revealed:t.revealed,tiedPlayers:t.tiedPlayers,tieBreakSubmitted:t.tieBreakSubmitted,tieBreakCards:t.tieBreakCards.map((c,i)=>{if(i===playerIdx)return c;if(t.revealed)return c;return c!==null?{}:null;}),waitingForDiscard:t.waitingForDiscard,discardExcess:t.discardExcess};}
-  return{myIdx:playerIdx,phase:g.phase,roundNum:g.roundNum,governorIdx:g.governorIdx,endgameFired:g.endgameFired,players:g.players.map((p,i)=>({name:p.name,color:p.color,symbol:p.symbol,isBot:p.isBot,handSize:p.hand.length,activeSlots:p.activeSlots,baelfungious:p.baelfungious,endgameTriggered:p.endgameTriggered})),myHand:me.hand,deckSize:g.deck.length,discardTop:g.discard.length?g.discard[g.discard.length-1]:null,discardSize:g.discard.length,trick:tv,replaceNeeded:g.replaceNeeded||[],anyCompletedThisRound:g.anyCompletedThisRound,lastTrickResult:g.lastTrickResult,finalScores:g.finalScores,tieBreakDeadline:g.tieBreakDeadline||null};
-}
-
-function bBotAct(g){
-  if(g.phase==='CHOOSE_BAELFUNGIOUS'){
-    for(const r of(g.replaceNeeded||[])){
-      if(g.players[r.playerIdx].isBot){
-        const p=g.players[r.playerIdx];const aSet=new Set(p.activeSlots.filter(s=>s!==null));
-        const activeColors=new Set([...aSet].map(s=>p.baelfungious[s].color));
-        const avail=p.baelfungious.map((b,i)=>({b,i})).filter(({b,i})=>!b.complete&&!aSet.has(i)&&(g.mode!=='2p'||!activeColors.has(b.color)));
-        if(!avail.length)continue;
-        const rv=Math.random();
-        let bi;
-        if(rv<0.4){avail.sort((a,b2)=>a.b.slots-b2.b.slots);bi=avail[0].i;}
-        else if(rv<0.7){avail.sort((a,b2)=>b2.b.slots-a.b.slots);bi=avail[0].i;}
-        else bi=avail[Math.floor(Math.random()*avail.length)].i;
-        return{playerIdx:r.playerIdx,msg:{type:'CHOOSE_BAELF',baelfIdx:bi}};
-      }
-    }
-  }
-  if(g.phase==='CHOOSE_TARGET'&&g.players[g.governorIdx].isBot){
-    const opts=bGetUncontested(g);if(!opts.length)return null;
-    opts.sort((a,b)=>a.baelf.slots-b.baelf.slots);
-    return{playerIdx:g.governorIdx,msg:{type:'CHOOSE_TARGET',targetPlayerIdx:opts[0].playerIdx,targetSlotIdx:opts[0].slotIdx}};
-  }
-  if(g.phase==='PLAYER_ACTIONS'&&g.trick){
-    const t=g.trick;
-    if(t.waitingForDiscard!==-1&&g.players[t.waitingForDiscard].isBot){
-      const p=g.players[t.waitingForDiscard];
-      const sorted=[...p.hand].sort((a,b)=>(a.value||0)-(b.value||0)).slice(0,t.discardExcess);
-      return{playerIdx:t.waitingForDiscard,msg:{type:'DISCARD_EXCESS',cardIds:sorted.map(c=>c.id)}};
-    }
-    const exp=t.actionOrder[t.currentActorIdx];
-    if(exp!==undefined&&g.players[exp].isBot){
-      const p=g.players[exp],baelf=bTrickBaelf(g);
-      const valid=p.hand.filter(c=>bCanPlay(c,baelf)).sort((a,b)=>(b.value||0)-(a.value||0));
-      let action;
-      if(!valid.length){action=p.hand.length?{type:'SWAP',cardIds:[p.hand[Math.floor(Math.random()*p.hand.length)].id]}:{type:'PASS'};}
-      else{const r=Math.random();if(r<0.65){const jkr=valid.find(c=>c.type==='joker');if(jkr)action={type:'BET',cardIds:[jkr.id]};else{const num=Math.min(valid.length,Math.floor(Math.random()*2)+1);action={type:'BET',cardIds:bShuf(valid).slice(0,num).map(c=>c.id)};}}else if(r<0.85&&p.hand.length){const srt=[...p.hand].sort((a,b)=>(a.value||0)-(b.value||0));const num=Math.random()<0.5?1:Math.min(2,srt.length);action={type:'SWAP',cardIds:srt.slice(0,num).map(c=>c.id)};}else action={type:'PASS'};}
-      return{playerIdx:exp,msg:{type:'PLAYER_ACT',...action}};
-    }
-  }
-  if(g.phase==='TIE_BREAK'&&g.trick){
-    for(const pi of g.trick.tiedPlayers){
-      if(g.players[pi].isBot&&!g.trick.tieBreakSubmitted[pi]){
-        const p=g.players[pi],baelf=bTrickBaelf(g);
-        const elig=p.hand.filter(c=>c.color===baelf.color&&c.type==='numeric').sort((a,b)=>b.value-a.value);
-        const cardId=(elig.length&&Math.random()<0.6)?elig[0].id:null;
-        return{playerIdx:pi,msg:{type:'TIE_BREAK',cardId}};
-      }
-    }
-  }
-  return null;
-}
-
-function bHandleAction(g,playerIdx,msg){
-  switch(msg.type){
-    case 'CHOOSE_BAELF':   return bChooseBaelf(g,playerIdx,msg.baelfIdx);
-    case 'CHOOSE_TARGET':  return bChooseTarget(g,playerIdx,msg.targetPlayerIdx,msg.targetSlotIdx);
-    case 'PLAYER_ACT': case 'BET': case 'SWAP': case 'PASS': return bPlayerAct(g,playerIdx,msg);
-    case 'DISCARD_EXCESS': return bDiscardExcess(g,playerIdx,msg.cardIds);
-    case 'TIE_BREAK':      return bTieBreakAct(g,playerIdx,msg.cardId??null);
-    default: return{error:'Acção desconhecida: '+msg.type};
-  }
-}
-
-// ── Lobby state ────────────────────────────────────────────────
-const BU_LOBBIES  = {};
-const BU_SESSIONS = {};
-const BU_WS_STATE = new WeakMap();
-
-// Init: 3 mesas 4p, 3 mesas 2p, 1 solo 4p, 1 solo 2p
-for(let i=1;i<=3;i++) BU_LOBBIES[`b4p${i}`]={id:`b4p${i}`,name:`Mesa ${i}`,mode:'4p',solo:false,maxP:4,players:Array(4).fill(null),names:Array(4).fill(''),tokens:Array(4).fill(null),graceTimers:Array(4).fill(null),game:null};
-for(let i=1;i<=3;i++) BU_LOBBIES[`b2p${i}`]={id:`b2p${i}`,name:`Mesa ${i}`,mode:'2p',solo:false,maxP:2,players:Array(2).fill(null),names:Array(2).fill(''),tokens:Array(2).fill(null),graceTimers:Array(2).fill(null),game:null};
-BU_LOBBIES['bsolo4p']={id:'bsolo4p',name:'Solo 4 jogadores',mode:'4p',solo:true,maxP:1,players:[null],names:[''],tokens:[null],graceTimers:[null],game:null};
-BU_LOBBIES['bsolo2p']={id:'bsolo2p',name:'Solo 2 jogadores',mode:'2p',solo:true,maxP:1,players:[null],names:[''],tokens:[null],graceTimers:[null],game:null};
-
-function buLobbyInfo(l){return{id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,seated:l.players.filter(Boolean).length,playing:!!l.game&&l.game.phase!=='GAME_OVER',names:l.names.filter(Boolean)};}
-function buSend(ws,msg){if(ws?.readyState===1)ws.send(JSON.stringify(msg));}
-function buBroadcastGame(lobby){const g=lobby.game;if(!g)return;const maxSeat=lobby.solo?1:lobby.maxP;for(let s=0;s<maxSeat;s++){if(lobby.players[s])buSend(lobby.players[s],{type:'GAME_STATE',state:bBuildView(g,s)});}}
-function buBroadcastLobbies(){const list=Object.values(BU_LOBBIES).map(buLobbyInfo);for(const ws of wss.clients){if(ws._isBU&&ws.readyState===1){const st=BU_WS_STATE.get(ws);if(!st||!st.lobbyId)buSend(ws,{type:'LOBBIES',lobbies:list});}}}
-
-function buScheduleBot(lobby,delay){
-  const g=lobby.game;if(!g)return;
-  const gen=g.turnGen;
-  // Also schedule tie-break timer if needed
-  if(g.phase==='TIE_BREAK'&&g.tieBreakDeadline&&!g.tieBreakTimer){
-    const ms=Math.max(0,g.tieBreakDeadline-Date.now());
-    g.tieBreakTimer=setTimeout(()=>{if(lobby.game===g&&g.phase==='TIE_BREAK'){bTieBreakTimeout(g);buBroadcastGame(lobby);buScheduleBot(lobby,600);}},ms);
-  }
-  setTimeout(()=>{
-    if(!lobby.game||lobby.game.turnGen!==gen)return;
-    const action=bBotAct(g);
-    if(!action)return;
-    const r=bHandleAction(g,action.playerIdx,action.msg);
-    if(r?.ok){buBroadcastGame(lobby);buScheduleBot(lobby,1200);}
-  },delay||1200);
-}
-
-function buHandle(ws,msg){
-  if(msg.type==='PING'){buSend(ws,{type:'PONG'});return;}
-  if(msg.type==='LOBBIES'){buSend(ws,{type:'LOBBIES',lobbies:Object.values(BU_LOBBIES).map(buLobbyInfo)});return;}
-  if(msg.type==='RECONNECT'){
-    const sess=BU_SESSIONS[msg.token];if(!sess){buSend(ws,{type:'RECONNECT_FAIL'});return;}
-    const lobby=BU_LOBBIES[sess.lobbyId];if(!lobby){buSend(ws,{type:'RECONNECT_FAIL'});return;}
-    const{seat,name}=sess;
-    clearTimeout(lobby.graceTimers[seat]);lobby.graceTimers[seat]=null;
-    lobby.players[seat]=ws;lobby.names[seat]=name;
-    BU_WS_STATE.set(ws,{lobbyId:sess.lobbyId,seat,token:msg.token});
-    buSend(ws,{type:'RECONNECTED',seat,name,mode:lobby.mode,solo:lobby.solo});
-    buBroadcastLobbies();
-    if(lobby.game)buSend(ws,{type:'GAME_STATE',state:bBuildView(lobby.game,seat)});
-    else buSend(ws,{type:'LOBBY_STATE',lobby:buLobbyInfo(lobby),names:lobby.names,mySeat:seat});
-    return;
-  }
-  if(msg.type==='JOIN_LOBBY'){
-    const lobby=BU_LOBBIES[msg.lobbyId];if(!lobby){buSend(ws,{type:'ERROR',text:'Mesa não encontrada'});return;}
-    const seat=lobby.players.findIndex(p=>p===null);if(seat<0){buSend(ws,{type:'ERROR',text:'Mesa cheia'});return;}
-    const name=(msg.playerName||'').trim().slice(0,20)||'Jogador';
-    const token=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
-    lobby.players[seat]=ws;lobby.names[seat]=name;lobby.tokens[seat]=token;
-    BU_WS_STATE.set(ws,{lobbyId:msg.lobbyId,seat,token});
-    BU_SESSIONS[token]={lobbyId:msg.lobbyId,seat,name};
-    buSend(ws,{type:'JOINED',seat,token,lobbyId:msg.lobbyId,mode:lobby.mode,solo:lobby.solo,name,lobby:buLobbyInfo(lobby),names:lobby.names});
-    lobby.players.forEach((p,i)=>{if(p&&i!==seat)buSend(p,{type:'PLAYER_JOINED',seat,name,lobby:buLobbyInfo(lobby)});});
-    buBroadcastLobbies();
-    if(lobby.solo){
-      const bots=[];
-      if(lobby.mode==='4p') for(let b=1;b<=3;b++) bots.push({name:`Bot ${b}`,isBot:true});
-      else bots.push({name:'The Rival',isBot:true});
-      const allPlayers=[{name,isBot:false},...bots];
-      lobby.game=bNewGame(allPlayers,lobby.mode);
-      buBroadcastGame(lobby);
-      buScheduleBot(lobby,1500);
-    }
-    return;
-  }
-  const st=BU_WS_STATE.get(ws);if(!st||!st.lobbyId)return;
-  const lobby=BU_LOBBIES[st.lobbyId];if(!lobby)return;
-  const seat=st.seat,g=lobby.game;
-
-  if(msg.type==='LEAVE_LOBBY'){
-    // Clear grace timer
-    if (lobby.graceTimers[seat]) { clearTimeout(lobby.graceTimers[seat]); lobby.graceTimers[seat]=null; }
-    // Remove from session store
-    const tok = lobby.tokens[seat];
-    if (tok && BU_SESSIONS[tok]) delete BU_SESSIONS[tok];
-    // Clear seat
-    const leftName = lobby.names[seat];
-    lobby.players[seat]=null; lobby.names[seat]=''; lobby.tokens[seat]=null;
-    BU_WS_STATE.delete(ws);
-    // If game was running, abort it
-    if (lobby.game && !lobby.solo) {
-      lobby.game = null;
-      lobby.players.forEach(p => { if(p) buSend(p, {type:'GAME_ABORTED', reason:`${leftName} saiu do jogo.`}); });
-    }
-    buBroadcastLobbies();
-    return;
-  }
-  if(msg.type==='REQUEST_STATE'){
-    if(g)buSend(ws,{type:'GAME_STATE',state:bBuildView(g,seat)});
-    else buSend(ws,{type:'LOBBY_STATE',lobby:buLobbyInfo(lobby),names:lobby.names,mySeat:seat});
-    return;
-  }
-  if(msg.type==='START'){
-    if(lobby.solo||seat!==0)return;
-    const seated=lobby.players.map((p,i)=>p?i:-1).filter(i=>i>=0);
-    if(seated.length<lobby.maxP){buSend(ws,{type:'ERROR',text:`Precisas de ${lobby.maxP} jogadores.`});return;}
-    const lps=lobby.names.map((n,i)=>({name:n||`Jogador ${i+1}`,isBot:false}));
-    lobby.game=bNewGame(lps,lobby.mode);buBroadcastLobbies();buBroadcastGame(lobby);return;
-  }
-  if(msg.type==='RESTART'){
-    if(!g||g.phase!=='GAME_OVER')return;
-    if(lobby.solo){
-      const bots=lobby.mode==='4p'?[{name:'Bot 1',isBot:true},{name:'Bot 2',isBot:true},{name:'Bot 3',isBot:true}]:[{name:'The Rival',isBot:true}];
-      lobby.game=bNewGame([{name:lobby.names[0],isBot:false},...bots],lobby.mode);
-      buBroadcastGame(lobby);buScheduleBot(lobby,1500);
-    }else{
-      if(seat!==0)return;
-      const lps=lobby.names.map((n,i)=>({name:n||`Jogador ${i+1}`,isBot:false}));
-      lobby.game=bNewGame(lps,lobby.mode);buBroadcastGame(lobby);
-    }
-    return;
-  }
-  if(!g||g.phase==='GAME_OVER')return;
-
-  const r=bHandleAction(g,seat,msg);
-  if(r?.ok){
-    buBroadcastGame(lobby);
-    if(g.phase!=='GAME_OVER')buScheduleBot(lobby,1000);
-  }else if(r?.error){
-    buSend(ws,{type:'ERROR',text:r.error});
-  }
-}
-
-// Expose for routing
-globalThis._buHandle  = buHandle;
-globalThis._buBroadcastLobbies = buBroadcastLobbies;
-globalThis._BU_SESSIONS = BU_SESSIONS;
-globalThis._BU_LOBBIES = BU_LOBBIES;
-}
