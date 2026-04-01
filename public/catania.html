@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catania</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold:#c9a84c;--gold-light:#e8c97a;--gold-dark:#8b6914;
+  --parchment:#f2e8d0;--parchment-dark:#d9c89a;
+  --ink:#1a1208;--red-sicel:#c0392b;--stone-gray:#7a7060;
+  --bg:#0d0b08;--panel:#1e1a10;--panel2:#2a2418;--border:#4a3c1a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--parchment);font-family:'Crimson Text',Georgia,serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.35}
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+/* NAME */
+#screen-name{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#2a1f08 0%,#0d0b08 70%)}
+.name-box{text-align:center;animation:fadeUp 0.8s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.name-box h1{font-family:'Cinzel',serif;font-size:clamp(3rem,8vw,6rem);font-weight:900;color:var(--gold);text-shadow:0 0 60px rgba(201,168,76,.4),0 2px 0 #000;letter-spacing:.12em;margin-bottom:.2em}
+.name-box .sub{font-style:italic;color:var(--parchment-dark);font-size:1.15rem;margin-bottom:2.5rem}
+.name-input-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem}
+.name-input-wrap label{font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:.1em;color:var(--gold-light);text-transform:uppercase}
+.name-input-wrap input{background:var(--panel2);border:2px solid var(--gold-dark);border-radius:4px;color:var(--parchment);font-family:'Cinzel',serif;font-size:1.1rem;padding:.7rem 1.5rem;text-align:center;width:280px;outline:none;transition:border-color .2s}
+.name-input-wrap input:focus{border-color:var(--gold)}
+/* BTN */
+.btn{background:linear-gradient(135deg,var(--gold-dark),var(--gold));border:none;border-radius:4px;color:var(--ink);cursor:pointer;font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;letter-spacing:.1em;padding:.75rem 2.5rem;text-transform:uppercase;transition:all .2s}
+.btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.sec{background:var(--panel2);border:1px solid var(--border);color:var(--parchment-dark)}
+.btn.danger{background:linear-gradient(135deg,#7a1a1a,#c0392b);color:#fff}
+/* LOBBY */
+#screen-lobby{padding:2rem}
+.lobby-hdr{text-align:center;padding:1.5rem 0 2rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+.lobby-hdr h2{font-family:'Cinzel',serif;font-size:2.2rem;color:var(--gold);letter-spacing:.1em}
+.tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;max-width:1100px;margin:0 auto}
+.tcard{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:1.25rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.tcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-dark),var(--gold));opacity:0;transition:opacity .2s}
+.tcard:hover{border-color:var(--gold-dark);transform:translateY(-2px)}
+.tcard:hover::before{opacity:1}
+.tcard h3{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--gold-light);margin-bottom:.5rem;letter-spacing:.05em}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:3px;color:var(--parchment-dark);font-size:.75rem;letter-spacing:.05em;padding:2px 8px;margin-bottom:.75rem;text-transform:uppercase;font-family:'Cinzel',serif}
+.tag.ai{border-color:var(--gold-dark);color:var(--gold-dark)}
+.seats{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+.sdot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:.65rem}
+.sdot.f{background:var(--gold-dark);border-color:var(--gold)}
+.sdot.b{background:#1a3a2a;border-color:#2a6a4a;color:#5a9a7a}
+.tstat{font-size:.82rem;color:var(--stone-gray);margin-top:.6rem}
+.tstat.open{color:#7ab070}
+.tstat.full{color:var(--red-sicel)}
+/* WAITING */
+#screen-waiting{padding:2rem;align-items:center}
+.wbox{max-width:500px;width:100%;text-align:center;margin-top:3rem}
+.wbox h2{font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);margin-bottom:1rem}
+.wseats{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0}
+.wseat{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:.8rem 1.2rem;min-width:120px;text-align:center}
+.wseat .slbl{font-size:.7rem;color:var(--stone-gray);text-transform:uppercase;font-family:'Cinzel',serif;letter-spacing:.05em}
+.wseat .snm{font-size:1rem;color:var(--parchment);margin-top:.2rem}
+.wseat.me .snm{color:var(--gold)}
+.wseat.empty .snm{color:var(--stone-gray);font-style:italic}
+.whint{color:var(--parchment-dark);font-style:italic;margin:1rem 0}
+.wacts{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* GAME */
+#screen-game{flex-direction:column;user-select:none}
+.gtop{background:var(--panel);border-bottom:1px solid var(--border);padding:.6rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.gtop h3{font-family:'Cinzel',serif;color:var(--gold);font-size:1.1rem;letter-spacing:.15em}
+.gtop .sp{flex:1}
+.tind{font-family:'Cinzel',serif;font-size:.8rem;background:var(--panel2);border:1px solid var(--border);padding:.25rem .75rem;border-radius:3px;color:var(--parchment-dark)}
+.tind.mt{color:var(--gold);border-color:var(--gold-dark)}
+.glayout{display:flex;flex:1;overflow:hidden;min-height:0}
+.gboard{flex:1;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:auto;background:var(--bg);position:relative}
+.gside{width:290px;min-width:240px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.ssec{padding:.75rem;border-bottom:1px solid var(--border)}
+.ssec h4{font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.08em;color:var(--gold-dark);text-transform:uppercase;margin-bottom:.6rem}
+/* PILE */
+.rpiles{display:flex;flex-direction:column;gap:.45rem}
+.prow{display:flex;align-items:center;gap:.5rem;background:var(--panel2);border-radius:4px;padding:.35rem .5rem;border:1px solid var(--border)}
+.ricon{font-size:1.1rem;width:24px;text-align:center}
+.rnm{font-family:'Cinzel',serif;font-size:.63rem;color:var(--parchment-dark);width:58px}
+.rdv{background:var(--ink);border:1.5px solid var(--gold-dark);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.65rem;color:var(--gold);margin-left:auto;flex-shrink:0}
+.rdv.red{border-color:var(--red-sicel);color:var(--red-sicel)}
+.rcnt{font-size:.72rem;color:var(--stone-gray)}
+/* HAND */
+.hcards{display:flex;flex-wrap:wrap;gap:4px}
+.card{width:42px;height:56px;border-radius:4px;border:1.5px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.card:hover{transform:translateY(-4px);filter:brightness(1.2)}
+.card.sel{transform:translateY(-6px);border-color:var(--gold);box-shadow:0 0 8px rgba(201,168,76,.5)}
+.card .ci{font-size:1.2rem}
+.card .ct{font-size:.43rem;font-family:'Cinzel',serif;color:rgba(255,255,255,.7);text-align:center}
+.c-cereais{background:linear-gradient(160deg,#806010,#c09018)}
+.c-vinho{background:linear-gradient(160deg,#501040,#8a2870)}
+.c-peixe{background:linear-gradient(160deg,#0a4060,#1a6090)}
+.c-calcario{background:linear-gradient(160deg,#5a5048,#8a8070)}
+.c-azeite{background:linear-gradient(160deg,#3a5010,#6a8020)}
+/* PLAYERS */
+.plist{display:flex;flex-direction:column;gap:.5rem}
+.prow2{background:var(--panel2);border-radius:4px;padding:.4rem .5rem;border:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+.prow2.ct{border-color:var(--gold-dark)}
+.pdot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.pnl{font-size:.85rem;flex:1}
+.pvills{display:flex;gap:2px}
+.vp{width:10px;height:10px;border-radius:2px;background:var(--border)}
+.vp.b{background:var(--gold)}
+.pscore{font-family:'Cinzel',serif;font-size:.72rem;color:var(--gold-dark)}
+/* ACTIONS */
+.apanel{padding:.75rem;background:var(--panel2);border-top:1px solid var(--border)}
+.apanel h4{font-family:'Cinzel',serif;font-size:.78rem;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem}
+.abtns{display:flex;flex-direction:column;gap:.5rem}
+.abtn{background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--parchment);cursor:pointer;padding:.5rem .75rem;font-family:'Crimson Text',serif;font-size:.9rem;text-align:left;transition:all .15s}
+.abtn:hover:not(:disabled){border-color:var(--gold-dark);color:var(--gold-light)}
+.abtn:disabled{opacity:.4;cursor:not-allowed}
+.abtn.pri{border-color:var(--gold-dark);background:rgba(201,168,76,.08)}
+.abtn.act{border-color:var(--gold);background:rgba(201,168,76,.18);color:var(--gold)}
+/* LOG */
+.glog{display:flex;flex-direction:column;gap:2px;max-height:130px;overflow-y:auto}
+.ll{font-size:.76rem;color:var(--stone-gray)}
+.ll.hl{color:var(--gold-dark)}
+/* TOWER */
+.tdisc-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.td{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;flex-shrink:0}
+.td.bl{background:var(--ink);border:1.5px solid var(--gold-dark);color:var(--gold)}
+.td.rd{background:#2a0808;border:1.5px solid var(--red-sicel);color:var(--red-sicel)}
+.td.top{box-shadow:0 0 5px rgba(201,168,76,.7)}
+/* VICTORY */
+#screen-victory{align-items:center;justify-content:center}
+.vbox{text-align:center;max-width:500px;padding:2rem}
+.vbox h2{font-family:'Cinzel',serif;font-size:2.5rem;color:var(--gold);margin-bottom:.5rem}
+.vbox .vw{font-family:'Cinzel',serif;font-size:1.5rem;color:var(--gold-light)}
+.stbl{margin:1.5rem auto;border-collapse:collapse;width:100%}
+.stbl th{font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold-dark);letter-spacing:.08em;text-transform:uppercase;padding:.4rem .6rem;border-bottom:1px solid var(--border)}
+.stbl td{padding:.4rem .6rem;border-bottom:1px solid rgba(74,60,26,.3)}
+.stbl tr:first-child td{color:var(--gold)}
+/* MODAL */
+.movl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+.movl.on{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:1.5rem;max-width:400px;width:90%;animation:fadeUp .2s ease}
+.mbox h3{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:1rem}
+.mbox p{color:var(--parchment-dark);font-size:.9rem;margin-bottom:1rem;line-height:1.5}
+.mbtns{display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--panel)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(max-width:700px){.glayout{flex-direction:column}.gside{width:100%;border-left:none;border-top:1px solid var(--border);min-width:0}}
+</style>
+</head>
+<body>
+
+<!-- NAME -->
+<div id="screen-name" class="screen active">
+  <div class="name-box">
+    <h1>CATANIA</h1>
+    <p class="sub">Um jogo de David Marques &bull; Fundação da Magna Grécia</p>
+    <p style="color:var(--gold-dark);font-size:.9rem;margin-bottom:2rem">Século VIII a.C.</p>
+    <div class="name-input-wrap">
+      <label>O teu nome, Cidadão</label>
+      <input id="pin" type="text" maxlength="16" placeholder="Nome..." autofocus>
+      <button class="btn" onclick="enterLobby()">Entrar em Catânia</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-hdr">
+    <h2>CATANIA — Mesas de Jogo</h2>
+    <p style="font-style:italic;color:var(--parchment-dark);margin-top:.3rem">Bem-vindo, <span id="lpn" style="color:var(--gold)"></span></p>
+  </div>
+  <div class="tables-grid" id="tgrid"></div>
+</div>
+
+<!-- WAITING -->
+<div id="screen-waiting" class="screen">
+  <div class="wbox">
+    <h2 id="wtitle">Mesa Multijogador</h2>
+    <p class="whint pulse" id="whint">À espera de jogadores...</p>
+    <div class="wseats" id="wseats"></div>
+    <div class="wacts">
+      <button class="btn" id="wstart" onclick="startFromWaiting()" style="display:none">▶ Iniciar Jogo</button>
+      <button class="btn sec" onclick="leaveLobby()">← Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div class="gtop">
+    <h3>⚑ CATANIA</h3>
+    <div class="sp"></div>
+    <div class="tind" id="tind">Ronda 1</div>
+    <button class="btn sec" style="font-size:.75rem;padding:.3rem .8rem" onclick="leaveGame()">← Sair</button>
+  </div>
+  <div class="glayout">
+    <div class="gboard" id="gboard"><div id="bwrap"></div></div>
+    <div class="gside">
+      <div class="ssec"><h4>Jogadores</h4><div class="plist" id="plist"></div></div>
+      <div class="ssec"><h4>Pilhas de Recursos</h4><div class="rpiles" id="rpiles"></div></div>
+      <div class="ssec">
+        <h4>Mão — <span id="hlbl" style="color:var(--parchment-dark);font-family:'Crimson Text',serif;text-transform:none;font-size:.85rem"></span></h4>
+        <div class="hcards" id="hcards"></div>
+      </div>
+      <div class="ssec"><h4>Torre de Discos</h4><div id="tdisplay"></div></div>
+      <div class="apanel"><h4>Ações</h4><div class="abtns" id="abtns"></div></div>
+      <div class="ssec"><h4>Registo</h4><div class="glog" id="glog"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- VICTORY -->
+<div id="screen-victory" class="screen">
+  <div class="vbox">
+    <h2>🏛 Vitória!</h2>
+    <p class="vw" id="vwinner"></p>
+    <table class="stbl">
+      <thead><tr><th>#</th><th>Jogador</th><th>Aldeias</th><th>Pontos</th></tr></thead>
+      <tbody id="stbody"></tbody>
+    </table>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem">
+      <button class="btn" onclick="playAgain()">↺ Jogar de Novo</button>
+      <button class="btn sec" onclick="backToLobby()">← Lobby</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="movl" id="movl">
+  <div class="mbox">
+    <h3 id="mtitle"></h3><p id="mbody"></p>
+    <div class="mbtns" id="mbtns"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  CATANIA — self-contained browser game
+// ════════════════════════════════════════════════════
+const RES = ['cereais','vinho','peixe','calcario','azeite'];
+const ICON = {cereais:'🌾',vinho:'🍇',peixe:'🐟',calcario:'🪨',azeite:'🫒'};
+const NAME = {cereais:'Cereais',vinho:'Vinho',peixe:'Peixe',calcario:'Calcário',azeite:'Azeite'};
+
+// Tower: black discs + red discs
+// Black: 12,11,11,10,10,8,8,6,6,4,4,2,2  (13)
+// Red:   9,7,5,3,1                         (5)
+// Total 18 — sorted ascending (index 0=bottom, pop()=top)
+const BLACK = [12,11,11,10,10,8,8,6,6,4,4,2,2];
+const REDS  = [9,7,5,3,1];
+const RSET  = new Set(REDS);
+
+function mkTower(){
+  const all=[...BLACK,...REDS];
+  all.sort((a,b)=>a-b);
+  return all;
+}
+
+const PCOL=['#b03a2e','#1a5276','#1d6a27','#7d6608'];
+
+// ── Hex geometry (pointy-top) ──────────────────────
+// pointy-top: width=sqrt(3)*R, height=2*R
+// step-x = sqrt(3)*R, step-y = 1.5*R
+// offset col shifts by half-width on odd rows
+const R = 62;
+const W3 = Math.sqrt(3)*R;
+
+function hexPts(cx,cy,r){
+  const a=[];
+  for(let i=0;i<6;i++){
+    const ang=Math.PI/180*(60*i-30);
+    a.push((cx+r*Math.cos(ang)).toFixed(1)+','+(cy+r*Math.sin(ang)).toFixed(1));
+  }
+  return a.join(' ');
+}
+
+// Offset coords → pixel (pointy-top odd-row offset)
+function h2p(col,row){
+  const x=W3*col + (row&1 ? W3/2 : 0);
+  const y=R*1.5*row;
+  return {x,y};
+}
+
+// Board layout: 3-4-4 = 11 tiles (10 resource + 1 volcano)
+// Rows: row0=3 tiles(cols0-2), row1=4 tiles(cols0-3), row2=4 tiles(cols0-3)
+// Volcano at row1 col1 (centered-ish in middle row)
+const LAYOUT=[
+  {row:0,count:3,colStart:0},
+  {row:1,count:4,colStart:0},
+  {row:2,count:4,colStart:0},
+];
+const VOL_ROW=1,VOL_COLIDX=1; // volcano is 2nd hex in row1
+
+function buildHexes(){
+  let pool=[];
+  RES.forEach(r=>pool.push(r,r)); // 10 resource tiles
+  shuffle(pool);
+
+  const hexes=[];
+  let id=0,ri=0;
+  LAYOUT.forEach(({row,count,colStart})=>{
+    for(let ci=0;ci<count;ci++){
+      const col=colStart+ci;
+      const isVol=(row===VOL_ROW&&ci===VOL_COLIDX);
+      const type=isVol?'vulcao':pool[ri++];
+      const px=h2p(col,row);
+      hexes.push({id:id++,row,col,ci,type,px,tokens:[]});
+    }
+  });
+  return hexes;
+}
+
+// Pointy-top odd-row neighbors
+function neighbors(hexId,hexes){
+  const h=hexes.find(x=>x.id===hexId); if(!h) return[];
+  const even=[[1,0],[-1,0],[0,-1],[0,1],[1,-1],[-1,-1]];
+  const odd= [[1,0],[-1,0],[0,-1],[0,1],[1,1], [-1,1]];
+  const dirs=(h.row&1)?odd:even;
+  return dirs.map(([dc,dr])=>{
+    const nb=hexes.find(x=>x.row===h.row+dr&&x.col===h.col+dc);
+    return nb?nb.id:null;
+  }).filter(x=>x!==null);
+}
+
+// ── App state ──────────────────────────────────────
+let pname='';
+let curLobby=null;
+let G=null; // game state
+let mySeat=0;
+let mode=null; // 'c1'|'c2'|'found'|'sicel'
+let selCards=[];
+
+// ── Lobbies ────────────────────────────────────────
+const LOBBIES=[
+  {id:'mp1',type:'mp',name:'Mesa 1 — Multijogador',maxP:4,bots:0},
+  {id:'mp2',type:'mp',name:'Mesa 2 — Multijogador',maxP:4,bots:0},
+  {id:'mp3',type:'mp',name:'Mesa 3 — Multijogador',maxP:4,bots:0},
+  {id:'mp4',type:'mp',name:'Mesa 4 — Multijogador',maxP:4,bots:0},
+  {id:'ai2',type:'ai',name:'Mesa IA — 1 Humano + 1 Bot',maxP:2,bots:1},
+  {id:'ai4',type:'ai',name:'Mesa IA — 1 Humano + 3 Bots',maxP:4,bots:3},
+];
+const LPL={};
+function glp(id){if(!LPL[id])LPL[id]=Array(4).fill(null);return LPL[id];}
+
+function SS(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
+
+// ── Name screen ────────────────────────────────────
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')enterLobby();});
+function enterLobby(){
+  const v=document.getElementById('pin').value.trim();
+  if(!v){document.getElementById('pin').focus();return;}
+  pname=v;
+  document.getElementById('lpn').textContent=pname;
+  renderLobby(); SS('lobby');
+}
+
+// ── Lobby ──────────────────────────────────────────
+function renderLobby(){
+  const g=document.getElementById('tgrid'); g.innerHTML='';
+  LOBBIES.forEach(lob=>{
+    const pl=glp(lob.id);
+    const hc=pl.filter(Boolean).length;
+    const isAI=lob.type==='ai';
+    const full=!isAI&&hc>=lob.maxP;
+    const stat=isAI?`1 Humano + ${lob.bots} Bot${lob.bots>1?'s':''}`:(full?'Mesa Cheia':`${hc}/${lob.maxP} jogadores`);
+    const card=document.createElement('div'); card.className='tcard';
+    let sh='';
+    if(isAI){sh+=`<div class="sdot">👤</div>`;for(let b=0;b<lob.bots;b++)sh+=`<div class="sdot b">🤖</div>`;}
+    else{for(let i=0;i<lob.maxP;i++)sh+=`<div class="sdot ${pl[i]?'f':''}">${pl[i]?pl[i][0]:'?'}</div>`;}
+    card.innerHTML=`<h3>${lob.name}</h3><span class="tag ${isAI?'ai':''}">${isAI?'vs IA':'Multijogador'}</span><div class="seats">${sh}</div><div class="tstat ${full?'full':'open'}">${stat}</div>`;
+    if(!full) card.onclick=()=>joinTable(lob); else{card.style.opacity='.6';card.style.cursor='not-allowed';}
+    g.appendChild(card);
+  });
+}
+
+function joinTable(lob){
+  curLobby=lob;
+  if(lob.type==='ai'){startGame(buildAI(lob));return;}
+  const pl=glp(lob.id);
+  const seat=pl.findIndex(p=>!p); if(seat<0){renderLobby();return;}
+  pl[seat]=pname; mySeat=seat;
+  renderWaiting(lob); SS('waiting');
+  const bn=['Aristoteles','Themistocles','Pericles','Socrates'];
+  window._wt=setTimeout(()=>{
+    for(let i=0;i<lob.maxP;i++) if(!pl[i]) pl[i]=bn[i]+'_'+i;
+    renderWaiting(lob);
+    document.getElementById('whint').textContent='Mesa completa!';
+    if(mySeat===0) document.getElementById('wstart').style.display='inline-block';
+  },2500);
+}
+
+function renderWaiting(lob){
+  const pl=glp(lob.id);
+  document.getElementById('wtitle').textContent=lob.name;
+  const c=document.getElementById('wseats'); c.innerHTML='';
+  for(let i=0;i<lob.maxP;i++){
+    const d=document.createElement('div');
+    d.className=`wseat ${i===mySeat?'me':''} ${pl[i]?'':'empty'}`;
+    d.innerHTML=`<div class="slbl">Lugar ${i+1}</div><div class="snm">${pl[i]||(i===mySeat?pname:'Livre...')}</div>`;
+    c.appendChild(d);
+  }
+}
+function startFromWaiting(){
+  const pl=glp(curLobby.id);
+  startGame(buildMP(pl.map((n,i)=>n||`J${i+1}`),curLobby));
+}
+function leaveLobby(){
+  if(curLobby){const pl=glp(curLobby.id);pl[mySeat]=null;}
+  clearTimeout(window._wt); curLobby=null; renderLobby(); SS('lobby');
+}
+
+// ── Build game ─────────────────────────────────────
+function buildAI(lob){
+  const names=[pname];
+  const bn=['Bot Arquimedes','Bot Pitágoras','Bot Euclides'];
+  for(let b=0;b<lob.bots;b++) names.push(bn[b]);
+  return newGame(names,names.map((_,i)=>i>0),lob.id);
+}
+function buildMP(names,lob){return newGame(names,names.map(()=>false),lob.id);}
+
+function newGame(names,isBot,lobId){
+  const pc=names.length;
+  const tower=mkTower();
+  const hexes=buildHexes();
+
+  // Draw initial 5 discs from tower top (one per resource), assign randomly
+  const drawn=[];
+  for(let i=0;i<5;i++) drawn.push(tower.pop());
+  shuffle(drawn);
+  const piles={};
+  RES.forEach((r,i)=>{ piles[r]={disc:drawn[i],count:0}; });
+
+  const players=names.map((name,idx)=>({
+    idx,name,isBot:isBot[idx],
+    hand:{},collected:{},villages:[],score:0,
+  }));
+  RES.forEach(r=>players.forEach(p=>{p.hand[r]=0;p.collected[r]=0;}));
+
+  return {
+    lobId,pc,players,hexes,tower,piles,
+    sicel:hexes.find(h=>h.type==='vulcao').id,
+    cur:0,round:1,
+    phase:'ACTION', // ACTION|LAST_ROUND|GAME_OVER
+    trigP:null,
+    log:[],
+  };
+}
+
+// ── Start game ─────────────────────────────────────
+function startGame(g){
+  clearTimeout(window._wt);
+  G=g; mode=null; selCards=[];
+  mySeat=g.players.findIndex(p=>p.name===pname&&!p.isBot);
+  if(mySeat<0) mySeat=0;
+  log2('⚑ Jogo iniciado! Que vença o melhor Cidadão.','hl');
+  SS('game');
+  render();
+  schedBot();
+}
+
+// ── Render ─────────────────────────────────────────
+function render(){
+  if(!G) return;
+  const cp=G.players[G.cur];
+  const ti=document.getElementById('tind');
+  ti.textContent=`Ronda ${G.round} — ${cp.name}`;
+  ti.className='tind'+(G.cur===mySeat?' mt':'');
+  drawBoard();
+  renderPiles();
+  renderHand();
+  renderTower();
+  renderPlayers();
+  renderActions();
+  renderLog();
+}
+
+// ── SVG Board ──────────────────────────────────────
+function drawBoard(){
+  // Compute bounding box
+  let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
+  G.hexes.forEach(h=>{mnx=Math.min(mnx,h.px.x);mny=Math.min(mny,h.px.y);mxx=Math.max(mxx,h.px.x);mxy=Math.max(mxy,h.px.y);});
+  const pad=R+12;
+  const SW=mxx-mnx+W3+pad*2, SH=mxy-mny+R*2+pad*2;
+  const ox=-mnx+pad+W3/2, oy=-mny+pad+R;
+  const isMyT=G.cur===mySeat&&!G.players[mySeat].isBot&&G.phase!=='GAME_OVER';
+
+  const fillMap={cereais:'#c8a020',vinho:'#7a2060',peixe:'#1a6080',calcario:'#7a7060',azeite:'#607a10',vulcao:'#2a1808'};
+  const iconMap={cereais:'🌾',vinho:'🍇',peixe:'🐟',calcario:'🪨',azeite:'🫒',vulcao:'🌋'};
+  const nmMap={cereais:'Cereais',vinho:'Vinho',peixe:'Peixe',calcario:'Calcário',azeite:'Azeite',vulcao:'Vulcão Etna'};
+
+  let svg=`<svg width="${SW.toFixed(0)}" height="${SH.toFixed(0)}" viewBox="0 0 ${SW.toFixed(0)} ${SH.toFixed(0)}" xmlns="http://www.w3.org/2000/svg">`;
+  svg+=`<defs><filter id="gw" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+
+  G.hexes.forEach(h=>{
+    const cx=h.px.x+ox, cy=h.px.y+oy;
+    const pts=hexPts(cx,cy,R-1.5);
+    const isVol=h.type==='vulcao';
+    const isSicel=G.sicel===h.id;
+    const occ=h.tokens.some(pi=>pi!==mySeat);
+    const pile=G.piles[h.type];
+
+    // Selectability
+    const canSel=isMyT&&!isVol&&!isSicel&&!occ&&(mode==='c1'||mode==='c2');
+    const isSicelAdj=mode==='sicel'&&neighbors(G.sicel,G.hexes).includes(h.id);
+
+    let stroke=isSicel?'#c0392b':(canSel||isSicelAdj?'#c9a84c':'rgba(0,0,0,0.6)');
+    let strokeW=isSicel?3:((canSel||isSicelAdj)?2.5:1);
+    let fillOpac=occ&&!isVol?0.38:1;
+
+    const cursor=canSel||isSicelAdj?'pointer':(isVol?'not-allowed':'default');
+
+    svg+=`<g style="cursor:${cursor}" onclick="hclick(${h.id})">`;
+    // Main polygon
+    svg+=`<polygon points="${pts}" fill="${fillMap[h.type]}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${fillOpac}"/>`;
+    // Inner sheen
+    svg+=`<polygon points="${hexPts(cx,cy,R*0.7)}" fill="rgba(255,255,255,0.04)" stroke="none"/>`;
+    // Glow for selectable
+    if(canSel||isSicelAdj){
+      svg+=`<polygon points="${pts}" fill="rgba(201,168,76,0.18)" stroke="none"/>`;
+    }
+
+    // Icon
+    svg+=`<text x="${cx.toFixed(1)}" y="${(cy-9).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="28" style="pointer-events:none;user-select:none">${iconMap[h.type]}</text>`;
+
+    // Name label
+    svg+=`<text x="${cx.toFixed(1)}" y="${(cy+24).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="rgba(255,255,255,0.82)" font-family="Cinzel,serif" font-weight="600" style="pointer-events:none;user-select:none">${nmMap[h.type]}</text>`;
+
+    // Disc badge (top-right)
+    if(!isVol&&pile){
+      const disc=pile.disc;
+      const isRed=RSET.has(disc);
+      const bx=(cx+R*0.52).toFixed(1), by=(cy-R*0.52).toFixed(1);
+      svg+=`<circle cx="${bx}" cy="${by}" r="14" fill="#0c0a06" stroke="${isRed?'#c0392b':'#8b6914'}" stroke-width="1.8"/>`;
+      svg+=`<text x="${bx}" y="${by}" text-anchor="middle" dominant-baseline="central" font-size="10" font-family="Cinzel,serif" font-weight="700" fill="${isRed?'#e05040':'#c9a84c'}" style="pointer-events:none;user-select:none">${disc}</text>`;
+    }
+
+    // Player city tokens
+    h.tokens.forEach((pi,ti2)=>{
+      const ang=Math.PI*(2*ti2/Math.max(h.tokens.length,1))-Math.PI/2;
+      const tr=R*0.44;
+      const tx=(cx+tr*Math.cos(ang)).toFixed(1);
+      const ty=(cy+tr*Math.sin(ang)+6).toFixed(1);
+      svg+=`<circle cx="${tx}" cy="${ty}" r="11" fill="${PCOL[pi]}" stroke="rgba(255,255,255,0.55)" stroke-width="1.5" filter="url(#gw)"/>`;
+      svg+=`<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" font-size="8.5" fill="white" font-weight="bold" style="pointer-events:none;user-select:none">${G.players[pi].name[0]}</text>`;
+    });
+
+    // Sicel
+    if(isSicel){
+      svg+=`<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="30" style="pointer-events:none;user-select:none">💀</text>`;
+    }
+
+    svg+=`</g>`;
+  });
+  svg+=`</svg>`;
+  document.getElementById('bwrap').innerHTML=svg;
+}
+
+function hclick(hexId){
+  if(!G||G.cur!==mySeat||G.players[mySeat].isBot) return;
+  const h=G.hexes.find(x=>x.id===hexId); if(!h) return;
+
+  if(mode==='sicel'){
+    if(!neighbors(G.sicel,G.hexes).includes(hexId)){log2('Escolhe um hex adjacente ao vulcão!');return;}
+    G.sicel=hexId;
+    mode=null;
+    log2('💀 Sicelos moveram-se!','hl');
+    render(); return;
+  }
+
+  if(mode!=='c1'&&mode!=='c2') return;
+  if(h.type==='vulcao'){log2('O vulcão não tem recursos!');return;}
+  if(G.sicel===hexId){log2('Os Sicelos bloqueiam esse território!');return;}
+  if(h.tokens.some(pi=>pi!==mySeat)){log2('Território ocupado por outro jogador!');return;}
+  doCollect(h, mode==='c2'?2:1);
+}
+
+function doCollect(h,amt){
+  const p=G.players[mySeat];
+  const r=h.type;
+  const pile=G.piles[r];
+  // Move city token
+  G.hexes.forEach(hx=>{hx.tokens=hx.tokens.filter(pi=>pi!==mySeat);});
+  h.tokens.push(mySeat);
+  p.hand[r]=(p.hand[r]||0)+amt;
+  p.collected[r]=(p.collected[r]||0)+amt;
+  pile.count+=amt;
+  if(amt===2){
+    if(G.tower.length>0){
+      const nd=G.tower.pop();
+      pile.disc=nd;
+      log2(`${p.name} recolheu 2 ${NAME[r]} - disco agora ${nd}${RSET.has(nd)?' 🔴 Sicelos!':''}`,RSET.has(nd)?'hl':'');
+      if(RSET.has(nd)){mode='sicel';render();return;}
+    }
+  } else log2(`${p.name} recolheu 1 ${NAME[r]}`);
+  mode=null; render();
+}
+
+// ── Piles ──────────────────────────────────────────
+function renderPiles(){
+  const c=document.getElementById('rpiles'); c.innerHTML='';
+  RES.forEach(r=>{
+    const pile=G.piles[r]; if(!pile) return;
+    const iR=RSET.has(pile.disc);
+    const d=document.createElement('div'); d.className='prow';
+    d.innerHTML=`<div class="ricon">${ICON[r]}</div><div class="rnm">${NAME[r]}</div><div class="rcnt">${pile.count}</div><div class="rdv ${iR?'red':''}">${pile.disc}</div>`;
+    c.appendChild(d);
+  });
+}
+
+// ── Hand ───────────────────────────────────────────
+function renderHand(){
+  const p=G.players[mySeat];
+  const c=document.getElementById('hcards'); c.innerHTML='';
+  let tot=0; RES.forEach(r=>tot+=(p.hand[r]||0));
+  document.getElementById('hlbl').textContent=`${tot} carta${tot!==1?'s':''}`;
+  RES.forEach(r=>{
+    const cnt=p.hand[r]||0;
+    for(let i=0;i<cnt;i++){
+      const cd=document.createElement('div');
+      const key=`${r}_${i}`;
+      cd.className=`card c-${r}${selCards.includes(key)?' sel':''}`;
+      cd.innerHTML=`<div class="ci">${ICON[r]}</div><div class="ct">${NAME[r]}</div>`;
+      cd.onclick=()=>cardClick(r,i);
+      c.appendChild(cd);
+    }
+  });
+}
+function cardClick(r,i){
+  if(mode!=='found') return;
+  const key=`${r}_${i}`;
+  const idx=selCards.indexOf(key);
+  if(idx>=0) selCards.splice(idx,1); else selCards.push(key);
+  renderHand(); renderActions();
+}
+
+// ── Tower ──────────────────────────────────────────
+function renderTower(){
+  const el=document.getElementById('tdisplay');
+  if(G.tower.length===0){el.innerHTML='<span style="color:var(--stone-gray)">Torre vazia</span>';return;}
+  const top=G.tower[G.tower.length-1];
+  const iR=RSET.has(top);
+  let h=`<div style="font-size:.75rem;color:var(--stone-gray);margin-bottom:4px">Topo: <span style="color:${iR?'var(--red-sicel)':'var(--gold)'};font-weight:600;font-family:'Cinzel',serif">${top}${iR?' 🔴':''}</span> (${G.tower.length} restantes)</div>`;
+  h+=`<div class="tdisc-row">`;
+  [...G.tower].reverse().forEach((d,i)=>{
+    const r=RSET.has(d);
+    h+=`<div class="td ${r?'rd':'bl'} ${i===0?'top':''}">${d}</div>`;
+  });
+  h+=`</div>`; el.innerHTML=h;
+}
+
+// ── Players ────────────────────────────────────────
+function renderPlayers(){
+  const c=document.getElementById('plist'); c.innerHTML='';
+  G.players.forEach((p,i)=>{
+    const r=document.createElement('div');
+    r.className=`prow2 ${i===G.cur?'ct':''}`;
+    let vh=''; for(let v=0;v<3;v++) vh+=`<div class="vp ${v<p.villages.length?'b':''}"></div>`;
+    const sc=RES.reduce((s,r2)=>s+(p.collected[r2]||0)*(G.piles[r2]?.disc||1),0);
+    r.innerHTML=`<div class="pdot" style="background:${PCOL[i]}"></div><div class="pnl">${p.name}${p.isBot?' 🤖':''}${i===mySeat?' ★':''}</div><div class="pvills">${vh}</div><div class="pscore">~${sc}p</div>`;
+    c.appendChild(r);
+  });
+}
+
+// ── Actions ────────────────────────────────────────
+function renderActions(){
+  const c=document.getElementById('abtns'); c.innerHTML='';
+  const isMyT=G.cur===mySeat&&!G.players[mySeat].isBot;
+
+  if(G.phase==='GAME_OVER'){c.innerHTML='<div style="color:var(--stone-gray);font-size:.85rem">Jogo terminado.</div>';return;}
+  if(!isMyT){c.innerHTML=`<div style="color:var(--stone-gray);font-size:.85rem;font-style:italic">Vez de ${G.players[G.cur].name}...</div>`;return;}
+
+  const me=G.players[mySeat];
+  const types=RES.filter(r=>me.hand[r]>0).length;
+
+  if(mode==='sicel'){
+    const a=ab(c,'💀 Clica num hex adjacente para mover os Sicelos','abtn act'); a.style.pointerEvents='none';
+    ab(c,'✕ Cancelar (manter posição)','abtn',()=>{mode=null;render();});
+    return;
+  }
+  if(mode==='c1'||mode==='c2'){
+    ab(c,mode==='c1'?'🎯 Seleciona território — recolher 1 carta':'🎯 Seleciona território — recolher 2 cartas','abtn act').style.pointerEvents='none';
+    ab(c,'✕ Cancelar','abtn',()=>{mode=null;render();});
+    return;
+  }
+  if(mode==='found'){
+    const st=new Set(selCards.map(k=>k.split('_')[0]));
+    const ok=st.size>=2;
+    const b=ab(c,`🏘 Fundar Aldeia${ok?' ✓':'  (seleciona 2+ tipos)'}`,`abtn${ok?' pri':''}`,ok?()=>doFound():null);
+    b.disabled=!ok;
+    ab(c,'✕ Cancelar','abtn',()=>{mode=null;selCards=[];renderHand();renderActions();});
+    return;
+  }
+  ab(c,'(A) Recolher 1 carta','abtn pri',()=>{mode='c1';render();});
+  const b2=ab(c,'(A) Recolher 2 cartas — valor desce','abtn',()=>{mode='c2';render();});
+  if(G.tower.length===0){b2.disabled=true;b2.title='Torre vazia';}
+  const b3=ab(c,'(B) Fundar Aldeia','abtn pri',()=>{mode='found';selCards=[];renderHand();renderActions();});
+  b3.disabled=types<2; b3.title=types<2?'Precisas de 2+ tipos':'';
+  ab(c,'↳ Passar vez','abtn',()=>endTurn());
+}
+function ab(c,txt,cls,fn){
+  const b=document.createElement('button'); b.className=cls; b.textContent=txt;
+  if(fn) b.onclick=fn; c.appendChild(b); return b;
+}
+
+// ── Found village ──────────────────────────────────
+function doFound(){
+  const me=G.players[mySeat];
+  const tc={};
+  selCards.forEach(k=>{const r=k.split('_')[0];tc[r]=(tc[r]||0)+1;});
+  const types=Object.keys(tc);
+  if(types.length<2){log2('Precisas de 2+ tipos!');return;}
+  let mx=0,maj=null;
+  types.forEach(r=>{if(tc[r]>mx){mx=tc[r];maj=r;}});
+  const tied=types.filter(r=>tc[r]===mx);
+  if(tied.length>1){
+    pickRes('Empate de Maioria','Qual recurso mantés na aldeia?',tied,ch=>execFound(me,tc,ch));
+    return;
+  }
+  execFound(me,tc,maj);
+}
+
+function execFound(me,tc,keep){
+  const disc=[];
+  Object.keys(tc).forEach(r=>{
+    if(r===keep) return;
+    me.hand[r]=Math.max(0,me.hand[r]-tc[r]);
+    const pile=G.piles[r];
+    if(pile){
+      // Return disc from top of this pile to tower, reorder, then pull new top for pile
+      G.tower.push(pile.disc);
+      G.tower.sort((a,b)=>a-b);
+      if(G.tower.length>0) pile.disc=G.tower.pop();
+    }
+    disc.push(NAME[r]);
+  });
+  me.hand[keep]=Math.max(0,(me.hand[keep]||0)-(tc[keep]||0));
+  me.villages.push({res:keep,cards:tc[keep]||0});
+  log2(`🏘 ${me.name} fundou aldeia (${NAME[keep]})! Descartou: ${disc.join(', ')||'—'}`,'hl');
+  mode=null; selCards=[];
+  if(me.villages.length>=3&&G.phase==='ACTION'){
+    log2(`🏛 ${me.name} fundou a 3ª aldeia! Última ronda!`,'hl');
+    G.phase='LAST_ROUND'; G.trigP=mySeat;
+  }
+  endTurn();
+}
+
+// ── Turn ───────────────────────────────────────────
+function endTurn(){
+  if(mode==='sicel'){log2('Move os Sicelos antes de continuar!');return;}
+  // Tokens stay on board between turns — they block territories
+  const next=(G.cur+1)%G.pc;
+  if(G.phase==='LAST_ROUND'&&next===G.trigP){endGame();return;}
+  if(G.phase==='GAME_OVER'){showVictory();return;}
+  G.cur=next; if(next===0) G.round++;
+  mode=null; selCards=[];
+  render(); schedBot();
+}
+
+function endGame(){
+  G.phase='GAME_OVER';
+  G.players.forEach(p=>{p.score=RES.reduce((s,r)=>s+(p.collected[r]||0)*(G.piles[r]?.disc||1),0);});
+  log2('⚑ Jogo terminado! A contar pontos...','hl');
+  render(); setTimeout(showVictory,900);
+}
+
+function showVictory(){
+  const sorted=[...G.players].sort((a,b)=>b.score-a.score);
+  document.getElementById('vwinner').textContent=`${sorted[0].name} vence!`;
+  const tb=document.getElementById('stbody'); tb.innerHTML='';
+  sorted.forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${p.name}${p.isBot?' 🤖':''}</td><td>${p.villages.length}</td><td>${p.score}</td>`;
+    tb.appendChild(tr);
+  });
+  SS('victory');
+}
+
+// ── Bot ────────────────────────────────────────────
+function schedBot(){
+  if(!G||G.phase==='GAME_OVER') return;
+  if(!G.players[G.cur].isBot) return;
+  setTimeout(botTurn,800+Math.random()*700);
+}
+function botTurn(){
+  if(!G||G.phase==='GAME_OVER') return;
+  const bot=G.players[G.cur];
+  if(!bot.isBot) return;
+  const ci=G.cur;
+
+  const htypes=RES.filter(r=>bot.hand[r]>0).length;
+  // Try found
+  if(htypes>=2&&Math.random()<0.48){
+    const tc={}; RES.forEach(r=>{if(bot.hand[r]>0)tc[r]=bot.hand[r];});
+    let mx=0,keep=null;
+    Object.keys(tc).forEach(r=>{if(tc[r]>mx){mx=tc[r];keep=r;}});
+    // Discard others
+    Object.keys(tc).forEach(r=>{
+      if(r===keep) return;
+      bot.hand[r]=Math.max(0,bot.hand[r]-tc[r]);
+      const pile=G.piles[r];
+      if(pile){G.tower.push(pile.disc);G.tower.sort((a,b)=>a-b);if(G.tower.length>0)pile.disc=G.tower.pop();}
+    });
+    bot.hand[keep]=Math.max(0,(bot.hand[keep]||0)-(tc[keep]||0));
+    bot.villages.push({res:keep,cards:tc[keep]||0});
+    log2(`🏘 ${bot.name} fundou aldeia (${NAME[keep]})!`,'hl');
+    if(bot.villages.length>=3&&G.phase==='ACTION'){
+      log2(`🏛 ${bot.name} fundou 3ª aldeia! Última ronda!`,'hl');
+      G.phase='LAST_ROUND'; G.trigP=ci;
+    }
+  }
+
+  // Collect
+  const avail=G.hexes.filter(h=>h.type!=='vulcao'&&h.id!==G.sicel&&!h.tokens.some(pi=>pi!==ci));
+  if(avail.length>0){
+    const h=avail[Math.floor(Math.random()*avail.length)];
+    const amt=G.tower.length>2&&Math.random()<0.38?2:1;
+    G.hexes.forEach(hx=>{hx.tokens=hx.tokens.filter(pi=>pi!==ci);});
+    h.tokens.push(ci);
+    bot.hand[h.type]=(bot.hand[h.type]||0)+amt;
+    bot.collected[h.type]=(bot.collected[h.type]||0)+amt;
+    G.piles[h.type].count+=amt;
+    if(amt===2&&G.tower.length>0){
+      const nd=G.tower.pop();
+      G.piles[h.type].disc=nd;
+      log2(`${bot.name} recolheu 2 ${NAME[h.type]}`);
+      if(RSET.has(nd)){
+        // Bot moves sicel automatically
+        const adj2=neighbors(G.sicel,G.hexes);
+        const free=adj2.filter(id=>{const hh=G.hexes.find(x=>x.id===id);return hh&&hh.tokens.length===0;});
+        const tgt=(free.length>0?free:adj2)[0];
+        if(tgt!==undefined){G.sicel=tgt;log2('💀 Sicelos moveram-se!','hl');}
+      }
+    } else log2(`${bot.name} recolheu 1 ${NAME[h.type]}`);
+  } else log2(`${bot.name} passa.`);
+
+  // End turn — tokens stay on board
+  const next=(ci+1)%G.pc;
+  if(G.phase==='LAST_ROUND'&&next===G.trigP){endGame();return;}
+  G.cur=next; if(next===0) G.round++;
+  mode=null; selCards=[];
+  render(); schedBot();
+}
+
+// ── Log ────────────────────────────────────────────
+function log2(txt,type=''){if(G)G.log.push({txt,type});}
+function renderLog(){
+  const c=document.getElementById('glog'); c.innerHTML='';
+  G.log.slice(-25).forEach(l=>{
+    const d=document.createElement('div'); d.className=`ll ${l.type}`;
+    d.textContent=l.txt; c.appendChild(d);
+  });
+  c.scrollTop=c.scrollHeight;
+}
+
+// ── Modal ──────────────────────────────────────────
+function pickRes(title,body,opts,cb){
+  document.getElementById('mtitle').textContent=title;
+  document.getElementById('mbody').textContent=body;
+  const c=document.getElementById('mbtns'); c.innerHTML='';
+  opts.forEach(r=>{
+    const b=document.createElement('button'); b.className='btn';
+    b.textContent=`${ICON[r]} ${NAME[r]}`;
+    b.onclick=()=>{closeM();cb(r);}; c.appendChild(b);
+  });
+  document.getElementById('movl').classList.add('on');
+}
+function showM(title,body,btns){
+  document.getElementById('mtitle').textContent=title;
+  document.getElementById('mbody').textContent=body;
+  const c=document.getElementById('mbtns'); c.innerHTML='';
+  btns.forEach(b=>{
+    const el=document.createElement('button'); el.className=b.d?'btn danger':'btn sec';
+    el.textContent=b.l; el.onclick=b.a; c.appendChild(el);
+  });
+  document.getElementById('movl').classList.add('on');
+}
+function closeM(){document.getElementById('movl').classList.remove('on');}
+
+// ── Game controls ──────────────────────────────────
+function playAgain(){
+  if(!curLobby){backToLobby();return;}
+  startGame(curLobby.type==='ai'?buildAI(curLobby):buildMP(glp(curLobby.id).map((n,i)=>n||`J${i+1}`),curLobby));
+}
+function backToLobby(){G=null;curLobby=null;renderLobby();SS('lobby');}
+function leaveGame(){
+  showM('Sair do Jogo','Tens a certeza?',[
+    {l:'Sair',a:()=>{G=null;closeM();backToLobby();},d:true},
+    {l:'Cancelar',a:closeM},
+  ]);
+}
+
+// ── Utils ──────────────────────────────────────────
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+</script>
+</body>
+</html>
