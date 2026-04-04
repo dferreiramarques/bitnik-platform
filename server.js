@@ -647,6 +647,10 @@ const server = http.createServer((req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
+
+
+
+
 // CATANIA — in-process game
 // Resources: cereais/vinho/peixe/calcario/azeite
 // Village rule: keep majority, ONE chosen minority gets top tower disc
@@ -1005,14 +1009,13 @@ function catHandleMsg(ws,msg){
   if(g.phase!=='GAME_OVER')catScheduleBots(lobby);
 }
 
+globalThis._catSend=catSend;
 globalThis._catHandleMsg=catHandleMsg;
 globalThis._catBroadcastLobbies=catBroadcastLobbies;
 globalThis._CAT_LOBBIES=CAT_LOBBIES;
 globalThis._CAT_WS=CAT_WS;
 globalThis._CAT_SESSIONS=CAT_SESSIONS;
 }
-
-
 
 const wss = new WebSocketServer({ noServer: true });
 const capWss = { get clients() { return [...wss.clients].filter(w=>w._isCap); } }; // alias
@@ -1078,7 +1081,8 @@ wss.on('connection', (ws, req) => {
   // Route: Catania connections
   if (ws._isCAT) {
     globalThis._catWss = wss;
-    catSend(ws, {type:'LOBBIES', lobbies:Object.values(globalThis._CAT_LOBBIES).map(l=>({
+    const _cS = globalThis._catSend;
+    _cS(ws, {type:'LOBBIES', lobbies:Object.values(globalThis._CAT_LOBBIES).map(l=>({
       id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,
       seated:l.players.filter(Boolean).length,
       playing:!!l.game&&l.game.phase!=='GAME_OVER',
