@@ -795,7 +795,1192 @@ const CATALOG = [
     duration: '30–60 min',
     complexity: 'Médio',
     type: ['Tabuleiro', 'Gestão', 'Família'],
-    status: 'bge',
+    status: 'ready',
+    bge: 'catania.bge.json',
+  },
+];
+
+let currentGame = null;
+let generatedBGE = null;
+let wizStep = 1;
+const WIZ_STEPS = 4;
+
+// ── CATALOG RENDER ────────────────────────────────────────────────
+function renderCatalog() {
+  const grid = document.getElementById('game-grid');
+  let html = CATALOG.map(g => `
+    <div class="game-card" onclick="openGame('${g.id}')">
+      <div class="card-status ${g.status === 'ready' ? 'status-ready' : g.status === 'bge' ? 'status-bge' : 'status-draft'}">
+        ${g.status === 'ready' ? 'Online' : g.status === 'bge' ? 'BGE' : 'Draft'}
+      </div>
+      <div class="card-tag">${g.type.join(' · ')}</div>
+      <div class="card-title">${g.name}</div>
+      <div class="card-desc">${g.tagline}</div>
+      <div class="card-meta">
+        <span>👥 ${g.players}</span>
+        <span>⏱ ${g.duration}</span>
+        <span>◆ ${g.complexity}</span>
+      </div>
+      <button class="card-play" onclick="event.stopPropagation();openGame('${g.id}')">Ver jogo →</button>
+    </div>
+  `).join('');
+
+  html += `
+    <div class="game-card add-new" onclick="openWizard()">
+      <div class="add-icon">+</div>
+      <div class="add-label">Adicionar jogo</div>
+    </div>
+  `;
+  grid.innerHTML = html;
+  document.getElementById('stat-games').textContent = CATALOG.length;
+}
+
+// ── GAME DETAIL ───────────────────────────────────────────────────
+function openGame(id) {
+  currentGame = CATALOG.find(g => g.id === id);
+  if (!currentGame) return;
+  // Reset video player
+  const vp = document.getElementById('gd-video-player');
+  if (vp) { vp.pause(); vp.src=''; vp.style.display='none'; }
+  const pb = document.getElementById('gd-play-btn');
+  const pl = document.getElementById('gd-play-label');
+  if (pb) pb.style.display='flex';
+  if (pl) pl.style.display='block';
+  // Check if video exists for this game
+  const videoFile = `/${currentGame.id}/regras.mp4`;
+  const wrap = document.getElementById('gd-video-wrap');
+  if (wrap) {
+    fetch(videoFile, {method:'HEAD'}).then(r => {
+      wrap.classList.toggle('has-video', r.ok);
+    }).catch(() => wrap.classList.remove('has-video'));
+  }
+  const g = currentGame;
+  document.getElementById('gd-tag').textContent = g.type.join(' · ');
+  document.getElementById('gd-title').textContent = g.name;
+  document.getElementById('gd-sub').textContent = g.tagline;
+  document.getElementById('gd-meta').innerHTML = `
+    <div class="gd-meta-item"><div class="gd-meta-label">Jogadores</div><div class="gd-meta-val">${g.players}</div></div>
+    <div class="gd-meta-item"><div class="gd-meta-label">Duração</div><div class="gd-meta-val">${g.duration}</div></div>
+    <div class="gd-meta-item"><div class="gd-meta-label">Complexidade</div><div class="gd-meta-val">${g.complexity}</div></div>
+    <div class="gd-meta-item"><div class="gd-meta-label">Estado</div><div class="gd-meta-val" style="color:var(--teal)">${g.status === 'ready' ? '● Online' : g.status === 'bge' ? '◎ BGE — sem implementação digital' : '○ Draft'}</div></div>
+  `;
+  document.getElementById('gd-desc').textContent = g.desc;
+  document.getElementById('gd-mechs').innerHTML = g.type.map(t => `<span class="mech-tag">${t}</span>`).join('');
+  document.getElementById('game-overlay').classList.add('open');
+}
+
+function closeGame() { document.getElementById('game-overlay').classList.remove('open'); }
+
+function launchGame() {
+  if (!currentGame) return;
+  if (currentGame.status !== 'ready') {
+    showToast('Este jogo ainda não está disponível online.');
+    return;
+  }
+  window.open(`/play/${currentGame.id}`, '_blank');
+}
+
+function playGameVideo() {
+  if (!currentGame) return;
+  const videoFile = `/${currentGame.id}/regras.mp4`;
+  fetch(videoFile, {method:'HEAD'}).then(r => {
+    if (!r.ok) return;
+    const v = document.getElementById('gd-video-player');
+    v.src = videoFile;
+    v.style.display = 'block';
+    document.getElementById('gd-play-btn').style.display = 'none';
+    document.getElementById('gd-play-label').style.display = 'none';
+    v.play().catch(()=>{});
+  }).catch(()=>{});
+}
+
+function shareGame() {
+  if (!currentGame) return;
+  const url = `${location.origin}/play/${currentGame.id}`;
+  navigator.clipboard?.writeText(url).then(() => showToast('Link copiado!'));
+}
+
+// ── WIZARD ────────────────────────────────────────────────────────
+function openWizard() {
+  wizStep = 1;
+  generatedBGE = null;
+  updateWizUI();
+  document.getElementById('wizard-overlay').classList.add('open');
+}
+
+function closeWizard() {
+  document.getElementById('wizard-overlay').classList.remove('open');
+  renderCatalog();
+}
+
+function toggleTag(el) { el.classList.toggle('selected'); }
+
+function wizNext() {
+  if (wizStep === 1) {
+    if (!document.getElementById('w-name').value.trim()) {
+      showToast('Dá um nome ao jogo'); return;
+    }
+  }
+  if (wizStep === 2) {
+    const rules = document.getElementById('w-rules').value.trim();
+    if (!rules) { showToast('Descreve as regras primeiro'); return; }
+    wizStep++;
+    updateWizUI();
+    runGeneration();
+    return;
+  }
+  if (wizStep === 3) {
+    if (!generatedBGE) { showToast('Aguarda a geração…'); return; }
+    // Add to catalog
+    const name = document.getElementById('w-name').value.trim();
+    const tagline = document.getElementById('w-tagline').value.trim() || 'Jogo criado com Bitnik';
+    const tags = [...document.querySelectorAll('.tag.selected')].map(t => t.textContent);
+    const gameId = name.toLowerCase().replace(/\s+/g, '-');
+    const newGame = {
+      id: gameId,
+      name, tagline, desc: document.getElementById('w-rules').value.trim().slice(0, 200) + '…',
+      players: `${document.getElementById('w-min').value}–${document.getElementById('w-max').value}`,
+      duration: '30–60 min',
+      complexity: 'A definir',
+      type: tags.length ? tags : ['Tabuleiro'],
+      status: 'draft',
+      bge: gameId + '.bge.json',
+    };
+    CATALOG.push(newGame);
+    document.getElementById('success-name').textContent = name + ' criado!';
+    document.getElementById('game-link').value = `${location.origin}/play/${gameId}`;
+    // Upload .bge to server so it's immediately playable
+    if (generatedBGE) {
+      uploadBGEToServer(generatedBGE).then(r => {
+        if (r?.ok) {
+          newGame.status = 'ready';
+          showToast('Jogo disponível online!');
+        }
+      });
+    }
+  }
+  if (wizStep < WIZ_STEPS) wizStep++;
+  updateWizUI();
+}
+
+function wizBack() {
+  if (wizStep > 1) { wizStep--; updateWizUI(); }
+}
+
+function updateWizUI() {
+  for (let i = 1; i <= WIZ_STEPS; i++) {
+    document.getElementById(`wiz-${i}`).classList.toggle('active', i === wizStep);
+    const tab = document.getElementById(`step-tab-${i}`);
+    tab.classList.remove('active','done');
+    if (i === wizStep) tab.classList.add('active');
+    else if (i < wizStep) tab.classList.add('done');
+  }
+  document.getElementById('wiz-back-btn').style.visibility = wizStep > 1 ? 'visible' : 'hidden';
+  const nextBtn = document.getElementById('wiz-next-btn');
+  if (wizStep === WIZ_STEPS) { nextBtn.style.display = 'none'; }
+  else { nextBtn.style.display = ''; nextBtn.textContent = wizStep === 3 ? (generatedBGE ? 'Publicar →' : 'A gerar…') : 'Continuar →'; }
+}
+
+// ── LLM GENERATION ────────────────────────────────────────────────
+async function runGeneration() {
+  const name  = document.getElementById('w-name').value.trim();
+  const rules = document.getElementById('w-rules').value.trim();
+  const tags  = [...document.querySelectorAll('.tag.selected')].map(t => t.textContent).join(', ');
+  const minP  = document.getElementById('w-min').value;
+  const maxP  = document.getElementById('w-max').value;
+
+  // Reset UI
+  document.getElementById('bge-result').style.display = 'none';
+  document.getElementById('gen-error').style.display = 'none';
+  for (let i=1;i<=4;i++) {
+    document.getElementById(`dot-${i}`).className='dot dot-wait';
+  }
+
+  const setStep = (n, done=false) => {
+    document.getElementById(`dot-${n}`).className = `dot ${done?'dot-done':'dot-active'}`;
+  };
+
+  setStep(1);
+  await delay(600);
+  setStep(1,true); setStep(2);
+  await delay(800);
+  setStep(2,true); setStep(3);
+
+  try {
+    const prompt = `You are a board game engine expert. Convert this game description into a valid BGE (.bge) JSON file.
+
+GAME: "${name}"
+PLAYERS: ${minP}–${maxP}
+TYPE: ${tags || 'board game'}
+RULES:
+${rules}
+
+Generate a complete .bge.json following this EXACT structure:
+{
+  "_format": "bge",
+  "_version": "0.4",
+  "game": { "name": "...", "players": { "min": N, "max": N } },
+  "swimlanes": [
+    { "id": "sl1", "name": "Setup", "color": "#f5a623", "y": 0, "h": 360, "collapsed": false },
+    { "id": "sl2", "name": "Game Loop", "color": "#2ec4a4", "y": 360, "h": 1080, "collapsed": false },
+    { "id": "sl3", "name": "End Game", "color": "#f87171", "y": 1440, "h": 360, "collapsed": false }
+  ],
+  "nodes": [...],
+  "edges": [...],
+  "engine_nodes_used": [...]
+}
+
+Node types available: GAME_START, ROUND_START, TURN_BLOCK, TURN_START, TURN_END, GAME_END, INSTANT_WIN, EXTRA_TURNS (FLOW); CHECK_COND, CHECK_RES, CHECK_WIN, DICE_ROLL, COMBO_DET, CONF_CHOICE, RANDOM (LOGIC); PLAY_CARD, DRAW_CARD, SWAP, TILE_PLACE, MOVE_PIECE, PLACE_TOKEN, COLLECT_RES, OPT_ACTION, STEAL, CARD_MOD (ACTIONS); DECK, HAND, COUNTER, PLAYER_ST, ZONE, SHARD_BOARD, STRUCTURE, LOCKED_SLOT, ROLE (DATA); NOTIFY_ALL, NOTIFY_P, SCORE_PTS, SPATIAL_SC, MAJORITY, COLL_BONUS, FIRST_CLAIM, PROG_REVEAL, SECRET_BET, COMP_CLAIM, REACT_DEF (EVENTS); ON_TURN_S, ON_TURN_E, ON_ROUND_E, ON_TILE, ON_CARD, ON_SCORE, ON_PIECE, ON_RES, ON_DECK_E, ON_COND, ON_ACTION, AFTER_EFF (TRIGGERS); BOARD_LAY, PIECE_VIS, CARD_TPL, ANIMATION, SOUND_FX, TIMER, SIMULTAN (ASSETS).
+
+TURN_BLOCK nodes must have config.tb with: constraint ("choose_1"|"up_to_n"|"all"|"free"), max (number), actions ([{id,type,mand}]), outcomes ([{id,label,color}]).
+
+Place Setup nodes at y≈60-300, Game Loop at y≈420-1400, End Game at y≈1500-1780.
+Place nodes horizontally at x: 60, 280, 520, 760, 1000...
+
+Return ONLY valid JSON, no markdown, no explanation.`;
+
+    const response = await fetch('/api/generate-bge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    setStep(3,true); setStep(4);
+    await delay(500);
+
+    // Parse JSON
+    let bge;
+    try {
+      const clean = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      bge = JSON.parse(clean);
+    } catch {
+      throw new Error('Não foi possível parsear o JSON gerado. Tenta de novo.');
+    }
+
+    // Validate
+    if (!bge.nodes || !bge.edges) throw new Error('Estrutura inválida — faltam nodes ou edges');
+
+    setStep(4,true);
+    generatedBGE = bge;
+
+    // Show preview
+    document.getElementById('bge-node-count').textContent = bge.nodes.length;
+    document.getElementById('bge-edge-count').textContent = bge.edges.length;
+
+    const preview = JSON.stringify(bge, null, 2)
+      .replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
+      .replace(/: "([^"]+)"/g, ': <span class="str">"$1"</span>')
+      .replace(/: (\d+)/g, ': <span class="val">$1</span>');
+    document.getElementById('bge-preview-box').innerHTML = preview;
+    document.getElementById('bge-result').style.display = 'block';
+
+    document.getElementById('wiz-next-btn').textContent = 'Publicar →';
+
+  } catch (err) {
+    setStep(3); // mark as failed (stays orange)
+    document.getElementById('gen-error').style.display = 'block';
+    document.getElementById('gen-error').textContent = '⚠ ' + (err.message || 'Erro na geração');
+    document.getElementById('wiz-next-btn').textContent = 'Tentar de novo';
+    document.getElementById('wiz-next-btn').onclick = () => { wizStep=2; updateWizUI(); };
+  }
+}
+
+function downloadBGE() {
+  if (!generatedBGE) return;
+  const name = (generatedBGE.game?.name || 'jogo').toLowerCase().replace(/\s+/g,'-');
+  const blob = new Blob([JSON.stringify(generatedBGE, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.bge.json';
+  a.click();
+}
+
+async function uploadBGEToServer(bge) {
+  try {
+    const res = await fetch('/api/upload-bge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bge),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.error('Upload failed:', e);
+    return null;
+  }
+}
+
+function copyLink() {
+  const val = document.getElementById('game-link').value;
+  navigator.clipboard?.writeText(val).then(() => showToast('Link copiado!'));
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────────────
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('upload-zone').innerHTML = `
+    <div class="upload-icon">✓</div>
+    <div class="upload-title">${file.name}</div>
+    <div class="upload-sub">${(file.size/1024).toFixed(0)} KB · carregado</div>
+  `;
+  document.getElementById('upload-zone').style.borderColor = 'var(--teal)';
+  // For demo: just note the filename in rules
+  const current = document.getElementById('w-rules').value;
+  if (!current) {
+    document.getElementById('w-rules').placeholder = `Ficheiro: ${file.name}\n\nDescreve também as mecânicas principais para melhorar o resultado…`;
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile({ target: { files: [file] } });
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modals on overlay click
+document.getElementById('wizard-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('wizard-overlay')) closeWizard();
+});
+document.getElementById('game-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('game-overlay')) closeGame();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────
+renderCatalog();
+
+function applyIndexLang() {
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = T('lang.toggle');
+  // Update game cards with translated names
+  document.querySelectorAll('.game-card').forEach(card => {
+    const id = card.dataset.id;
+    if (!id) return;
+    const game = CATALOG.find(g => g.id === id);
+    if (!game) return;
+    const lang = getLang();
+    const nameEl = card.querySelector('.game-name');
+    if (nameEl) nameEl.textContent = (lang==='en' && game.nameEn) ? game.nameEn : game.name;
+    const tagEl = card.querySelector('.game-tag');
+    if (tagEl && lang==='en' && game.taglineEn) tagEl.textContent = game.taglineEn;
+  });
+}
+window.addEventListener('langchange', applyIndexLang);
+if (typeof applyIndexLang === 'function') applyIndexLang();
+</script>
+</body>
+</html>status: 'ready'ml>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bitnik Games — David Marques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="/i18n.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0e0c09;
+  --paper: #f5f0e8;
+  --cream: #ede7d9;
+  --gold: #c8973a;
+  --rust: #b84e2a;
+  --teal: #2a6b6e;
+  --muted: #8a8070;
+  --border: #d4ccc0;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 56px;
+  background: var(--ink); border-bottom: 1px solid #2a2620;
+}
+.nav-logo {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+  font-size: 16px; color: var(--paper); letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.nav-logo span { color: var(--gold); }
+nav ul { display: flex; gap: 32px; list-style: none; }
+nav a { color: #8a8070; text-decoration: none; font-size: 12px;
+  letter-spacing: 1px; text-transform: uppercase; transition: color .2s; }
+nav a:hover { color: var(--paper); }
+.nav-cta {
+  padding: 7px 18px; background: var(--gold); color: var(--ink);
+  border-radius: 3px; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; border: none; transition: background .2s;
+}
+.nav-cta:hover { background: #d4a84a; }
+
+/* ── HERO ── */
+#hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  justify-content: flex-end; padding: 0 40px 80px;
+  position: relative; overflow: hidden;
+  background: var(--ink);
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, #1a3535 0%, var(--ink) 60%);
+}
+.hero-grid {
+  position: absolute; inset: 0; opacity: .06;
+  background-image:
+    linear-gradient(var(--paper) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.hero-content { position: relative; z-index: 2; max-width: 800px; }
+.hero-label {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-label::before {
+  content: ''; width: 32px; height: 1px; background: var(--gold);
+}
+h1 {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+  font-size: clamp(48px, 8vw, 96px); line-height: .95;
+  color: var(--paper); margin-bottom: 32px; letter-spacing: -2px;
+}
+h1 em { font-style: normal; color: var(--gold); }
+.hero-sub {
+  font-size: 15px; color: #8a8070; max-width: 480px;
+  line-height: 1.8; margin-bottom: 48px;
+}
+.hero-actions { display: flex; gap: 16px; align-items: center; }
+.btn-primary {
+  padding: 14px 32px; background: var(--gold); color: var(--ink);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
+  letter-spacing: 1.5px; text-transform: uppercase; border: none;
+  border-radius: 3px; cursor: pointer; transition: all .2s;
+}
+.btn-primary:hover { background: #d4a84a; transform: translateY(-1px); }
+.btn-ghost {
+  padding: 14px 32px; background: transparent; color: var(--paper);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  border: 1px solid #3a3630; border-radius: 3px; cursor: pointer; transition: all .2s;
+}
+.btn-ghost:hover { border-color: var(--paper); }
+.hero-stats {
+  position: absolute; bottom: 80px; right: 40px; z-index: 2;
+  display: flex; gap: 40px;
+}
+.stat { text-align: right; }
+.stat-n {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 36px;
+  color: var(--paper); line-height: 1;
+}
+.stat-l { font-size: 11px; color: #5a5450; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── SECTIONS ── */
+section { padding: 100px 40px; }
+.section-label {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 48px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
+
+/* ── CATALOG ── */
+#catalog { background: var(--paper); }
+.catalog-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 48px;
+}
+.catalog-header h2 {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+  font-size: 40px; letter-spacing: -1px;
+}
+#game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2px;
+}
+.game-card {
+  background: var(--cream); border: 1px solid var(--border);
+  padding: 28px; position: relative; overflow: hidden;
+  cursor: pointer; transition: all .2s; group: true;
+}
+.game-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 3px; background: var(--gold);
+  transform: scaleX(0); transform-origin: left; transition: transform .3s;
+}
+.game-card:hover::before { transform: scaleX(1); }
+.game-card:hover { background: #e8e2d8; }
+.card-tag {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+}
+.card-title {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+  font-size: 22px; margin-bottom: 8px; letter-spacing: -.5px;
+}
+.card-desc { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+.card-meta {
+  display: flex; gap: 16px; font-size: 11px; color: var(--muted);
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+.card-meta span { display: flex; align-items: center; gap: 4px; }
+.card-status {
+  position: absolute; top: 20px; right: 20px;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 2px;
+}
+.status-ready { background: rgba(42,107,110,.1); color: var(--teal); }
+.status-bge   { background: #6366f1; color: #fff; font-size: .65rem; }
+.status-draft { background: rgba(200,151,58,.1); color: var(--gold); }
+.card-play {
+  margin-top: 16px; width: 100%; padding: 10px;
+  background: var(--ink); color: var(--paper);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px;
+  letter-spacing: 1.5px; text-transform: uppercase; border: none;
+  border-radius: 2px; cursor: pointer; transition: background .2s; display: none;
+}
+.game-card:hover .card-play { display: block; }
+.card-play:hover { background: var(--teal); }
+
+/* Add new game card */
+.game-card.add-new {
+  border: 2px dashed var(--border); background: transparent;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 200px; gap: 12px;
+}
+.game-card.add-new:hover { border-color: var(--gold); background: rgba(200,151,58,.04); }
+.add-icon {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 2px dashed var(--border); display: flex; align-items: center;
+  justify-content: center; font-size: 24px; color: var(--muted);
+  transition: all .2s;
+}
+.game-card.add-new:hover .add-icon { border-color: var(--gold); color: var(--gold); }
+.add-label {
+  font-size: 12px; color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ── WIZARD MODAL ── */
+#wizard-overlay {
+  position: fixed; inset: 0; z-index: 500; display: none;
+  background: rgba(14,12,9,.7); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+#wizard-overlay.open { display: flex; }
+#wizard {
+  background: var(--paper); width: 100%; max-width: 680px;
+  max-height: 90vh; overflow-y: auto; border-radius: 4px;
+  border: 1px solid var(--border);
+  box-shadow: 0 32px 80px rgba(0,0,0,.4);
+}
+.wiz-header {
+  padding: 28px 32px 20px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.wiz-title {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 20px;
+}
+.wiz-close {
+  background: none; border: none; font-size: 22px; cursor: pointer;
+  color: var(--muted); line-height: 1; transition: color .15s;
+}
+.wiz-close:hover { color: var(--ink); }
+.wiz-steps {
+  display: flex; padding: 0 32px; gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.wiz-step {
+  flex: 1; padding: 14px 0; text-align: center;
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); border-bottom: 2px solid transparent;
+  transition: all .2s;
+}
+.wiz-step.active { color: var(--ink); border-bottom-color: var(--gold); }
+.wiz-step.done { color: var(--teal); }
+.wiz-body { padding: 32px; }
+.wiz-screen { display: none; }
+.wiz-screen.active { display: block; }
+
+/* Form */
+.form-group { margin-bottom: 24px; }
+.form-label {
+  display: block; font-size: 11px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.form-input, .form-textarea, .form-select {
+  width: 100%; padding: 12px 14px;
+  background: white; border: 1px solid var(--border); border-radius: 3px;
+  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink);
+  transition: border-color .2s; outline: none;
+}
+.form-input:focus, .form-textarea:focus { border-color: var(--gold); }
+.form-textarea { resize: vertical; min-height: 120px; line-height: 1.7; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: 4px;
+  padding: 40px; text-align: center; cursor: pointer;
+  transition: all .2s; background: white;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--gold); background: rgba(200,151,58,.04);
+}
+.upload-icon { font-size: 32px; margin-bottom: 12px; }
+.upload-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: var(--muted); }
+.upload-or {
+  display: flex; align-items: center; gap: 16px; margin: 20px 0;
+  font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+}
+.upload-or::before, .upload-or::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* AI Processing */
+.ai-status {
+  background: var(--ink); border-radius: 4px; padding: 24px;
+  margin-bottom: 24px; color: var(--paper);
+}
+.ai-status-line {
+  display: flex; align-items: center; gap: 12px; padding: 8px 0;
+  font-size: 12px; border-bottom: 1px solid #2a2620;
+}
+.ai-status-line:last-child { border: none; }
+.ai-status-line .dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.dot-wait { background: #3a3630; }
+.dot-active { background: var(--gold); animation: pulse 1s infinite; }
+.dot-done { background: var(--teal); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* BGE Preview */
+.bge-preview {
+  background: var(--ink); border-radius: 4px; padding: 20px;
+  font-size: 11px; line-height: 1.8; color: #8a8070;
+  max-height: 200px; overflow-y: auto; font-family: 'DM Mono', monospace;
+}
+.bge-preview .key { color: #c8973a; }
+.bge-preview .val { color: #8db5b7; }
+.bge-preview .str { color: #a8c87a; }
+
+/* Tags */
+.tag-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 2px;
+  font-size: 12px; cursor: pointer; transition: all .15s; background: white;
+}
+.tag.selected { border-color: var(--gold); background: rgba(200,151,58,.08); color: var(--gold); }
+
+/* Wiz nav */
+.wiz-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-top: 1px solid var(--border);
+  background: var(--cream);
+}
+.wiz-back {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 20px;
+  border-radius: 3px; cursor: pointer; transition: all .15s;
+}
+.wiz-back:hover { border-color: var(--ink); color: var(--ink); }
+.wiz-next {
+  padding: 10px 28px; background: var(--gold); color: var(--ink);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px;
+  letter-spacing: 1.5px; text-transform: uppercase; border: none;
+  border-radius: 3px; cursor: pointer; transition: all .2s;
+}
+.wiz-next:hover { background: #d4a84a; }
+.wiz-next:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+/* ── GAME DETAIL MODAL ── */
+#game-overlay {
+  position: fixed; inset: 0; z-index: 500; display: none;
+  background: rgba(14,12,9,.8); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+}
+#game-overlay.open { display: flex; }
+#game-detail {
+  background: var(--paper); width: 100%; max-width: 760px;
+  border-radius: 4px; border: 1px solid var(--border);
+  box-shadow: 0 32px 80px rgba(0,0,0,.5); overflow: hidden;
+}
+.gd-video-wrap {
+  background: var(--ink); border-radius: 4px; overflow: hidden;
+  aspect-ratio: 16/9; position: relative; cursor: pointer;
+  display: none; margin-bottom: 20px;
+}
+.gd-video-wrap.has-video { display: block; }
+.gd-video-thumb {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: brightness(0.7);
+}
+.gd-video-play {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+}
+.gd-play-btn {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.gd-play-btn::after {
+  content: ''; border-style: solid;
+  border-width: 10px 0 10px 18px;
+  border-color: transparent transparent transparent #fff;
+  margin-left: 4px;
+}
+.gd-play-label {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(255,255,255,.7);
+}
+.gd-video-player { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+.gd-header {
+  background: var(--ink); padding: 40px; position: relative;
+}
+.gd-tag { font-size: 11px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 12px; }
+.gd-title {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 36px;
+  color: var(--paper); letter-spacing: -1px; margin-bottom: 8px;
+}
+.gd-sub { font-size: 13px; color: #5a5450; }
+.gd-close {
+  position: absolute; top: 20px; right: 20px;
+  background: #1a1810; border: 1px solid #2a2620;
+  color: #5a5450; border-radius: 50%; width: 36px; height: 36px;
+  font-size: 18px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: all .15s;
+}
+.gd-close:hover { border-color: var(--paper); color: var(--paper); }
+.gd-body { padding: 32px 40px; }
+.gd-meta { display: flex; gap: 32px; margin-bottom: 28px; flex-wrap: wrap; }
+.gd-meta-item { }
+.gd-meta-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.gd-meta-val { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; }
+.gd-desc { font-size: 13px; line-height: 1.8; color: var(--muted); margin-bottom: 28px; }
+.gd-mechanics { margin-bottom: 28px; }
+.gd-mechanics h3 { font-family: 'Space Grotesk', sans-serif; font-size: 14px; margin-bottom: 12px; }
+.mech-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.mech-tag {
+  padding: 5px 12px; background: var(--cream); border: 1px solid var(--border);
+  border-radius: 2px; font-size: 11px; letter-spacing: .5px;
+}
+.gd-actions { display: flex; gap: 12px; }
+.btn-play {
+  flex: 1; padding: 16px; background: var(--teal); color: white;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 14px;
+  letter-spacing: 2px; text-transform: uppercase; border: none;
+  border-radius: 3px; cursor: pointer; transition: background .2s;
+}
+.btn-play:hover { background: #1f5558; }
+.btn-share {
+  padding: 16px 24px; background: transparent; color: var(--ink);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
+  letter-spacing: 1px; text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 3px; cursor: pointer; transition: all .2s;
+}
+.btn-share:hover { border-color: var(--ink); }
+
+/* ── ABOUT ── */
+#about { background: var(--ink); color: var(--paper); }
+#about .section-label { color: var(--gold); }
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.about-h {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 800;
+  font-size: 36px; letter-spacing: -1px; margin-bottom: 20px;
+  color: var(--paper); line-height: 1.1;
+}
+.about-p { font-size: 13px; color: #5a5450; line-height: 1.9; margin-bottom: 16px; }
+.about-sig {
+  font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--gold);
+  margin-top: 28px; padding-top: 20px; border-top: 1px solid #2a2620;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 32px; right: 32px; z-index: 999;
+  background: var(--ink); color: var(--paper);
+  padding: 14px 20px; border-radius: 4px; font-size: 13px;
+  border-left: 3px solid var(--gold); transform: translateY(20px);
+  opacity: 0; transition: all .3s; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink); border-top: 1px solid #1a1810;
+  padding: 28px 40px; display: flex; justify-content: space-between;
+  align-items: center; font-size: 11px; color: #3a3630;
+}
+.footer-brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #5a5450; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Bitnik <span>Games</span></div>
+  <ul>
+    <li><a href="#catalog">Catálogo</a></li>
+    <li><a href="#about">David Marques</a></li>
+    <li><a href="bitnik-docs.html" target="_blank">Docs</a></li>
+  <li><a href="taxonomy.html" target="_blank">Taxonomia</a></li>
+  </ul>
+  <button class="nav-cta" onclick="openWizard()">+ Novo Jogo</button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-label">Bitnik Games · Porto, Portugal</div>
+    <h1>Board games<br>by <em>David<br>Marques</em></h1>
+    <p class="hero-sub">
+      Jogos de tabuleiro independentes. Do papel ao digital —
+      cada jogo começa numa mesa, e acaba numa plataforma online.
+    </p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('catalog').scrollIntoView({behavior:'smooth'})">Ver catálogo</button>
+      <button class="btn-ghost" onclick="openWizard()">Digitalizar um jogo</button>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-n" id="stat-games">4</div><div class="stat-l">Jogos</div></div>
+    <div class="stat"><div class="stat-n">2024</div><div class="stat-l">Fundado</div></div>
+    <div class="stat"><div class="stat-n">MIT</div><div class="stat-l">Licença</div></div>
+  </div>
+</section>
+
+<!-- CATALOG -->
+<section id="catalog">
+  <div class="catalog-header">
+    <div>
+      <div class="section-label">Catálogo</div>
+      <h2>Os jogos</h2>
+    </div>
+    <button class="btn-primary" onclick="openWizard()">+ Adicionar jogo</button>
+  </div>
+  <div id="game-grid"></div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid">
+    <div>
+      <div class="section-label">O criador</div>
+      <h2 class="about-h">Game designer<br>independente</h2>
+      <p class="about-p">
+        Porto, 2026. Criei a Bitnik para publicar jogos de tabuleiro
+        independentes — do protótipo ao produto acabado, sem intermediários.
+      </p>
+      <p class="about-p">
+        Cada jogo começa numa mesa com testers. Quando as regras estão
+        sólidas, a versão digital serve para financiar a edição física —
+        para publishers, crowdfunding, ou simplesmente para jogar à distância.
+      </p>
+      <p class="about-p">
+        A Bitnik Framework é a infraestrutura que torna isso possível:
+        qualquer jogo do catálogo pode ser jogado online, a partir do
+        livro de regras.
+      </p>
+      <div class="about-sig">
+        David Marques · Bitnik Games · MIT License
+      </div>
+    </div>
+    <div>
+      <div style="background:#141210;border:1px solid #2a2620;border-radius:4px;padding:28px;font-size:12px;line-height:2;color:#3a3630">
+        <div style="color:#c8973a;margin-bottom:16px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px">Stack</div>
+        <div>Bitnik Framework (beta)</div>
+        <div>BGE Runtime · Node.js + WebSocket</div>
+        <div>Node Editor · HTML + JS</div>
+        <div>43-node Taxonomy</div>
+        <div style="margin-top:16px;color:#c8973a">Jogos validados</div>
+        <div>Bulbous · Capivaras</div>
+        <div>Praia das Percebes · Nine Oils · Catania</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="footer-brand">Bitnik Games</span>
+  <span>David Marques · MIT License · 2024</span>
+  <span>Porto, Portugal</span>
+</footer>
+
+<!-- WIZARD MODAL -->
+<div id="wizard-overlay">
+  <div id="wizard">
+    <div class="wiz-header">
+      <div class="wiz-title">Digitalizar um jogo</div>
+      <button class="wiz-close" onclick="closeWizard()">×</button>
+    </div>
+    <div class="wiz-steps">
+      <div class="wiz-step active" id="step-tab-1">1. Jogo</div>
+      <div class="wiz-step" id="step-tab-2">2. Regras</div>
+      <div class="wiz-step" id="step-tab-3">3. Gerar</div>
+      <div class="wiz-step" id="step-tab-4">4. Publicar</div>
+    </div>
+    <div class="wiz-body">
+
+      <!-- SCREEN 1: Game info -->
+      <div class="wiz-screen active" id="wiz-1">
+        <div class="form-group">
+          <label class="form-label">Nome do jogo *</label>
+          <input class="form-input" id="w-name" placeholder="ex: Bulbous" maxlength="60">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Mínimo de jogadores</label>
+            <select class="form-select" id="w-min">
+              <option value="1">1</option><option value="2" selected>2</option>
+              <option value="3">3</option><option value="4">4</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Máximo de jogadores</label>
+            <select class="form-select" id="w-max">
+              <option value="2">2</option><option value="3">3</option>
+              <option value="4" selected>4</option><option value="6">6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tagline (1 frase)</label>
+          <input class="form-input" id="w-tagline" placeholder="ex: Um jogo de bluff e apostas com cartas de charme">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de jogo</label>
+          <div class="tag-grid" id="type-tags">
+            <div class="tag" onclick="toggleTag(this)">Cartas</div>
+            <div class="tag" onclick="toggleTag(this)">Tabuleiro</div>
+            <div class="tag" onclick="toggleTag(this)">Dados</div>
+            <div class="tag" onclick="toggleTag(this)">Bluff</div>
+            <div class="tag" onclick="toggleTag(this)">Recursos</div>
+            <div class="tag" onclick="toggleTag(this)">Tile Placement</div>
+            <div class="tag" onclick="toggleTag(this)">Trick-taking</div>
+            <div class="tag" onclick="toggleTag(this)">Cooperativo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: Rules -->
+      <div class="wiz-screen" id="wiz-2">
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+             ondragover="this.classList.add('dragover');event.preventDefault()"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="handleDrop(event)">
+          <div class="upload-icon">📄</div>
+          <div class="upload-title">Arrasta o livro de regras aqui</div>
+          <div class="upload-sub">PDF ou Word · até 20MB</div>
+        </div>
+        <input type="file" id="file-input" accept=".pdf,.doc,.docx" style="display:none" onchange="handleFile(event)">
+        <div class="upload-or">ou descreve as regras</div>
+        <div class="form-group">
+          <label class="form-label">Descrição das mecânicas</label>
+          <textarea class="form-textarea" id="w-rules" style="min-height:160px"
+            placeholder="Descreve como se joga: setup, o que se faz no turno, como se ganha...&#10;&#10;ex: Cada jogador tem 4 Baelfungious (estruturas de 1-4 slots). Em cada ronda o Governante escolhe qual atacar. Todos apostam cartas secretamente. O apostador mais alto coloca um bulb. Quem completar todas as Baelfungious dispara o fim. Pontuação: bulbs + maioria + colecção de cores."></textarea>
+          <div class="form-hint">Quanto mais detalhe, melhor o resultado gerado.</div>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: Generate -->
+      <div class="wiz-screen" id="wiz-3">
+        <div class="ai-status" id="ai-status-box">
+          <div class="ai-status-line">
+            <div class="dot dot-wait" id="dot-1"></div>
+            <span id="step-txt-1">A analisar as regras…</span>
+          </div>
+          <div class="ai-status-line">
+            <div class="dot dot-wait" id="dot-2"></div>
+            <span id="step-txt-2">A identificar componentes e mecânicas…</span>
+          </div>
+          <div class="ai-status-line">
+            <div class="dot dot-wait" id="dot-3"></div>
+            <span id="step-txt-3">A gerar grafo de nós (.bge)…</span>
+          </div>
+          <div class="ai-status-line">
+            <div class="dot dot-wait" id="dot-4"></div>
+            <span id="step-txt-4">A validar estrutura…</span>
+          </div>
+        </div>
+        <div id="bge-result" style="display:none">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">
+            .bge gerado — <span id="bge-node-count">0</span> nós · <span id="bge-edge-count">0</span> edges
+          </div>
+          <div class="bge-preview" id="bge-preview-box"></div>
+        </div>
+        <div id="gen-error" style="display:none;color:var(--rust);font-size:13px;padding:16px;background:rgba(184,78,42,.08);border-radius:4px;border-left:3px solid var(--rust)"></div>
+      </div>
+
+      <!-- SCREEN 4: Publish -->
+      <div class="wiz-screen" id="wiz-4">
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:48px;margin-bottom:16px">🎉</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:24px;margin-bottom:8px" id="success-name">Jogo criado!</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:28px">
+            O teu jogo foi adicionado ao catálogo.
+          </div>
+        </div>
+        <div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:20px">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Link do jogo</div>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" id="game-link" readonly style="flex:1;background:white;font-size:12px">
+            <button class="wiz-next" onclick="copyLink()" style="flex-shrink:0">Copiar</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:16px">
+            <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Próximos passos</div>
+            <div style="font-size:12px;line-height:2;color:var(--muted)">
+              ↓ Descarrega o .bge<br>
+              → Corre o runtime local<br>
+              → Envia o link a playtesters<br>
+              → Usa para pitch a publishers
+            </div>
+          </div>
+          <div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:16px">
+            <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Ficheiros</div>
+            <button onclick="downloadBGE()" style="width:100%;padding:10px;background:var(--ink);color:var(--paper);border:none;border-radius:3px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;margin-bottom:8px">Descarregar .bge</button>
+            <button onclick="closeWizard()" style="width:100%;padding:10px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wiz-nav">
+      <button class="wiz-back" id="wiz-back-btn" onclick="wizBack()" style="visibility:hidden">← Voltar</button>
+      <button class="wiz-next" id="wiz-next-btn" onclick="wizNext()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME DETAIL MODAL -->
+<div id="game-overlay">
+  <div id="game-detail">
+    <div class="gd-header">
+      <button class="gd-close" onclick="closeGame()">×</button>
+      <div class="gd-tag" id="gd-tag">—</div>
+      <div class="gd-title" id="gd-title">—</div>
+      <div class="gd-sub" id="gd-sub">—</div>
+    </div>
+    <div class="gd-body">
+      <div class="gd-video-wrap" id="gd-video-wrap" onclick="playGameVideo()">
+        <div class="gd-video-play">
+          <button class="gd-play-btn" id="gd-play-btn"></button>
+          <span class="gd-play-label" id="gd-play-label">Ver vídeo das regras</span>
+        </div>
+        <video class="gd-video-player" id="gd-video-player" controls></video>
+      </div>
+      <div class="gd-meta" id="gd-meta"></div>
+      <div class="gd-desc" id="gd-desc"></div>
+      <div class="gd-mechanics">
+        <h3>Mecânicas</h3>
+        <div class="mech-list" id="gd-mechs"></div>
+      </div>
+      <div class="gd-actions">
+        <button class="btn-play" onclick="launchGame()">▶ Jogar Online</button>
+        <button class="btn-share" onclick="shareGame()">Partilhar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const CATALOG = [
+  {
+    id: 'bulbous',
+    name: 'Bulbous',
+    tagline: 'Um jogo de bluff e apostas com cartas de charme',
+    desc: 'Cada jogador controla Baelfungious — estruturas míticas de 1 a 4 slots. O Governante escolhe qual atacar. Todos apostam cartas secretamente. O apostador mais alto coloca um bulb. Primeiro a esgotar o reservatório dispara o endgame.',
+    players: '2–4',
+    duration: '45–60 min',
+    complexity: 'Médio',
+    type: ['Cartas', 'Bluff', 'Trick-taking'],
+    status: 'ready',
+    bge: 'bulbous.bge.json',
+  },
+  {
+    id: 'capivaras',
+    name: 'Capivaras',
+    tagline: 'Apostas secretas no Pantanal',
+    desc: 'Cartas de capivaras e nenúfares dispostas na mesa. Cada jogador aposta secretamente numa. Aposta única ganha a carta. Empate — ninguém ganha. O token do pássaro pertence a quem tiver mais cartas-pássaro.',
+    players: '2–6',
+    duration: '20–30 min',
+    complexity: 'Leve',
+    type: ['Cartas', 'Bluff', 'Família'],
+    status: 'ready',
+    bge: 'capivaras.bge.json',
+  },
+  {
+    id: 'percebes',
+    name: 'Praia das Percebes', nameEn: 'Barnacle Beach',
+    tagline: 'Tile placement cooperativo e competitivo na praia',
+    desc: 'Tabuleiro 7×7 partilhado. Cada turno, tiras um tile e colocas na adjacência. Salva-vidas marcam linhas e colunas — pontua quem tiver mais banhistas no segmento. Objectivos secretos revelados progressivamente.',
+    players: '2–4',
+    duration: '40–60 min',
+    complexity: 'Médio',
+    type: ['Tabuleiro', 'Tile Placement', 'Recursos'],
+    status: 'ready',
+    bge: 'percebes.bge.json',
+  },
+  {
+    id: 'nineoils',
+    name: 'Nine Oils',
+    tagline: 'A game of luck and will — 1861',
+    desc: 'Dois vendedores de óleo de cobra competem pela banca. Rola 9 dados, identifica combos, joga cartas de personagem para bloquear, roubar ou amplificar. Primeiro a encher 6 garrafas na banca ganha.',
+    players: '2',
+    duration: '20–40 min',
+    complexity: 'Leve',
+    type: ['Dados', 'Cartas', 'Bluff'],
+    status: 'ready',
+    bge: 'nine-oils.bge.json',
+  },
+  {
+    id: 'catania',
+    name: 'Catania',
+    tagline: 'Funda aldeias na Sicília do século VIII',
+    desc: 'Spinoff do Catan por David Marques. Gere recursos num tabuleiro hexagonal, recolhe cartas e funda aldeias. A torre numérica faz os valores dos recursos subir e descer ao longo do jogo. Quem fundar 3 aldeias desencadeia o fim — pontuação = cartas × valor do disco.',
+    players: '2–4',
+    duration: '30–60 min',
+    complexity: 'Médio',
+    type: ['Tabuleiro', 'Gestão', 'Família'],
+    status: 'ready',
     bge: 'catania.bge.json',
   },
 ];
