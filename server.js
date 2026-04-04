@@ -1100,27 +1100,6 @@ wss.on('connection', (ws, req) => {
     ws.on('error',()=>{});
     return;
   }
-  // Route: Catania
-  if (ws._isCAT) {
-    globalThis._catWss = wss;
-    const _cl = Object.values(globalThis._CAT_LOBBIES||{}).map(l=>({id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,bots:l.bots||0,seated:l.players.filter(Boolean).length,playing:!!l.game&&l.game.phase!=='GAME_OVER',names:l.names.filter(Boolean)}));
-    if(ws.readyState===1)ws.send(JSON.stringify({type:'LOBBIES',lobbies:_cl}));
-    ws.on('message',raw=>{try{(globalThis._catHandleMsg)(ws,JSON.parse(raw));}catch(e){console.error('CAT',e);}});
-    ws.on('close',()=>{
-      const st=globalThis._CAT_WS?.get(ws);if(!st?.lobbyId)return;
-      const lobby=globalThis._CAT_LOBBIES?.[st.lobbyId];if(!lobby)return;
-      const{seat}=st;lobby.players[seat]=null;
-      lobby.graceTimers[seat]=setTimeout(()=>{
-        lobby.names[seat]='';lobby.tokens[seat]=null;
-        if(globalThis._CAT_SESSIONS?.[st.token])delete globalThis._CAT_SESSIONS[st.token];
-        if(lobby.game&&!lobby.solo){lobby.game=null;lobby.players.forEach(p=>{if(p)try{p.send(JSON.stringify({type:'GAME_ABORTED',reason:'Adversário desligou.'}));}catch{}});}
-        if(globalThis._catBcast)globalThis._catBcast();
-      },45000);
-      if(globalThis._catBcast)globalThis._catBcast();
-    });
-    ws.on('error',()=>{});
-    return;
-  }
   // Route: percebes connections
   if (ws._isPerc) {
     pbSend(ws, { type:'LOBBIES', lobbies: Object.values(PERC_LOBBIES).map(pbLobbyInfo) });
@@ -1146,38 +1125,6 @@ wss.on('connection', (ws, req) => {
     return;
   }
   // Route: capivaras connections go to dedicated handler
-  if (ws._isCat) {
-    // Catania WebSocket
-    const _catH = globalThis._catHandle;
-    const _catL = globalThis._CAT_LOBBIES;
-    if (ws.readyState===1) ws.send(JSON.stringify({
-      type:'LOBBIES',
-      lobbies: Object.values(_catL).map(l=>({id:l.id,name:l.name,mode:l.mode,solo:l.solo,maxP:l.maxP,
-        seated:l.players.filter(Boolean).length,
-        playing:!!l.game&&l.game.phase!=='GAME_OVER',
-        names:l.names.filter(Boolean)}))
-    }));
-    ws.on('message', raw => { try { _catH(ws, JSON.parse(raw)); } catch(e){console.error('CAT err',e);} });
-    ws.on('close', () => {
-      const st = globalThis._CAT_WS_STATE?.get(ws);
-      if (!st) return;
-      const lobby = globalThis._CAT_LOBBIES?.[st.lobbyId];
-      if (!lobby) return;
-      lobby.players[st.seat] = null;
-      lobby.graceTimers[st.seat] = setTimeout(() => {
-        lobby.names[st.seat]=''; lobby.tokens[st.seat]=null;
-        if(st.token&&globalThis._CAT_SESSIONS?.[st.token]) delete globalThis._CAT_SESSIONS[st.token];
-        if(lobby.game&&!lobby.solo){
-          lobby.game=null;
-          lobby.players.forEach(p=>{if(p)p.send&&p.send(JSON.stringify({type:'GAME_ABORTED',reason:'Adversário desligou.'}));});
-        }
-        if(globalThis._catBroadcastLobbies) globalThis._catBroadcastLobbies();
-      }, 45000);
-      if(globalThis._catBroadcastLobbies) globalThis._catBroadcastLobbies();
-    });
-    return;
-  }
-
   if (ws._isCap) {
     capSend(ws, { type:'LOBBIES', lobbies: Object.values(CAP_LOBBIES).map(capLobbyInfo) });
     ws.on('message', raw => { try { capHandle(ws, JSON.parse(raw)); } catch {} });
@@ -1575,6 +1522,24 @@ function capHandle(ws,msg){
       capBroadcast(lobby);}
   }
 }
+
+// ── WebSocket upgrade routing ─────────────────────────────────────
+server.on('upgrade', (req, socket, head) => {
+  const urlPath = (req.url || '').split('?')[0];
+  wss.handleUpgrade(req, socket, head, ws => {
+    ws._isCap  = (urlPath === '/ws/capivaras');
+    ws._isPerc = (urlPath === '/ws/percebes');
+    ws._isNO   = (urlPath === '/ws/nineoils');
+    ws._isBU   = (urlPath === '/ws/bulbous');
+    ws._isCAT  = (urlPath === '/ws/catania');
+    wss.emit('connection', ws, req);
+  });
+});
+
+setInterval(() => {
+  for (const ws of wss.clients) if (ws.readyState === 1) ws.ping();
+}, 25000);
+
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Bitnik] Server running on port ${PORT}`);
