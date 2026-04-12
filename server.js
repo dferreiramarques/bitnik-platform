@@ -781,6 +781,8 @@ function catHandle(g,seat,msg){
     const{keepRes,affectRes}=msg;
     // Validate
     const types=CAT_RES.filter(r=>p.hand[r]>0);
+    const totalCards=types.reduce((s,r)=>s+p.hand[r],0);
+    if(totalCards<5)return{error:'Precisas de pelo menos 5 cartas na mão para fundar uma aldeia'};
     if(types.length<2)return{error:'Precisas de 2+ tipos de recursos'};
     if(!p.hand[keepRes]||p.hand[keepRes]===0)return{error:'Não tens esse recurso'};
     const maxCount=Math.max(...types.map(r=>p.hand[r]));
@@ -856,7 +858,8 @@ function catBot(g){
 
   if(t.collects>=1&&!t.foundDone){
     const types=CAT_RES.filter(r=>p.hand[r]>0);
-    if(types.length>=2&&Math.random()<0.48){
+    const totalCards=types.reduce((s,r)=>s+p.hand[r],0);
+    if(types.length>=2&&totalCards>=5&&Math.random()<0.48){
       const maxC=Math.max(...types.map(r=>p.hand[r]));
       const majs=types.filter(r=>p.hand[r]===maxC);
       const keepRes=majs[0|Math.random()*majs.length];
@@ -984,6 +987,8 @@ function catHandleMsg(ws,msg){
     const name=lobby.names[seat];
     lobby.players[seat]=null;lobby.names[seat]='';lobby.tokens[seat]=null;CAT_WS.delete(ws);
     if(lobby.game&&!lobby.solo){lobby.game=null;lobby.players.forEach(p=>{if(p)catSend(p,{type:'GAME_ABORTED',reason:`${name} saiu.`});});}
+    if(lobby.game&&lobby.solo){lobby.game=null;if(lobby.botTimer){clearTimeout(lobby.botTimer);lobby.botTimer=null;}}
+    lobby._abandonedAt=null;
     catBroadcastLobbies();return;
   }
   if(msg.type==='REQUEST_STATE'){
@@ -1008,6 +1013,35 @@ function catHandleMsg(ws,msg){
   catBroadcastGame(lobby);
   if(g.phase!=='GAME_OVER')catScheduleBots(lobby);
 }
+
+// ── Periodic cleanup of abandoned lobbies ─────────────────────────
+// Solo: if game is running but no human connected for >30min → reset
+// MP: if game is running but no players for >60min → reset
+setInterval(()=>{
+  const now=Date.now();
+  Object.values(CAT_LOBBIES).forEach(lobby=>{
+    if(!lobby.game)return;
+    const humanConnected=lobby.players.some(ws=>ws&&ws.readyState===1);
+    if(!humanConnected){
+      if(!lobby._abandonedAt) { lobby._abandonedAt=now; return; }
+      const elapsed=now-lobby._abandonedAt;
+      const timeoutMs=lobby.solo?30*60*1000:60*60*1000; // 30min solo, 60min mp
+      if(elapsed>timeoutMs){
+        console.log(`[CAT] Resetting abandoned lobby: ${lobby.id}`);
+        if(lobby.botTimer){clearTimeout(lobby.botTimer);lobby.botTimer=null;}
+        lobby.game=null;lobby._abandonedAt=null;
+        lobby.players.fill(null);lobby.names.fill('');lobby.tokens.fill(null);
+        // Clear sessions for this lobby
+        Object.keys(CAT_SESSIONS).forEach(tok=>{
+          if(CAT_SESSIONS[tok]?.lobbyId===lobby.id)delete CAT_SESSIONS[tok];
+        });
+        catBroadcastLobbies();
+      }
+    } else {
+      lobby._abandonedAt=null; // reset timer if someone reconnects
+    }
+  });
+}, 5*60*1000); // check every 5 minutes
 
 globalThis._catSend=catSend;
 globalThis._catHandleMsg=catHandleMsg;
