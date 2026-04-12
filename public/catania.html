@@ -590,7 +590,8 @@ function renderActions(st){
   const me=st.players[st.myIdx];const t=me.turn||{};
   const types=RES.filter(r=>me.hand[r]>0);
   const maxH=types.length?Math.max(...types.map(r=>me.hand[r])):0;
-  const canFound=types.length>=2&&!t.foundDone;
+  const totalCards=types.reduce((s,r)=>s+(me.hand[r]||0),0);
+  const canFound=types.length>=2&&totalCards>=5&&!t.foundDone;
   if(mode==='sicel'){ab(c,'💀 Disco vermelho! Clica num hex adjacente para mover os Sicelos','abtn act');return;}
   if(mode==='c1'||mode==='c2'){
     ab(c,mode==='c1'?'🎯 Clica num hex livre para recolher 1 carta':'🎯 Clica num hex livre para recolher 2 cartas','abtn act');
@@ -617,6 +618,7 @@ function renderActions(st){
   const sep=document.createElement('div');sep.style.cssText='border-top:1px solid var(--border);margin:4px 0';c.appendChild(sep);
   const b3=ab(c,'(Bónus) Fundar Aldeia','abtn pri',canFound&&t.collects>=1?()=>{mode='found';selCards=[];renderHand(st);renderActions(st);}:null);
   b3.disabled=!canFound||t.collects<1;
+  if(!canFound) b3.title=t.foundDone?'Já fundaste uma aldeia este turno':totalCards<5?`Precisas de 5 cartas (tens ${totalCards})`:'Precisas de 2+ tipos de recursos';
   const bend=ab(c,'✓ Terminar Turno','abtn',t.collects>=1&&!t.sicelPending?()=>send({type:'CAT_END_TURN'}):null);
   bend.disabled=t.collects<1||t.sicelPending;
 }
@@ -661,7 +663,9 @@ function renderLog(st){
 // ── Found village ─────────────────────────────────
 function doFound(){
   const tc={};selCards.forEach(k=>{const r=k.split('_')[0];tc[r]=(tc[r]||0)+1;});
-  const types=Object.keys(tc);if(types.length<2){toast('Precisas de 2+ tipos!');return;}
+  const types=Object.keys(tc);const total=Object.values(tc).reduce((a,b)=>a+b,0);
+  if(types.length<2){toast('Precisas de 2+ tipos!');return;}
+  if(total<5){toast('Precisas de pelo menos 5 cartas!');return;}
   let mx=0;types.forEach(r=>{if(tc[r]>mx)mx=tc[r];});
   const majs=types.filter(r=>tc[r]===mx);
   const mins=types.filter(r=>tc[r]<mx);
