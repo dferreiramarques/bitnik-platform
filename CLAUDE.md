@@ -15,6 +15,7 @@ Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `README.md
 - **Fase 0 (feita)**: engine, server, client SDK, Catania como primeiro pacote, Studio e runtime limpo.
 - Catania 3.0.0: regra de "ronda completa" no fim do jogo, para equilibrar a vantagem do 1.º jogador a 2 jogadores.
 - **Fase 0c (feita)**: consola em `/console` (painel, jogos com simulação, mesas de aprovação por convite, avisos), protegida por `ADMIN_TOKEN`.
+- Fora do MVP: deploy público para partilhar o link das mesas de aprovação com clientes (as mesas funcionam localmente).
 - **Fase 0b**: UI própria do Catania, service worker (PWA).
 - **Fase 1**: Forge a gerar `rules.js` e testes a partir de cartões Gherkin.
 - **Fase 2**: migrar Bulbous, Capivaras, Praia das Percebes e Nine Oils. Secção "Clientes" na consola quando houver runtimes em produção.
