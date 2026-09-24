@@ -42,6 +42,37 @@ export function defineGame(game) {
   return Object.freeze({ defaultLang: 'pt', events: {}, bots: {}, enumerate: null, ...game });
 }
 
+// ─── Versões ────────────────────────────────────────────────────
+
+const parseVersion = (v) => String(v).split('.').map((n) => parseInt(n, 10) || 0);
+
+/**
+ * Semver à letra: uma versão guardada `a` é compatível com a instalada `b`
+ * se o primeiro número não nulo for igual (1.x ↔ 1.y; 0.2.x ↔ 0.2.y; 0.0.3 só ↔ 0.0.3).
+ */
+export function compatibleVersions(a, b) {
+  const [A, B] = [parseVersion(a), parseVersion(b)];
+  for (let i = 0; i < 3; i++) {
+    if (A[i] !== B[i]) return false;
+    if (A[i] > 0) return true;
+  }
+  return true;
+}
+
+/**
+ * Diz se um match guardado pode ser retomado com o jogo e o motor instalados.
+ * @returns {null | {reason:'game'|'engine', from:string, to:string}}
+ */
+export function matchIncompatibility(game, match) {
+  if (!compatibleVersions(match.gameVersion, game.version)) {
+    return { reason: 'game', from: String(match.gameVersion), to: game.version };
+  }
+  if (!compatibleVersions(match.engineVersion ?? '0.0.0', ENGINE_VERSION)) {
+    return { reason: 'engine', from: String(match.engineVersion), to: ENGINE_VERSION };
+  }
+  return null;
+}
+
 // ─── Contexto passado às regras ─────────────────────────────────
 
 function makeCtx({ game, match, seat, rng, logs, timerOps }) {
@@ -168,8 +199,15 @@ export function fireTimer(game, match, key) {
   return run(game, without, null, fn, t.payload, { seat: null, type: `@${t.event}`, key, payload: t.payload });
 }
 
-/** Refaz um match a partir da seed e das jogadas. Útil para testes e bugs. */
-export function replay(game, { seed, numPlayers, options, moves }) {
+/**
+ * Refaz um match a partir da seed e das jogadas. Útil para testes e bugs.
+ * Só é garantido com a versão exata: um patch que corrija um bug pode fazer
+ * uma partida antiga divergir. Nesse caso avisa por `onWarn`.
+ */
+export function replay(game, { seed, numPlayers, options, moves, gameVersion }, { onWarn = console.warn } = {}) {
+  if (gameVersion != null && gameVersion !== game.version) {
+    onWarn(`replay: partida da versão ${gameVersion} refeita com ${game.version}; pode divergir`);
+  }
   let m = createMatch(game, { seed, numPlayers, options });
   for (const mv of moves) {
     const r = mv.type.startsWith('@') ? fireTimer(game, m, mv.key) : applyMove(game, m, mv.seat, mv);

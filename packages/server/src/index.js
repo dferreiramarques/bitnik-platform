@@ -10,10 +10,10 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import {
-  checkGame, createMatch, applyMove, fireTimer, viewFor, activeSeats, botMove, ENGINE_VERSION,
+  checkGame, createMatch, applyMove, fireTimer, viewFor, activeSeats, botMove, matchIncompatibility, ENGINE_VERSION,
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
@@ -32,7 +32,6 @@ const MIME = {
 };
 
 const id = (n = 9) => randomBytes(n).toString('base64url');
-const major = (v) => String(v).split('.')[0];
 const cleanName = (s, fallback) => String(s ?? '').replace(/[<>]/g, '').trim().slice(0, 24) || fallback;
 
 export function createPlatform({
@@ -43,6 +42,7 @@ export function createPlatform({
   graceMs = 60_000,
   studio = false,
   logger = console,
+  adminToken = process.env.ADMIN_TOKEN, // sem token, as rotas /admin não existem
 } = {}) {
   // ─── Jogos ──────────────────────────────────────────────────
   const G = new Map();
@@ -60,6 +60,7 @@ export function createPlatform({
   const botTimers = new Map();     // roomId → timeout
   const gameTimers = new Map();    // roomId → Map(key → timeout)
   const graceTimers = new Map();   // userId → timeout
+  let notices = [];                // avisos do publisher para todos os ligados
   let now = () => Date.now();
   let closing = false;
 
@@ -90,6 +91,7 @@ export function createPlatform({
         name: s.name, bot: s.bot, away: s.away, taken: !!(s.userId || s.bot), isYou: !!userId && s.userId === userId,
       })),
       round: room.match?.state?.round ?? null,
+      expired: room.expired ?? null,
     };
   }
 
@@ -112,7 +114,8 @@ export function createPlatform({
     const game = G.get(room.gameId);
     const seat = seatOf(room, userId);
     const base = { type: 'ROOM', room: summary(room, userId), seat: seat < 0 ? null : seat };
-    if (!room.match) return base;
+    // Uma partida de versão incompatível não passa pelo view: o estado antigo pode não encaixar.
+    if (!room.match || room.status === 'expired') return base;
     const v = viewFor(game, room.match, seat < 0 ? null : seat);
     v.legal = v.legal.map((mv) => ({ ...mv, label: game.describeMove?.(mv, v.view) ?? { key: `move.${mv.type}` } }));
     // Prazos absolutos dos timers, para a UI mostrar contagens decrescentes.
@@ -137,6 +140,7 @@ export function createPlatform({
     room.match = createMatch(game, { numPlayers: room.numPlayers, seed: `${room.id}:${now()}:${id(4)}` });
     room.status = room.match.result ? 'over' : 'playing';
     room.timerDue = {};
+    room.expired = null;
     afterChange(room);
   }
 
@@ -166,7 +170,7 @@ export function createPlatform({
     for (const h of handles.values()) clearTimeout(h);
     handles.clear();
     const due = {};
-    for (const t of room.match?.timers || []) {
+    for (const t of (room.status === 'expired' ? null : room.match?.timers) || []) {
       const prev = room.timerDue?.[t.key];
       due[t.key] = prev && prev.seq === t.seq ? prev : { at: now() + t.delayMs, seq: t.seq };
       const wait = Math.max(0, due[t.key].at - now());
@@ -230,6 +234,53 @@ export function createPlatform({
     syncTimers(room);
   }
 
+  // ─── Avisos e janelas de manutenção ─────────────────────────
+  // Um runtime é um deploy por publisher: um aviso chega a todos os
+  // jogos e jogadores desse publisher. Com `maintenance`, a partir de
+  // `from` deixam de começar partidas novas dos jogos indicados (as que
+  // decorrem continuam), para o deploy apanhar o mínimo de mesas a meio.
+  const activeNotices = () => notices.filter((n) => n.until > now());
+  const broadcastNotices = () => {
+    for (const [ws, c] of conns) if (c.user) send(ws, { type: 'NOTICES', notices: activeNotices(), now: now() });
+  };
+  const saveNotices = () => storage.saveNotices?.(notices);
+
+  function notify({ id: nid, level = 'info', key, params = {}, text, at = null, until, maintenance = null } = {}) {
+    if (!key && !text) throw new Error('notify: indica key ou text');
+    const clean = (s) => String(s ?? '').replace(/[<>]/g, '').slice(0, 500);
+    const n = {
+      id: nid ? String(nid).replace(/[^\w-]/g, '').slice(0, 40) : id(6),
+      level: level === 'warn' ? 'warn' : 'info',
+      key: key ? String(key).slice(0, 80) : null,
+      params: Object.fromEntries(Object.entries(params || {}).map(([k, v]) => [k, typeof v === 'number' ? v : clean(v)])),
+      text: text ? Object.fromEntries(Object.entries(text).map(([l, v]) => [l.slice(0, 5), clean(v)])) : null,
+      at: at == null ? null : Number(at),
+      until: Number(until ?? at ?? now() + 24 * 3600_000),
+      maintenance: maintenance ? {
+        games: Array.isArray(maintenance.games) ? maintenance.games.map(String) : null, // null = todos
+        from: Number(maintenance.from ?? now()),
+      } : null,
+      createdAt: now(),
+    };
+    notices = [...notices.filter((x) => x.id !== n.id && x.until > now()), n];
+    saveNotices();
+    broadcastNotices();
+    return n;
+  }
+
+  function clearNotice(nid) {
+    const before = notices.length;
+    notices = notices.filter((x) => x.id !== nid);
+    if (notices.length === before) return false;
+    saveNotices();
+    broadcastNotices();
+    return true;
+  }
+
+  /** Há uma janela de manutenção ativa para este jogo? */
+  const inMaintenance = (gameId) => activeNotices().some((n) => n.maintenance
+    && n.maintenance.from <= now() && (!n.maintenance.games || n.maintenance.games.includes(gameId)));
+
   // ─── Mensagens ──────────────────────────────────────────────
   const fail = (ws, code, params = {}) => send(ws, { type: 'ERROR', code, params });
 
@@ -253,6 +304,8 @@ export function createPlatform({
         games: [...G.values()].map((g) => ({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
         })),
+        notices: activeNotices(),
+        now: now(),
       });
       send(ws, { type: 'ROOMS', ...roomsFor(user.userId) });
     },
@@ -272,6 +325,7 @@ export function createPlatform({
     CREATE_SOLO(ws, c, { gameId, numPlayers, level }) {
       const game = G.get(gameId);
       if (!game) return fail(ws, 'server.UNKNOWN_GAME');
+      if (inMaintenance(gameId)) return fail(ws, 'server.MAINTENANCE');
       const n = Number(numPlayers);
       if (!(n >= Math.max(2, game.players.min) && n <= game.players.max)) return fail(ws, 'server.BAD_PLAYERS');
       const room = {
@@ -325,6 +379,7 @@ export function createPlatform({
       if (!room) return fail(ws, 'server.ROOM_NOT_FOUND');
       if (seatOf(room, c.user.userId) < 0) return fail(ws, 'server.NOT_SEATED');
       if (room.status !== 'waiting') return fail(ws, 'server.ALREADY_STARTED');
+      if (inMaintenance(room.gameId)) return fail(ws, 'server.MAINTENANCE');
       let b = 0;
       // Lugares vazios passam a bots.
       room.seats = room.seats.map((s) => (s.userId ? s : { userId: null, name: `Bot ${++b}`, bot: true, away: false }));
@@ -334,6 +389,7 @@ export function createPlatform({
     MOVE(ws, c, { roomId, move, seq }) {
       const room = rooms.get(roomId);
       if (!room?.match) return fail(ws, 'server.ROOM_NOT_FOUND');
+      if (room.status === 'expired') return fail(ws, 'server.EXPIRED');
       const seat = seatOf(room, c.user.userId);
       if (seat < 0) return fail(ws, 'server.NOT_SEATED');
       const game = G.get(room.gameId);
@@ -353,7 +409,8 @@ export function createPlatform({
       const room = rooms.get(roomId);
       if (!room) return fail(ws, 'server.ROOM_NOT_FOUND');
       if (seatOf(room, c.user.userId) < 0) return fail(ws, 'server.NOT_SEATED');
-      if (room.status !== 'over') return fail(ws, 'server.NOT_OVER');
+      if (room.status !== 'over' && room.status !== 'expired') return fail(ws, 'server.NOT_OVER');
+      if (inMaintenance(room.gameId)) return fail(ws, 'server.MAINTENANCE');
       startMatch(room);
     },
 
@@ -413,8 +470,36 @@ export function createPlatform({
     }
   }
 
+  // ─── Admin: avisos (Authorization: Bearer ADMIN_TOKEN) ──────
+  const authorized = (req) => {
+    const got = Buffer.from(String(req.headers.authorization || ''));
+    const want = Buffer.from(`Bearer ${adminToken}`);
+    return got.length === want.length && timingSafeEqual(got, want);
+  };
+  const json = (res, status, body) => {
+    res.writeHead(status, body === undefined ? {} : { 'Content-Type': 'application/json' });
+    res.end(body === undefined ? '' : JSON.stringify(body));
+  };
+
+  function admin(req, res, url) {
+    if (!authorized(req)) return json(res, 401, { error: 'unauthorized' });
+    if (url === '/admin/notices' && req.method === 'GET') return json(res, 200, { notices: activeNotices() });
+    if (url === '/admin/notices' && req.method === 'POST') {
+      let body = '';
+      req.on('data', (d) => { body += d; if (body.length > 10_000) req.destroy(); });
+      req.on('end', () => {
+        try { json(res, 201, notify(JSON.parse(body))); } catch (e) { json(res, 400, { error: e.message }); }
+      });
+      return undefined;
+    }
+    const del = url.match(/^\/admin\/notices\/([\w-]+)$/);
+    if (del && req.method === 'DELETE') return json(res, clearNotice(del[1]) ? 204 : 404);
+    return json(res, 404, { error: 'not found' });
+  }
+
   const http = createServer((req, res) => {
     const url = new URL(req.url, 'http://x').pathname;
+    if (adminToken && url.startsWith('/admin/')) return admin(req, res, url);
     if (url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, brand: brand.id, games: [...G.keys()], rooms: rooms.size }));
@@ -453,13 +538,20 @@ export function createPlatform({
   const ready = (async () => {
     const saved = await storage.load();
     users = saved.users || {};
+    notices = (saved.notices || []).filter((n) => n.until > now());
     for (const room of saved.rooms || []) {
       const game = G.get(room.gameId);
       if (!game) { logger.warn(`[load] ${room.id}: jogo ${room.gameId} não instalado, ignorada`); continue; }
-      if (room.match && major(room.match.gameVersion) !== major(game.version)) {
-        logger.warn(`[load] ${room.id}: versão ${room.match.gameVersion} incompatível com ${game.version}`);
-        if (room.kind === 'solo') { storage.deleteRoom(room.id); continue; }
-        room.match = null; room.status = 'waiting';
+      const inc = room.match && room.status !== 'expired' && matchIncompatibility(game, room.match);
+      if (inc) {
+        logger.warn(`[load] ${room.id}: ${inc.reason} ${inc.from} incompatível com ${inc.to}`);
+        if (room.kind === 'solo') {
+          // Fica em "As minhas mesas" com o aviso; o match fica guardado para replay.
+          room.status = 'expired'; room.expired = inc; room.timerDue = {};
+          persist(room);
+        } else {
+          room.match = null; room.status = 'waiting';
+        }
       }
       if (room.kind === 'public' && room.status === 'waiting') room.seats = room.seats.map(emptySeat);
       // Ninguém está ligado logo após um restart: nas mesas públicas os bots cobrem.
@@ -476,6 +568,8 @@ export function createPlatform({
     http,
     ready,
     rooms,
+    notify,
+    clearNotice,
     async listen(port = process.env.PORT || 3000) {
       await ready;
       await new Promise((resolve) => http.listen(port, resolve));

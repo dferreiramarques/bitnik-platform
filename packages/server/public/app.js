@@ -23,6 +23,9 @@ const UI = {
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
     timer: '{event} em {s} s',
+    expired: 'Versão antiga ({from}), já não pode ser retomada',
+    expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
+    newMatch: 'Começar nova partida', dismiss: 'Fechar',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -41,6 +44,9 @@ const UI = {
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
     timer: '{event} in {s} s',
+    expired: 'Old version ({from}), can no longer be resumed',
+    expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
+    newMatch: 'Start a new game', dismiss: 'Close',
   },
 };
 
@@ -53,6 +59,9 @@ const app = {
   welcome: null,
   rooms: { public: [], mine: [] },
   room: null,
+  notices: [],
+  noticesSkew: 0,     // relógio do servidor − local
+  dismissed: new Set(),
 };
 
 const client = new BitnikClient({ lang: app.lang });
@@ -110,7 +119,7 @@ function renderLobby() {
         <div><h3>${u('myTables')}</h3>
           ${mine.length ? `<ul class="rows">${mine.map((r) => `<li>
             <span class="grow">${u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}</small></span>
-            <button class="btn btn-outline" data-open="${r.id}">${u(r.status === 'over' ? 'view' : 'resume')}</button>
+            <button class="btn btn-outline" data-open="${r.id}">${u(r.status === 'over' || r.status === 'expired' ? 'view' : 'resume')}</button>
             <button class="btn btn-ghost" data-remove="${r.id}" aria-label="${u('remove')}">✕</button>
           </li>`).join('')}</ul>` : `<p class="empty">${u('noMine')}</p>`}
         </div>
@@ -133,6 +142,7 @@ function renderLobby() {
 }
 
 function statusText(r) {
+  if (r.status === 'expired') return u('expired', { from: r.expired?.from });
   if (r.status === 'playing') return r.round ? `${u('playing')}, ${u('round', { n: r.round })}` : u('playing');
   return u(r.status);
 }
@@ -168,6 +178,11 @@ function renderPalette(msg) {
       <ol>${order.map(([sc, i]) => `<li>${esc(seatName(i))}: ${u('points', { n: sc })}</li>`).join('')}</ol>
       ${msg.seat != null ? `<button class="btn" data-restart>${u('again')}</button>` : ''}
     </div>`;
+  }
+  if (msg.room.status === 'expired') {
+    const { from, to } = msg.room.expired || {};
+    return `<div class="palette"><p class="palette-wait">${u('expiredTable', { from, to })}</p>
+      <button class="btn btn-primary" data-restart>${u('newMatch')}</button></div>`;
   }
   if (msg.room.status === 'waiting') {
     return msg.seat != null
@@ -253,6 +268,35 @@ function renderTable() {
   </section>`;
 }
 
+// ─── Avisos do publisher (faixa no topo) ─────────────────────
+function renderNotices() {
+  const el = $('#notices');
+  const t0 = Date.now() + app.noticesSkew;
+  const list = app.notices.filter((n) => n.until > t0 && !app.dismissed.has(n.id));
+  el.hidden = !list.length;
+  el.innerHTML = list.map((n) => {
+    const time = n.at ? new Date(n.at - app.noticesSkew).toLocaleTimeString(app.lang, { hour: '2-digit', minute: '2-digit' }) : '';
+    const main = n.text ? (n.text[app.lang] || Object.values(n.text)[0]) : t(n.key, { time, ...n.params });
+    const drain = n.maintenance && n.maintenance.from <= t0 ? ` ${t('notice.MAINTENANCE')}` : '';
+    return `<div class="notice notice-${esc(n.level)}" role="status"><span>${esc(main + drain)}</span>
+      <button class="btn btn-ghost" data-dismiss="${esc(n.id)}" aria-label="${u('dismiss')}">✕</button></div>`;
+  }).join('');
+}
+
+function setNotices(list, serverNow) {
+  app.notices = list || [];
+  if (serverNow) app.noticesSkew = serverNow - Date.now();
+  renderNotices();
+}
+setInterval(renderNotices, 30_000); // a janela de manutenção pode começar entretanto
+
+$('#notices').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-dismiss]');
+  if (!b) return;
+  app.dismissed.add(b.dataset.dismiss);
+  renderNotices();
+});
+
 // ─── Render e eventos ────────────────────────────────────────
 function render() {
   const inRoom = !!routeRoom();
@@ -261,6 +305,7 @@ function render() {
   $('#nameLabel').textContent = u('yourName');
   $('#name').placeholder = u('yourName');
   document.documentElement.lang = app.lang;
+  renderNotices();
   // Preserva os <details> abertos do inspetor entre renders.
   const openPaths = [...document.querySelectorAll('.inspect details[open]')].map((d) => d.querySelector('summary')?.textContent);
   $('#view').innerHTML = inRoom ? renderTable() : renderLobby();
@@ -299,12 +344,14 @@ $('#name').addEventListener('change', (e) => client.setName(e.target.value));
 client.on('status', (s) => { $('#status').textContent = u(s); });
 client.on('welcome', (w) => {
   app.welcome = w;
+  setNotices(w.notices, w.now);
   $('#name').value = w.name;
   if (!localStorage.getItem('bitnik.lang')) app.lang = w.brand.lang;
   const id = routeRoom();
   if (id) client.open(id);
   render();
 });
+client.on('notices', (m) => setNotices(m.notices, m.now));
 client.on('rooms', (r) => { app.rooms = r; if (!routeRoom()) render(); });
 client.on('room', (msg) => {
   app.room = msg;

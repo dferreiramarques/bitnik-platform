@@ -1,6 +1,7 @@
 // Adaptadores de persistência. O servidor só conhece esta interface:
 //   load()            → { users: {token: user}, rooms: [room] }
 //   saveRoom(room)    / deleteRoom(id) / saveUsers(users)
+//   saveNotices(list) (opcional; load() devolve também { notices })
 // O match é JSON puro, por isso guardar uma sala é só serializá-la.
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -8,11 +9,15 @@ import { join } from 'node:path';
 export function memoryStorage() {
   const rooms = new Map();
   let users = {};
+  let notices = [];
   return {
-    async load() { return { users: structuredClone(users), rooms: [...rooms.values()].map((r) => structuredClone(r)) }; },
+    async load() {
+      return { users: structuredClone(users), rooms: [...rooms.values()].map((r) => structuredClone(r)), notices: structuredClone(notices) };
+    },
     async saveRoom(room) { rooms.set(room.id, structuredClone(room)); },
     async deleteRoom(id) { rooms.delete(id); },
     async saveUsers(u) { users = structuredClone(u); },
+    async saveNotices(n) { notices = structuredClone(n); },
   };
 }
 
@@ -49,7 +54,9 @@ export function fileStorage(dir) {
           console.error('[storage] sala ilegível', f, e.message);
         }
       }
-      return { users, rooms };
+      let notices = [];
+      try { notices = JSON.parse(await readFile(join(dir, 'notices.json'), 'utf8')); } catch { /* sem avisos */ }
+      return { users, rooms, notices };
     },
     saveRoom: (room) => write(join(roomsDir, `${safe(room.id)}.json`), room),
     async deleteRoom(id) {
@@ -58,5 +65,6 @@ export function fileStorage(dir) {
       await rm(file, { force: true });
     },
     saveUsers: (users) => write(join(dir, 'users.json'), users),
+    saveNotices: (notices) => write(join(dir, 'notices.json'), notices),
   };
 }

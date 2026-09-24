@@ -13,7 +13,7 @@ import { defineGame } from '@bitnik/engine';
 
 export default defineGame({
   id: 'catania',            // único dentro de um deploy
-  version: '3.0.0',         // semver; mudar o major invalida partidas guardadas
+  version: '3.0.1',         // semver; uma versão incompatível não retoma partidas guardadas
   players: { min: 2, max: 4 },
   defaultLang: 'pt',
   i18n: { pt: {...}, en: {...} },   // mesmas chaves em todas as línguas (verificado)
@@ -82,6 +82,25 @@ Não são timers do jogo, e ficam fora das regras: o ritmo dos bots, a animaçã
 
 `createMatch(game, { numPlayers, seed })` devolve um objeto JSON com `seed`, `rng`, `seq`, `state`, `moves`, `log`, `timers` e `result`. É isto que o servidor guarda. `replay(game, match)` reconstrói o estado a partir da seed e das jogadas: se o resultado não bater certo, há não-determinismo nas regras.
 
+## Versões e partidas guardadas
+
+A versão do pacote segue semver à letra: uma partida guardada só é retomada se `compatibleVersions(guardada, instalada)`, ou seja, se o primeiro número não nulo for igual (`3.0.0` ↔ `3.2.1`; `0.2.0` ↔ `0.2.5`, mas não ↔ `0.3.0`; `0.0.3` só ↔ `0.0.3`). Os protótipos no Studio vivem em `0.x`: cada minor que mude regras invalida as partidas de teste. A mesma regra aplica-se à `engineVersion` guardada no match.
+
+Com uma versão incompatível, as mesas solo ficam `expired`: continuam em "As minhas mesas" com o aviso, não aceitam jogadas (`server.EXPIRED`), podem recomeçar com a versão nova, e o match fica guardado para replay. As mesas públicas voltam a "à espera".
+
+`replay` só é garantido com a versão exata. Um patch que corrija um bug pode fazer uma partida antiga divergir; `replay` avisa quando a `gameVersion` do match não é a instalada.
+
+**Antes de um deploy**, o publisher (ou a Bitnik) anuncia a atualização com `platform.notify(...)` ou `POST /admin/notices` (com `Authorization: Bearer $ADMIN_TOKEN`):
+
+```js
+platform.notify({
+  key: 'notice.UPDATE_AT', at: horaDoDeploy,       // ou text: { pt, en }
+  maintenance: { games: ['catania'], from: agora }, // opcional; games: null = todos
+});
+```
+
+O aviso chega a todos os ligados (`NOTICES`) e a quem se ligar depois (`WELCOME.notices`), sobrevive a restarts e acaba em `until` (por omissão, `at`). Durante a janela de manutenção não começam partidas novas desses jogos (`server.MAINTENANCE`); as que decorrem continuam.
+
 ## i18n
 
 Todo o texto visível sai de chaves: `game.name`, `game.tagline`, `move.X`, `moveLabel.X`, `log.X`, `err.X`, e as que o jogo precisar (`res.vinho`). `checkGame` recusa pacotes em que as línguas não têm as mesmas chaves, e os testes do Catania verificam que cada `err.`/`log.` usado nas regras existe em PT e EN.
@@ -107,5 +126,5 @@ Validadas uma a uma e registadas em [DECISOES.md](DECISOES.md).
 1. **Moves imperativas sobre uma cópia**, em vez de funções que devolvem estado novo. Tudo-ou-nada, incluindo exceções (`engine.RULE_ERROR`); jogadas sobre estados antigos são recusadas (`engine.STALE_MOVE`). Aceite: ADR-001.
 2. **Timers declarativos** em vez de `setTimeout` nas regras. Na migração só 2 timers são regras (desempate do Bulbous, pausa da revelação das Capivaras); os prazos vão no `ROOM` e a simulação exercita os timeouts. Aceite: ADR-002.
 3. **Um RNG por match, guardado no estado do match.** Bots usam um RNG derivado de `seed + seq + lugar` e jogam sobre o `view`; `checkPurity` impede aleatoriedade e relógio fora do motor. Não serve jogos a dinheiro. Aceite: ADR-003.
-4. **Incompatibilidade por major.** Uma partida guardada com `1.x` não é retomada com `2.x`: mesas solo antigas são apagadas e mesas públicas reiniciadas.
+4. **Incompatibilidade por versão (semver à letra, incluindo `0.x` e o motor).** Mesas solo antigas ficam `expired` em vez de apagadas; avisos e janela de manutenção antes de um deploy. Aceite: ADR-004.
 5. **`describeMove` no pacote**, para a UI genérica mostrar jogadas legíveis sem UI própria.

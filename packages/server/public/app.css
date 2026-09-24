@@ -81,6 +81,13 @@ button { font: inherit; }
 .table-head h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 .table-head .meta { color: var(--ui-muted); }
 
+.notices { display: grid; gap: 6px; margin-top: 8px; }
+.notice {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--ui-r-md);
+  background: var(--ui-card); border: 2px solid var(--ui-primary);
+}
+.notice span { flex: 1; }
+.notice-warn { border-color: var(--color-danger, #c0392b); }
 .timers { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .timer { font-variant-numeric: tabular-nums; font-weight: 600; }
 .seats { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }

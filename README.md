@@ -33,7 +33,7 @@ PORT=3001 npm run runtime       # runtime de exemplo
 npm run simulate -- catania 500
 ```
 
-`DATA_DIR` escolhe onde as partidas são guardadas (por omissão `./data/studio` e `./data/runtime`). Em Railway, aponta para um volume.
+`ADMIN_TOKEN` ativa as rotas `/admin` (avisos). `DATA_DIR` escolhe onde as partidas são guardadas (por omissão `./data/studio` e `./data/runtime`). Em Railway, aponta para um volume.
 
 ## Como as peças encaixam
 
@@ -49,7 +49,9 @@ pacote de jogo ──► @bitnik/engine ◄── @bitnik/server ◄──ws─�
 
 **Identidade**: token por dispositivo, guardado no browser. Não há contas nesta fase.
 
-**Protocolo** (cliente → servidor): `HELLO`, `SET_NAME`, `LIST`, `CREATE_SOLO`, `OPEN`, `CLOSE`, `JOIN`, `LEAVE`, `START`, `MOVE`, `RESTART`, `DELETE`, `PING`. O servidor responde com `WELCOME`, `ROOMS`, `ROOM` e `ERROR` (sempre com uma chave i18n).
+**Protocolo** (cliente → servidor): `HELLO`, `SET_NAME`, `LIST`, `CREATE_SOLO`, `OPEN`, `CLOSE`, `JOIN`, `LEAVE`, `START`, `MOVE`, `RESTART`, `DELETE`, `PING`. O servidor responde com `WELCOME`, `ROOMS`, `ROOM`, `NOTICES` e `ERROR` (sempre com uma chave i18n).
+
+**Avisos e atualizações**: com `ADMIN_TOKEN` definido, `POST /admin/notices` anuncia uma atualização a todos os jogadores do deploy e pode abrir uma janela de manutenção (sem partidas novas de um jogo até ao deploy). Ver `docs/CONTRATO.md`.
 
 ## Um deploy para um cliente
 

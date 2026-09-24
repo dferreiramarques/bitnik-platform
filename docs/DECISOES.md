@@ -81,3 +81,36 @@ Alternativas consideradas: os bots usarem o RNG do match (o que o bot "pensa" pa
 - O bot das Capivaras tem de deixar de ler as apostas dos outros (passa a jogar só com o `view`).
 - O mulberry32 tem 2³² estados (cerca de 4 mil milhões de baralhos possíveis). Chega para jogos de tabuleiro. **Não serve jogos a dinheiro**, que estão fora do âmbito da plataforma.
 
+---
+
+## ADR-004: Incompatibilidade por versão; avisos antes de um deploy
+
+**Estado:** aceite (2026-09-24)
+
+### Contexto
+
+Cada match guarda a `gameVersion`. Ao arrancar, o servidor comparava só o primeiro número: mesas solo de outro major eram apagadas sem aviso e as públicas reiniciadas. Na verificação:
+
+- em `0.x` nada era invalidado (`'0.1.0'` e `'0.2.0'` davam os dois major `'0'`), e os protótipos do Studio vão viver em `0.x`;
+- a `engineVersion` era guardada mas nunca verificada;
+- o jogador perdia a mesa solo sem saber porquê, e perdia-se o registo para reproduzir bugs;
+- num runtime de cliente, cada deploy reinicia o processo. As partidas são guardadas e os clientes voltam a ligar-se, por isso só perde a partida quem está num jogo que mudou de versão incompatível; mas ninguém é avisado antes.
+
+Nenhum dos 4 jogos a migrar guarda partidas hoje (tudo em memória): não há nada antigo a respeitar.
+
+Alternativas consideradas: `migrate(state, fromVersion)` no pacote (cada mudança de regras obriga a escrever e testar migrações, difíceis de gerar pela Forge, para partidas que duram minutos) e manter duas versões instaladas ao mesmo tempo (ver abaixo).
+
+### Decisão
+
+- `compatibleVersions(a, b)`: semver à letra, incluindo `0.x` (compara o primeiro número não nulo). Aplica-se à versão do jogo e à do motor (`matchIncompatibility`).
+- Mesas solo incompatíveis ficam `expired`: aparecem com o aviso, recusam jogadas (`server.EXPIRED`), podem recomeçar com a versão nova e guardam o match para replay. Mesas públicas voltam a "à espera".
+- `replay` avisa quando a versão do jogo não é a da partida.
+- Avisos do publisher: `platform.notify(...)` / `POST /admin/notices` (com `ADMIN_TOKEN`), enviados a todos os ligados (`NOTICES`) e no `WELCOME`, guardados no storage até `until`. Com `maintenance`, deixam de começar partidas novas dos jogos indicados (`server.MAINTENANCE`) e as que decorrem continuam.
+
+### Consequências
+
+- Um deploy anunciado com janela de manutenção chega à hora marcada com poucas ou nenhumas mesas a meio no jogo atualizado.
+- No Studio, mudar o minor de um protótipo `0.x` expira as partidas de teste antigas.
+- Sem `migrate` por agora: pode entrar mais tarde como hook opcional sem partir nada.
+- **Evolução futura:** instalar duas versões ao mesmo tempo (`catania@3` e `catania@4`, indexadas por `id@major`, com aliases npm), para as partidas a decorrer acabarem na versão antiga. Elimina o kick por completo; rever quando houver um cliente com partidas longas ou muitos jogadores em simultâneo.
+

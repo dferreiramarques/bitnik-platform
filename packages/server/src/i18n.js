@@ -11,6 +11,10 @@ export const PLATFORM_I18N = {
     'server.BAD_MESSAGE': 'Mensagem inválida.',
     'server.NO_HELLO': 'Ligação sem identificação.',
     'server.INTERNAL': 'Erro interno do servidor.',
+    'server.MAINTENANCE': 'Há uma atualização marcada: não é possível começar novas partidas deste jogo até lá.',
+    'server.EXPIRED': 'Esta partida é de uma versão antiga do jogo e já não pode ser retomada.',
+    'notice.UPDATE_AT': 'A aplicação vai ser atualizada às {time}. As partidas em curso nessa altura podem ser interrompidas.',
+    'notice.MAINTENANCE': 'Até à atualização, não é possível começar novas partidas.',
   },
   en: {
     'server.UNKNOWN_GAME': 'That game is not installed.',
@@ -23,5 +27,9 @@ export const PLATFORM_I18N = {
     'server.BAD_MESSAGE': 'Invalid message.',
     'server.NO_HELLO': 'Connection without identification.',
     'server.INTERNAL': 'Internal server error.',
+    'server.MAINTENANCE': 'An update is scheduled: new games of this title cannot start until then.',
+    'server.EXPIRED': 'This game is from an old version and can no longer be resumed.',
+    'notice.UPDATE_AT': 'The app will be updated at {time}. Games in progress at that time may be interrupted.',
+    'notice.MAINTENANCE': 'Until the update, new games cannot be started.',
   },
 };

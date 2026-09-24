@@ -186,15 +186,126 @@ test('runtime limpo: outra marca, só os pacotes entregues', async () => {
   await s.stop();
 });
 
-test('ficheiros de storage de outro jogo ou versão incompatível não partem o arranque', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+/** Guarda uma mesa solo com um match de outra versão, dono 'u' (token 'tok'). */
+async function oldSolo(dir, match) {
   const st = fileStorage(dir);
   await st.load();
+  await st.saveUsers({ tok: { userId: 'u', name: 'Ana' } });
+  await st.saveRoom({
+    id: 'solo-old', gameId: 'catania', kind: 'solo', owner: 'u', name: '', numPlayers: 2, level: 'default',
+    seats: [{ userId: 'u', name: 'Ana', bot: false, away: false }, { userId: null, name: 'Bot 1', bot: true, away: false }],
+    match: { gameVersion: '3.0.0', engineVersion: '0.2.0', seq: 4, timers: [{ key: 't', delayMs: 1, event: 'X', seq: 4 }], state: {}, ...match },
+    status: 'playing', timerDue: {}, createdAt: 0, updatedAt: 0,
+  });
+  return st;
+}
+const tokenStore = () => { const m = memStore(); m.setItem('bitnik.token', 'tok'); return m; };
+
+test('ficheiros de storage de outro jogo ou versão incompatível não partem o arranque', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const st = await oldSolo(dir, { gameVersion: '1.0.0' });
   await st.saveRoom({ id: 'x', gameId: 'nao-existe', kind: 'solo', seats: [] });
-  await st.saveRoom({ id: 'solo-old', gameId: 'catania', kind: 'solo', owner: 'u', seats: [{ userId: 'u' }], match: { gameVersion: '1.0.0', timers: [] }, status: 'playing' });
   const s = await boot(makeStudio, { dataDir: dir });
   assert.ok(!s.platform.rooms.has('x'));
-  assert.ok(!s.platform.rooms.has('solo-old'));
+  const old = s.platform.rooms.get('solo-old');
+  assert.equal(old.status, 'expired', 'não é apagada: fica marcada');
+  assert.deepEqual(old.expired, { reason: 'game', from: '1.0.0', to: '3.0.1' });
+  assert.ok(old.match, 'o match fica guardado para replay');
+  await s.stop();
+});
+
+test('mesa solo expirada: aparece com aviso, não aceita jogadas e pode recomeçar', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  await oldSolo(dir, { gameVersion: '2.4.0' });
+  const s = await boot(makeStudio, { dataDir: dir });
+  const c = await s.client(tokenStore());
+  const rooms = await new Promise((r) => { c.on('rooms', r); c.list(); });
+  const mine = rooms.mine.find((x) => x.id === 'solo-old');
+  assert.equal(mine.status, 'expired');
+  assert.equal(mine.expired.from, '2.4.0');
+  const opened = c.next('room');
+  c.open('solo-old');
+  const msg = await opened;
+  assert.equal(msg.view, undefined, 'o estado antigo não passa pelo view');
+  const err = c.next('error');
+  c.move('solo-old', { type: 'END_TURN' });
+  assert.equal((await err).code, 'server.EXPIRED');
+  const fresh = c.next('room', (m) => m.room.status === 'playing');
+  c.restart('solo-old');
+  const r = await fresh;
+  assert.equal(r.room.expired, null);
+  assert.equal(r.seq, 0);
+  await s.stop();
+});
+
+test('um match de outra versão major do motor também expira', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  await oldSolo(dir, { gameVersion: '3.0.1', engineVersion: '0.1.0' });
+  const s = await boot(makeStudio, { dataDir: dir });
+  assert.equal(s.platform.rooms.get('solo-old').expired.reason, 'engine');
+  await s.stop();
+});
+
+test('avisos: chegam a quem está ligado e a quem se liga depois, e sobrevivem a um restart', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const s1 = await boot(makeStudio, { dataDir: dir });
+  const a = await s1.client();
+  const got = a.next('notices');
+  const at = Date.now() + 3600_000;
+  s1.platform.notify({ id: 'deploy', key: 'notice.UPDATE_AT', at });
+  const { notices } = await got;
+  assert.equal(notices.length, 1);
+  assert.equal(notices[0].key, 'notice.UPDATE_AT');
+  assert.equal(notices[0].until, at, 'por omissão, o aviso acaba à hora da atualização');
+  const b = await s1.client();
+  assert.deepEqual(b.welcome.notices.map((n) => n.id), ['deploy']);
+  await new Promise((r) => setTimeout(r, 50));
+  await s1.stop();
+  const s2 = await boot(makeStudio, { dataDir: dir });
+  const c = await s2.client();
+  assert.deepEqual(c.welcome.notices.map((n) => n.id), ['deploy']);
+  await s2.stop();
+});
+
+test('janela de manutenção: não começam partidas novas desse jogo; as outras continuam', async () => {
+  const s = await boot(makeStudio);
+  const c = await s.client();
+  const created = c.next('room');
+  c.createSolo('catania', 2);
+  const { room } = await created;
+  s.platform.notify({ id: 'm', key: 'notice.UPDATE_AT', at: Date.now() + 3600_000, maintenance: { games: ['catania'] } });
+  const err = c.next('error');
+  c.createSolo('catania', 2);
+  assert.equal((await err).code, 'server.MAINTENANCE');
+  const moved = c.next('room', (m) => m.seq === 1);
+  c.move(room.id, { type: 'END_TURN' });
+  await moved;
+  s.platform.clearNotice('m');
+  const again = c.next('room', (m) => m.room.id !== room.id);
+  c.createSolo('catania', 2);
+  await again;
+  await s.stop();
+});
+
+test('admin: avisos por HTTP com ADMIN_TOKEN; sem token as rotas não existem', async () => {
+  const off = await boot(makeStudio, { adminToken: undefined });
+  assert.equal((await fetch(`http://localhost:${off.port}/admin/notices`)).status, 404);
+  await off.stop();
+
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/notices`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  assert.equal((await fetch(url)).status, 401);
+  assert.equal((await fetch(url, { headers: { Authorization: 'Bearer errado' } })).status, 401);
+  const c = await s.client();
+  const got = c.next('notices');
+  const post = await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ text: { pt: 'Olá', en: 'Hi' }, level: 'warn' }) });
+  assert.equal(post.status, 201);
+  const n = await post.json();
+  assert.deepEqual((await got).notices[0].text, { pt: 'Olá', en: 'Hi' });
+  assert.equal((await (await fetch(url, { headers: auth })).json()).notices.length, 1);
+  assert.equal((await fetch(`${url}/${n.id}`, { method: 'DELETE', headers: auth })).status, 204);
+  assert.equal((await fetch(url, { method: 'POST', headers: auth, body: '{}' })).status, 400);
   await s.stop();
 });
 

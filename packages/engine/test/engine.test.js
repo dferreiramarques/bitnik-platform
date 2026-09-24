@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove, defineGame, checkPurity,
+  compatibleVersions, matchIncompatibility, ENGINE_VERSION,
 } from '../src/index.js';
 import race from './fixtures/race.js';
 
@@ -177,3 +178,31 @@ test('checkPurity apanha relógio, Math.random, timers e imports de fora, e igno
     'rules.js:8: Date.now (as regras não sabem a hora)',
   ]);
 });
+
+test('compatibilidade de versões segue semver à letra, incluindo 0.x', () => {
+  const casos = [
+    ['1.0.0', '1.4.2', true], ['1.9.0', '2.0.0', false], ['3.0.0', '3.0.1', true],
+    ['0.1.0', '0.1.5', true], ['0.1.0', '0.2.0', false],
+    ['0.0.3', '0.0.3', true], ['0.0.3', '0.0.4', false],
+  ];
+  for (const [a, b, ok] of casos) assert.equal(compatibleVersions(a, b), ok, `${a} ↔ ${b}`);
+});
+
+test('um match de outro major do jogo ou do motor não é retomado', () => {
+  const m = createMatch(race, { numPlayers: 2, seed: 1 });
+  assert.equal(matchIncompatibility(race, m), null);
+  assert.deepEqual(matchIncompatibility({ ...race, version: '0.0.2' }, m), { reason: 'game', from: '0.0.1', to: '0.0.2' });
+  assert.deepEqual(matchIncompatibility(race, { ...m, engineVersion: '0.1.0' }),
+    { reason: 'engine', from: '0.1.0', to: ENGINE_VERSION });
+});
+
+test('replay avisa quando a versão do jogo não é a da partida', () => {
+  let m = createMatch(race, { numPlayers: 2, seed: 1 });
+  m = applyMove(race, m, 0, { type: 'ROLL' }).match;
+  const avisos = [];
+  replay(race, m, { onWarn: (w) => avisos.push(w) });
+  assert.deepEqual(avisos, []);
+  replay({ ...race, version: '0.0.9' }, m, { onWarn: (w) => avisos.push(w) });
+  assert.equal(avisos.length, 1);
+});
+
