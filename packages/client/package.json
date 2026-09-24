@@ -1,0 +1,9 @@
+{
+  "name": "@bitnik/client",
+  "version": "0.1.0",
+  "description": "SDK de browser: ligação, identidade, reconexão e salas.",
+  "type": "module",
+  "main": "src/client.js",
+  "exports": { ".": "./src/client.js" },
+  "license": "UNLICENSED"
+}

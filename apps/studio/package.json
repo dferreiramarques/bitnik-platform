@@ -1,0 +1,8 @@
+{
+  "name": "@bitnik/studio",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "@bitnik/server": "^0.1.0", "@bitnik/game-catania": "^3.0.0" }
+}

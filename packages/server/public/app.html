@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{BRAND_NAME}}</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg">
+{{BRAND_HEAD}}
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="bar">
+  <button class="bar-back btn btn-ghost" id="back" hidden>←</button>
+  <strong class="bar-brand" id="brand">{{BRAND_NAME}}</strong>
+  <span class="bar-status" id="status" role="status"></span>
+  <label class="bar-name"><span class="sr" id="nameLabel"></span><input id="name" maxlength="24" autocomplete="nickname"></label>
+  <button class="btn btn-ghost bar-lang" id="lang"></button>
+</header>
+<main id="view" class="container"></main>
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
