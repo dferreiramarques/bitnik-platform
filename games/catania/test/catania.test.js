@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { createMatch, applyMove, simulate, checkGame } from '@bitnik/engine';
+import { createMatch, applyMove, simulate, checkGame, checkPurity, botMove } from '@bitnik/engine';
 import catania from '../index.js';
 
 const newMatch = (n = 2, seed = 'catania') => createMatch(catania, { numPlayers: n, seed });
@@ -222,13 +222,19 @@ test('Todas as chaves err./log. usadas nas regras existem em PT e EN', () => {
   for (const lang of ['pt', 'en']) for (const k of keys) assert.ok(k in catania.i18n[lang], `${lang}:${k}`);
 });
 
-test('O pacote só importa @bitnik/engine e ficheiros próprios', () => {
+test('O pacote é puro: só importa @bitnik/engine e ficheiros próprios, sem relógio nem Math.random', () => {
   const dir = new URL('../', import.meta.url);
   const files = ['index.js', 'rules.js', 'board.js', 'bot.js', ...readdirSync(new URL('i18n/', dir)).map((f) => `i18n/${f}`)];
-  for (const f of files) {
-    const src = readFileSync(new URL(f, dir), 'utf8');
-    for (const [, spec] of src.matchAll(/from\s+'([^']+)'/g)) {
-      assert.ok(spec === '@bitnik/engine' || spec.startsWith('./'), `${f} importa ${spec}`);
-    }
-  }
+  const problems = files.flatMap((f) => checkPurity(readFileSync(new URL(f, dir), 'utf8'), f));
+  assert.deepEqual(problems, []);
+});
+
+test('O bot joga sobre o view do seu lugar, não sobre o estado completo', () => {
+  const m = newMatch(2, 'bot-view');
+  let seen;
+  const spy = { ...catania, bots: { default: (v, seat, ctx) => { seen = { v, ctx }; return catania.bots.default(v, seat, ctx); } } };
+  const mv = botMove(spy, m, 0);
+  assert.deepEqual(seen.v, catania.view(m.state, 0));
+  assert.ok(seen.ctx.legal.some((x) => x.type === mv.type), 'recebe as jogadas legais');
+  assert.ok(applyMove(catania, m, 0, mv).ok);
 });

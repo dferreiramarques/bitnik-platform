@@ -7,10 +7,11 @@
 
 import { createRng, seedFrom } from './rng.js';
 import { translate, i18nGaps, ENGINE_I18N } from './i18n.js';
+import { checkPurity } from './purity.js';
 
-export { createRng, seedFrom, translate, i18nGaps, ENGINE_I18N };
+export { createRng, seedFrom, translate, i18nGaps, ENGINE_I18N, checkPurity };
 
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 const INVALID = Symbol('invalid');
 const LOG_CAP = 200;
 
@@ -203,12 +204,17 @@ export function viewFor(game, match, seat) {
   };
 }
 
-/** Escolhe a jogada de um bot. O RNG deriva da seed e do seq: determinístico. */
+/**
+ * Escolhe a jogada de um bot. O RNG deriva da seed, do seq e do lugar:
+ * determinístico, e não gasta o RNG do match (trocar um humano por um
+ * bot não muda os dados nem os baralhos).
+ * O bot vê o mesmo que um humano nesse lugar: `view(state, seat)`.
+ */
 export function botMove(game, match, seat, level = 'default') {
   const bot = game.bots?.[level] || game.bots?.default;
   const rng = createRng(seedFrom(`${match.seed}:${match.seq}:${seat}`));
-  if (bot) return bot(match.state, seat, { rng, numPlayers: match.numPlayers });
   const legal = legalMoves(game, match, seat);
+  if (bot) return bot(game.view(match.state, seat), seat, { rng, legal, numPlayers: match.numPlayers });
   return legal.length ? rng.pick(legal) : null;
 }
 

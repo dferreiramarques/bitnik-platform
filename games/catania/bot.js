@@ -1,27 +1,26 @@
 // Bot do Catania, portado de catBot (catania-v2) com RNG determinístico.
+// Joga sobre o view do seu lugar: vê o mesmo que um humano.
 import { RESOURCES } from './board.js';
-import { fireTargets } from './rules.js';
 
-const topOf = (s, r) => s.piles[r].discs[s.piles[r].discs.length - 1];
-
-export function defaultBot(s, seat, { rng }) {
-  const p = s.players[seat];
+export function defaultBot(v, seat, { rng }) {
+  const p = v.players[seat];
   const t = p.turn;
+  const topOf = (r) => v.piles[r].value;
 
   if (t.firePending) {
-    const free = fireTargets(s);
+    const free = v.fireTargets;
     return free.length
       ? { type: 'MOVE_FIRE', payload: { hex: rng.pick(free) } }
       : { type: 'MOVE_FIRE', payload: { stay: true } };
   }
 
   if (!t.founded && (t.collects < 1 || (t.collects < 2 && rng.chance(0.6)))) {
-    const avail = s.hexes.filter((h) => h.type !== 'vulcao' && s.fire !== h.id
+    const avail = v.hexes.filter((h) => h.type !== 'vulcao' && v.fire !== h.id
       && !h.workers.some((w) => w !== seat) && !t.visited.includes(h.id));
     if (avail.length) {
       // Prefere o recurso mais barato (valor atual mais baixo).
-      avail.sort((a, b) => topOf(s, a.type) - topOf(s, b.type));
-      return { type: 'COLLECT', payload: { hex: avail[0].id, take2: s.tower.length > 2 && rng.chance(0.38) } };
+      avail.sort((a, b) => topOf(a.type) - topOf(b.type));
+      return { type: 'COLLECT', payload: { hex: avail[0].id, take2: v.tower > 2 && rng.chance(0.38) } };
     }
   }
 
@@ -32,7 +31,7 @@ export function defaultBot(s, seat, { rng }) {
       const sorted = types.slice().sort((a, b) => p.hand[b] - p.hand[a]);
       const keep = sorted[0];
       // Valoriza a minoria com o valor mais baixo (maior ganho).
-      const raise = sorted.slice(1).sort((a, b) => topOf(s, a) - topOf(s, b))[0];
+      const raise = sorted.slice(1).sort((a, b) => topOf(a) - topOf(b))[0];
       return { type: 'FOUND', payload: { keep, raise } };
     }
   }

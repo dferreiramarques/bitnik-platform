@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove, defineGame,
+  createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove, defineGame, checkPurity,
 } from '../src/index.js';
 import race from './fixtures/race.js';
 
@@ -146,4 +146,34 @@ test('simulate com idleRate exercita os eventos de timeout', () => {
   assert.deepEqual(idle.failures, []);
   assert.ok(idle.timersFired > 0);
   assert.deepEqual(simulate(race, { numPlayers: 2, games: 20, seed: 'idle', idleRate: 0.4 }), idle, 'determinístico');
+});
+
+test('bots veem o view do lugar, não o estado escondido', () => {
+  const secreto = defineGame({
+    ...race,
+    id: 'secreto',
+    view: (s, seat) => ({ cur: s.cur, mine: s.pos[seat] }),
+    bots: { default: (v) => ({ type: 'ROLL', payload: { viu: Object.keys(v).sort() } }) },
+  });
+  const m = createMatch(secreto, { numPlayers: 2, seed: 1 });
+  assert.deepEqual(botMove(secreto, m, 0).payload.viu, ['cur', 'mine']);
+});
+
+test('checkPurity apanha relógio, Math.random, timers e imports de fora, e ignora comentários', () => {
+  const src = [
+    "import { defineGame } from '@bitnik/engine';",
+    "import { x } from './board.js';",
+    "import fs from 'node:fs';",
+    '// Math.random() num comentário não conta',
+    '/* nem setTimeout(() => {}) aqui */',
+    'const a = Math.random();',
+    'setTimeout(() => {}, 10);',
+    'const t = Date.now();',
+  ].join('\n');
+  assert.deepEqual(checkPurity(src, 'rules.js'), [
+    'rules.js:3: importa node:fs',
+    'rules.js:6: Math.random (usa ctx.rng)',
+    'rules.js:7: timer do sistema (usa ctx.schedule)',
+    'rules.js:8: Date.now (as regras não sabem a hora)',
+  ]);
 });

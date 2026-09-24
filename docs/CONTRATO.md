@@ -1,4 +1,4 @@
-# Contrato de um pacote de jogo (v0.1)
+# Contrato de um pacote de jogo (v0.2)
 
 Este é o documento a validar. Tudo o resto da plataforma (servidor, UI genérica, simulação, Forge) depende só disto. Um jogo que cumpre o contrato corre no Studio e em qualquer runtime de cliente sem alterações.
 
@@ -27,12 +27,12 @@ export default defineGame({
   // opcionais
   enumerate(state, seat) → [{ type, payload }],   // jogadas legais
   events: { NOME(state, payload, ctx) },          // disparados por timers
-  bots: { default(state, seat, { rng }) → move },
+  bots: { default(view, seat, { rng, legal, numPlayers }) → move },
   describeMove(move, view) → { key, params },     // rótulo para a UI genérica
 });
 ```
 
-Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros próprios (há um teste que verifica isto). É o que garante que o pacote entregue a um cliente não arrasta nada do Studio.
+Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros próprios (`./`), e não usam `Math.random`, `Date.now`, `new Date`, `setTimeout`/`setInterval`, `fetch`, `process` nem `require`. `checkPurity(source, file)` do motor verifica isto e cada pacote tem um teste que o corre sobre todos os seus ficheiros. É o que garante que o pacote entregue a um cliente não arrasta nada do Studio e que as regras são determinísticas.
 
 ## As peças, uma a uma
 
@@ -56,6 +56,8 @@ Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros própr
 **`activePlayers(state)`** diz quem pode jogar agora. Um array permite jogadas simultâneas (apostas às cegas, como nas Capivaras). Um array vazio com timers pendentes significa "à espera do relógio".
 
 **`view(state, seat)`** esconde o que cada lugar não deve ver. `seat = null` é um espectador. É aqui que ficam as mãos ocultas.
+
+**`bots`** recebem o `view` do seu lugar (nunca o estado completo), as jogadas legais e um `rng` próprio, derivado de `seed + seq + lugar`. Um bot vê o mesmo que um humano sentado nesse lugar, e as decisões dele não gastam o RNG do match: trocar um humano por um bot não muda os dados nem os baralhos. Sem bot no pacote, o motor escolhe uma jogada legal ao acaso.
 
 **`result(state)`** devolve `null` enquanto o jogo decorre. No fim, pelo menos `scores` (por lugar) e `winners` (lugares; mais de um é empate).
 
@@ -104,6 +106,6 @@ Validadas uma a uma e registadas em [DECISOES.md](DECISOES.md).
 
 1. **Moves imperativas sobre uma cópia**, em vez de funções que devolvem estado novo. Tudo-ou-nada, incluindo exceções (`engine.RULE_ERROR`); jogadas sobre estados antigos são recusadas (`engine.STALE_MOVE`). Aceite: ADR-001.
 2. **Timers declarativos** em vez de `setTimeout` nas regras. Na migração só 2 timers são regras (desempate do Bulbous, pausa da revelação das Capivaras); os prazos vão no `ROOM` e a simulação exercita os timeouts. Aceite: ADR-002.
-3. **Um RNG por match, guardado no estado do match.** Bots usam um RNG derivado de `seed + seq + lugar`, também determinístico.
+3. **Um RNG por match, guardado no estado do match.** Bots usam um RNG derivado de `seed + seq + lugar` e jogam sobre o `view`; `checkPurity` impede aleatoriedade e relógio fora do motor. Não serve jogos a dinheiro. Aceite: ADR-003.
 4. **Incompatibilidade por major.** Uma partida guardada com `1.x` não é retomada com `2.x`: mesas solo antigas são apagadas e mesas públicas reiniciadas.
 5. **`describeMove` no pacote**, para a UI genérica mostrar jogadas legíveis sem UI própria.

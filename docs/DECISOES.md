@@ -53,3 +53,31 @@ Alternativas consideradas: manter `setTimeout` nas regras (perde persistência, 
 - Os cartões Gherkin da Fase 1 do tipo "Quando passam 20 s" têm teste: `fireTimer` num teste unitário, `idleRate` na simulação.
 - As regras não sabem a hora: "quem respondeu primeiro" não pode ser regra. Nenhum dos 4 jogos precisa disso.
 
+---
+
+## ADR-003: Um RNG por match; bots num RNG derivado de `seed + seq + lugar`
+
+**Estado:** aceite (2026-09-24)
+
+### Contexto
+
+O match guarda o estado do gerador (mulberry32, um inteiro) e as regras só tiram aleatoriedade de `ctx.rng`. Os 4 jogos a migrar usam `Math.random` para baralhar, lançar dados, escolher quem começa e nos bots. Na verificação apareceram dois problemas:
+
+- os bots recebiam o estado completo, com a informação escondida. O bot atual das Capivaras já faz batota: lê a aposta secreta do outro bot (`g.bets[...]`) e evita essa carta;
+- nada impedia um pacote de usar `Math.random` ou o relógio, e na Fase 1 o código vem da Forge.
+
+Alternativas consideradas: os bots usarem o RNG do match (o que o bot "pensa" passaria a mudar os dados, e uma partida com bot divergia da mesma partida com humano) e RNG criptográfico sem seed (perde replay e simulação).
+
+### Decisão
+
+- Um RNG por match, guardado no match; a seed nunca sai do servidor.
+- Os bots usam um RNG derivado de `seed + seq + lugar` e recebem `bot(view, seat, { rng, legal, numPlayers })`: veem o mesmo que um humano nesse lugar.
+- `checkPurity(source, file)` no motor recusa `Math.random`, relógio, timers do sistema, rede, `process`, `require` e imports que não sejam `@bitnik/engine` ou `./`. Os testes de cada pacote correm-no sobre todos os ficheiros.
+- Motor passa a `0.2.0` (a assinatura dos bots mudou); Catania passa a `3.0.1` (bot adaptado, regras iguais; a simulação de 1000 partidas dá exatamente os mesmos números).
+
+### Consequências
+
+- Na migração, `Math.random` → `ctx.rng` é mecânico; o cuidado é passar o `rng` às funções auxiliares (o `shuffle` global, o `drawCard` do Nine Oils que volta a baralhar o descarte).
+- O bot das Capivaras tem de deixar de ler as apostas dos outros (passa a jogar só com o `view`).
+- O mulberry32 tem 2³² estados (cerca de 4 mil milhões de baralhos possíveis). Chega para jogos de tabuleiro. **Não serve jogos a dinheiro**, que estão fora do âmbito da plataforma.
+

@@ -1,6 +1,6 @@
 {
   "name": "@bitnik/game-catania",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Catania — pacote de jogo para @bitnik/engine.",
   "type": "module",
   "main": "index.js",
@@ -8,7 +8,7 @@
   "files": ["index.js", "rules.js", "board.js", "bot.js", "i18n/", "REGRAS.md"],
   "license": "CC-BY-4.0",
   "author": "David Marques",
-  "peerDependencies": { "@bitnik/engine": "^0.1.0" },
+  "peerDependencies": { "@bitnik/engine": "^0.2.0" },
   "scripts": { "test": "node --test test/*.test.js" },
-  "bitnik": { "engine": "^0.1.0", "langs": ["pt", "en"] }
+  "bitnik": { "engine": "^0.2.0", "langs": ["pt", "en"] }
 }

@@ -6,5 +6,5 @@
   "main": "src/index.js",
   "exports": { ".": "./src/index.js" },
   "license": "UNLICENSED",
-  "dependencies": { "@bitnik/engine": "^0.1.0", "@bitnik/client": "^0.1.0", "ws": "^8.18.0" }
+  "dependencies": { "@bitnik/engine": "^0.2.0", "@bitnik/client": "^0.1.0", "ws": "^8.18.0" }
 }
