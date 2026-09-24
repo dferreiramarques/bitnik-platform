@@ -1,0 +1,32 @@
+{
+  "name": "Pergaminho do Etna",
+  "description": "Paleta original do catania-v2: dourado e pergaminho sobre fundo vulcânico.",
+  "tokens": {
+    "--cat-bg": { "value": "#14110b", "type": "color", "group": "base", "label": { "pt": "Fundo da mesa", "en": "Table background" } },
+    "--cat-panel": { "value": "#1e1a10", "type": "color", "group": "base", "label": { "pt": "Painéis", "en": "Panels" } },
+    "--cat-panel-2": { "value": "#2a2418", "type": "color", "group": "base", "label": { "pt": "Painéis (realce)", "en": "Panels (raised)" } },
+    "--cat-line": { "value": "#4a3c1a", "type": "color", "group": "base", "label": { "pt": "Linhas", "en": "Lines" } },
+    "--cat-text": { "value": "#f2e8d0", "type": "color", "group": "base", "label": { "pt": "Texto", "en": "Text" } },
+    "--cat-muted": { "value": "#a89c84", "type": "color", "group": "base", "label": { "pt": "Texto secundário", "en": "Secondary text" } },
+    "--cat-gold": { "value": "#c9a84c", "type": "color", "group": "base", "label": { "pt": "Dourado (destaques)", "en": "Gold (highlights)" } },
+    "--cat-gold-dark": { "value": "#8b6914", "type": "color", "group": "base", "label": { "pt": "Dourado escuro", "en": "Dark gold" } },
+    "--cat-red": { "value": "#d9503f", "type": "color", "group": "base", "label": { "pt": "Vermelho (fogo, discos vermelhos)", "en": "Red (fire, red discs)" } },
+    "--cat-on-gold": { "value": "#1a1208", "type": "color", "group": "base", "label": { "pt": "Texto sobre dourado", "en": "Text on gold" } },
+
+    "--cat-res-cereais": { "value": "#c8a020", "type": "color", "group": "resources", "label": { "pt": "Cereais", "en": "Grain" } },
+    "--cat-res-vinho": { "value": "#7a2060", "type": "color", "group": "resources", "label": { "pt": "Vinho", "en": "Wine" } },
+    "--cat-res-peixe": { "value": "#1a6080", "type": "color", "group": "resources", "label": { "pt": "Peixe", "en": "Fish" } },
+    "--cat-res-calcario": { "value": "#7a7060", "type": "color", "group": "resources", "label": { "pt": "Calcário", "en": "Limestone" } },
+    "--cat-res-azeite": { "value": "#607a10", "type": "color", "group": "resources", "label": { "pt": "Azeite", "en": "Olive oil" } },
+    "--cat-res-vulcao": { "value": "#2a1808", "type": "color", "group": "resources", "label": { "pt": "Vulcão", "en": "Volcano" } },
+
+    "--cat-p1": { "value": "#b03a2e", "type": "color", "group": "players", "label": { "pt": "Jogador 1", "en": "Player 1" } },
+    "--cat-p2": { "value": "#1a5276", "type": "color", "group": "players", "label": { "pt": "Jogador 2", "en": "Player 2" } },
+    "--cat-p3": { "value": "#1d6a27", "type": "color", "group": "players", "label": { "pt": "Jogador 3", "en": "Player 3" } },
+    "--cat-p4": { "value": "#7d6608", "type": "color", "group": "players", "label": { "pt": "Jogador 4", "en": "Player 4" } },
+
+    "--cat-board-bg": { "value": "none", "type": "image", "group": "art", "label": { "pt": "Imagem de fundo do tabuleiro", "en": "Board background image" } },
+    "--cat-font-display": { "value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)", "type": "font", "group": "type", "label": { "pt": "Letra de títulos", "en": "Display font" } },
+    "--cat-radius": { "value": "14px", "type": "size", "group": "shape", "label": { "pt": "Arredondamento", "en": "Corner radius" } }
+  }
+}

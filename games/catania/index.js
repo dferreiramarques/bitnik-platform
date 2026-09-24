@@ -13,6 +13,9 @@ export default defineGame({
   license: 'CC-BY-4.0',
   defaultLang: 'pt',
   i18n: { pt, en },
+  // UI própria (ADR-006): servida pela plataforma a partir desta pasta.
+  root: new URL('./', import.meta.url).href,
+  ui: './ui/index.js',
 
   setup: rules.setup,
   moves: rules.moves,

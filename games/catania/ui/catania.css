@@ -1,0 +1,130 @@
+/* Catania — UI própria (ADR-006/008). Tudo fica dentro de .cat, na área da
+   mesa; as cores e formas vêm só dos tokens --cat-* (skin.json). */
+
+.cat {
+  --cat-gap: 12px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--cat-gap);
+  background: var(--cat-bg); color: var(--cat-text);
+  border-radius: var(--cat-radius); padding: var(--cat-gap);
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+.cat h4 {
+  font-family: var(--cat-font-display); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--cat-gold); margin: 0 0 8px;
+}
+.cat button { font: inherit; cursor: pointer; }
+.cat button:disabled { cursor: not-allowed; opacity: .45; }
+.cat :focus-visible { outline: 3px solid var(--cat-gold); outline-offset: 2px; }
+
+.cat-main { display: grid; gap: var(--cat-gap); min-width: 0; align-content: start; }
+.cat-side { display: grid; gap: var(--cat-gap); align-content: start; }
+.cat-sec { background: var(--cat-panel); border: 1px solid var(--cat-line); border-radius: var(--cat-radius); padding: 10px 12px; }
+
+/* Topo */
+.cat-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cat-round { font-family: var(--cat-font-display); font-size: 1.1rem; }
+.cat-turn { margin-left: auto; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--cat-line); color: var(--cat-muted); }
+.cat-turn.mine { background: var(--cat-gold); border-color: var(--cat-gold); color: var(--cat-on-gold); font-weight: 600; }
+.cat-last { color: var(--cat-red); font-weight: 600; }
+
+/* Jogadores */
+.cat-players { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.cat-player { background: var(--cat-panel); border: 2px solid var(--cat-line); border-radius: var(--cat-radius); padding: 8px 10px; display: grid; gap: 6px; }
+.cat-player.cur { border-color: var(--cat-gold); }
+.cat-pname { display: flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; }
+.cat-pname span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.cat-score { margin-left: auto; font-family: var(--cat-font-display); color: var(--cat-gold); }
+.cat-minis { display: flex; gap: 4px; }
+.cat-mini { display: flex; align-items: center; gap: 2px; font-size: .8rem; padding: 2px 4px; border-radius: 6px; background: var(--cat-panel-2); }
+.cat-mini.zero { opacity: .35; }
+.cat-mini img { width: 16px; height: 16px; }
+.cat-vills { display: flex; gap: 4px; flex-wrap: wrap; font-size: .8rem; color: var(--cat-muted); min-height: 22px; align-items: center; }
+.cat-vill { display: flex; align-items: center; gap: 2px; padding: 1px 6px 1px 4px; border-left: 3px solid; background: var(--cat-panel-2); border-radius: 4px; color: var(--cat-text); }
+.cat-vill img { width: 16px; height: 16px; }
+
+/* Tabuleiro */
+.cat-board {
+  background: var(--cat-board-bg) center / cover no-repeat, var(--cat-panel);
+  border: 1px solid var(--cat-line); border-radius: var(--cat-radius); padding: 6px;
+}
+.cat-board svg { display: block; width: 100%; height: auto; max-height: 62vh; }
+.cat-hex { cursor: default; }
+.cat-hex.can { cursor: pointer; }
+.cat-hex.can .cat-hex-shape { stroke: var(--cat-gold); stroke-width: 3; }
+.cat-hex.can:hover .cat-hex-glow, .cat-hex.can:focus .cat-hex-glow { opacity: .28; }
+.cat-hex.fire .cat-hex-shape { stroke: var(--cat-red); stroke-width: 3; }
+.cat-hex-glow { fill: var(--cat-gold); opacity: .14; pointer-events: none; }
+.cat-hex:focus { outline: none; }
+.cat-hex:focus-visible .cat-hex-shape { stroke: var(--cat-text); stroke-width: 4; }
+
+/* A minha área */
+.cat-me { display: flex; gap: var(--cat-gap); flex-wrap: wrap; align-items: stretch; }
+.cat-me > div { flex: 1 1 220px; }
+.cat-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+.cat-card {
+  width: 56px; height: 76px; border-radius: 8px; border: 2px solid var(--cat-line); background: var(--cat-panel-2);
+  display: grid; place-items: center; align-content: center; gap: 2px; font-size: .75rem;
+}
+.cat-card img { width: 30px; height: 30px; }
+.cat-card b { font-family: var(--cat-font-display); font-size: 1rem; }
+.cat-card.zero { opacity: .3; }
+.cat-vcard { border-color: var(--cat-gold-dark); }
+.cat-vcard .disc { color: var(--cat-gold); }
+.cat-vcard.empty { border-style: dashed; background: transparent; }
+
+/* Pilhas e torre */
+.cat-pile { display: grid; grid-template-columns: 24px 1fr auto 34px; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--cat-line); }
+.cat-pile:last-child { border-bottom: 0; }
+.cat-pile img { width: 22px; height: 22px; }
+.cat-pile small { color: var(--cat-muted); }
+.cat-disc {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--cat-font-display); font-weight: 700; font-size: .9rem;
+  background: var(--cat-bg); color: var(--cat-gold); border: 2px solid var(--cat-gold-dark);
+}
+.cat-disc.red { color: var(--cat-red); border-color: var(--cat-red); }
+.cat-tower { display: flex; flex-wrap: wrap; gap: 4px; }
+.cat-tower .cat-disc { width: 26px; height: 26px; font-size: .8rem; }
+.cat-tower-top { color: var(--cat-muted); font-size: .85rem; margin-bottom: 6px; }
+
+/* Ações */
+.cat-acts { display: grid; gap: 6px; }
+.cat-step { font-size: .75rem; color: var(--cat-muted); letter-spacing: .04em; text-transform: uppercase; }
+.cat-btn {
+  min-height: 44px; padding: 8px 12px; border-radius: 10px; text-align: left;
+  background: var(--cat-panel-2); color: var(--cat-text); border: 1px solid var(--cat-line);
+}
+.cat-btn.pri { background: var(--cat-gold); color: var(--cat-on-gold); border-color: var(--cat-gold); font-weight: 600; }
+.cat-btn.info { background: transparent; border-style: dashed; cursor: default; }
+.cat-wait { color: var(--cat-muted); font-style: italic; }
+.cat-sep { border-top: 1px solid var(--cat-line); margin: 2px 0; }
+
+/* Registo */
+.cat-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .85rem; max-height: 220px; overflow-y: auto; }
+.cat-log b { color: var(--cat-gold); font-weight: 600; }
+
+/* Modais (dentro da área da mesa, por cima de tudo) */
+.cat-ovl { position: fixed; inset: 0; background: rgb(0 0 0 / .55); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.cat-modal { background: var(--cat-panel); color: var(--cat-text); border: 2px solid var(--cat-gold-dark); border-radius: var(--cat-radius); padding: 16px; width: min(460px, 100%); display: grid; gap: 12px; }
+.cat-modal h3 { font-family: var(--cat-font-display); margin: 0; color: var(--cat-gold); }
+.cat-modal p { margin: 0; }
+.cat-types { display: flex; flex-wrap: wrap; gap: 8px; }
+.cat-type { display: grid; justify-items: center; gap: 2px; padding: 8px 10px; min-width: 76px; border-radius: 10px; background: var(--cat-panel-2); color: var(--cat-text); border: 2px solid var(--cat-line); }
+.cat-type img { width: 28px; height: 28px; }
+.cat-type.keep { border-color: var(--cat-gold); }
+.cat-type.keep:disabled, .cat-type.raise:disabled { opacity: 1; cursor: default; }
+.cat-type.raise { border-color: var(--cat-red); }
+.cat-type.off { opacity: .45; }
+.cat-summary { background: var(--cat-bg); border-radius: 10px; padding: 8px 10px; display: grid; gap: 4px; font-size: .9rem; }
+.cat-summary > div { display: flex; align-items: center; gap: 6px; }
+.cat-mbtns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+  .cat { grid-template-columns: minmax(0, 1fr); padding: 8px; }
+  .cat-side { grid-template-columns: 1fr; }
+  .cat-acts-sec { order: -1; }       /* ações logo a seguir ao tabuleiro */
+  .cat-players { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cat-board svg { max-height: 48vh; }
+  .cat-card { width: 48px; height: 66px; }
+}

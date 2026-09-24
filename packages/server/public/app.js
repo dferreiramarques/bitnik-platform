@@ -27,6 +27,7 @@ const UI = {
     expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
     newMatch: 'Começar nova partida', dismiss: 'Fechar',
     inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
+    protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -49,6 +50,7 @@ const UI = {
     expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
     newMatch: 'Start a new game', dismiss: 'Close',
     inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
+    protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
   },
 };
 
@@ -64,6 +66,8 @@ const app = {
   notices: [],
   noticesSkew: 0,     // relógio do servidor − local
   dismissed: new Set(),
+  proto: (() => { try { return localStorage.getItem('bitnik.proto') === '1'; } catch { return false; } })(),
+  ui: null,           // UI própria montada: { roomId, gameId, el, mod }
 };
 
 const client = new BitnikClient({ lang: app.lang });
@@ -250,20 +254,30 @@ function tree(value, key) {
   return `<details${key == null ? ' open' : ''}><summary>${label}${Array.isArray(value) ? `[${entries.length}]` : '{…}'}</summary>${entries.map(([k, v]) => tree(v, k)).join('')}</details>`;
 }
 
+/** A mesa usa a UI própria do jogo (ADR-006)? Só com o jogo a decorrer ou acabado. */
+function useGameUi(msg) {
+  const meta = gameMeta(msg?.room.gameId);
+  return !!meta?.ui && !app.proto && !!msg.view && ['playing', 'over'].includes(msg.room.status);
+}
+
 function renderTable() {
   const msg = app.room;
   if (!msg) return `<p class="empty">${u('connecting')}</p>`;
   const g = msg.room.gameId;
   const round = msg.view?.round;
   const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
+  const own = useGameUi(msg);
+  const protoBtn = app.welcome?.studio && gameMeta(g)?.ui && msg.view
+    ? `<button class="btn btn-ghost" data-proto>${u(app.proto ? 'gameUi' : 'protoUi')}</button>` : '';
   return `<section class="table">
     <div class="table-head">
       <h1>${esc(t('game.name', {}, g))}</h1>
       <span class="meta">${msg.room.kind === 'invite' ? `${esc(msg.room.name || u('inviteTable'))}, ` : ''}${u('tableOf', { n: msg.room.numPlayers })}${round ? `, ${u('round', { n: round })}` : ''}</span>
+      ${protoBtn}
       ${canLeave ? `<button class="btn btn-ghost" data-leave>${u('leave')}</button>` : ''}
     </div>
-    ${renderSeats(msg)}
     ${renderTimers(msg)}
+    ${own ? `${msg.result ? renderPalette(msg) : ''}<div id="gameHost" class="game-host"><p class="empty">${u('loadingUi')}</p></div></section>` : `${renderSeats(msg)}
     <div class="play">
       <div>${renderPalette(msg)}</div>
       <div class="side">
@@ -271,7 +285,57 @@ function renderTable() {
         ${msg.view ? `<div class="panel inspect"><h3>${u('state')}</h3>${tree(msg.view)}</div>` : ''}
       </div>
     </div>
-  </section>`;
+  </section>`}`;
+}
+
+// ─── UI própria do jogo (módulo do pacote com mount/update) ──
+const uiModules = new Map(); // url → Promise<módulo>
+
+function unmountGameUi() {
+  try { app.ui?.mod.unmount?.(); } catch (e) { console.error(e); }
+  app.ui = null;
+}
+
+/** Monta (uma vez por mesa) e atualiza a UI do jogo no #gameHost. */
+async function syncGameUi(msg) {
+  const host = document.getElementById('gameHost');
+  if (!host) { if (app.ui) unmountGameUi(); return; }
+  const gameId = msg.room.gameId;
+  if (app.ui && (app.ui.roomId !== msg.room.id || app.ui.gameId !== gameId)) unmountGameUi();
+  if (!app.ui) {
+    if (syncGameUi.loading === msg.room.id) return undefined; // já a carregar: o próximo render monta
+    syncGameUi.loading = msg.room.id;
+    const url = gameMeta(gameId).ui;
+    if (!uiModules.has(url)) uiModules.set(url, import(url));
+    let mod;
+    try { mod = await uiModules.get(url); } catch (e) {
+      console.error('[ui]', url, e);
+      uiModules.delete(url);
+      app.proto = true; // cai na UI genérica
+      return render();
+    } finally { syncGameUi.loading = null; }
+    if (app.room?.room.id !== msg.room.id || app.ui) return app.ui ? syncGameUi(app.room) : undefined;
+    const el = document.createElement('div');
+    el.className = 'game-root';
+    el.dataset.game = gameId;
+    app.ui = { roomId: msg.room.id, gameId, el, mod: mod.default ?? mod };
+    app.ui.mod.mount(el, {
+      gameId,
+      lang: () => app.lang,
+      t: (key, params) => t(key, params, gameId),
+      move: (mv) => {
+        const ok = client.move(msg.room.id, { type: mv.type, payload: mv.payload });
+        if (!ok) toast(u('notSent'));
+        return ok;
+      },
+      seatName,
+      toast,
+    });
+  }
+  const live = document.getElementById('gameHost');
+  if (live && live !== app.ui.el) live.replaceWith(app.ui.el);
+  try { app.ui.mod.update(app.room); } catch (e) { console.error('[ui] update', e); }
+  return undefined;
 }
 
 // ─── Avisos do publisher (faixa no topo) ─────────────────────
@@ -314,7 +378,10 @@ function render() {
   renderNotices();
   // Preserva os <details> abertos do inspetor entre renders.
   const openPaths = [...document.querySelectorAll('.inspect details[open]')].map((d) => d.querySelector('summary')?.textContent);
+  // A UI própria não é redesenhada: sai do DOM antes e volta para o #gameHost.
+  app.ui?.el.remove();
   $('#view').innerHTML = inRoom ? renderTable() : renderLobby();
+  if (inRoom && app.room) syncGameUi(app.room); else if (app.ui) unmountGameUi();
   document.querySelectorAll('.inspect details').forEach((d) => {
     if (openPaths.includes(d.querySelector('summary')?.textContent)) d.open = true;
   });
@@ -334,6 +401,10 @@ $('#view').addEventListener('click', (e) => {
     const mv = app.room.legal[Number(d.move)];
     if (client.move(roomId, { type: mv.type, payload: mv.payload })) b.setAttribute('aria-busy', 'true');
     else toast(u('notSent'));
+  } else if ('proto' in d) {
+    app.proto = !app.proto;
+    try { localStorage.setItem('bitnik.proto', app.proto ? '1' : '0'); } catch { /* sem storage */ }
+    render();
   } else if ('start' in d) client.start(roomId);
   else if ('restart' in d) client.restart(roomId);
   else if ('leave' in d) { client.leave(roomId); go(null); }

@@ -395,3 +395,20 @@ test('mesas de aprovação: criadas na consola, só entra quem tem o link, jogam
   assert.ok(!s.platform.rooms.has(created.id));
   await s.stop();
 });
+
+test('UI própria: o servidor serve a UI e as regras do pacote, nunca os testes', async () => {
+  const s = await boot(makeStudio);
+  const base = `http://localhost:${s.port}`;
+  const c = await s.client();
+  assert.equal(c.welcome.games[0].ui, '/games/catania/ui/index.js');
+  const ui = await fetch(`${base}/games/catania/ui/index.js`);
+  assert.equal(ui.status, 200);
+  assert.match(ui.headers.get('content-type'), /javascript/);
+  assert.equal((await fetch(`${base}/games/catania/rules.js`)).status, 200, 'regras para o tutorial no browser');
+  assert.equal((await fetch(`${base}/games/catania/ui/skin.json`)).status, 200);
+  assert.equal((await fetch(`${base}/games/catania/test/catania.test.js`)).status, 404);
+  assert.equal((await fetch(`${base}/games/catania/%2e%2e/%2e%2e/package.json`)).status, 404);
+  assert.equal((await fetch(`${base}/games/catania/REGRAS.md`)).status, 404);
+  assert.match(await (await fetch(`${base}/`)).text(), /"@bitnik\/engine": "\/engine\/index\.js"/, 'import map');
+  await s.stop();
+});

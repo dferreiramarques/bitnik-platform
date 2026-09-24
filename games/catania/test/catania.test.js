@@ -249,3 +249,25 @@ test('Rótulos: cada jogada legal tem uma frase com recurso e território', () =
   assert.ok(legal.every((x) => x.label.key in catania.i18n.pt));
 });
 
+
+test('A UI (ui/) só importa ficheiros próprios ou o SDK de cliente, nunca o servidor', () => {
+  const dir = new URL('../ui/', import.meta.url);
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.js'))) {
+    const src = readFileSync(new URL(f, dir), 'utf8');
+    for (const [, spec] of src.matchAll(/from\s+'([^']+)'/g)) {
+      assert.ok(spec.startsWith('./') || spec === '@bitnik/client' || spec === '@bitnik/engine', `ui/${f} importa ${spec}`);
+    }
+  }
+});
+
+test('skin.json: todos os tokens --cat-* usados no CSS e na UI têm valor por omissão', () => {
+  const skin = JSON.parse(readFileSync(new URL('../ui/skin.json', import.meta.url), 'utf8'));
+  const used = new Set();
+  for (const f of ['catania.css', 'index.js']) {
+    for (const [tok] of readFileSync(new URL(`../ui/${f}`, import.meta.url), 'utf8').matchAll(/--cat-[a-z0-9-]+/g)) used.add(tok);
+  }
+  used.delete('--cat-gap'); // variável interna de layout, não é skin
+  used.delete('--cat-p'); // prefixo de seatColor (--cat-p1..4)
+  used.delete('--cat-res-'); // prefixo de --cat-res-<recurso>
+  for (const tok of used) assert.ok(tok in skin.tokens, `falta ${tok} no skin.json`);
+});

@@ -30,7 +30,13 @@ const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml',
   '.webmanifest': 'application/manifest+json',
+  '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
 };
+
+// Ficheiros de um pacote de jogo que o browser pode pedir: as regras (para o
+// tutorial correr o motor localmente), a UI e os assets. Nunca os testes.
+const GAME_FILE = /^(?!test\/|node_modules\/)(?:[\w-]+\/)*[\w.-]+\.(?:js|css|json|svg|png|webp|jpg|woff2|mp3)$/;
+const gameUiUrl = (g) => (g.ui ? `/games/${g.id}/${String(g.ui).replace(/^\.\//, '')}` : null);
 
 const id = (n = 9) => randomBytes(n).toString('base64url');
 const cleanName = (s, fallback) => String(s ?? '').replace(/[<>]/g, '').trim().slice(0, 24) || fallback;
@@ -309,6 +315,7 @@ export function createPlatform({
         platformI18n: PLATFORM_I18N,
         games: [...G.values()].map((g) => ({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
+          ui: gameUiUrl(g),
         })),
         notices: activeNotices(),
         now: now(),
@@ -645,6 +652,13 @@ export function createPlatform({
       }));
     }
     if (url === '/sdk/client.js') return serveFile(res, CLIENT_FILE, MIME['.js']);
+    const gf = url.match(/^\/games\/([\w-]+)\/(.+)$/);
+    if (gf) {
+      const g = G.get(gf[1]);
+      const rel = decodeURIComponent(gf[2]);
+      if (!g?.root || rel.includes('..') || !GAME_FILE.test(rel)) { res.writeHead(404); return res.end('404'); }
+      return serveFile(res, join(fileURLToPath(g.root), rel), MIME[extname(rel)]);
+    }
     const eng = url.match(/^\/engine\/([a-z0-9]+\.js)$/);
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
     const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css)$/);

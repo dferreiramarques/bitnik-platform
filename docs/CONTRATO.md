@@ -29,6 +29,8 @@ export default defineGame({
   events: { NOME(state, payload, ctx) },          // disparados por timers
   bots: { default(view, seat, { rng, legal, numPlayers }) → move },
   describeMove(move, view) → { key, params },     // rótulo para a UI genérica
+  root: new URL('./', import.meta.url).href,      // pasta do pacote (a plataforma serve a UI daqui)
+  ui: './ui/index.js',                            // UI própria (ADR-006)
 });
 ```
 
@@ -87,6 +89,20 @@ Não são timers do jogo, e ficam fora das regras: o ritmo dos bots, a animaçã
 Jogos simples não precisam da função. É necessária quando a frase depende do `view` (no Catania, o recurso do hexágono). O servidor envia só a chave e os parâmetros; cada cliente traduz na língua do jogador.
 
 Estado de interface (cartas selecionadas, destaques) não entra no `state`: uma jogada é uma decisão completa (`PLAY_CARDS { idx: [...] }`, não `SELECT_CARD` repetido).
+
+## UI própria (ADR-006)
+
+Um pacote pode trazer a sua UI em `ui/`. A plataforma serve os ficheiros do pacote em `/games/<id>/...` (JS, CSS, JSON, imagens, fontes e sons; nunca `test/`) e monta o módulo indicado em `ui` na área da mesa, com o jogo a decorrer ou acabado. Barra, avisos, lobby, sentar, começar e fim de jogo continuam a ser da plataforma.
+
+```js
+export function mount(el, ctx) { /* uma vez por mesa */ }
+export function update(msg) { /* a cada ROOM: msg.view, msg.legal (com label), msg.log, msg.result */ }
+export function unmount() { /* opcional */ }
+```
+
+`ctx` traz `t(key, params)` (traduz com o i18n do jogo e da plataforma), `move(mv)` (envia uma jogada; devolve `false` sem ligação), `seatName(i)`, `lang()`, `toast(texto)` e `gameId`. A UI não repete regras: cada interação corresponde a uma jogada de `msg.legal`. Só pode importar ficheiros próprios, `@bitnik/client` ou `@bitnik/engine` (resolvidos por import map). As cores e formas vêm só de tokens declarados em `ui/skin.json` (ADR-008).
+
+No Studio, o botão "Modo protótipo" troca para a UI genérica. Se o módulo não carregar, a plataforma usa a genérica.
 
 ## O match
 
