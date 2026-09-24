@@ -125,7 +125,12 @@ function run(game, match, seat, fn, payload, record) {
   const logs = [];
   const timerOps = [];
   const ctx = makeCtx({ game, match, seat, rng, logs, timerOps });
-  const r = fn(state, payload ?? {}, ctx);
+  let r;
+  // Um bug nas regras recusa a jogada como outra qualquer: a cópia é
+  // descartada e o match fica intacto (tudo-ou-nada).
+  try { r = fn(state, payload ?? {}, ctx); } catch (e) {
+    return { ok: false, error: { code: 'engine.RULE_ERROR', params: { type: record.type, message: String(e?.message ?? e) } } };
+  }
   if (r && r[INVALID]) return { ok: false, error: { code: r.code, params: r.params } };
   const next = commit(game, match, { state, rng, record, logs, timerOps });
   // Um jogo terminado não deixa timers pendurados.
@@ -135,9 +140,14 @@ function run(game, match, seat, fn, payload, record) {
 
 /**
  * Aplica uma jogada. Não altera o match recebido.
+ * Com `expectSeq`, só aceita a jogada se o match ainda estiver nesse seq
+ * (a jogada foi pensada sobre o estado atual, não sobre um antigo).
  * @returns {{ok:true, match:object} | {ok:false, error:{code:string, params:object}}}
  */
-export function applyMove(game, match, seat, move) {
+export function applyMove(game, match, seat, move, { expectSeq } = {}) {
+  if (expectSeq != null && expectSeq !== match.seq) {
+    return { ok: false, error: { code: 'engine.STALE_MOVE', params: { seq: expectSeq, current: match.seq } } };
+  }
   if (match.result) return { ok: false, error: { code: 'engine.GAME_OVER', params: {} } };
   const fn = game.moves[move?.type];
   if (!fn) return { ok: false, error: { code: 'engine.UNKNOWN_MOVE', params: { type: String(move?.type) } } };

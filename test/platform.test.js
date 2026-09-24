@@ -137,6 +137,36 @@ test('mesa pública: dois humanos, vez validada, quem sai é substituído por um
   await s.stop();
 });
 
+test('jogada reenviada sobre um estado antigo é recusada e o cliente recebe o estado atual', async () => {
+  const s = await boot(makeStudio, { botDelayMs: [60_000, 60_001] });
+  const c = await s.client();
+  const created = c.next('room');
+  c.createSolo('catania', 2);
+  const first = await created;
+  const { room } = first;
+  const hex = first.legal.find((m) => m.type === 'COLLECT').payload.hex;
+  const applied = c.next('room', (m) => m.seq === 1);
+  assert.equal(c.move(room.id, { type: 'COLLECT', payload: { hex } }), true);
+  await applied;
+  // Reenvio da mesma jogada com o seq antigo (ex.: depois de uma reconexão).
+  const err = c.next('error');
+  const resync = c.next('room');
+  c.send('MOVE', { roomId: room.id, move: { type: 'COLLECT', payload: { hex } }, seq: 0 });
+  assert.equal((await err).code, 'engine.STALE_MOVE');
+  const r = await resync;
+  assert.equal(r.seq, 1, 'recebe o último estado confirmado');
+  assert.equal(r.view.players[0].turn.collects, 1, 'a jogada não foi aplicada duas vezes');
+  await s.stop();
+});
+
+test('sem ligação, move() devolve false e não envia nada', async () => {
+  const s = await boot(makeStudio);
+  const c = await s.client();
+  c.close();
+  assert.equal(c.move('qualquer', { type: 'END_TURN' }), false);
+  await s.stop();
+});
+
 test('runtime limpo: outra marca, só os pacotes entregues', async () => {
   const s = await boot(makeRuntime);
   const health = await (await fetch(`http://localhost:${s.port}/health`)).json();

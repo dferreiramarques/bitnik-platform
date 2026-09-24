@@ -21,6 +21,7 @@ const UI = {
     gameOver: 'Fim do jogo', wins: '{names} ganha', share: '{names} partilham a vitória',
     points: '{n} pts', again: 'Jogar outra vez', system: 'Jogo',
     confirmRemove: 'Apagar esta mesa?',
+    notSent: 'Sem ligação: a jogada não foi enviada.',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -37,6 +38,7 @@ const UI = {
     gameOver: 'Game over', wins: '{names} wins', share: '{names} share the win',
     points: '{n} pts', again: 'Play again', system: 'Game',
     confirmRemove: 'Delete this table?',
+    notSent: 'Offline: the move was not sent.',
   },
 };
 
@@ -254,8 +256,8 @@ $('#view').addEventListener('click', (e) => {
   else if (d.remove) { if (confirm(u('confirmRemove'))) client.remove(d.remove); }
   else if (d.move != null) {
     const mv = app.room.legal[Number(d.move)];
-    b.setAttribute('aria-busy', 'true');
-    client.move(roomId, { type: mv.type, payload: mv.payload });
+    if (client.move(roomId, { type: mv.type, payload: mv.payload })) b.setAttribute('aria-busy', 'true');
+    else toast(u('notSent'));
   } else if ('start' in d) client.start(roomId);
   else if ('restart' in d) client.restart(roomId);
   else if ('leave' in d) { client.leave(roomId); go(null); }

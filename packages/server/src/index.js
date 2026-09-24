@@ -328,14 +328,21 @@ export function createPlatform({
       startMatch(room);
     },
 
-    MOVE(ws, c, { roomId, move }) {
+    MOVE(ws, c, { roomId, move, seq }) {
       const room = rooms.get(roomId);
       if (!room?.match) return fail(ws, 'server.ROOM_NOT_FOUND');
       const seat = seatOf(room, c.user.userId);
       if (seat < 0) return fail(ws, 'server.NOT_SEATED');
       const game = G.get(room.gameId);
-      const r = applyMove(game, room.match, seat, { type: move?.type, payload: move?.payload });
-      if (!r.ok) return send(ws, { type: 'ERROR', gameId: game.id, ...r.error });
+      // `seq` é o estado que o jogador viu. Se o jogo já avançou (reenvio
+      // após reconexão, clique sobre um estado antigo), a jogada é recusada.
+      const r = applyMove(game, room.match, seat, { type: move?.type, payload: move?.payload }, { expectSeq: seq });
+      if (!r.ok) {
+        if (r.error.code === 'engine.RULE_ERROR') logger.error(`[regras] ${room.id} lugar ${seat}`, r.error.params);
+        send(ws, { type: 'ERROR', gameId: game.id, ...r.error });
+        if (r.error.code === 'engine.STALE_MOVE') send(ws, roomMessage(room, c.user.userId));
+        return;
+      }
       commit(room, r.match);
     },
 

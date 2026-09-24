@@ -72,7 +72,10 @@ export class BitnikClient {
         this.storage?.setItem(TOKEN_KEY, msg.token);
         if (this.openRoom) this.send('OPEN', { roomId: this.openRoom });
       }
-      if (msg.type === 'ROOM') this.openRoom = msg.room.id;
+      if (msg.type === 'ROOM') {
+        this.openRoom = msg.room.id;
+        this.seq = msg.seq ?? null; // último estado confirmado que o jogador viu
+      }
       this.emit(msg.type.toLowerCase(), msg);
     };
     ws.onclose = () => {
@@ -88,8 +91,11 @@ export class BitnikClient {
 
   close() { this.closed = true; clearInterval(this.ping); this.ws?.close(); }
 
+  /** Envia uma mensagem. Devolve false se não houver ligação (nada é enviado). */
   send(type, data = {}) {
-    if (this.ws?.readyState === 1) this.ws.send(JSON.stringify({ type, ...data }));
+    if (this.ws?.readyState !== 1) return false;
+    this.ws.send(JSON.stringify({ type, ...data }));
+    return true;
   }
 
   // Açúcar para o protocolo.
@@ -101,7 +107,14 @@ export class BitnikClient {
   join(roomId) { this.openRoom = roomId; this.send('JOIN', { roomId }); }
   leave(roomId) { if (this.openRoom === roomId) this.openRoom = null; this.send('LEAVE', { roomId }); }
   start(roomId) { this.send('START', { roomId }); }
-  move(roomId, move) { this.send('MOVE', { roomId, move }); }
+  /**
+   * Envia uma jogada com o seq do estado que o jogador viu. Devolve false
+   * sem ligação: a UI deve avisar, e ao reconectar recebe o estado atual.
+   */
+  move(roomId, move) {
+    const seq = roomId === this.openRoom ? this.seq : undefined;
+    return this.send('MOVE', { roomId, move, seq });
+  }
   restart(roomId) { this.send('RESTART', { roomId }); }
   remove(roomId) { this.send('DELETE', { roomId }); }
 }

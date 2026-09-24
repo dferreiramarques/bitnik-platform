@@ -38,7 +38,9 @@ Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros própr
 
 **`setup(ctx)`** cria o estado inicial. Tem `ctx.numPlayers`, `ctx.options` e `ctx.rng`. Pode agendar timers.
 
-**`moves`** são as jogadas. Recebem uma cópia do estado e alteram-na diretamente (estilo imperativo, como o código atual dos jogos). Para recusar, devolvem `ctx.invalid('err.CODIGO', params)`: o motor descarta a cópia e o estado fica intacto. O motor já garante antes de chamar a move que o jogo não acabou, que o tipo existe e que o lugar está em `activePlayers`.
+**`moves`** são as jogadas. Recebem uma cópia do estado e alteram-na diretamente (estilo imperativo, como o código atual dos jogos). Para recusar, devolvem `ctx.invalid('err.CODIGO', params)`: o motor descarta a cópia e o estado fica intacto. Se a move lançar uma exceção, acontece o mesmo e a jogada é recusada com `engine.RULE_ERROR` (tudo-ou-nada). O motor já garante antes de chamar a move que o jogo não acabou, que o tipo existe e que o lugar está em `activePlayers`.
+
+`applyMove(game, match, seat, move, { expectSeq })` recusa com `engine.STALE_MOVE` uma jogada pensada sobre um estado antigo. O servidor usa o `seq` que vem no `MOVE` (o SDK envia-o sozinho) e, nesse caso, reenvia o estado atual.
 
 **`ctx`** dentro de uma move:
 
@@ -92,9 +94,11 @@ A taxonomia BGE mapeia diretamente no contrato:
 
 Os testes em `games/catania/test/` já estão escritos assim, um por regra do REGRAS.md, para servirem de modelo ao que o Forge vai gerar.
 
-## Decisões a validar
+## Decisões
 
-1. **Moves imperativas sobre uma cópia**, em vez de funções que devolvem estado novo. Facilita portar o código atual; custa uma cópia do estado por jogada (irrelevante nestes tamanhos).
+Validadas uma a uma e registadas em [DECISOES.md](DECISOES.md).
+
+1. **Moves imperativas sobre uma cópia**, em vez de funções que devolvem estado novo. Tudo-ou-nada, incluindo exceções (`engine.RULE_ERROR`); jogadas sobre estados antigos são recusadas (`engine.STALE_MOVE`). Aceite: ADR-001.
 2. **Timers declarativos** em vez de `setTimeout` nas regras. Obriga a reescrever os timers do Bulbous, Capivaras e Nine Oils como eventos.
 3. **Um RNG por match, guardado no estado do match.** Bots usam um RNG derivado de `seed + seq + lugar`, também determinístico.
 4. **Incompatibilidade por major.** Uma partida guardada com `1.x` não é retomada com `2.x`: mesas solo antigas são apagadas e mesas públicas reiniciadas.

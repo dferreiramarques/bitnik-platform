@@ -23,6 +23,11 @@ export default defineGame({
       s.cur = (s.cur + 1) % s.pos.length;
       ctx.schedule('turn', 10000, 'TIMEOUT');
     },
+    /** Simula um bug nas regras: muta e depois rebenta. */
+    BOOM(s) {
+      s.pos[s.cur] = 99;
+      throw new Error('bug de teste');
+    },
   },
   events: {
     TIMEOUT(s, p, ctx) {

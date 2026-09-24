@@ -22,6 +22,26 @@ test('jogada inválida não altera nada', () => {
   assert.equal(m.seq, 0);
 });
 
+test('exceção nas regras: RULE_ERROR e o match fica intacto', () => {
+  const m = createMatch(race, { numPlayers: 2, seed: 1 });
+  const before = structuredClone(m);
+  const r = applyMove(race, m, 0, { type: 'BOOM' });
+  assert.equal(r.ok, false);
+  assert.equal(r.error.code, 'engine.RULE_ERROR');
+  assert.equal(r.error.params.message, 'bug de teste');
+  assert.deepEqual(m, before, 'a mutação feita antes da exceção não passou para o match');
+});
+
+test('jogada sobre um estado antigo: STALE_MOVE', () => {
+  let m = createMatch(race, { numPlayers: 2, seed: 1 });
+  m = applyMove(race, m, 0, { type: 'ROLL' }, { expectSeq: 0 }).match;
+  assert.equal(m.seq, 1);
+  const r = applyMove(race, m, 1, { type: 'ROLL' }, { expectSeq: 0 });
+  assert.equal(r.error.code, 'engine.STALE_MOVE');
+  assert.deepEqual(r.error.params, { seq: 0, current: 1 });
+  assert.ok(applyMove(race, m, 1, { type: 'ROLL' }, { expectSeq: 1 }).ok);
+});
+
 test('só joga quem está ativo', () => {
   const m = createMatch(race, { numPlayers: 2, seed: 1 });
   assert.equal(applyMove(race, m, 1, { type: 'ROLL' }).error.code, 'engine.NOT_ACTIVE');

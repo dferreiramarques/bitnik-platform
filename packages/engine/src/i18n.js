@@ -5,12 +5,16 @@ export const ENGINE_I18N = {
     'engine.NOT_ACTIVE': 'Não é a tua vez.',
     'engine.UNKNOWN_MOVE': 'Jogada desconhecida: {type}.',
     'engine.UNKNOWN_EVENT': 'Evento desconhecido: {event}.',
+    'engine.RULE_ERROR': 'Erro nas regras ao aplicar {type}. A jogada não foi aplicada.',
+    'engine.STALE_MOVE': 'O jogo avançou entretanto. Vê o estado atual e joga de novo.',
   },
   en: {
     'engine.GAME_OVER': 'The game is over.',
     'engine.NOT_ACTIVE': 'It is not your turn.',
     'engine.UNKNOWN_MOVE': 'Unknown move: {type}.',
     'engine.UNKNOWN_EVENT': 'Unknown event: {event}.',
+    'engine.RULE_ERROR': 'Rules error while applying {type}. The move was not applied.',
+    'engine.STALE_MOVE': 'The game has moved on. Check the current state and play again.',
   },
 };
 
