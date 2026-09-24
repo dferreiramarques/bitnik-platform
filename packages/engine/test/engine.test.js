@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove,
+  createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove, defineGame,
 } from '../src/index.js';
 import race from './fixtures/race.js';
 
@@ -112,4 +112,38 @@ test('simulate joga partidas completas', () => {
   const r = simulate(race, { numPlayers: 3, games: 50 });
   assert.equal(r.failures.length, 0);
   assert.equal(r.finished, 50);
+});
+
+test('simulate dispara o timer que vence primeiro, não o primeiro da lista', () => {
+  const two = defineGame({
+    id: 'dois-timers', version: '0.0.1', players: { min: 2, max: 2 },
+    i18n: { pt: { 'game.name': 'Dois' }, en: { 'game.name': 'Two' } },
+    setup(ctx) {
+      ctx.schedule('lento', 5000, 'LENTO');
+      ctx.schedule('rapido', 1000, 'RAPIDO');
+      return { ordem: [] };
+    },
+    moves: {},
+    events: {
+      LENTO: (s) => { s.ordem.push('lento'); },
+      RAPIDO: (s, p, ctx) => { s.ordem.push('rapido'); if (s.ordem.length < 3) ctx.schedule('rapido', 1000, 'RAPIDO'); },
+    },
+    activePlayers: () => [],
+    view: (s) => s,
+    result: (s) => (s.ordem.includes('lento') ? { scores: [0, 0], winners: [0] } : null),
+  });
+  let ordem;
+  const r = simulate(two, { numPlayers: 2, games: 1, onMatch: (m) => { ordem = m.state.ordem; } });
+  assert.deepEqual(r.failures, []);
+  // rápido aos 1 s, 2 s e 3 s (reagendado), lento aos 5 s.
+  assert.deepEqual(ordem, ['rapido', 'rapido', 'rapido', 'lento']);
+});
+
+test('simulate com idleRate exercita os eventos de timeout', () => {
+  const quietos = simulate(race, { numPlayers: 2, games: 20, seed: 'idle' });
+  assert.equal(quietos.timersFired, 0);
+  const idle = simulate(race, { numPlayers: 2, games: 20, seed: 'idle', idleRate: 0.4 });
+  assert.deepEqual(idle.failures, []);
+  assert.ok(idle.timersFired > 0);
+  assert.deepEqual(simulate(race, { numPlayers: 2, games: 20, seed: 'idle', idleRate: 0.4 }), idle, 'determinístico');
 });

@@ -22,6 +22,7 @@ const UI = {
     points: '{n} pts', again: 'Jogar outra vez', system: 'Jogo',
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
+    timer: '{event} em {s} s',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -39,6 +40,7 @@ const UI = {
     points: '{n} pts', again: 'Play again', system: 'Game',
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
+    timer: '{event} in {s} s',
   },
 };
 
@@ -190,6 +192,27 @@ function renderPalette(msg) {
   </div>`;
 }
 
+/** Contagens decrescentes dos timers do jogo (texto atualizado a cada segundo). */
+function renderTimers(msg) {
+  const list = (msg.timers || []).filter((x) => x.at != null);
+  if (!list.length) return '';
+  const g = msg.room.gameId;
+  return `<div class="timers">${list.map((x) => {
+    const key = `event.${x.event}`;
+    const name = t(key, {}, g);
+    return `<span class="timer" data-at="${x.at}" data-name="${esc(name === key ? x.event : name)}"></span>`;
+  }).join('')}</div>`;
+}
+
+function tickTimers() {
+  const skew = app.room ? app.room.now - app.roomAt : 0; // relógio do servidor − local
+  document.querySelectorAll('.timer[data-at]').forEach((el) => {
+    const s = Math.max(0, Math.ceil((Number(el.dataset.at) - (Date.now() + skew)) / 1000));
+    el.textContent = `⏱ ${u('timer', { event: el.dataset.name, s })}`;
+  });
+}
+setInterval(tickTimers, 1000);
+
 function renderLog(msg) {
   const g = msg.room.gameId;
   const items = [...(msg.log || [])].reverse();
@@ -219,6 +242,7 @@ function renderTable() {
       ${canLeave ? `<button class="btn btn-ghost" data-leave>${u('leave')}</button>` : ''}
     </div>
     ${renderSeats(msg)}
+    ${renderTimers(msg)}
     <div class="play">
       <div>${renderPalette(msg)}</div>
       <div class="side">
@@ -243,6 +267,7 @@ function render() {
   document.querySelectorAll('.inspect details').forEach((d) => {
     if (openPaths.includes(d.querySelector('summary')?.textContent)) d.open = true;
   });
+  tickTimers();
 }
 
 $('#view').addEventListener('click', (e) => {
@@ -283,6 +308,7 @@ client.on('welcome', (w) => {
 client.on('rooms', (r) => { app.rooms = r; if (!routeRoom()) render(); });
 client.on('room', (msg) => {
   app.room = msg;
+  app.roomAt = Date.now();
   if (routeRoom() !== msg.room.id) go(msg.room.id);
   else render();
 });

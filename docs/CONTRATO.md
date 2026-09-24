@@ -70,7 +70,11 @@ events: {
 }
 ```
 
-O servidor executa o timer e o evento fica no registo de jogadas como `@TIE_TIMEOUT`, por isso o replay reproduz tudo.
+O servidor executa o timer e o evento fica no registo de jogadas como `@TIE_TIMEOUT`, por isso o replay reproduz tudo. O prazo absoluto de cada timer é guardado com a sala (sobrevive a um restart) e vai no `ROOM` como `timers: [{ key, event, at }]`, com `now` (hora do servidor) para a UI mostrar a contagem decrescente. O nome visível do evento é a chave `event.NOME`, se existir.
+
+Na simulação, os timers vencem num relógio simulado com a mesma regra do servidor (agendamento + `delayMs`), por ordem de prazo. `simulate({ idleRate })` faz os bots deixarem esgotar o tempo nessa proporção das vezes, para os `events` de timeout também serem testados (`npm run simulate -- jogo 500 0.2`).
+
+Não são timers do jogo, e ficam fora das regras: o ritmo dos bots, a animação e a substituição de quem se desliga (o servidor põe um bot no lugar).
 
 ## O match
 
@@ -99,7 +103,7 @@ Os testes em `games/catania/test/` já estão escritos assim, um por regra do RE
 Validadas uma a uma e registadas em [DECISOES.md](DECISOES.md).
 
 1. **Moves imperativas sobre uma cópia**, em vez de funções que devolvem estado novo. Tudo-ou-nada, incluindo exceções (`engine.RULE_ERROR`); jogadas sobre estados antigos são recusadas (`engine.STALE_MOVE`). Aceite: ADR-001.
-2. **Timers declarativos** em vez de `setTimeout` nas regras. Obriga a reescrever os timers do Bulbous, Capivaras e Nine Oils como eventos.
+2. **Timers declarativos** em vez de `setTimeout` nas regras. Na migração só 2 timers são regras (desempate do Bulbous, pausa da revelação das Capivaras); os prazos vão no `ROOM` e a simulação exercita os timeouts. Aceite: ADR-002.
 3. **Um RNG por match, guardado no estado do match.** Bots usam um RNG derivado de `seed + seq + lugar`, também determinístico.
 4. **Incompatibilidade por major.** Uma partida guardada com `1.x` não é retomada com `2.x`: mesas solo antigas são apagadas e mesas públicas reiniciadas.
 5. **`describeMove` no pacote**, para a UI genérica mostrar jogadas legíveis sem UI própria.

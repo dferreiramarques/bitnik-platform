@@ -81,6 +81,8 @@ button { font: inherit; }
 .table-head h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 .table-head .meta { color: var(--ui-muted); }
 
+.timers { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.timer { font-variant-numeric: tabular-nums; font-weight: 600; }
 .seats { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .seat {
   padding: 10px 14px; border-radius: var(--ui-r-md);

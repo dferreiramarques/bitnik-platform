@@ -5,7 +5,8 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BitnikClient } from '@bitnik/client';
-import { fileStorage } from '@bitnik/server';
+import { fileStorage, createPlatform } from '@bitnik/server';
+import race from '../packages/engine/test/fixtures/race.js';
 import { makeStudio } from '../apps/studio/server.js';
 import { makeRuntime } from '../examples/clean-runtime/server.js';
 
@@ -194,5 +195,19 @@ test('ficheiros de storage de outro jogo ou versão incompatível não partem o 
   const s = await boot(makeStudio, { dataDir: dir });
   assert.ok(!s.platform.rooms.has('x'));
   assert.ok(!s.platform.rooms.has('solo-old'));
+  await s.stop();
+});
+
+test('o ROOM traz o prazo absoluto de cada timer do jogo', async () => {
+  const s = await boot(() => createPlatform({ games: [race], botDelayMs: [60_000, 60_001], logger: quiet }));
+  const c = await s.client();
+  const created = c.next('room');
+  c.createSolo('race', 2);
+  const msg = await created;
+  assert.equal(msg.timers.length, 1);
+  const [t] = msg.timers;
+  assert.equal(t.key, 'turn');
+  assert.equal(t.event, 'TIMEOUT');
+  assert.ok(Math.abs(t.at - (msg.now + 10_000)) < 1000, 'vence 10 s depois de agendado');
   await s.stop();
 });
