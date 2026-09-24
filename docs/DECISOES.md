@@ -216,6 +216,8 @@ Três camadas de tokens e dois níveis de personalização, com o mesmo peso:
 
 A UI de um jogo nunca usa cores escritas diretamente no código: só tokens, para as duas vias funcionarem.
 
+Toda a skin define `--table-bg`, o aspeto da mesa onde o jogo assenta (cor, gradiente ou imagem). A plataforma aplica-o à área da mesa de qualquer jogo; é o primeiro campo da "Aparência". No Catania é o mar do `catania-v2`.
+
 ### Consequências
 
 - Um publisher afina a skin sem deploy; um designer pode redesenhar a mesa inteira sem tocar nas regras.

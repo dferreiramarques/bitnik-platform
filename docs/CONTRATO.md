@@ -100,7 +100,7 @@ export function update(msg) { /* a cada ROOM: msg.view, msg.legal (com label), m
 export function unmount() { /* opcional */ }
 ```
 
-`ctx` traz `t(key, params)` (traduz com o i18n do jogo e da plataforma), `move(mv)` (envia uma jogada; devolve `false` sem ligação), `seatName(i)`, `lang()`, `toast(texto)` e `gameId`. A UI não repete regras: cada interação corresponde a uma jogada de `msg.legal`. Só pode importar ficheiros próprios, `@bitnik/client` ou `@bitnik/engine` (resolvidos por import map). As cores e formas vêm só de tokens declarados em `ui/skin.json` (ADR-008).
+`ctx` traz `t(key, params)` (traduz com o i18n do jogo e da plataforma), `move(mv)` (envia uma jogada; devolve `false` sem ligação), `seatName(i)`, `lang()`, `toast(texto)` e `gameId`. A UI não repete regras: cada interação corresponde a uma jogada de `msg.legal`. Só pode importar ficheiros próprios, `@bitnik/client` ou `@bitnik/engine` (resolvidos por import map). As cores e formas vêm só de tokens declarados em `ui/skin.json` (ADR-008). Toda a skin define `--table-bg`, o aspeto da mesa: a plataforma aplica-o à área onde a UI é montada.
 
 No Studio, o botão "Modo protótipo" troca para a UI genérica. Se o módulo não carregar, a plataforma usa a genérica.
 

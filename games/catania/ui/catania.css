@@ -4,8 +4,7 @@
 .cat {
   --cat-gap: 12px;
   display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--cat-gap);
-  background: var(--cat-bg); color: var(--cat-text);
-  border-radius: var(--cat-radius); padding: var(--cat-gap);
+  color: var(--cat-text); padding: var(--cat-gap); /* o fundo é o --table-bg, aplicado pela plataforma */
   font-family: var(--font-body, system-ui, sans-serif);
 }
 .cat h4 {
@@ -21,6 +20,7 @@
 .cat-sec { background: var(--cat-panel); border: 1px solid var(--cat-line); border-radius: var(--cat-radius); padding: 10px 12px; }
 
 /* Topo */
+.cat-top { text-shadow: 0 1px 2px rgb(0 0 0 / .5); }
 .cat-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cat-round { font-family: var(--cat-font-display); font-size: 1.1rem; }
 .cat-turn { margin-left: auto; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--cat-line); color: var(--cat-muted); }
@@ -44,10 +44,7 @@
 .cat-vill img { width: 16px; height: 16px; }
 
 /* Tabuleiro */
-.cat-board {
-  background: var(--cat-board-bg) center / cover no-repeat, var(--cat-panel);
-  border: 1px solid var(--cat-line); border-radius: var(--cat-radius); padding: 6px;
-}
+.cat-board { padding: 6px; } /* a ilha assenta direto na mesa (o mar) */
 .cat-board svg { display: block; width: 100%; height: auto; max-height: 62vh; }
 .cat-hex { cursor: default; }
 .cat-hex.can { cursor: pointer; }
@@ -81,7 +78,7 @@
 .cat-disc {
   width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
   font-family: var(--cat-font-display); font-weight: 700; font-size: .9rem;
-  background: var(--cat-bg); color: var(--cat-gold); border: 2px solid var(--cat-gold-dark);
+  background: var(--cat-panel-2); color: var(--cat-gold); border: 2px solid var(--cat-gold-dark);
 }
 .cat-disc.red { color: var(--cat-red); border-color: var(--cat-red); }
 .cat-tower { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -116,7 +113,7 @@
 .cat-type.keep:disabled, .cat-type.raise:disabled { opacity: 1; cursor: default; }
 .cat-type.raise { border-color: var(--cat-red); }
 .cat-type.off { opacity: .45; }
-.cat-summary { background: var(--cat-bg); border-radius: 10px; padding: 8px 10px; display: grid; gap: 4px; font-size: .9rem; }
+.cat-summary { background: var(--cat-panel-2); border-radius: 10px; padding: 8px 10px; display: grid; gap: 4px; font-size: .9rem; }
 .cat-summary > div { display: flex; align-items: center; gap: 6px; }
 .cat-mbtns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 

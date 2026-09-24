@@ -90,6 +90,8 @@ button { font: inherit; }
 .notice span { flex: 1; }
 .notice-warn { border-color: var(--color-danger, #c0392b); }
 .game-host, .game-root { margin-top: 12px; min-width: 0; }
+/* A mesa: cada jogo define --table-bg no skin.json (ADR-008); sem ele, a cor alternativa da marca. */
+.game-root { background: var(--table-bg, var(--ui-alt)); border-radius: var(--ui-r-md); overflow: hidden; }
 .timers { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .timer { font-variant-numeric: tabular-nums; font-weight: 600; }
 .seats { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }

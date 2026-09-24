@@ -1,32 +1,204 @@
 {
   "name": "Pergaminho do Etna",
-  "description": "Paleta original do catania-v2: dourado e pergaminho sobre fundo vulcânico.",
+  "description": "Paleta original do catania-v2: mar Mediterrâneo, dourado e pergaminho.",
   "tokens": {
-    "--cat-bg": { "value": "#14110b", "type": "color", "group": "base", "label": { "pt": "Fundo da mesa", "en": "Table background" } },
-    "--cat-panel": { "value": "#1e1a10", "type": "color", "group": "base", "label": { "pt": "Painéis", "en": "Panels" } },
-    "--cat-panel-2": { "value": "#2a2418", "type": "color", "group": "base", "label": { "pt": "Painéis (realce)", "en": "Panels (raised)" } },
-    "--cat-line": { "value": "#4a3c1a", "type": "color", "group": "base", "label": { "pt": "Linhas", "en": "Lines" } },
-    "--cat-text": { "value": "#f2e8d0", "type": "color", "group": "base", "label": { "pt": "Texto", "en": "Text" } },
-    "--cat-muted": { "value": "#a89c84", "type": "color", "group": "base", "label": { "pt": "Texto secundário", "en": "Secondary text" } },
-    "--cat-gold": { "value": "#c9a84c", "type": "color", "group": "base", "label": { "pt": "Dourado (destaques)", "en": "Gold (highlights)" } },
-    "--cat-gold-dark": { "value": "#8b6914", "type": "color", "group": "base", "label": { "pt": "Dourado escuro", "en": "Dark gold" } },
-    "--cat-red": { "value": "#d9503f", "type": "color", "group": "base", "label": { "pt": "Vermelho (fogo, discos vermelhos)", "en": "Red (fire, red discs)" } },
-    "--cat-on-gold": { "value": "#1a1208", "type": "color", "group": "base", "label": { "pt": "Texto sobre dourado", "en": "Text on gold" } },
-
-    "--cat-res-cereais": { "value": "#c8a020", "type": "color", "group": "resources", "label": { "pt": "Cereais", "en": "Grain" } },
-    "--cat-res-vinho": { "value": "#7a2060", "type": "color", "group": "resources", "label": { "pt": "Vinho", "en": "Wine" } },
-    "--cat-res-peixe": { "value": "#1a6080", "type": "color", "group": "resources", "label": { "pt": "Peixe", "en": "Fish" } },
-    "--cat-res-calcario": { "value": "#7a7060", "type": "color", "group": "resources", "label": { "pt": "Calcário", "en": "Limestone" } },
-    "--cat-res-azeite": { "value": "#607a10", "type": "color", "group": "resources", "label": { "pt": "Azeite", "en": "Olive oil" } },
-    "--cat-res-vulcao": { "value": "#2a1808", "type": "color", "group": "resources", "label": { "pt": "Vulcão", "en": "Volcano" } },
-
-    "--cat-p1": { "value": "#b03a2e", "type": "color", "group": "players", "label": { "pt": "Jogador 1", "en": "Player 1" } },
-    "--cat-p2": { "value": "#1a5276", "type": "color", "group": "players", "label": { "pt": "Jogador 2", "en": "Player 2" } },
-    "--cat-p3": { "value": "#1d6a27", "type": "color", "group": "players", "label": { "pt": "Jogador 3", "en": "Player 3" } },
-    "--cat-p4": { "value": "#7d6608", "type": "color", "group": "players", "label": { "pt": "Jogador 4", "en": "Player 4" } },
-
-    "--cat-board-bg": { "value": "none", "type": "image", "group": "art", "label": { "pt": "Imagem de fundo do tabuleiro", "en": "Board background image" } },
-    "--cat-font-display": { "value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)", "type": "font", "group": "type", "label": { "pt": "Letra de títulos", "en": "Display font" } },
-    "--cat-radius": { "value": "14px", "type": "size", "group": "shape", "label": { "pt": "Arredondamento", "en": "Corner radius" } }
+    "--table-bg": {
+      "value": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 30 Q15 18 30 30 Q45 42 60 30 Q75 18 90 30 Q105 42 120 30' fill='none' stroke='white' stroke-width='1.2' opacity='0.06'/%3E%3Cpath d='M0 50 Q15 38 30 50 Q45 62 60 50 Q75 38 90 50 Q105 62 120 50' fill='none' stroke='white' stroke-width='1' opacity='0.04'/%3E%3Cpath d='M0 10 Q15 -2 30 10 Q45 22 60 10 Q75 -2 90 10 Q105 22 120 10' fill='none' stroke='white' stroke-width='1' opacity='0.04'/%3E%3C/svg%3E\") 0 0 / 120px 60px, radial-gradient(ellipse at 50% 45%, #1e5a8a 0%, #0e3460 35%, #071e3d 65%, #030e1e 100%)",
+      "type": "background",
+      "group": "table",
+      "label": {
+        "pt": "Mesa (fundo)",
+        "en": "Table (background)"
+      }
+    },
+    "--cat-panel": {
+      "value": "#1e1a10",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Painéis",
+        "en": "Panels"
+      }
+    },
+    "--cat-panel-2": {
+      "value": "#2a2418",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Painéis (realce)",
+        "en": "Panels (raised)"
+      }
+    },
+    "--cat-line": {
+      "value": "#4a3c1a",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Linhas",
+        "en": "Lines"
+      }
+    },
+    "--cat-text": {
+      "value": "#f2e8d0",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Texto",
+        "en": "Text"
+      }
+    },
+    "--cat-muted": {
+      "value": "#a89c84",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Texto secundário",
+        "en": "Secondary text"
+      }
+    },
+    "--cat-gold": {
+      "value": "#c9a84c",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Dourado (destaques)",
+        "en": "Gold (highlights)"
+      }
+    },
+    "--cat-gold-dark": {
+      "value": "#8b6914",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Dourado escuro",
+        "en": "Dark gold"
+      }
+    },
+    "--cat-red": {
+      "value": "#d9503f",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Vermelho (fogo, discos vermelhos)",
+        "en": "Red (fire, red discs)"
+      }
+    },
+    "--cat-on-gold": {
+      "value": "#1a1208",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Texto sobre dourado",
+        "en": "Text on gold"
+      }
+    },
+    "--cat-res-cereais": {
+      "value": "#c8a020",
+      "type": "color",
+      "group": "resources",
+      "label": {
+        "pt": "Cereais",
+        "en": "Grain"
+      }
+    },
+    "--cat-res-vinho": {
+      "value": "#7a2060",
+      "type": "color",
+      "group": "resources",
+      "label": {
+        "pt": "Vinho",
+        "en": "Wine"
+      }
+    },
+    "--cat-res-peixe": {
+      "value": "#1a6080",
+      "type": "color",
+      "group": "resources",
+      "label": {
+        "pt": "Peixe",
+        "en": "Fish"
+      }
+    },
+    "--cat-res-calcario": {
+      "value": "#7a7060",
+      "type": "color",
+      "group": "resources",
+      "label": {
+        "pt": "Calcário",
+        "en": "Limestone"
+      }
+    },
+    "--cat-res-azeite": {
+      "value": "#607a10",
+      "type": "color",
+      "group": "resources",
+      "label": {
+        "pt": "Azeite",
+        "en": "Olive oil"
+      }
+    },
+    "--cat-res-vulcao": {
+      "value": "#2a1808",
+      "type": "color",
+      "group": "resources",
+      "label": {
+        "pt": "Vulcão",
+        "en": "Volcano"
+      }
+    },
+    "--cat-p1": {
+      "value": "#b03a2e",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 1",
+        "en": "Player 1"
+      }
+    },
+    "--cat-p2": {
+      "value": "#1a5276",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 2",
+        "en": "Player 2"
+      }
+    },
+    "--cat-p3": {
+      "value": "#1d6a27",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 3",
+        "en": "Player 3"
+      }
+    },
+    "--cat-p4": {
+      "value": "#7d6608",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 4",
+        "en": "Player 4"
+      }
+    },
+    "--cat-font-display": {
+      "value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)",
+      "type": "font",
+      "group": "type",
+      "label": {
+        "pt": "Letra de títulos",
+        "en": "Display font"
+      }
+    },
+    "--cat-radius": {
+      "value": "14px",
+      "type": "size",
+      "group": "shape",
+      "label": {
+        "pt": "Arredondamento",
+        "en": "Corner radius"
+      }
+    }
   }
 }

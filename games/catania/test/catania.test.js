@@ -270,4 +270,5 @@ test('skin.json: todos os tokens --cat-* usados no CSS e na UI têm valor por om
   used.delete('--cat-p'); // prefixo de seatColor (--cat-p1..4)
   used.delete('--cat-res-'); // prefixo de --cat-res-<recurso>
   for (const tok of used) assert.ok(tok in skin.tokens, `falta ${tok} no skin.json`);
+  assert.ok(skin.tokens['--table-bg']?.value, 'toda a skin define --table-bg, o aspeto da mesa');
 });

@@ -170,7 +170,7 @@ function renderBoard(v) {
       ${move ? `<polygon class="cat-hex-glow" points="${hexPts(cx, cy, R - 1.5)}"/>` : ''}
       <image href="${ICONS[hex.type]}" x="${cx - 16}" y="${cy - 22}" width="32" height="32" style="pointer-events:none"/>
       <text x="${cx}" y="${cy + 24}" text-anchor="middle" font-size="9" font-weight="600" fill="rgb(255 255 255 / .8)" style="font-family:var(--cat-font-display);pointer-events:none">${esc(name)}</text>
-      ${!isVol && pile ? `<circle cx="${(cx + R * 0.52).toFixed(1)}" cy="${(cy - R * 0.52).toFixed(1)}" r="13" style="fill:var(--cat-bg);stroke:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold-dark)'}" stroke-width="1.8"/>
+      ${!isVol && pile ? `<circle cx="${(cx + R * 0.52).toFixed(1)}" cy="${(cy - R * 0.52).toFixed(1)}" r="13" style="fill:var(--cat-panel-2);stroke:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold-dark)'}" stroke-width="1.8"/>
         <text x="${(cx + R * 0.52).toFixed(1)}" y="${(cy - R * 0.52).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" style="font-family:var(--cat-font-display);fill:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold)'};pointer-events:none">${pile.value}</text>` : ''}
       ${workers}
       ${isFire ? `<image href="${ICONS.fogo}" x="${cx - 26}" y="${cy - 30}" width="52" height="52" style="pointer-events:none"/>` : ''}
