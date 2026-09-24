@@ -3,6 +3,7 @@
 // no browser (o mesmo motor e a mesma UI das mesas).
 import { applyGameSkin, applyOverrides, contrast } from '/appearance.js';
 import { translate } from '/engine/i18n.js';
+import { isDesignTokens, designTokensToAppearance } from '/design-tokens.js';
 
 const MAX_IMAGE_KB = 300;
 const BRAND_LABELS = {
@@ -41,6 +42,18 @@ const gameCfg = (id) => { st.draft.games[id] ??= { theme: null, tokens: {} }; re
 const lang = () => ctx.lang();
 const label = (l) => (typeof l === 'string' ? l : l?.[lang()] ?? l?.pt ?? '');
 const dirty = () => JSON.stringify(st.draft) !== st.saved;
+
+/** Valores por omissão de uma coleção e modo (para importar do Figma só o que mudou). */
+function defaultsFor(col, mode) {
+  if (col === 'brand') {
+    const cs = getComputedStyle(document.documentElement);
+    return Object.fromEntries(Object.keys(st.catalog.brandTokens).map((k) => [k, cs.getPropertyValue(k).trim()]));
+  }
+  const g = st.catalog.games.find((x) => x.id === col);
+  if (!g) return {};
+  const base = Object.fromEntries(Object.entries(g.skin?.tokens || {}).map(([k, d]) => [k, d.value]));
+  return { ...base, ...(mode ? g.themes?.[mode]?.tokens : {}) };
+}
 
 /** Valor por omissão de um token de jogo: o do tema escolhido, senão o do skin.json. */
 function gameDefault(g, k) {
@@ -254,7 +267,14 @@ export function after(root) {
       try {
         const data = JSON.parse(await readFile(e.target.files[0], 'text'));
         if (typeof data !== 'object' || !data) throw new Error();
-        st.draft = { brand: { tokens: { ...(data.brand?.tokens || {}) } }, games: clone(data.games || {}) };
+        if (isDesignTokens(data)) {
+          // Variables exportadas do Figma (W3C Design Tokens): só as coleções que vêm no ficheiro mudam.
+          const got = designTokensToAppearance(data, { defaults: defaultsFor });
+          if (Object.keys(got.brand.tokens).length) st.draft.brand.tokens = got.brand.tokens;
+          for (const [id, cfg] of Object.entries(got.games)) if (st.catalog.games.some((g) => g.id === id)) st.draft.games[id] = cfg;
+        } else {
+          st.draft = { brand: { tokens: { ...(data.brand?.tokens || {}) } }, games: clone(data.games || {}) };
+        }
         ctx.toast(u('apImported'));
       } catch { ctx.toast(u('apBadJson')); }
       ctx.rerender();

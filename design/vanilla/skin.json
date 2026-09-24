@@ -1,0 +1,168 @@
+{
+  "name": "Vanilla",
+  "description": "Skin neutra de referência para jogos novos e para o template do Figma (ADR-008). Tokens --game-* do design system.",
+  "tokens": {
+    "--table-bg": {
+      "value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
+      "type": "background",
+      "group": "table",
+      "label": {
+        "pt": "Mesa (fundo)",
+        "en": "Table (background)"
+      }
+    },
+    "--game-panel": {
+      "value": "#fffaf1",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Painéis",
+        "en": "Panels"
+      }
+    },
+    "--game-panel-2": {
+      "value": "#f3e4cb",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Painéis (realce)",
+        "en": "Panels (raised)"
+      }
+    },
+    "--game-line": {
+      "value": "#d9c49a",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Linhas",
+        "en": "Lines"
+      }
+    },
+    "--game-text": {
+      "value": "#2b1b12",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Texto",
+        "en": "Text"
+      }
+    },
+    "--game-muted": {
+      "value": "#5b4636",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Texto secundário",
+        "en": "Secondary text"
+      }
+    },
+    "--game-accent": {
+      "value": "#b8461f",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Destaque",
+        "en": "Accent"
+      }
+    },
+    "--game-on-accent": {
+      "value": "#fffaf1",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Texto sobre destaque",
+        "en": "Text on accent"
+      }
+    },
+    "--game-danger": {
+      "value": "#b3261e",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Perigo",
+        "en": "Danger"
+      }
+    },
+    "--game-color-1": {
+      "value": "#b03a2e",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 1",
+        "en": "Player 1"
+      }
+    },
+    "--game-color-2": {
+      "value": "#1a5276",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 2",
+        "en": "Player 2"
+      }
+    },
+    "--game-color-3": {
+      "value": "#1d6a27",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 3",
+        "en": "Player 3"
+      }
+    },
+    "--game-color-4": {
+      "value": "#7d6608",
+      "type": "color",
+      "group": "players",
+      "label": {
+        "pt": "Jogador 4",
+        "en": "Player 4"
+      }
+    },
+    "--game-font-display": {
+      "value": "'Baloo 2', system-ui, sans-serif",
+      "type": "font",
+      "group": "type",
+      "label": {
+        "pt": "Letra de títulos",
+        "en": "Display font"
+      }
+    },
+    "--game-font-body": {
+      "value": "Inter, system-ui, sans-serif",
+      "type": "font",
+      "group": "type",
+      "label": {
+        "pt": "Letra de texto",
+        "en": "Body font"
+      }
+    },
+    "--game-radius": {
+      "value": "14px",
+      "type": "size",
+      "group": "shape",
+      "label": {
+        "pt": "Arredondamento",
+        "en": "Corner radius"
+      }
+    }
+  },
+  "contrast": [
+    [
+      "--game-text",
+      "--game-panel"
+    ],
+    [
+      "--game-text",
+      "--game-panel-2"
+    ],
+    [
+      "--game-muted",
+      "--game-panel"
+    ],
+    [
+      "--game-on-accent",
+      "--game-accent"
+    ]
+  ]
+}

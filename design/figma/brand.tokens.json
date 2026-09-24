@@ -1,0 +1,138 @@
+{
+  "brand": {
+    "brand": {
+      "brand-primary": {
+        "$type": "color",
+        "$value": "#b8461f",
+        "$extensions": {
+          "bitnik": {
+            "token": "--brand-primary",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "brand-secondary": {
+        "$type": "color",
+        "$value": "#ea7c2e",
+        "$extensions": {
+          "bitnik": {
+            "token": "--brand-secondary",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "brand-accent": {
+        "$type": "color",
+        "$value": "#e8a93b",
+        "$extensions": {
+          "bitnik": {
+            "token": "--brand-accent",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "bg": {
+        "$type": "color",
+        "$value": "#fbf3e4",
+        "$extensions": {
+          "bitnik": {
+            "token": "--bg",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "bg-alt": {
+        "$type": "color",
+        "$value": "#f3e4cb",
+        "$extensions": {
+          "bitnik": {
+            "token": "--bg-alt",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "text": {
+        "$type": "color",
+        "$value": "#2b1b12",
+        "$extensions": {
+          "bitnik": {
+            "token": "--text",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "text-muted": {
+        "$type": "color",
+        "$value": "#5b4636",
+        "$extensions": {
+          "bitnik": {
+            "token": "--text-muted",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "border": {
+        "$type": "color",
+        "$value": "#ecd6ac",
+        "$extensions": {
+          "bitnik": {
+            "token": "--border",
+            "type": "color",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "font-display": {
+        "$type": "fontFamily",
+        "$value": "'Baloo 2', system-ui, sans-serif",
+        "$extensions": {
+          "bitnik": {
+            "token": "--font-display",
+            "type": "font",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "font-body": {
+        "$type": "fontFamily",
+        "$value": "Inter, system-ui, sans-serif",
+        "$extensions": {
+          "bitnik": {
+            "token": "--font-body",
+            "type": "font",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      },
+      "radius-md": {
+        "$type": "dimension",
+        "$value": "14px",
+        "$extensions": {
+          "bitnik": {
+            "token": "--radius-md",
+            "type": "size",
+            "collection": "brand",
+            "mode": "default"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "vanilla": {
+    "table": {
+      "table-bg": {
+        "$type": "string",
+        "$value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
+        "$description": "Mesa (fundo)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--table-bg",
+            "type": "background",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "base": {
+      "game-panel": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Painéis",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-panel",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-panel-2": {
+        "$type": "color",
+        "$value": "#f3e4cb",
+        "$description": "Painéis (realce)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-panel-2",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-line": {
+        "$type": "color",
+        "$value": "#d9c49a",
+        "$description": "Linhas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-line",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-text": {
+        "$type": "color",
+        "$value": "#2b1b12",
+        "$description": "Texto",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-text",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-muted": {
+        "$type": "color",
+        "$value": "#5b4636",
+        "$description": "Texto secundário",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-muted",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-accent": {
+        "$type": "color",
+        "$value": "#b8461f",
+        "$description": "Destaque",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-accent",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-accent": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Texto sobre destaque",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-accent",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-danger": {
+        "$type": "color",
+        "$value": "#b3261e",
+        "$description": "Perigo",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-danger",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "players": {
+      "game-color-1": {
+        "$type": "color",
+        "$value": "#b03a2e",
+        "$description": "Jogador 1",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-1",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-color-2": {
+        "$type": "color",
+        "$value": "#1a5276",
+        "$description": "Jogador 2",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-2",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-color-3": {
+        "$type": "color",
+        "$value": "#1d6a27",
+        "$description": "Jogador 3",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-3",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-color-4": {
+        "$type": "color",
+        "$value": "#7d6608",
+        "$description": "Jogador 4",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-4",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "type": {
+      "game-font-display": {
+        "$type": "fontFamily",
+        "$value": "'Baloo 2', system-ui, sans-serif",
+        "$description": "Letra de títulos",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-font-display",
+            "type": "font",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-font-body": {
+        "$type": "fontFamily",
+        "$value": "Inter, system-ui, sans-serif",
+        "$description": "Letra de texto",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-font-body",
+            "type": "font",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "shape": {
+      "game-radius": {
+        "$type": "dimension",
+        "$value": "14px",
+        "$description": "Arredondamento",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-radius",
+            "type": "size",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      }
+    }
+  }
+}

@@ -2,12 +2,20 @@
   "name": "bitnik-platform",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "games/*", "apps/*", "examples/*"],
+  "workspaces": [
+    "packages/*",
+    "games/*",
+    "apps/*",
+    "examples/*"
+  ],
   "scripts": {
     "test": "node --test packages/engine/test/*.test.js games/*/test/*.test.js test/*.test.js",
     "studio": "node apps/studio/server.js",
     "runtime": "node examples/clean-runtime/server.js",
-    "simulate": "node tools/simulate.js"
+    "simulate": "node tools/simulate.js",
+    "figma": "node tools/figma.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

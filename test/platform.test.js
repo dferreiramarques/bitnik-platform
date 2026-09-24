@@ -461,3 +461,23 @@ test('aparência: catálogo com skin e temas; afinações validadas, enviadas ao
   assert.equal(again.welcome.games[0].themes.dia, '/games/catania/ui/themes/dia/theme.json');
   await s2.stop();
 });
+
+test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência certa', async () => {
+  const { exportAll, defaultsFor } = await import('../tools/figma.js');
+  const { designTokensToAppearance, readDesignTokens, isDesignTokens } = await import('../packages/server/public/design-tokens.js');
+  const files = await exportAll();
+  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'vanilla.tokens.json']);
+  const vanilla = readDesignTokens(files['vanilla.tokens.json']);
+  assert.ok(vanilla.some((t) => t.name === '--table-bg'), 'a vanilla também define a mesa');
+  const defaults = await defaultsFor();
+
+  // Sem alterações no Figma: nada fica fixado, só o tema do modo exportado.
+  const dia = files['catania.dia.tokens.json'];
+  assert.ok(isDesignTokens(dia));
+  assert.deepEqual(designTokensToAppearance(dia, { defaults }), { brand: { tokens: {} }, games: { catania: { theme: 'dia', tokens: {} } } });
+
+  // O designer muda uma cor no Figma: só essa volta.
+  const changed = structuredClone(files['catania.default.tokens.json']);
+  changed.catania.base['cat-gold'].$value = '#00aaff';
+  assert.deepEqual(designTokensToAppearance(changed, { defaults }).games.catania, { theme: null, tokens: { '--cat-gold': '#00aaff' } });
+});

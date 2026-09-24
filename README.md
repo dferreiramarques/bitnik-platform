@@ -21,6 +21,10 @@ tools/
   simulate.js partidas com bots em série
 docs/
   CONTRATO.md o contrato de um pacote de jogo (ler primeiro)
+  DECISOES.md as decisões de arquitetura (ADR)
+design/
+  vanilla/    skin neutra de referência para jogos novos
+  figma/      tokens para as Variables do Figma (npm run figma) e o guião do template
 ```
 
 ## Começar

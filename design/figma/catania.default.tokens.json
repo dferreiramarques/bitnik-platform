@@ -1,0 +1,302 @@
+{
+  "catania": {
+    "table": {
+      "table-bg": {
+        "$type": "string",
+        "$value": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 30 Q15 18 30 30 Q45 42 60 30 Q75 18 90 30 Q105 42 120 30' fill='none' stroke='white' stroke-width='1.2' opacity='0.06'/%3E%3Cpath d='M0 50 Q15 38 30 50 Q45 62 60 50 Q75 38 90 50 Q105 62 120 50' fill='none' stroke='white' stroke-width='1' opacity='0.04'/%3E%3Cpath d='M0 10 Q15 -2 30 10 Q45 22 60 10 Q75 -2 90 10 Q105 22 120 10' fill='none' stroke='white' stroke-width='1' opacity='0.04'/%3E%3C/svg%3E\") 0 0 / 120px 60px, radial-gradient(ellipse at 50% 45%, #1e5a8a 0%, #0e3460 35%, #071e3d 65%, #030e1e 100%)",
+        "$description": "Mesa (fundo)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--table-bg",
+            "type": "background",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "base": {
+      "cat-panel": {
+        "$type": "color",
+        "$value": "#1e1a10",
+        "$description": "Painéis",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-panel",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-panel-2": {
+        "$type": "color",
+        "$value": "#2a2418",
+        "$description": "Painéis (realce)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-panel-2",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-line": {
+        "$type": "color",
+        "$value": "#4a3c1a",
+        "$description": "Linhas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-line",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-text": {
+        "$type": "color",
+        "$value": "#f2e8d0",
+        "$description": "Texto",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-text",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-muted": {
+        "$type": "color",
+        "$value": "#a89c84",
+        "$description": "Texto secundário",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-muted",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-gold": {
+        "$type": "color",
+        "$value": "#c9a84c",
+        "$description": "Dourado (destaques)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-gold",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-gold-dark": {
+        "$type": "color",
+        "$value": "#8b6914",
+        "$description": "Dourado escuro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-gold-dark",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-red": {
+        "$type": "color",
+        "$value": "#d9503f",
+        "$description": "Vermelho (fogo, discos vermelhos)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-red",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-on-gold": {
+        "$type": "color",
+        "$value": "#1a1208",
+        "$description": "Texto sobre dourado",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-on-gold",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "resources": {
+      "cat-res-cereais": {
+        "$type": "color",
+        "$value": "#c8a020",
+        "$description": "Cereais",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-res-cereais",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-res-vinho": {
+        "$type": "color",
+        "$value": "#7a2060",
+        "$description": "Vinho",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-res-vinho",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-res-peixe": {
+        "$type": "color",
+        "$value": "#1a6080",
+        "$description": "Peixe",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-res-peixe",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-res-calcario": {
+        "$type": "color",
+        "$value": "#7a7060",
+        "$description": "Calcário",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-res-calcario",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-res-azeite": {
+        "$type": "color",
+        "$value": "#607a10",
+        "$description": "Azeite",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-res-azeite",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-res-vulcao": {
+        "$type": "color",
+        "$value": "#2a1808",
+        "$description": "Vulcão",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-res-vulcao",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "players": {
+      "cat-p1": {
+        "$type": "color",
+        "$value": "#b03a2e",
+        "$description": "Jogador 1",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-p1",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-p2": {
+        "$type": "color",
+        "$value": "#1a5276",
+        "$description": "Jogador 2",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-p2",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-p3": {
+        "$type": "color",
+        "$value": "#1d6a27",
+        "$description": "Jogador 3",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-p3",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "cat-p4": {
+        "$type": "color",
+        "$value": "#7d6608",
+        "$description": "Jogador 4",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-p4",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "type": {
+      "cat-font-display": {
+        "$type": "fontFamily",
+        "$value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)",
+        "$description": "Letra de títulos",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-font-display",
+            "type": "font",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "shape": {
+      "cat-radius": {
+        "$type": "dimension",
+        "$value": "14px",
+        "$description": "Arredondamento",
+        "$extensions": {
+          "bitnik": {
+            "token": "--cat-radius",
+            "type": "size",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      }
+    }
+  }
+}
