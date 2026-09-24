@@ -322,3 +322,76 @@ test('o ROOM traz o prazo absoluto de cada timer do jogo', async () => {
   assert.ok(Math.abs(t.at - (msg.now + 10_000)) < 1000, 'vence 10 s depois de agendado');
   await s.stop();
 });
+
+test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', async () => {
+  const off = await boot(makeStudio, { adminToken: undefined });
+  assert.equal((await fetch(`http://localhost:${off.port}/console`)).status, 404);
+  await off.stop();
+
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const base = `http://localhost:${s.port}`;
+  const auth = { Authorization: 'Bearer segredo' };
+  const page = await fetch(`${base}/console`);
+  assert.equal(page.status, 200);
+  assert.match(await page.text(), /Bitnik Studio/);
+  assert.equal((await fetch(`${base}/console.js`)).status, 200);
+  assert.equal((await fetch(`${base}/admin/status`)).status, 401);
+  await s.client();
+  const st = await (await fetch(`${base}/admin/status`, { headers: auth })).json();
+  assert.equal(st.engineVersion, '0.2.0');
+  assert.equal(st.studio, true);
+  assert.equal(st.online, 1);
+  assert.equal(st.rooms.total, 3);
+  const { games } = await (await fetch(`${base}/admin/games`, { headers: auth })).json();
+  assert.equal(games[0].id, 'catania');
+  assert.equal(games[0].name, 'Catania');
+  assert.deepEqual(games[0].problems, []);
+  await s.stop();
+});
+
+test('consola: simulação por HTTP devolve vitórias por lugar para cada número de jogadores', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const r = await fetch(`http://localhost:${s.port}/admin/games/catania/simulate`, {
+    method: 'POST', headers: { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' }, body: JSON.stringify({ games: 30 }),
+  });
+  const { results } = await r.json();
+  assert.deepEqual(results.map((x) => x.numPlayers), [2, 3, 4]);
+  for (const x of results) {
+    assert.equal(x.finished, 30);
+    assert.deepEqual(x.failures, []);
+    assert.equal(x.winRateBySeat.length, x.numPlayers);
+    assert.ok(Math.abs(x.winRateBySeat.reduce((a, b) => a + b, 0) - 100) < 1);
+  }
+  await s.stop();
+});
+
+test('mesas de aprovação: criadas na consola, só entra quem tem o link, jogam-se até ao fim', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/tables`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const created = await (await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ gameId: 'catania', numPlayers: 3, name: 'Revisão <b>' }) })).json();
+  assert.equal(created.kind, 'invite');
+  assert.equal(created.name, 'Revisão b');
+  assert.equal(created.link, `/#/r/${created.id}`);
+  assert.equal((await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ gameId: 'catania', numPlayers: 9 }) })).status, 400);
+
+  const a = await s.client(memStore(), 'Ana');
+  const rooms = await new Promise((r) => { a.on('rooms', r); a.list(); });
+  assert.ok(!rooms.public.some((x) => x.id === created.id), 'não aparece no lobby público');
+  const seated = a.next('room', (m) => m.seat === 0);
+  a.join(created.id);
+  await seated;
+  const mine = await new Promise((r) => { a.on('rooms', r); a.list(); });
+  assert.ok(mine.mine.some((x) => x.id === created.id), 'aparece em "as minhas mesas" de quem se sentou');
+  const started = a.next('room', (m) => m.room.status === 'playing');
+  a.start(created.id);
+  await started;
+  const end = await playToEnd(a, created.id);
+  assert.ok(end.result);
+  const { tables } = await (await fetch(url, { headers: auth })).json();
+  assert.equal(tables[0].id, created.id);
+  assert.ok(tables[0].result || tables[0].status === 'waiting');
+  assert.equal((await fetch(`${url}/${created.id}`, { method: 'DELETE', headers: auth })).status, 204);
+  assert.ok(!s.platform.rooms.has(created.id));
+  await s.stop();
+});

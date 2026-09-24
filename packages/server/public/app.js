@@ -26,6 +26,7 @@ const UI = {
     expired: 'Versão antiga ({from}), já não pode ser retomada',
     expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
     newMatch: 'Começar nova partida', dismiss: 'Fechar',
+    inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -47,6 +48,7 @@ const UI = {
     expired: 'Old version ({from}), can no longer be resumed',
     expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
     newMatch: 'Start a new game', dismiss: 'Close',
+    inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
   },
 };
 
@@ -118,9 +120,9 @@ function renderLobby() {
       <div class="lobby-cols">
         <div><h3>${u('myTables')}</h3>
           ${mine.length ? `<ul class="rows">${mine.map((r) => `<li>
-            <span class="grow">${u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}</small></span>
+            <span class="grow">${r.kind === 'invite' ? esc(r.name || u('inviteTable')) : u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}</small></span>
             <button class="btn btn-outline" data-open="${r.id}">${u(r.status === 'over' || r.status === 'expired' ? 'view' : 'resume')}</button>
-            <button class="btn btn-ghost" data-remove="${r.id}" aria-label="${u('remove')}">✕</button>
+            ${r.kind === 'solo' ? `<button class="btn btn-ghost" data-remove="${r.id}" aria-label="${u('remove')}">✕</button>` : ''}
           </li>`).join('')}</ul>` : `<p class="empty">${u('noMine')}</p>`}
         </div>
         <div><h3>${u('publicTables')}</h3>
@@ -185,8 +187,12 @@ function renderPalette(msg) {
       <button class="btn btn-primary" data-restart>${u('newMatch')}</button></div>`;
   }
   if (msg.room.status === 'waiting') {
-    return msg.seat != null
-      ? `<div class="palette"><p class="palette-wait">${u('seatedWait')}</p><button class="btn btn-primary" data-start>${u('start')}</button></div>`
+    if (msg.seat != null) {
+      return `<div class="palette"><p class="palette-wait">${u('seatedWait')}</p><button class="btn btn-primary" data-start>${u('start')}</button></div>`;
+    }
+    const free = msg.room.seats.some((s) => !s.taken);
+    return free && msg.room.kind !== 'solo'
+      ? `<div class="palette"><p class="palette-wait">${u(msg.room.kind === 'invite' ? 'inviteJoin' : 'spectator')}</p><button class="btn btn-primary" data-join="${msg.room.id}">${u('join')}</button></div>`
       : `<p class="palette-wait">${u('spectator')}</p>`;
   }
   if (msg.seat == null) return `<p class="palette-wait">${u('spectator')}</p>`;
@@ -249,11 +255,11 @@ function renderTable() {
   if (!msg) return `<p class="empty">${u('connecting')}</p>`;
   const g = msg.room.gameId;
   const round = msg.view?.round;
-  const canLeave = msg.room.kind === 'public' && msg.seat != null;
+  const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
   return `<section class="table">
     <div class="table-head">
       <h1>${esc(t('game.name', {}, g))}</h1>
-      <span class="meta">${u('tableOf', { n: msg.room.numPlayers })}${round ? `, ${u('round', { n: round })}` : ''}</span>
+      <span class="meta">${msg.room.kind === 'invite' ? `${esc(msg.room.name || u('inviteTable'))}, ` : ''}${u('tableOf', { n: msg.room.numPlayers })}${round ? `, ${u('round', { n: round })}` : ''}</span>
       ${canLeave ? `<button class="btn btn-ghost" data-leave>${u('leave')}</button>` : ''}
     </div>
     ${renderSeats(msg)}

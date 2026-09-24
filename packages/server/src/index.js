@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import {
-  checkGame, createMatch, applyMove, fireTimer, viewFor, activeSeats, botMove, matchIncompatibility, ENGINE_VERSION,
+  checkGame, createMatch, applyMove, fireTimer, viewFor, activeSeats, botMove, matchIncompatibility, simulate,
+  translate, ENGINE_VERSION,
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
@@ -63,13 +64,18 @@ export function createPlatform({
   let notices = [];                // avisos do publisher para todos os ligados
   let now = () => Date.now();
   let closing = false;
+  const startedAt = now();
 
   const isOnline = (userId) => [...conns.values()].some((c) => c.user?.userId === userId);
   const send = (ws, msg) => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); };
   const persist = (room) => storage.saveRoom(room);
 
   // ─── Salas ──────────────────────────────────────────────────
+  // Três tipos: 'public' (uma por número de jogadores, no lobby), 'solo'
+  // (privada, com bots) e 'invite' (mesa de aprovação: só entra quem tem o
+  // link; joga-se como uma pública).
   const emptySeat = () => ({ userId: null, name: '', bot: false, away: false });
+  const shared = (room) => room.kind === 'public' || room.kind === 'invite';
 
   function publicRoomsFor(game) {
     const out = [];
@@ -99,7 +105,8 @@ export function createPlatform({
     const all = [...rooms.values()];
     return {
       public: all.filter((r) => r.kind === 'public').map((r) => summary(r, userId)),
-      mine: all.filter((r) => r.kind === 'solo' && r.owner === userId)
+      mine: all.filter((r) => (r.kind === 'solo' && r.owner === userId)
+        || (r.kind === 'invite' && r.seats.some((s) => s.userId === userId)))
         .sort((a, b) => b.updatedAt - a.updatedAt).map((r) => summary(r, userId)),
     };
   }
@@ -149,7 +156,7 @@ export function createPlatform({
     room.status = match.result ? 'over' : 'playing';
     afterChange(room, { lobby: !wasOver && room.status === 'over' });
     // Mesa pública acabada sem ninguém ligado: volta a ficar livre.
-    if (room.kind === 'public' && room.status === 'over'
+    if (shared(room) && room.status === 'over'
       && !room.seats.some((s) => s.userId && isOnline(s.userId))) {
       room.seats = room.seats.map(emptySeat);
       resetPublicIfEmpty(room);
@@ -188,7 +195,7 @@ export function createPlatform({
   }
 
   // ─── Bots (e lugares ausentes em mesas públicas) ───────────
-  const botControls = (room, seat) => room.seats[seat].bot || (room.kind === 'public' && room.seats[seat].away);
+  const botControls = (room, seat) => room.seats[seat].bot || (shared(room) && room.seats[seat].away);
 
   function scheduleBots(room) {
     clearTimeout(botTimers.get(room.id));
@@ -211,7 +218,7 @@ export function createPlatform({
     for (const room of rooms.values()) {
       const s = seatOf(room, userId);
       if (s < 0) continue;
-      if (room.kind === 'public' && room.status === 'waiting' && away) {
+      if (shared(room) && room.status === 'waiting' && away) {
         room.seats[s] = emptySeat(); // na sala de espera, liberta o lugar
         touch(room, { lobby: true });
         continue;
@@ -225,7 +232,7 @@ export function createPlatform({
   }
 
   function resetPublicIfEmpty(room) {
-    if (room.kind !== 'public' || room.seats.some((s) => s.userId)) return;
+    if (!shared(room) || room.seats.some((s) => s.userId)) return;
     clearTimeout(botTimers.get(room.id));
     room.seats = room.seats.map(emptySeat);
     room.match = null;
@@ -350,7 +357,7 @@ export function createPlatform({
 
     JOIN(ws, c, { roomId }) {
       const room = rooms.get(roomId);
-      if (!room || room.kind !== 'public') return fail(ws, 'server.ROOM_NOT_FOUND');
+      if (!room || !shared(room)) return fail(ws, 'server.ROOM_NOT_FOUND');
       c.roomId = room.id;
       if (seatOf(room, c.user.userId) >= 0) return send(ws, roomMessage(room, c.user.userId));
       if (room.status !== 'waiting') return fail(ws, 'server.ALREADY_STARTED');
@@ -365,7 +372,7 @@ export function createPlatform({
       if (!room) return;
       if (c.roomId === roomId) c.roomId = null;
       const s = seatOf(room, c.user.userId);
-      if (s < 0 || room.kind !== 'public') return;
+      if (s < 0 || !shared(room)) return;
       // A meio do jogo, um bot fica com o lugar.
       room.seats[s] = room.status === 'waiting' ? emptySeat() : { ...room.seats[s], userId: null, bot: true };
       resetPublicIfEmpty(room);
@@ -480,16 +487,131 @@ export function createPlatform({
     res.end(body === undefined ? '' : JSON.stringify(body));
   };
 
-  function admin(req, res, url) {
+  const readJson = (req) => new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (d) => { body += d; if (body.length > 10_000) req.destroy(); });
+    req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch (e) { reject(e); } });
+  });
+
+  const gameName = (g, lang = brand.lang || 'pt') => translate(g, lang, 'game.name');
+
+  function status() {
+    const list = [...rooms.values()];
+    const count = (st) => list.filter((r) => r.status === st).length;
+    return {
+      brand: { id: brand.id, name: brand.name }, studio, engineVersion: ENGINE_VERSION,
+      node: process.version, uptimeMs: now() - startedAt,
+      games: G.size,
+      rooms: { total: list.length, playing: count('playing'), waiting: count('waiting'), over: count('over'), expired: count('expired') },
+      online: new Set([...conns.values()].filter((c) => c.user).map((c) => c.user.userId)).size,
+    };
+  }
+
+  function gameInfo(g) {
+    const list = [...rooms.values()].filter((r) => r.gameId === g.id);
+    return {
+      id: g.id, name: gameName(g), version: g.version, players: g.players,
+      author: g.author ?? null, license: g.license ?? null, langs: Object.keys(g.i18n),
+      bots: Object.keys(g.bots || {}), enumerate: !!g.enumerate, describeMove: !!g.describeMove,
+      events: Object.keys(g.events || {}), problems: checkGame(g),
+      rooms: { playing: list.filter((r) => r.status === 'playing').length, total: list.length },
+    };
+  }
+
+  /**
+   * Simulação sem bloquear o servidor: blocos de partidas com uma pausa
+   * entre eles, para as mesas a decorrer continuarem a responder.
+   */
+  async function simulateGame(game, { numPlayers, games = 200, idleRate = 0, seed = 'consola' }) {
+    const total = Math.max(1, Math.min(2000, Number(games) || 200));
+    const chunk = 25;
+    const wins = Array(numPlayers).fill(0);
+    let finished = 0; let moves = 0; let timersFired = 0; const failures = [];
+    for (let done = 0; done < total; done += chunk) {
+      const n = Math.min(chunk, total - done);
+      const r = simulate(game, { numPlayers, games: n, seed: `${seed}:${numPlayers}:${done}`, idleRate: Number(idleRate) || 0 });
+      finished += r.finished; moves += r.avgMoves * r.finished; timersFired += r.timersFired;
+      r.winRateBySeat.forEach((w, i) => { wins[i] += (w / 100) * r.finished; });
+      failures.push(...r.failures.slice(0, 5 - failures.length));
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    return {
+      numPlayers, games: total, finished, failures, timersFired,
+      avgMoves: Math.round((moves / (finished || 1)) * 10) / 10,
+      winRateBySeat: wins.map((w) => Math.round((w / (finished || 1)) * 1000) / 10),
+    };
+  }
+
+  function inviteInfo(room) {
+    const s = summary(room);
+    return { ...s, createdAt: room.createdAt, link: `/#/r/${room.id}`, result: room.match?.result ?? null, seq: room.match?.seq ?? 0 };
+  }
+
+  function createInvite({ gameId, numPlayers, name }) {
+    const game = G.get(gameId);
+    if (!game) throw new Error('jogo não instalado');
+    const n = Number(numPlayers);
+    if (!(n >= Math.max(2, game.players.min) && n <= game.players.max)) throw new Error('número de jogadores inválido');
+    const room = {
+      id: `inv-${id(9)}`, gameId, kind: 'invite', owner: null, name: cleanName(name, ''), numPlayers: n,
+      seats: Array.from({ length: n }, emptySeat),
+      status: 'waiting', match: null, timerDue: {}, createdAt: now(), updatedAt: now(),
+    };
+    rooms.set(room.id, room);
+    persist(room);
+    return room;
+  }
+
+  function deleteRoom(room) {
+    clearTimeout(botTimers.get(room.id));
+    for (const h of gameTimers.get(room.id)?.values() || []) clearTimeout(h);
+    rooms.delete(room.id);
+    storage.deleteRoom(room.id);
+    for (const [ws, cc] of conns) {
+      if (cc.roomId !== room.id) continue;
+      cc.roomId = null;
+      fail(ws, 'server.ROOM_NOT_FOUND');
+    }
+    broadcastLobby();
+  }
+
+  async function admin(req, res, url) {
     if (!authorized(req)) return json(res, 401, { error: 'unauthorized' });
+    try {
+      if (url === '/admin/status' && req.method === 'GET') return json(res, 200, status());
+      if (url === '/admin/games' && req.method === 'GET') return json(res, 200, { games: [...G.values()].map(gameInfo) });
+      const sim = url.match(/^\/admin\/games\/([\w-]+)\/simulate$/);
+      if (sim && req.method === 'POST') {
+        const game = G.get(sim[1]);
+        if (!game) return json(res, 404, { error: 'jogo não instalado' });
+        const body = await readJson(req);
+        const counts = body.numPlayers ? [Number(body.numPlayers)]
+          : Array.from({ length: game.players.max - Math.max(2, game.players.min) + 1 }, (_, i) => Math.max(2, game.players.min) + i);
+        const results = [];
+        for (const n of counts) results.push(await simulateGame(game, { ...body, numPlayers: n }));
+        return json(res, 200, { gameId: game.id, version: game.version, results });
+      }
+      if (url === '/admin/tables' && req.method === 'GET') {
+        return json(res, 200, { tables: [...rooms.values()].filter((r) => r.kind === 'invite').sort((a, b) => b.createdAt - a.createdAt).map(inviteInfo) });
+      }
+      if (url === '/admin/tables' && req.method === 'POST') {
+        const room = createInvite(await readJson(req));
+        broadcastLobby();
+        return json(res, 201, inviteInfo(room));
+      }
+      const tbl = url.match(/^\/admin\/tables\/([\w-]+)$/);
+      if (tbl && req.method === 'DELETE') {
+        const room = rooms.get(tbl[1]);
+        if (!room || room.kind !== 'invite') return json(res, 404, { error: 'mesa não encontrada' });
+        deleteRoom(room);
+        return json(res, 204);
+      }
+    } catch (e) {
+      return json(res, 400, { error: e.message });
+    }
     if (url === '/admin/notices' && req.method === 'GET') return json(res, 200, { notices: activeNotices() });
     if (url === '/admin/notices' && req.method === 'POST') {
-      let body = '';
-      req.on('data', (d) => { body += d; if (body.length > 10_000) req.destroy(); });
-      req.on('end', () => {
-        try { json(res, 201, notify(JSON.parse(body))); } catch (e) { json(res, 400, { error: e.message }); }
-      });
-      return undefined;
+      try { return json(res, 201, notify(await readJson(req))); } catch (e) { return json(res, 400, { error: e.message }); }
     }
     const del = url.match(/^\/admin\/notices\/([\w-]+)$/);
     if (del && req.method === 'DELETE') return json(res, clearNotice(del[1]) ? 204 : 404);
@@ -499,6 +621,11 @@ export function createPlatform({
   const http = createServer((req, res) => {
     const url = new URL(req.url, 'http://x').pathname;
     if (adminToken && url.startsWith('/admin/')) return admin(req, res, url);
+    if (adminToken && (url === '/console' || url === '/console/')) {
+      return serveFile(res, join(PUBLIC_DIR, 'console.html'), MIME['.html'], (html) => html
+        .replaceAll('{{BRAND_NAME}}', brand.name).replace('{{BRAND_HEAD}}', brandHead())
+        .replace('{{LANG}}', brand.lang || 'pt'));
+    }
     if (url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, brand: brand.id, games: [...G.keys()], rooms: rooms.size }));
@@ -520,7 +647,7 @@ export function createPlatform({
     if (url === '/sdk/client.js') return serveFile(res, CLIENT_FILE, MIME['.js']);
     const eng = url.match(/^\/engine\/([a-z0-9]+\.js)$/);
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
-    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg)$/);
+    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });
@@ -552,9 +679,9 @@ export function createPlatform({
           room.match = null; room.status = 'waiting';
         }
       }
-      if (room.kind === 'public' && room.status === 'waiting') room.seats = room.seats.map(emptySeat);
+      if (shared(room) && room.status === 'waiting') room.seats = room.seats.map(emptySeat);
       // Ninguém está ligado logo após um restart: nas mesas públicas os bots cobrem.
-      for (const s of room.seats) if (s.userId) s.away = room.kind === 'public';
+      for (const s of room.seats) if (s.userId) s.away = shared(room);
       rooms.set(room.id, room);
     }
     for (const game of G.values()) {

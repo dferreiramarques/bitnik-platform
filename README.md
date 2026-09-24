@@ -2,7 +2,7 @@
 
 Motor, servidor e ferramentas para desenhar, testar e entregar jogos de tabuleiro online. Um deploy por marca: o **Bitnik Studio** (a instância da Bitnik, onde se criam e aprovam jogos) e um **runtime** por publisher cliente, que recebe só os jogos vendidos.
 
-Estado: **Fase 0**. Contrato, motor, servidor genérico, pacote de jogo com i18n e o Catania como primeiro pacote, a correr no Studio e num runtime limpo.
+Estado: **Fase 0c**. Contrato validado (ver `docs/DECISOES.md`), motor, servidor genérico, pacote de jogo com i18n e o Catania como primeiro pacote, a correr no Studio e num runtime limpo, com consola de administração.
 
 ## Estrutura
 
@@ -35,6 +35,22 @@ npm run simulate -- catania 500
 
 `ADMIN_TOKEN` ativa as rotas `/admin` (avisos). `DATA_DIR` escolhe onde as partidas são guardadas (por omissão `./data/studio` e `./data/runtime`). Em Railway, aponta para um volume.
 
+## Consola
+
+Com `ADMIN_TOKEN` definido, cada deploy tem uma consola em `/console` (entra-se com o token):
+
+- **Painel**: marca, versão do motor e do Node, tempo ligado, jogos, mesas e jogadores ligados.
+- **Jogos**: pacotes instalados, versão, línguas, validação do contrato e simulação com bots (vitórias por lugar), sem bloquear as mesas.
+- **Mesas de aprovação**: mesas privadas por convite; cria-se na consola, copia-se o link e quem o abre senta-se e joga. Lugares vazios passam a bots.
+- **Avisos**: atualização marcada ou texto livre (PT/EN), com opção de suspender partidas novas até ao deploy.
+- **Forge**: chega na Fase 1.
+
+```bash
+ADMIN_TOKEN=um-segredo npm run studio   # http://localhost:3000/console
+```
+
+A consola usa a API `/admin/*` (`status`, `games`, `games/:id/simulate`, `tables`, `notices`), sempre com `Authorization: Bearer $ADMIN_TOKEN`. Sem token, nem a consola nem a API existem.
+
 ## Como as peças encaixam
 
 ```
@@ -44,6 +60,8 @@ pacote de jogo ──► @bitnik/engine ◄── @bitnik/server ◄──ws─�
 ```
 
 **Mesas públicas**: uma por número de jogadores de cada jogo. Quem se senta começa quando quiser e os lugares vazios passam a bots. Se alguém sai a meio, um bot fica com o lugar; se perde a ligação, um bot joga por ele até voltar.
+
+**Mesas de aprovação**: privadas, criadas na consola; só entra quem tem o link. Jogam-se como as públicas e aparecem em "As minhas mesas" de quem se sentou.
 
 **Mesas solo**: uma instância privada por utilizador, com bots. Aparecem em "As minhas mesas", sobrevivem a restarts e podem ser retomadas.
 

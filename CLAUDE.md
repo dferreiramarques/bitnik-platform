@@ -14,9 +14,10 @@ Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `README.md
 
 - **Fase 0 (feita)**: engine, server, client SDK, Catania como primeiro pacote, Studio e runtime limpo.
 - Catania 3.0.0: regra de "ronda completa" no fim do jogo, para equilibrar a vantagem do 1.º jogador a 2 jogadores.
+- **Fase 0c (feita)**: consola em `/console` (painel, jogos com simulação, mesas de aprovação por convite, avisos), protegida por `ADMIN_TOKEN`.
 - **Fase 0b**: UI própria do Catania, service worker (PWA).
 - **Fase 1**: Forge a gerar `rules.js` e testes a partir de cartões Gherkin.
-- **Fase 2**: migrar Bulbous, Capivaras, Praia das Percebes e Nine Oils; mesas de aprovação por convite.
+- **Fase 2**: migrar Bulbous, Capivaras, Praia das Percebes e Nine Oils. Secção "Clientes" na consola quando houver runtimes em produção.
 
 ## Convenções
 
@@ -37,6 +38,6 @@ Os ficheiros de um pacote em `games/*` só importam `@bitnik/engine` e ficheiros
 npm install
 npm test
 npm run simulate -- catania 1000
-npm run studio
+ADMIN_TOKEN=segredo npm run studio   # consola em /console
 PORT=3001 npm run runtime
 ```

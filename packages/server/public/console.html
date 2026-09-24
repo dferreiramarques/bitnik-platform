@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consola · {{BRAND_NAME}}</title>
+<link rel="icon" href="/icon.svg">
+<meta name="robots" content="noindex">
+{{BRAND_HEAD}}
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body>
+<header class="bar">
+  <strong class="bar-brand">{{BRAND_NAME}}</strong>
+  <span class="con-tag" id="conTitle"></span>
+  <span class="bar-status" id="status" role="status"></span>
+  <a class="btn btn-ghost" href="/" id="toLobby"></a>
+  <button class="btn btn-ghost" id="lang"></button>
+  <button class="btn btn-ghost" id="logout" hidden></button>
+</header>
+<div class="con container">
+  <nav class="con-nav" id="nav" hidden></nav>
+  <main class="con-main" id="view"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="/console.js"></script>
+</body>
+</html>
