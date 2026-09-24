@@ -11,8 +11,8 @@ export const bitnikBrand = {
   lang: 'pt',
   fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap',
   stylesheets: [
-    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@main/src/index.css',
-    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@main/src/game-ui.css',
+    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@v1.0.0/src/index.css',
+    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@v1.0.0/src/game-ui.css',
   ],
 };
 

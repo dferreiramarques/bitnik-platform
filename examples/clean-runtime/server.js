@@ -12,8 +12,8 @@ export const clientBrand = {
   lang: 'en',
   fonts: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap',
   stylesheets: [
-    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@main/src/index.css',
-    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@main/src/game-ui.css',
+    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@v1.0.0/src/index.css',
+    'https://cdn.jsdelivr.net/gh/dferreiramarques/bitnikgames-design-system@v1.0.0/src/game-ui.css',
   ],
   tokens: {
     '--color-yellow': '#8fb8a8', '--color-yellow-deep': '#5f8f7d',

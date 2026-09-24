@@ -141,3 +141,84 @@ Alternativas consideradas: só convenção, sem função (não resolve frases qu
 - Na migração do Nine Oils, `SELECT_CARD` + `ROLL` passam a uma jogada só (`PLAY_CARDS { idx }`).
 - O esquema declarativo das jogadas fica como opção a reavaliar na Fase 1, se a Forge precisar de gerar UI.
 
+---
+
+## ADR-006: A UI de um jogo vive no pacote e ocupa a área da mesa
+
+**Estado:** aceite (2026-09-24), a implementar na Fase 0b
+
+### Contexto
+
+O `catania-v2` tem todo o cliente num `index.html` de 2446 linhas: lobby, sala de espera, tabuleiro em SVG, modal de aldeia, vitória, sons e tutorial. Os 4 jogos a migrar têm o mesmo padrão, com lobby próprio. A plataforma já trata de lobby, identidade, reconexão, avisos e mesas de aprovação, na marca de cada deploy.
+
+Alternativas consideradas: UI num pacote separado (`@bitnik/ui-catania`; duas versões a manter alinhadas, e regras e tabuleiro vendem-se juntos) e uma página inteira por jogo (cada jogo volta a ter lobby, avisos e reconexão próprios).
+
+### Decisão
+
+- A UI vem no pacote, em `ui/`, e é servida pela plataforma. Ocupa só a área da mesa; barra, avisos, lobby, sentar e começar continuam a ser da plataforma.
+- Interface: um módulo com `mount(el, ctx)` e `update(msg)`. Recebe o `view` e as jogadas legais (já rotuladas) e envia jogadas pelo `@bitnik/client`. Não repete regras: um clique corresponde a uma jogada legal.
+- A UI genérica passa a ser a implementação por omissão da mesma interface; no Studio há um "modo protótipo" para trocar.
+- `checkPurity` continua a valer para as regras; `ui/` pode importar o SDK de cliente, nunca o servidor.
+
+### Consequências
+
+- O port do `catania-v2` fica com o tabuleiro, pilhas, torre, mãos, modal de aldeia e sons; lobby e sala de espera saem.
+- A migração dos 4 jogos aproveita só a parte da mesa de cada um.
+
+---
+
+## ADR-007: O tutorial corre o motor verdadeiro no browser; cenários no pacote
+
+**Estado:** aceite (2026-09-24), a implementar na Fase 0b
+
+### Contexto
+
+O tutorial do `catania-v2` (630 linhas) tem uma cópia própria das regras para jogar sem servidor, e já está desatualizada: acaba o jogo quando a vez volta a quem fundou a 3.ª aldeia, sem a regra de ronda completa da 3.0.0. Usa um tabuleiro fixo e uma situação a meio do jogo montada à mão.
+
+Alternativa considerada: o tutorial jogar contra o servidor numa mesa solo (sem rede não funciona, o que choca com a PWA, e ocupa mesas no servidor).
+
+### Decisão
+
+- As regras são puras e correm no browser tal como estão. O servidor serve os ficheiros de regras do pacote e um import map resolve `@bitnik/engine`.
+- O tutorial cria uma partida local e usa `applyMove` e `botMove`; nenhuma cópia de regras.
+- Cenários no pacote: `setup` aceita `ctx.options.scenario` (ex.: `'tutorial'`, `'meio-de-jogo'`) e devolve esse estado. É o mesmo mecanismo que o "Dado…" dos cartões Gherkin vai usar na Forge; os testes podem partilhar os cenários.
+- O guião (textos, destaques, passos) é UI e fica em `ui/`.
+
+### Consequências
+
+- O tutorial nunca diverge das regras; funciona sem rede.
+- A consola pode usar o mesmo cenário para pré-visualizar a aparência de um jogo (ADR-008).
+
+---
+
+## ADR-008: Aparência e design à medida, em camadas
+
+**Estado:** aceite (2026-09-24), a implementar na Fase 0b
+
+### Contexto
+
+A aparência de um jogo é tão relevante como as regras, para a Bitnik e para os publishers. O design system `bitnikgames-design-system` já separa tokens de base, semânticos (`--bg`, `--text`, `--brand-*`, `--font-*`) e de jogo (`--game-color-1..4` no `game-ui.css`). Era carregado do CDN a partir do `@main`, sem versão: qualquer alteração mudava no mesmo instante todos os deploys, incluindo os de clientes. O `catania-v2` tem uma paleta própria (dourado e pergaminho) sobre a forma e a tipografia do design system.
+
+Alternativas consideradas: editar só em código (cada ajuste passa por um deploy e por alguém técnico) e editar direto no repo do design system (todos os deploys mudam ao mesmo tempo; um publisher não deve mexer no design system da Bitnik).
+
+### Decisão
+
+Três camadas de tokens e dois níveis de personalização, com o mesmo peso:
+
+| Camada | Quem define | Onde vive |
+|---|---|---|
+| Design system | Bitnik | repo do design system, com versão fixa (`@v1.0.0`) |
+| Marca (moldura) | publisher | config do deploy, editável na consola |
+| Jogo (tabuleiro) | Bitnik por omissão, publisher pode sobrepor | `ui/skin.json` no pacote + sobreposições na consola |
+
+1. **Aparência por tokens:** cores, fontes, raios e imagens (`url(...)`), editáveis na consola ("Aparência") com pré-visualização ao vivo do cenário do tutorial. Guardadas no storage do deploy; exportáveis e importáveis em JSON. Aviso de contraste abaixo de AA.
+2. **Design à medida:** um tema completo do jogo, com CSS próprio e assets (arte do tabuleiro, cartas, texturas, fontes), em `ui/themes/<nome>/`. O CSS fica limitado à área da mesa, para não esconder avisos nem controlos da plataforma. O tema escolhe-se por deploy; os tokens continuam a poder ser afinados por cima.
+
+A UI de um jogo nunca usa cores escritas diretamente no código: só tokens, para as duas vias funcionarem.
+
+### Consequências
+
+- Um publisher afina a skin sem deploy; um designer pode redesenhar a mesa inteira sem tocar nas regras.
+- Na migração, cada jogo ganha um `skin.json` com a paleta que já tem, e os temas que fizerem sentido.
+- Mudar o design system passa a ser uma versão nova, adotada deploy a deploy.
+
