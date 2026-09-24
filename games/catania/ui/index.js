@@ -1,7 +1,8 @@
 // Catania — UI própria (ADR-006). A plataforma monta este módulo na área da
 // mesa: `mount(el, ctx)` uma vez e `update(msg)` a cada estado (ROOM).
 // Não repete regras: cada clique corresponde a uma jogada legal que já veio
-// do servidor em `msg.legal`. As cores vêm dos tokens --cat-* (skin.json).
+// do servidor em `msg.legal`. As cores vêm dos tokens --cat-* (skin.json),
+// que a plataforma aplica por camadas (defaults, tema, afinações do deploy).
 import { ICONS } from './icons.js';
 import { sfx } from './sounds.js';
 
@@ -17,13 +18,6 @@ const hexPts = (cx, cy, r) => Array.from({ length: 6 }, (_, i) => {
   return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
 }).join(' ');
 const seatColor = (i) => `var(--cat-p${(i % 4) + 1})`;
-
-let skinPromise = null;
-/** Tokens por omissão do skin.json, aplicados na raiz (a consola pode sobrepor). */
-function loadSkin() {
-  skinPromise ??= fetch(new URL('./skin.json', import.meta.url)).then((r) => r.json()).catch(() => ({ tokens: {} }));
-  return skinPromise;
-}
 
 function ensureCss() {
   const href = new URL('./catania.css', import.meta.url).href;
@@ -45,11 +39,6 @@ export function mount(el, context) {
   root = document.createElement('div');
   root.className = 'cat';
   el.append(root);
-  loadSkin().then((skin) => {
-    for (const [k, def] of Object.entries(skin.tokens || {})) {
-      if (!el.style.getPropertyValue(k)) el.style.setProperty(k, def.value);
-    }
-  });
   root.addEventListener('click', onClick);
   root.addEventListener('keydown', (e) => {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.cat-hex.can')) { e.preventDefault(); onClick(e); }

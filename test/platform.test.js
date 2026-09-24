@@ -414,3 +414,50 @@ test('UI própria: o servidor serve a UI e as regras do pacote, nunca os testes'
   assert.match(await (await fetch(`${base}/`)).text(), /"@bitnik\/engine": "\/engine\/index\.js"/, 'import map');
   await s.stop();
 });
+
+test('aparência: catálogo com skin e temas; afinações validadas, enviadas aos ligados e guardadas', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const url = `http://localhost:${s.port}/admin/appearance`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const put = (body) => fetch(url, { method: 'PUT', headers: auth, body: JSON.stringify(body) });
+
+  const cat = await (await fetch(url, { headers: auth })).json();
+  const catania = cat.games.find((g) => g.id === 'catania');
+  assert.ok(catania.skin.tokens['--table-bg'], 'a skin define a mesa');
+  assert.equal(catania.themes.dia.name.pt, 'Dia');
+  assert.equal(catania.meta.preview.scenario, 'tutorial-meio');
+  assert.ok('--brand-primary' in cat.brandTokens);
+
+  // Recusas: token que não existe, tema que não existe, tentativa de fugir da declaração, url perigoso.
+  assert.equal((await put({ games: { catania: { tokens: { '--nao-existe': '#fff' } } } })).status, 400);
+  assert.equal((await put({ games: { catania: { theme: 'noite' } } })).status, 400);
+  assert.equal((await put({ games: { catania: { tokens: { '--cat-gold': 'red;}body{display:none' } } } })).status, 400);
+  assert.equal((await put({ games: { catania: { tokens: { '--table-bg': 'url(javascript:alert(1))' } } } })).status, 400);
+  assert.equal((await put({ games: { catania: { tokens: { '--cat-gold': 'url(https://x.pt/a.png)' } } } })).status, 400, 'url só em fundos e imagens');
+  assert.equal((await put({ brand: { tokens: { '--qualquer': '#fff' } } })).status, 400);
+
+  const c = await s.client();
+  const live = c.next('appearance');
+  const png = 'url("data:image/png;base64,iVBORw0KGgo=") center / cover no-repeat';
+  const ok = await put({
+    brand: { tokens: { '--brand-primary': '#123456' } },
+    games: { catania: { theme: 'dia', tokens: { '--cat-gold': '#ff0000', '--table-bg': png } } },
+  });
+  assert.equal(ok.status, 200);
+  const { appearance } = await live;
+  assert.equal(appearance.games.catania.theme, 'dia');
+  assert.equal(appearance.games.catania.tokens['--table-bg'], png);
+  const later = await s.client();
+  assert.equal(later.welcome.appearance.brand.tokens['--brand-primary'], '#123456');
+  assert.match(await (await fetch(`http://localhost:${s.port}/`)).text(), /id="appearance-brand">:root\{--brand-primary:#123456\}/);
+  assert.equal((await fetch(`http://localhost:${s.port}/console-appearance.js`)).status, 200);
+  await new Promise((r) => setTimeout(r, 50));
+  await s.stop();
+
+  const s2 = await boot(makeStudio, { dataDir: dir });
+  const again = await s2.client();
+  assert.equal(again.welcome.appearance.games.catania.tokens['--cat-gold'], '#ff0000', 'sobrevive a um restart');
+  assert.equal(again.welcome.games[0].themes.dia, '/games/catania/ui/themes/dia/theme.json');
+  await s2.stop();
+});

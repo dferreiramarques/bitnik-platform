@@ -16,7 +16,7 @@ Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `README.md
 - Catania 3.0.0: regra de "ronda completa" no fim do jogo, para equilibrar a vantagem do 1.º jogador a 2 jogadores.
 - **Fase 0c (feita)**: consola em `/console` (painel, jogos com simulação, mesas de aprovação por convite, avisos), protegida por `ADMIN_TOKEN`.
 - Fora do MVP: deploy público para partilhar o link das mesas de aprovação com clientes (as mesas funcionam localmente).
-- **Fase 0b** (em curso): UI própria do Catania, por etapas: (1) infraestrutura da UI no pacote ✔; (2) tabuleiro do Catania ✔; (3) tutorial com o motor verdadeiro e cenários no pacote; (4) "Aparência" na consola (tokens, temas, pré-visualização); (5) template vanilla no Figma, com variáveis com os mesmos nomes dos tokens do `skin.json` (`--table-bg`, …) para desenhar skins e temas e trocá-los em JSON; (6) service worker (PWA).
+- **Fase 0b** (em curso): UI própria do Catania, por etapas: (1) infraestrutura da UI no pacote ✔; (2) tabuleiro do Catania ✔; (3) tutorial com o motor verdadeiro e cenários no pacote ✔; (4) "Aparência" na consola (tokens, temas, pré-visualização) ✔; (5) template vanilla no Figma, com variáveis com os mesmos nomes dos tokens do `skin.json` (`--table-bg`, …) para desenhar skins e temas e trocá-los em JSON; (6) service worker (PWA).
 - **Fase 1**: Forge a gerar `rules.js` e testes a partir de cartões Gherkin.
 - **Fase 2**: migrar Bulbous, Capivaras, Praia das Percebes e Nine Oils. Secção "Clientes" na consola quando houver runtimes em produção.
 

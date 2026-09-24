@@ -1,7 +1,7 @@
 // Adaptadores de persistência. O servidor só conhece esta interface:
 //   load()            → { users: {token: user}, rooms: [room] }
 //   saveRoom(room)    / deleteRoom(id) / saveUsers(users)
-//   saveNotices(list) (opcional; load() devolve também { notices })
+//   saveNotices(list) / saveAppearance(obj) (opcionais; load() devolve também { notices, appearance })
 // O match é JSON puro, por isso guardar uma sala é só serializá-la.
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -10,14 +10,19 @@ export function memoryStorage() {
   const rooms = new Map();
   let users = {};
   let notices = [];
+  let appearance = null;
   return {
     async load() {
-      return { users: structuredClone(users), rooms: [...rooms.values()].map((r) => structuredClone(r)), notices: structuredClone(notices) };
+      return {
+        users: structuredClone(users), rooms: [...rooms.values()].map((r) => structuredClone(r)),
+        notices: structuredClone(notices), appearance: structuredClone(appearance),
+      };
     },
     async saveRoom(room) { rooms.set(room.id, structuredClone(room)); },
     async deleteRoom(id) { rooms.delete(id); },
     async saveUsers(u) { users = structuredClone(u); },
     async saveNotices(n) { notices = structuredClone(n); },
+    async saveAppearance(a) { appearance = structuredClone(a); },
   };
 }
 
@@ -56,7 +61,9 @@ export function fileStorage(dir) {
       }
       let notices = [];
       try { notices = JSON.parse(await readFile(join(dir, 'notices.json'), 'utf8')); } catch { /* sem avisos */ }
-      return { users, rooms, notices };
+      let appearance = null;
+      try { appearance = JSON.parse(await readFile(join(dir, 'appearance.json'), 'utf8')); } catch { /* sem afinações */ }
+      return { users, rooms, notices, appearance };
     },
     saveRoom: (room) => write(join(roomsDir, `${safe(room.id)}.json`), room),
     async deleteRoom(id) {
@@ -66,5 +73,6 @@ export function fileStorage(dir) {
     },
     saveUsers: (users) => write(join(dir, 'users.json'), users),
     saveNotices: (notices) => write(join(dir, 'notices.json'), notices),
+    saveAppearance: (appearance) => write(join(dir, 'appearance.json'), appearance),
   };
 }

@@ -17,6 +17,10 @@ export default defineGame({
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
   tutorial: './ui/tutorial.js',
+  // Aparência (ADR-008): tokens por omissão e temas de design à medida.
+  skin: './ui/skin.json',
+  themes: { dia: './ui/themes/dia/theme.json' },
+  preview: { scenario: 'tutorial-meio', players: 4 }, // cenário da pré-visualização na consola
 
   setup: rules.setup,
   moves: rules.moves,

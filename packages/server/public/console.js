@@ -28,6 +28,16 @@ const UI = {
     needWhen: 'Indica a hora da atualização.', needText: 'Escreve o texto do aviso.',
     forgeLead: 'A Forge chega na Fase 1: cartões Gherkin (Dado / Quando / Então) que geram as regras e os testes de um jogo novo.',
     forgeNext: 'Até lá, os jogos novos entram como pacotes escritos à mão, como o Catania.',
+    nav_aparencia: 'Aparência',
+    apLead: 'A marca (moldura) e a aparência de cada jogo neste deploy. As alterações aparecem já na pré-visualização; só chegam aos jogadores quando guardas.',
+    apTarget: 'Editar', apBrand: 'Marca (moldura)', apTheme: 'Tema', apThemeDefault: 'Por omissão (skin do pacote)',
+    apSave: 'Guardar', apDiscard: 'Descartar alterações', apResetAll: 'Repor tudo', apExport: 'Exportar JSON', apImport: 'Importar JSON',
+    apReset: 'Repor', apDefault: 'por omissão: {v}', apUpload: 'Carregar imagem', apTooBig: 'Imagem demasiado grande (máx. {kb} KB).',
+    apPreview: 'Pré-visualização', apPreviewNote: 'Cenário do tutorial, a correr no browser. Podes jogar.',
+    apContrast: 'Contraste', apContrastOk: 'Contraste suficiente em todos os pares (AA).', apContrastLow: '{a} sobre {b}: {r}:1 (mínimo 4.5:1)',
+    apUnsaved: 'Há alterações por guardar.', apSaved: 'Aparência guardada: já chegou aos jogadores ligados.', apImported: 'JSON importado. Revê e guarda.',
+    apBadJson: 'JSON inválido.',
+    grp_table: 'Mesa', grp_base: 'Base', grp_resources: 'Recursos', grp_players: 'Jogadores', grp_type: 'Letra', grp_shape: 'Forma', grp_art: 'Arte', grp_brand: 'Marca',
   },
   en: {
     console: 'Console', lobby: 'Open the lobby', lang: 'PT', logout: 'Sign out',
@@ -54,11 +64,23 @@ const UI = {
     needWhen: 'Set the update time.', needText: 'Write the notice text.',
     forgeLead: 'The Forge arrives in Phase 1: Gherkin cards (Given / When / Then) that generate the rules and tests for a new game.',
     forgeNext: 'Until then, new games come in as hand-written packages, like Catania.',
+    nav_aparencia: 'Appearance',
+    apLead: 'The brand (frame) and the look of each game on this deploy. Changes show in the preview right away; players only get them when you save.',
+    apTarget: 'Edit', apBrand: 'Brand (frame)', apTheme: 'Theme', apThemeDefault: 'Default (package skin)',
+    apSave: 'Save', apDiscard: 'Discard changes', apResetAll: 'Reset all', apExport: 'Export JSON', apImport: 'Import JSON',
+    apReset: 'Reset', apDefault: 'default: {v}', apUpload: 'Upload image', apTooBig: 'Image too large (max {kb} KB).',
+    apPreview: 'Preview', apPreviewNote: 'Tutorial scenario, running in the browser. You can play.',
+    apContrast: 'Contrast', apContrastOk: 'Enough contrast on every pair (AA).', apContrastLow: '{a} on {b}: {r}:1 (minimum 4.5:1)',
+    apUnsaved: 'There are unsaved changes.', apSaved: 'Appearance saved: connected players already have it.', apImported: 'JSON imported. Review and save.',
+    apBadJson: 'Invalid JSON.',
+    grp_table: 'Table', grp_base: 'Base', grp_resources: 'Resources', grp_players: 'Players', grp_type: 'Type', grp_shape: 'Shape', grp_art: 'Art', grp_brand: 'Brand',
   },
 };
 
-const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'forge'];
-const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', forge: '⚒' };
+import * as appearanceUi from '/console-appearance.js';
+
+const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'aparencia', 'forge'];
+const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', aparencia: '🎨', forge: '⚒' };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -266,11 +288,16 @@ function render() {
   const cur = section();
   $('#nav').innerHTML = SECTIONS.map((s) => `<a href="#/${s}" ${s === cur ? 'aria-current="page"' : ''}>
     <span aria-hidden="true">${ICONS[s]}</span>${u(`nav_${s}`)}${s === 'forge' ? `<span class="soon">${u('soon')}</span>` : ''}</a>`).join('');
-  const views = { painel: viewPainel, jogos: viewJogos, mesas: viewMesas, avisos: viewAvisos, forge: viewForge };
+  const views = {
+    painel: viewPainel, jogos: viewJogos, mesas: viewMesas, avisos: viewAvisos, forge: viewForge,
+    aparencia: () => appearanceUi.view(),
+  };
   // Não redesenha um formulário que está a ser preenchido.
   if (document.activeElement?.closest?.('form') && render.section === cur) return;
+  if (render.section === 'aparencia' && cur !== 'aparencia') appearanceUi.leave();
   render.section = cur;
   $('#view').innerHTML = views[cur]();
+  if (cur === 'aparencia') appearanceUi.after($('#view'));
 }
 
 async function load() {
@@ -281,6 +308,8 @@ async function load() {
     app.status = status; app.games = games.games;
     if (cur === 'mesas') app.tables = (await api('tables')).tables;
     if (cur === 'avisos') app.notices = (await api('notices')).notices;
+    if (cur === 'aparencia') await appearanceUi.appearanceUi.init({ api, u, lang: () => app.lang, toast, rerender: () => { render.section = null; render(); } });
+load();
     $('#status').textContent = '';
   } catch (e) {
     $('#status').textContent = e.message;

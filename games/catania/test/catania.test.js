@@ -309,3 +309,19 @@ test('Todas as chaves ui./tut. usadas pela UI e pelo tutorial existem em PT e EN
   for (const lang of ['pt', 'en']) for (const k of keys) assert.ok(k in catania.i18n[lang], `${lang}:${k}`);
 });
 
+
+test('Temas: só tokens do skin.json e CSS sempre dentro da área da mesa', () => {
+  const skin = JSON.parse(readFileSync(new URL('../ui/skin.json', import.meta.url), 'utf8'));
+  for (const [name, rel] of Object.entries(catania.themes)) {
+    const themeUrl = new URL(`../${rel.replace(/^\.\//, '')}`, import.meta.url);
+    const theme = JSON.parse(readFileSync(themeUrl, 'utf8'));
+    for (const k of Object.keys(theme.tokens)) assert.ok(k in skin.tokens, `${name}: ${k} não está no skin.json`);
+    if (!theme.css) continue;
+    const css = readFileSync(new URL(theme.css, themeUrl), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const block of css.split('}')) {
+      const sel = block.split('{')[0].trim();
+      if (!sel) continue;
+      for (const part of sel.split(',')) assert.ok(part.trim().startsWith('[data-game="catania"]'), `${name}: "${part.trim()}" fora da mesa`);
+    }
+  }
+});

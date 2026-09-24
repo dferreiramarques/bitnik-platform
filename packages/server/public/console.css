@@ -63,3 +63,31 @@
   .con-nav a { white-space: nowrap; }
   .con-nav .soon { display: none; }
 }
+
+/* Aparência: editor estreito à esquerda, pré-visualização larga à direita */
+.ap { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.ap-preview { position: sticky; top: 16px; min-width: 0; }
+.ap-stage .game-root { margin-top: 8px; }
+.ap-group { border: 0; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; min-width: 0; }
+.ap-group legend { font-family: var(--ui-display); font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; }
+.ap-row { display: grid; gap: 4px; }
+.ap-row label small { display: block; color: var(--ui-muted); font-size: .78rem; word-break: break-all; }
+.ap-row.set > label { font-weight: 600; }
+.ap-input { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ap-input input:not([type="color"]), .ap-input textarea {
+  flex: 1; min-width: 140px; font: inherit; padding: 6px 10px; min-height: 40px;
+  border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); color: var(--ui-text);
+}
+.ap-input textarea { font-family: ui-monospace, Consolas, monospace; font-size: .78rem; }
+.ap-swatch { width: 44px; height: 40px; padding: 2px; border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); cursor: pointer; }
+.ap-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ap-file { cursor: pointer; display: inline-flex; align-items: center; }
+.ap-contrast { margin-top: 14px; padding: 10px 12px; border-radius: var(--ui-r-sm); background: var(--ui-alt); }
+.ap-contrast h3 { font-size: 1rem; margin-bottom: 4px; }
+.ap-contrast ul { margin: 0; padding-left: 18px; }
+.ap-contrast p { margin: 0; }
+.ap-dirty { color: #8e2a1f; font-weight: 600; margin: 10px 0 0; }
+.ap-sample { display: grid; gap: 10px; padding: 12px; border-radius: var(--ui-r-md); background: var(--ui-bg); }
+.ap-sample p { margin: 0; }
+.ap-sample-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 1100px) { .ap { grid-template-columns: 1fr; } .ap-preview { position: static; } }

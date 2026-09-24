@@ -31,6 +31,10 @@ export default defineGame({
   describeMove(move, view) → { key, params },     // rótulo para a UI genérica
   root: new URL('./', import.meta.url).href,      // pasta do pacote (a plataforma serve a UI daqui)
   ui: './ui/index.js',                            // UI própria (ADR-006)
+  tutorial: './ui/tutorial.js',                   // tutorial no browser (ADR-007)
+  skin: './ui/skin.json',                         // tokens por omissão (ADR-008)
+  themes: { dia: './ui/themes/dia/theme.json' },  // temas de design à medida
+  preview: { scenario: 'tutorial-meio', players: 4 }, // pré-visualização na consola
 });
 ```
 
@@ -103,6 +107,13 @@ export function unmount() { /* opcional */ }
 `ctx` traz `t(key, params)` (traduz com o i18n do jogo e da plataforma), `move(mv)` (envia uma jogada; devolve `false` sem ligação), `seatName(i)`, `lang()`, `toast(texto)` e `gameId`.
 
 Um pacote pode também trazer um tutorial (`tutorial: './ui/tutorial.js'`), com `start(el, ctx) → stop`. Corre o motor no browser (`createMatch` com `options.scenario`, `applyMove`, `legalMoves`) e reutiliza a UI da mesa, com `ctx.move` ligado à partida local. O lobby mostra o botão "Tutorial" e a rota é `#/tutorial/<jogo>`; `ctx` traz ainda `exit()` e `playReal(n)` (abre uma mesa solo). A UI não repete regras: cada interação corresponde a uma jogada de `msg.legal`. Só pode importar ficheiros próprios, `@bitnik/client` ou `@bitnik/engine` (resolvidos por import map). As cores e formas vêm só de tokens declarados em `ui/skin.json` (ADR-008). Toda a skin define `--table-bg`, o aspeto da mesa: a plataforma aplica-o à área onde a UI é montada.
+
+### Aparência (ADR-008)
+
+- `skin.json`: `{ name, tokens: { '--x': { value, type, group, label: { pt, en } } }, contrast: [[texto, fundo], ...] }`. Tipos: `color`, `background`, `image`, `font`, `size`. `--table-bg` é obrigatório.
+- Tema: `theme.json` com `{ name, description, tokens: { '--x': valor }, css }`. Só pode mexer em tokens do `skin.json`; o CSS começa sempre por `[data-game="<id>"]` (há testes para as duas coisas).
+- A plataforma aplica três camadas em folhas de estilo próprias: defaults do pacote, tema escolhido no deploy e afinações da consola. A UI do jogo não carrega a skin; só usa os tokens.
+- Na consola, "Aparência" edita os tokens da marca e de cada jogo (com carregamento de imagens, aviso de contraste AA e exportar/importar JSON), escolhe o tema e pré-visualiza com o cenário `preview` a correr no browser. `PUT /admin/appearance` valida tudo (só tokens declarados, só temas existentes, `url()` só em fundos e imagens e só `data:image`, `https:` ou caminhos locais) e envia `APPEARANCE` a todos os ligados.
 
 No Studio, o botão "Modo protótipo" troca para a UI genérica. Se o módulo não carregar, a plataforma usa a genérica.
 

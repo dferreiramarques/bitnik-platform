@@ -38,6 +38,35 @@ const MIME = {
 const GAME_FILE = /^(?!test\/|node_modules\/)(?:[\w-]+\/)*[\w.-]+\.(?:js|css|json|svg|png|webp|jpg|woff2|mp3)$/;
 const gameFileUrl = (g, rel) => (rel ? `/games/${g.id}/${String(rel).replace(/^\.\//, '')}` : null);
 
+// ─── Aparência (ADR-008) ───────────────────────────────────────
+// Tokens da marca (moldura) que a consola pode afinar, com o tipo de valor.
+export const BRAND_TOKENS = {
+  '--brand-primary': 'color', '--brand-secondary': 'color', '--brand-accent': 'color',
+  '--bg': 'color', '--bg-alt': 'color', '--text': 'color', '--text-muted': 'color', '--border': 'color',
+  '--font-display': 'font', '--font-body': 'font', '--radius-md': 'size',
+};
+const TOKEN_LIMITS = { color: 64, font: 200, size: 32, background: 400_000, image: 400_000 };
+
+/** Valida um valor de token; devolve o valor limpo ou lança um erro com o motivo. */
+function cleanToken(name, type, value) {
+  const v = String(value ?? '').trim();
+  if (!v) return null;
+  const max = TOKEN_LIMITS[type] ?? 200;
+  if (v.length > max) throw new Error(`${name}: valor demasiado longo`);
+  const URL_RE = /url\(\s*(['"]?)(.*?)\1\s*\)/gi;
+  const urls = [...v.matchAll(URL_RE)].map((m) => m[2]);
+  // Fora de url(): nada que feche a declaração ou abra outra regra dentro do <style>.
+  if (/[{};<>\\]|\/\*|@import|expression\s*\(|javascript:/i.test(v.replace(URL_RE, 'url()'))) throw new Error(`${name}: valor inválido`);
+  if (urls.length && !['background', 'image'].includes(type)) throw new Error(`${name}: só imagens e fundos aceitam url()`);
+  for (const u of urls) {
+    // Dentro de url(): só imagens em data:, https: ou caminhos do próprio servidor.
+    if (/[{}<>\\\n]/.test(u) || !/^(data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]|https:\/\/|\/(?!\/))/i.test(u)) {
+      throw new Error(`${name}: url não permitido`);
+    }
+  }
+  return v;
+}
+
 const id = (n = 9) => randomBytes(n).toString('base64url');
 const cleanName = (s, fallback) => String(s ?? '').replace(/[<>]/g, '').trim().slice(0, 24) || fallback;
 
@@ -68,6 +97,7 @@ export function createPlatform({
   const gameTimers = new Map();    // roomId → Map(key → timeout)
   const graceTimers = new Map();   // userId → timeout
   let notices = [];                // avisos do publisher para todos os ligados
+  let appearance = { brand: { tokens: {} }, games: {} }; // afinações da consola (ADR-008)
   let now = () => Date.now();
   let closing = false;
   const startedAt = now();
@@ -289,6 +319,61 @@ export function createPlatform({
     return true;
   }
 
+  // ─── Aparência (afinações do deploy) ───────────────────────
+  async function readPkgJson(g, rel) {
+    if (!g.root || !rel) return null;
+    try { return JSON.parse(await readFile(join(fileURLToPath(g.root), String(rel).replace(/^\.\//, '')), 'utf8')); } catch { return null; }
+  }
+
+  async function appearanceCatalog() {
+    const games = [];
+    for (const g of G.values()) {
+      const themes = {};
+      for (const [k, rel] of Object.entries(g.themes || {})) themes[k] = await readPkgJson(g, rel);
+      games.push({
+        id: g.id, name: gameName(g), skin: await readPkgJson(g, g.skin), themes,
+        // Para a consola montar a pré-visualização com o motor no browser.
+        meta: {
+          id: g.id, pkg: g.root ? gameFileUrl(g, 'index.js') : null, ui: gameFileUrl(g, g.ui), skin: gameFileUrl(g, g.skin),
+          themes: Object.fromEntries(Object.entries(g.themes || {}).map(([k, rel]) => [k, gameFileUrl(g, rel)])),
+          preview: g.preview ?? null,
+        },
+      });
+    }
+    return { appearance, brandTokens: BRAND_TOKENS, games };
+  }
+
+  /** Valida e guarda as afinações; só tokens declarados, só temas que existem. */
+  async function setAppearance(input = {}) {
+    const next = { brand: { tokens: {} }, games: {} };
+    for (const [k, v] of Object.entries(input.brand?.tokens || {})) {
+      if (!BRAND_TOKENS[k]) throw new Error(`${k}: token da marca desconhecido`);
+      const c = cleanToken(k, BRAND_TOKENS[k], v);
+      if (c) next.brand.tokens[k] = c;
+    }
+    for (const [id, cfg] of Object.entries(input.games || {})) {
+      const g = G.get(id);
+      if (!g) throw new Error(`${id}: jogo não instalado`);
+      const skin = await readPkgJson(g, g.skin);
+      const out = { theme: null, tokens: {} };
+      if (cfg?.theme) {
+        if (!g.themes?.[cfg.theme]) throw new Error(`${id}: tema ${cfg.theme} não existe`);
+        out.theme = cfg.theme;
+      }
+      for (const [k, v] of Object.entries(cfg?.tokens || {})) {
+        const def = skin?.tokens?.[k];
+        if (!def) throw new Error(`${id}: token ${k} não está no skin.json`);
+        const c = cleanToken(k, def.type, v);
+        if (c) out.tokens[k] = c;
+      }
+      if (out.theme || Object.keys(out.tokens).length) next.games[id] = out;
+    }
+    appearance = next;
+    storage.saveAppearance?.(appearance);
+    for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance });
+    return appearance;
+  }
+
   /** Há uma janela de manutenção ativa para este jogo? */
   const inMaintenance = (gameId) => activeNotices().some((n) => n.maintenance
     && n.maintenance.from <= now() && (!n.maintenance.games || n.maintenance.games.includes(gameId)));
@@ -317,8 +402,11 @@ export function createPlatform({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
+          skin: gameFileUrl(g, g.skin),
+          themes: Object.fromEntries(Object.entries(g.themes || {}).map(([k, rel]) => [k, gameFileUrl(g, rel)])),
         })),
         notices: activeNotices(),
+        appearance,
         now: now(),
       });
       send(ws, { type: 'ROOMS', ...roomsFor(user.userId) });
@@ -471,6 +559,8 @@ export function createPlatform({
     ...(brand.fonts ? [`<link rel="stylesheet" href="${brand.fonts}">`] : []),
     ...(brand.stylesheets || []).map((h) => `<link rel="stylesheet" href="${h}">`),
     brand.tokens ? `<style>:root{${Object.entries(brand.tokens).map(([k, v]) => `${k}:${v}`).join(';')}}</style>` : '',
+    // Afinações da marca feitas na consola (já validadas); o JS mantém-nas ao vivo.
+    `<style id="appearance-brand">:root{${Object.entries(appearance.brand.tokens).map(([k, v]) => `${k}:${v}`).join(';')}}</style>`,
   ].join('\n');
 
   async function serveFile(res, file, type, transform) {
@@ -599,6 +689,8 @@ export function createPlatform({
         for (const n of counts) results.push(await simulateGame(game, { ...body, numPlayers: n }));
         return json(res, 200, { gameId: game.id, version: game.version, results });
       }
+      if (url === '/admin/appearance' && req.method === 'GET') return json(res, 200, await appearanceCatalog());
+      if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req)) });
       if (url === '/admin/tables' && req.method === 'GET') {
         return json(res, 200, { tables: [...rooms.values()].filter((r) => r.kind === 'invite').sort((a, b) => b.createdAt - a.createdAt).map(inviteInfo) });
       }
@@ -662,7 +754,7 @@ export function createPlatform({
     }
     const eng = url.match(/^\/engine\/([a-z0-9]+\.js)$/);
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
-    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css)$/);
+    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });
@@ -680,6 +772,7 @@ export function createPlatform({
     const saved = await storage.load();
     users = saved.users || {};
     notices = (saved.notices || []).filter((n) => n.until > now());
+    if (saved.appearance) appearance = { brand: { tokens: {} }, games: {}, ...saved.appearance };
     for (const room of saved.rooms || []) {
       const game = G.get(room.gameId);
       if (!game) { logger.warn(`[load] ${room.id}: jogo ${room.gameId} não instalado, ignorada`); continue; }
@@ -711,6 +804,7 @@ export function createPlatform({
     rooms,
     notify,
     clearNotice,
+    setAppearance,
     async listen(port = process.env.PORT || 3000) {
       await ready;
       await new Promise((resolve) => http.listen(port, resolve));

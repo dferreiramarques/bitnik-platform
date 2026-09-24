@@ -4,6 +4,7 @@
 // Uma UI feita à medida para um jogo usa o mesmo SDK.
 import { BitnikClient } from '/sdk/client.js';
 import { translate } from '/engine/i18n.js';
+import { applyGameSkin, applyOverrides } from '/appearance.js';
 
 const UI = {
   pt: {
@@ -70,7 +71,14 @@ const app = {
   dismissed: new Set(),
   proto: (() => { try { return localStorage.getItem('bitnik.proto') === '1'; } catch { return false; } })(),
   ui: null,           // UI própria montada: { roomId, gameId, el, mod }
+  appearance: null,   // afinações do deploy (consola), ao vivo
 };
+
+/** Skin do jogo (defaults + tema do deploy), antes de montar a mesa ou o tutorial. */
+function skinFor(gameId) {
+  const meta = gameMeta(gameId);
+  return meta ? applyGameSkin(meta, app.appearance?.games?.[gameId]?.theme) : Promise.resolve();
+}
 
 const client = new BitnikClient({ lang: app.lang });
 const u = (key, params) => fill((UI[app.lang] || UI.pt)[key] ?? key, params);
@@ -312,7 +320,7 @@ async function syncGameUi(msg) {
     const url = gameMeta(gameId).ui;
     if (!uiModules.has(url)) uiModules.set(url, import(url));
     let mod;
-    try { mod = await uiModules.get(url); } catch (e) {
+    try { [mod] = await Promise.all([uiModules.get(url), skinFor(gameId)]); } catch (e) {
       console.error('[ui]', url, e);
       uiModules.delete(url);
       app.proto = true; // cai na UI genérica
@@ -391,7 +399,7 @@ async function syncTutorial(gameId) {
   syncTutorial.loading = true;
   const meta = gameMeta(gameId);
   let mod;
-  try { mod = meta?.tutorial && await import(meta.tutorial); } catch (e) { console.error('[tutorial]', e); } finally { syncTutorial.loading = false; }
+  try { [mod] = meta?.tutorial ? await Promise.all([import(meta.tutorial), skinFor(gameId)]) : []; } catch (e) { console.error('[tutorial]', e); } finally { syncTutorial.loading = false; }
   if (!mod || routeTutorial() !== gameId) { if (!mod) go(null); return; }
   unmountGameUi();
   const el = document.createElement('div');
@@ -471,6 +479,8 @@ $('#name').addEventListener('change', (e) => client.setName(e.target.value));
 client.on('status', (s) => { $('#status').textContent = u(s); });
 client.on('welcome', (w) => {
   app.welcome = w;
+  app.appearance = w.appearance;
+  applyOverrides(w.appearance);
   setNotices(w.notices, w.now);
   $('#name').value = w.name;
   if (!localStorage.getItem('bitnik.lang')) app.lang = w.brand.lang;
@@ -479,6 +489,12 @@ client.on('welcome', (w) => {
   render();
 });
 client.on('notices', (m) => setNotices(m.notices, m.now));
+client.on('appearance', (m) => {
+  app.appearance = m.appearance;
+  applyOverrides(m.appearance);
+  const id = app.ui?.gameId || app.tut?.gameId;
+  if (id) skinFor(id); // o tema pode ter mudado
+});
 client.on('rooms', (r) => { app.rooms = r; if (!routeRoom()) render(); });
 client.on('room', (msg) => {
   app.room = msg;

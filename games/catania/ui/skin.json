@@ -200,5 +200,27 @@
         "en": "Corner radius"
       }
     }
-  }
+  },
+  "contrast": [
+    [
+      "--cat-text",
+      "--cat-panel"
+    ],
+    [
+      "--cat-text",
+      "--cat-panel-2"
+    ],
+    [
+      "--cat-on-gold",
+      "--cat-gold"
+    ],
+    [
+      "--cat-gold",
+      "--cat-panel"
+    ],
+    [
+      "--cat-muted",
+      "--cat-panel"
+    ]
+  ]
 }

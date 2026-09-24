@@ -1,0 +1,23 @@
+{
+  "name": {
+    "pt": "Dia",
+    "en": "Daylight"
+  },
+  "description": {
+    "pt": "Mesa clara: mar de dia, painéis de pergaminho e contornos de tinta.",
+    "en": "Light table: daytime sea, parchment panels and ink outlines."
+  },
+  "tokens": {
+    "--table-bg": "radial-gradient(ellipse at 50% 40%, #bfe3f2 0%, #8cc7e0 45%, #5aa3c4 100%)",
+    "--cat-panel": "#f6eedb",
+    "--cat-panel-2": "#efe2c2",
+    "--cat-line": "#c9b27a",
+    "--cat-text": "#2b1d0e",
+    "--cat-muted": "#6b5a3e",
+    "--cat-gold": "#8b5e0f",
+    "--cat-gold-dark": "#6b4a10",
+    "--cat-on-gold": "#fffaf0",
+    "--cat-red": "#b3261e"
+  },
+  "css": "theme.css"
+}
