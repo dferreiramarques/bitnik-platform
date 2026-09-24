@@ -224,7 +224,7 @@ test('Todas as chaves err./log. usadas nas regras existem em PT e EN', () => {
 
 test('O pacote é puro: só importa @bitnik/engine e ficheiros próprios, sem relógio nem Math.random', () => {
   const dir = new URL('../', import.meta.url);
-  const files = ['index.js', 'rules.js', 'board.js', 'bot.js', ...readdirSync(new URL('i18n/', dir)).map((f) => `i18n/${f}`)];
+  const files = ['index.js', 'rules.js', 'board.js', 'bot.js', 'scenarios.js', ...readdirSync(new URL('i18n/', dir)).map((f) => `i18n/${f}`)];
   const problems = files.flatMap((f) => checkPurity(readFileSync(new URL(f, dir), 'utf8'), f));
   assert.deepEqual(problems, []);
 });
@@ -250,12 +250,12 @@ test('Rótulos: cada jogada legal tem uma frase com recurso e território', () =
 });
 
 
-test('A UI (ui/) só importa ficheiros próprios ou o SDK de cliente, nunca o servidor', () => {
+test('A UI (ui/) só importa ficheiros próprios, o pacote (../index.js) ou o SDK de cliente, nunca o servidor', () => {
   const dir = new URL('../ui/', import.meta.url);
   for (const f of readdirSync(dir).filter((x) => x.endsWith('.js'))) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     for (const [, spec] of src.matchAll(/from\s+'([^']+)'/g)) {
-      assert.ok(spec.startsWith('./') || spec === '@bitnik/client' || spec === '@bitnik/engine', `ui/${f} importa ${spec}`);
+      assert.ok(spec.startsWith('./') || spec === '../index.js' || spec === '@bitnik/client' || spec === '@bitnik/engine', `ui/${f} importa ${spec}`);
     }
   }
 });
@@ -272,3 +272,40 @@ test('skin.json: todos os tokens --cat-* usados no CSS e na UI têm valor por om
   for (const tok of used) assert.ok(tok in skin.tokens, `falta ${tok} no skin.json`);
   assert.ok(skin.tokens['--table-bg']?.value, 'toda a skin define --table-bg, o aspeto da mesa');
 });
+
+test('Cenário tutorial-meio: fundar a 3.ª aldeia abre a última ronda e todos jogam uma vez', () => {
+  let m = createMatch(catania, { numPlayers: 4, seed: 't', options: { scenario: 'tutorial-meio' } });
+  assert.equal(m.state.round, 5);
+  assert.equal(m.state.players[0].villages.length, 2);
+  const collect = catania.enumerate(m.state, 0).find((x) => x.type === 'COLLECT' && !x.payload.take2);
+  m = ok(applyMove(catania, m, 0, collect));
+  const found = catania.enumerate(m.state, 0).find((x) => x.type === 'FOUND');
+  assert.ok(found, 'com 5 cartas de 2 tipos já pode fundar');
+  m = ok(applyMove(catania, m, 0, found));
+  assert.equal(m.state.phase, 'LAST_ROUND');
+  for (const seat of [0, 1, 2, 3]) {
+    assert.equal(m.result, null);
+    const t = m.state.players[seat].turn;
+    if (seat > 0 && t.firePending) m = ok(applyMove(catania, m, seat, catania.enumerate(m.state, seat)[0]));
+    m = ok(move(m, seat, 'END_TURN'));
+  }
+  assert.ok(m.result, 'acaba depois do Lugar 4');
+});
+
+test('Cenários: o mesmo cenário dá sempre o mesmo tabuleiro; cenário desconhecido é recusado', () => {
+  const a = createMatch(catania, { numPlayers: 4, seed: 1, options: { scenario: 'tutorial-inicio' } });
+  const b = createMatch(catania, { numPlayers: 4, seed: 2, options: { scenario: 'tutorial-inicio' } });
+  assert.deepEqual(a.state.hexes.map((h) => h.type), b.state.hexes.map((h) => h.type));
+  assert.throws(() => createMatch(catania, { numPlayers: 4, options: { scenario: 'nao-existe' } }), /cenário desconhecido/);
+  assert.throws(() => createMatch(catania, { numPlayers: 2, options: { scenario: 'tutorial-inicio' } }), /4 jogadores/);
+});
+
+test('Todas as chaves ui./tut. usadas pela UI e pelo tutorial existem em PT e EN', () => {
+  const src = ['index.js', 'tutorial.js'].map((f) => readFileSync(new URL(`../ui/${f}`, import.meta.url), 'utf8')).join('\n');
+  const keys = new Set([...src.matchAll(/'((?:ui|tut)\.[a-zA-Z.]+)'/g)].map((m) => m[1]));
+  const steps = [...src.matchAll(/\{ id: '([a-z]+)'/g)].map((m) => m[1]);
+  for (const id of steps) { keys.add(`tut.${id}.title`); keys.add(`tut.${id}.body`); }
+  assert.ok(steps.length >= 10, 'encontrou os passos do tutorial');
+  for (const lang of ['pt', 'en']) for (const k of keys) assert.ok(k in catania.i18n[lang], `${lang}:${k}`);
+});
+

@@ -28,6 +28,7 @@ const UI = {
     newMatch: 'Começar nova partida', dismiss: 'Fechar',
     inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
+    tutorial: 'Tutorial', tutorialOf: 'Tutorial',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -51,6 +52,7 @@ const UI = {
     newMatch: 'Start a new game', dismiss: 'Close',
     inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
+    tutorial: 'Tutorial', tutorialOf: 'Tutorial',
   },
 };
 
@@ -94,6 +96,7 @@ function toast(text) {
 
 // ─── Rotas: #/ (lobby) e #/r/<id> (mesa) ────────────────────
 const routeRoom = () => (location.hash.match(/^#\/r\/(.+)$/) || [])[1] || null;
+const routeTutorial = () => (location.hash.match(/^#\/tutorial\/([\w-]+)$/) || [])[1] || null;
 
 function go(roomId) {
   location.hash = roomId ? `#/r/${roomId}` : '#/';
@@ -120,6 +123,7 @@ function renderLobby() {
       </div>
       <div class="solo-start"><span>${u('playBots')}</span>
         ${counts.map((n) => `<button class="btn btn-primary" data-solo="${g.id}" data-n="${n}">${u('players', { n })}</button>`).join('')}
+        ${g.tutorial ? `<a class="btn btn-outline" href="#/tutorial/${g.id}">${u('tutorial')}</a>` : ''}
       </div>
       <div class="lobby-cols">
         <div><h3>${u('myTables')}</h3>
@@ -367,15 +371,61 @@ $('#notices').addEventListener('click', (e) => {
   renderNotices();
 });
 
+// ─── Tutorial (módulo do pacote; corre o motor no browser) ───
+function renderTutorial(gameId) {
+  return `<section class="table">
+    <div class="table-head"><h1>${esc(t('game.name', {}, gameId))}</h1><span class="meta">${u('tutorialOf')}</span></div>
+    <div id="tutHost" class="game-host"><p class="empty">${u('loadingUi')}</p></div>
+  </section>`;
+}
+
+function stopTutorial() {
+  try { app.tut?.stop?.(); } catch (e) { console.error(e); }
+  app.tut = null;
+}
+
+async function syncTutorial(gameId) {
+  if (app.tut?.gameId === gameId) { document.getElementById('tutHost')?.replaceWith(app.tut.el); return; }
+  stopTutorial();
+  if (syncTutorial.loading) return;
+  syncTutorial.loading = true;
+  const meta = gameMeta(gameId);
+  let mod;
+  try { mod = meta?.tutorial && await import(meta.tutorial); } catch (e) { console.error('[tutorial]', e); } finally { syncTutorial.loading = false; }
+  if (!mod || routeTutorial() !== gameId) { if (!mod) go(null); return; }
+  unmountGameUi();
+  const el = document.createElement('div');
+  el.className = 'tut-root';
+  app.tut = { gameId, el, stop: null };
+  document.getElementById('tutHost')?.replaceWith(el);
+  app.tut.stop = mod.start(el, {
+    gameId,
+    lang: () => app.lang,
+    t: (key, params) => t(key, params, gameId),
+    toast,
+    exit: () => go(null),
+    playReal: (n) => client.createSolo(gameId, n),
+  });
+}
+
 // ─── Render e eventos ────────────────────────────────────────
 function render() {
+  const tut = routeTutorial();
   const inRoom = !!routeRoom();
-  $('#back').hidden = !inRoom;
+  $('#back').hidden = !inRoom && !tut;
   $('#lang').textContent = u('lang');
   $('#nameLabel').textContent = u('yourName');
   $('#name').placeholder = u('yourName');
   document.documentElement.lang = app.lang;
   renderNotices();
+  if (tut) {
+    if (!app.welcome) return;
+    app.tut?.el.remove();
+    $('#view').innerHTML = renderTutorial(tut);
+    syncTutorial(tut);
+    return;
+  }
+  if (app.tut) stopTutorial();
   // Preserva os <details> abertos do inspetor entre renders.
   const openPaths = [...document.querySelectorAll('.inspect details[open]')].map((d) => d.querySelector('summary')?.textContent);
   // A UI própria não é redesenhada: sai do DOM antes e volta para o #gameHost.

@@ -1,12 +1,21 @@
 // Catania — regras puras no contrato @bitnik/engine.
 // Fonte: catania-v2/server.js (catHandle, catEndGame) e REGRAS.md.
 import { RESOURCES, BLACK_DISCS, RED_DISCS, RED, buildIsland } from './board.js';
+import { SCENARIOS } from './scenarios.js';
 
 const top = (pile) => pile.discs[pile.discs.length - 1];
 const handTotal = (p) => RESOURCES.reduce((s, r) => s + p.hand[r], 0);
 const freshTurn = () => ({ collects: 0, founded: false, firePending: false, visited: [] });
 
 export function setup(ctx) {
+  // Cenário fixo (tutorial, pré-visualização, testes): ADR-007.
+  const scenario = ctx.options?.scenario;
+  if (scenario) {
+    const sc = SCENARIOS[scenario];
+    if (!sc) throw new Error(`cenário desconhecido: ${scenario}`);
+    if (sc.players !== ctx.numPlayers) throw new Error(`o cenário ${scenario} é para ${sc.players} jogadores`);
+    return sc.setup(ctx);
+  }
   const n = ctx.numPlayers;
   const tower = [...BLACK_DISCS, ...RED_DISCS].sort((a, b) => a - b);
   const hexes = buildIsland(n, ctx.rng);

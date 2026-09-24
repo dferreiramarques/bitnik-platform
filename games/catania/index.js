@@ -16,6 +16,7 @@ export default defineGame({
   // UI própria (ADR-006): servida pela plataforma a partir desta pasta.
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
+  tutorial: './ui/tutorial.js',
 
   setup: rules.setup,
   moves: rules.moves,

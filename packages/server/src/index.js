@@ -36,7 +36,7 @@ const MIME = {
 // Ficheiros de um pacote de jogo que o browser pode pedir: as regras (para o
 // tutorial correr o motor localmente), a UI e os assets. Nunca os testes.
 const GAME_FILE = /^(?!test\/|node_modules\/)(?:[\w-]+\/)*[\w.-]+\.(?:js|css|json|svg|png|webp|jpg|woff2|mp3)$/;
-const gameUiUrl = (g) => (g.ui ? `/games/${g.id}/${String(g.ui).replace(/^\.\//, '')}` : null);
+const gameFileUrl = (g, rel) => (rel ? `/games/${g.id}/${String(rel).replace(/^\.\//, '')}` : null);
 
 const id = (n = 9) => randomBytes(n).toString('base64url');
 const cleanName = (s, fallback) => String(s ?? '').replace(/[<>]/g, '').trim().slice(0, 24) || fallback;
@@ -315,7 +315,8 @@ export function createPlatform({
         platformI18n: PLATFORM_I18N,
         games: [...G.values()].map((g) => ({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
-          ui: gameUiUrl(g),
+          ui: gameFileUrl(g, g.ui),
+          tutorial: gameFileUrl(g, g.tutorial),
         })),
         notices: activeNotices(),
         now: now(),

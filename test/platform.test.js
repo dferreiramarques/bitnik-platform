@@ -401,6 +401,8 @@ test('UI própria: o servidor serve a UI e as regras do pacote, nunca os testes'
   const base = `http://localhost:${s.port}`;
   const c = await s.client();
   assert.equal(c.welcome.games[0].ui, '/games/catania/ui/index.js');
+  assert.equal(c.welcome.games[0].tutorial, '/games/catania/ui/tutorial.js');
+  assert.equal((await fetch(`${base}/games/catania/scenarios.js`)).status, 200, 'cenários para o tutorial');
   const ui = await fetch(`${base}/games/catania/ui/index.js`);
   assert.equal(ui.status, 200);
   assert.match(ui.headers.get('content-type'), /javascript/);

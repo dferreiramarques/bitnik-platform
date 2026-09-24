@@ -98,17 +98,18 @@ function render() {
     <div class="cat-main">
       ${renderTop(v)}
       ${renderPlayers(v)}
-      <div class="cat-board">${renderBoard(v)}</div>
+      <div class="cat-board" data-tut="board">${renderBoard(v)}</div>
       ${v.me != null ? renderMe(v) : ''}
     </div>
     <div class="cat-side">
-      <section class="cat-sec cat-acts-sec"><h4>${ctx.t('ui.actions')}</h4>${renderActions(v)}</section>
-      <section class="cat-sec"><h4>${ctx.t('ui.piles')}</h4>${renderPiles(v)}</section>
-      <section class="cat-sec"><h4>${ctx.t('ui.tower')}</h4>${renderTower(v)}</section>
-      <section class="cat-sec"><h4>${ctx.t('ui.log')}</h4>${renderLog()}</section>
+      <section class="cat-sec cat-acts-sec" data-tut="actions"><h4>${ctx.t('ui.actions')}</h4>${renderActions(v)}</section>
+      <section class="cat-sec" data-tut="piles"><h4>${ctx.t('ui.piles')}</h4>${renderPiles(v)}</section>
+      <section class="cat-sec" data-tut="tower"><h4>${ctx.t('ui.tower')}</h4>${renderTower(v)}</section>
+      <section class="cat-sec" data-tut="log"><h4>${ctx.t('ui.log')}</h4>${renderLog()}</section>
     </div>
     ${ui.modal === 'found' ? renderFoundModal(v) : ''}
     ${ui.modal === 'pass' ? renderPassModal() : ''}`;
+  ctx.afterRender?.(root); // ex.: o tutorial volta a destacar as zonas de que fala
 }
 
 function renderTop(v) {
@@ -122,7 +123,7 @@ function renderTop(v) {
 }
 
 function renderPlayers(v) {
-  return `<div class="cat-players">${v.players.map((p, i) => `
+  return `<div class="cat-players" data-tut="players">${v.players.map((p, i) => `
     <div class="cat-player${i === v.cur && !msg.result ? ' cur' : ''}">
       <div class="cat-pname"><i class="cat-dot" style="background:${seatColor(i)}"></i><span>${esc(ctx.seatName(i))}</span>
         <b class="cat-score">${ctx.t('ui.pts', { n: p.score })}</b></div>
@@ -190,7 +191,7 @@ function renderMe(v) {
   }).join('');
   const hand = RES.map((r) => `<div class="cat-card${p.hand[r] ? '' : ' zero'}" title="${esc(ctx.t(`res.${r}`))}">
     ${img(r, 30)}<b>${p.hand[r]}</b></div>`).join('');
-  return `<div class="cat-me">
+  return `<div class="cat-me" data-tut="me">
     <div class="cat-sec"><h4>${ctx.t('ui.villages')}</h4><div class="cat-cards">${vills}</div></div>
     <div class="cat-sec"><h4>${ctx.t('ui.hand')} · ${ctx.t('ui.cards', { n: p.handTotal })}</h4><div class="cat-cards">${hand}</div></div>
   </div>`;

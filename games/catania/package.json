@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "exports": { ".": "./index.js" },
-  "files": ["index.js", "rules.js", "board.js", "bot.js", "i18n/", "ui/", "REGRAS.md", "README.md"],
+  "files": ["index.js", "rules.js", "board.js", "bot.js", "scenarios.js", "i18n/", "ui/", "REGRAS.md", "README.md"],
   "license": "CC-BY-4.0",
   "author": "David Marques",
   "peerDependencies": { "@bitnik/engine": "^0.2.0" },
