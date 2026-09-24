@@ -71,6 +71,8 @@ pacote de jogo ──► @bitnik/engine ◄── @bitnik/server ◄──ws─�
 
 **Identidade**: token por dispositivo, guardado no browser. Não há contas nesta fase.
 
+**PWA**: a app instala-se no telemóvel e tem um service worker (`/sw.js`). O HTML vem primeiro da rede (um deploy novo chega logo); motor, UI e ficheiros dos jogos vêm da cache e atualizam-se em fundo. A versão da cache é um hash do conteúdo e muda sozinha a cada deploy. Sem rede, o lobby mostra os jogos da última ligação e **o tutorial funciona offline**. Consola, `/admin` e WebSocket nunca ficam em cache.
+
 **Protocolo** (cliente → servidor): `HELLO`, `SET_NAME`, `LIST`, `CREATE_SOLO`, `OPEN`, `CLOSE`, `JOIN`, `LEAVE`, `START`, `MOVE`, `RESTART`, `DELETE`, `PING`. O servidor responde com `WELCOME`, `ROOMS`, `ROOM`, `NOTICES` e `ERROR` (sempre com uma chave i18n).
 
 **Avisos e atualizações**: com `ADMIN_TOKEN` definido, `POST /admin/notices` anuncia uma atualização a todos os jogadores do deploy e pode abrir uma janela de manutenção (sem partidas novas de um jogo até ao deploy). Ver `docs/CONTRATO.md`.

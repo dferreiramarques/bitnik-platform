@@ -481,3 +481,30 @@ test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência cert
   changed.catania.base['cat-gold'].$value = '#00aaff';
   assert.deepEqual(designTokensToAppearance(changed, { defaults }).games.catania, { theme: null, tokens: { '--cat-gold': '#00aaff' } });
 });
+
+test('PWA: service worker com versão por conteúdo e o que o tutorial precisa para funcionar offline', async () => {
+  const s = await boot(makeStudio);
+  const base = `http://localhost:${s.port}`;
+  const res = await fetch(`${base}/sw.js`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /javascript/);
+  assert.equal(res.headers.get('cache-control'), 'no-cache');
+  const js = await res.text();
+  assert.doesNotMatch(js, /\{\{/, 'sem marcadores por preencher');
+  const { version, precache } = s.platform.serviceWorker;
+  assert.match(js, new RegExp(`const VERSION = '${version}'`));
+  for (const f of ['/', '/app.js', '/sdk/client.js', '/engine/index.js', '/games/catania/ui/tutorial.js', '/games/catania/scenarios.js', '/games/catania/i18n/pt.js']) {
+    assert.ok(precache.includes(f), `guarda ${f}`);
+  }
+  assert.ok(!precache.some((f) => f.includes('/test/') || f.startsWith('/console') || f.startsWith('/admin')), 'nunca testes, consola nem admin');
+  const again = await boot(makeStudio);
+  assert.equal(again.platform.serviceWorker.version, version, 'a mesma versão enquanto nada muda');
+  await again.stop();
+  const other = await boot(makeRuntime);
+  assert.notEqual(other.platform.serviceWorker.version, version, 'outra marca, outra versão');
+  await other.stop();
+  const manifest = await (await fetch(`${base}/manifest.webmanifest`)).json();
+  assert.equal(manifest.scope, '/');
+  assert.equal(manifest.display, 'standalone');
+  await s.stop();
+});

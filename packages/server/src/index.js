@@ -8,9 +8,10 @@
 // adaptador de storage. Um deploy por marca/cliente.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import {
   checkGame, createMatch, applyMove, fireTimer, viewFor, activeSeats, botMove, matchIncompatibility, simulate,
@@ -67,6 +68,21 @@ function cleanToken(name, type, value) {
   return v;
 }
 
+/** Ficheiros servíveis de um pacote de jogo (para o service worker guardar). */
+function gameFiles(g) {
+  if (!g.root) return [];
+  const root = fileURLToPath(g.root);
+  const out = [];
+  const walk = (rel) => {
+    for (const e of readdirSync(join(root, rel), { withFileTypes: true })) {
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) { if (!['test', 'node_modules'].includes(e.name)) walk(r); } else if (GAME_FILE.test(r)) out.push(r);
+    }
+  };
+  walk('');
+  return out.sort();
+}
+
 const id = (n = 9) => randomBytes(n).toString('base64url');
 const cleanName = (s, fallback) => String(s ?? '').replace(/[<>]/g, '').trim().slice(0, 24) || fallback;
 
@@ -88,6 +104,31 @@ export function createPlatform({
     if (G.has(g.id)) throw new Error(`Jogo repetido: ${g.id}`);
     G.set(g.id, g);
   }
+
+  // ─── Service worker (PWA) ─────────────────────────────────────
+  // A versão é um hash do conteúdo do que fica em cache e da marca: muda
+  // sozinha a cada deploy que mexa no motor, na UI ou num jogo.
+  const SHELL = ['app.js', 'app.css', 'appearance.js', 'icon.svg'];
+  const sw = (() => {
+    const hash = createHash('sha256').update(JSON.stringify(brand));
+    const files = [];
+    for (const f of SHELL) { files.push(`/${f}`); hash.update(readFileSync(join(PUBLIC_DIR, f))); }
+    hash.update(readFileSync(join(PUBLIC_DIR, 'app.html')));
+    hash.update(readFileSync(join(PUBLIC_DIR, 'sw.js')));
+    hash.update(readFileSync(CLIENT_FILE));
+    files.push('/sdk/client.js');
+    for (const f of readdirSync(ENGINE_DIR).filter((x) => /^[a-z0-9]+\.js$/.test(x)).sort()) {
+      files.push(`/engine/${f}`);
+      hash.update(readFileSync(join(ENGINE_DIR, f)));
+    }
+    for (const g of G.values()) {
+      for (const rel of gameFiles(g)) {
+        files.push(`/games/${g.id}/${rel}`);
+        hash.update(readFileSync(join(fileURLToPath(g.root), rel)));
+      }
+    }
+    return { version: hash.digest('hex').slice(0, 12), precache: ['/', '/manifest.webmanifest', ...files] };
+  })();
 
   // ─── Estado em memória ──────────────────────────────────────
   let users = {};                  // token → { userId, name }
@@ -735,9 +776,14 @@ export function createPlatform({
         .replaceAll('{{BRAND_NAME}}', brand.name).replace('{{BRAND_HEAD}}', brandHead())
         .replace('{{LANG}}', brand.lang || 'pt'));
     }
+    if (url === '/sw.js') {
+      return serveFile(res, join(PUBLIC_DIR, 'sw.js'), MIME['.js'], (js) => js
+        .replace('{{VERSION}}', sw.version).replace('{{PRECACHE}}', JSON.stringify(sw.precache)));
+    }
     if (url === '/manifest.webmanifest') {
       res.writeHead(200, { 'Content-Type': MIME['.webmanifest'] });
       return res.end(JSON.stringify({
+        id: '/', scope: '/', lang: brand.lang || 'pt',
         name: brand.name, short_name: brand.name, start_url: '/', display: 'standalone',
         background_color: brand.tokens?.['--color-cream'] || '#fbf3e4',
         theme_color: brand.tokens?.['--color-brick'] || '#b8461f',
@@ -805,6 +851,7 @@ export function createPlatform({
     notify,
     clearNotice,
     setAppearance,
+    serviceWorker: sw,
     async listen(port = process.env.PORT || 3000) {
       await ready;
       await new Promise((resolve) => http.listen(port, resolve));

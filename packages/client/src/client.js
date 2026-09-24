@@ -99,14 +99,14 @@ export class BitnikClient {
   }
 
   // Açúcar para o protocolo.
-  setName(name) { this.send('SET_NAME', { name }); }
-  list() { this.send('LIST'); }
-  createSolo(gameId, numPlayers, level) { this.send('CREATE_SOLO', { gameId, numPlayers, level }); }
+  setName(name) { return this.send('SET_NAME', { name }); }
+  list() { return this.send('LIST'); }
+  createSolo(gameId, numPlayers, level) { return this.send('CREATE_SOLO', { gameId, numPlayers, level }); }
   open(roomId) { this.openRoom = roomId; this.send('OPEN', { roomId }); }
   closeRoom() { this.openRoom = null; this.send('CLOSE'); }
-  join(roomId) { this.openRoom = roomId; this.send('JOIN', { roomId }); }
+  join(roomId) { this.openRoom = roomId; return this.send('JOIN', { roomId }); }
   leave(roomId) { if (this.openRoom === roomId) this.openRoom = null; this.send('LEAVE', { roomId }); }
-  start(roomId) { this.send('START', { roomId }); }
+  start(roomId) { return this.send('START', { roomId }); }
   /**
    * Envia uma jogada com o seq do estado que o jogador viu. Devolve false
    * sem ligação: a UI deve avisar, e ao reconectar recebe o estado atual.

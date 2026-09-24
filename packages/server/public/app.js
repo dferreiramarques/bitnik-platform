@@ -82,14 +82,19 @@ function skinFor(gameId) {
 
 const client = new BitnikClient({ lang: app.lang });
 const u = (key, params) => fill((UI[app.lang] || UI.pt)[key] ?? key, params);
-const gameMeta = (id) => app.welcome?.games.find((g) => g.id === id);
+
+// Sem rede, a app usa os jogos da última ligação (o tutorial funciona offline).
+const WELCOME_KEY = 'bitnik.welcome';
+app.cachedWelcome = (() => { try { return JSON.parse(localStorage.getItem(WELCOME_KEY)); } catch { return null; } })();
+const W = () => app.welcome || app.cachedWelcome;
+const gameMeta = (id) => W()?.games.find((g) => g.id === id);
 
 /** Traduz chaves do jogo, do motor ou da plataforma. */
 function t(key, params, gameId) {
   const g = gameMeta(gameId);
   const bundle = {
     defaultLang: g?.defaultLang || 'pt',
-    i18n: Object.fromEntries(['pt', 'en'].map((l) => [l, { ...app.welcome?.platformI18n?.[l], ...g?.i18n?.[l] }])),
+    i18n: Object.fromEntries(['pt', 'en'].map((l) => [l, { ...W()?.platformI18n?.[l], ...g?.i18n?.[l] }])),
   };
   return translate(bundle, app.lang, key, params);
 }
@@ -118,7 +123,7 @@ window.addEventListener('hashchange', () => {
 
 // ─── Lobby ───────────────────────────────────────────────────
 function renderLobby() {
-  const games = app.welcome?.games || [];
+  const games = W()?.games || [];
   return `<section class="lobby">${games.map((g) => {
     const counts = [];
     for (let n = Math.max(2, g.players.min); n <= g.players.max; n++) counts.push(n);
@@ -427,7 +432,7 @@ function render() {
   document.documentElement.lang = app.lang;
   renderNotices();
   if (tut) {
-    if (!app.welcome) return;
+    if (!W()) return;
     app.tut?.el.remove();
     $('#view').innerHTML = renderTutorial(tut);
     syncTutorial(tut);
@@ -451,7 +456,7 @@ $('#view').addEventListener('click', (e) => {
   if (!b) return;
   const d = b.dataset;
   const roomId = app.room?.room.id;
-  if (d.solo) client.createSolo(d.solo, Number(d.n));
+  if (d.solo) { if (!client.createSolo(d.solo, Number(d.n))) toast(u('notSent')); }
   else if (d.open) go(d.open);
   else if (d.join) { client.join(d.join); go(d.join); }
   else if (d.remove) { if (confirm(u('confirmRemove'))) client.remove(d.remove); }
@@ -479,6 +484,10 @@ $('#name').addEventListener('change', (e) => client.setName(e.target.value));
 client.on('status', (s) => { $('#status').textContent = u(s); });
 client.on('welcome', (w) => {
   app.welcome = w;
+  try {
+    const { games, platformI18n, brand } = w;
+    localStorage.setItem(WELCOME_KEY, JSON.stringify({ games, platformI18n, brand }));
+  } catch { /* sem storage */ }
   app.appearance = w.appearance;
   applyOverrides(w.appearance);
   setNotices(w.notices, w.now);
@@ -509,3 +518,8 @@ client.on('error', (e) => {
 
 client.connect();
 render();
+
+// PWA: service worker (só em https ou localhost).
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('[sw]', e));
+}
