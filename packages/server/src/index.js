@@ -117,7 +117,6 @@ export function createPlatform({
     // Uma partida de versão incompatível não passa pelo view: o estado antigo pode não encaixar.
     if (!room.match || room.status === 'expired') return base;
     const v = viewFor(game, room.match, seat < 0 ? null : seat);
-    v.legal = v.legal.map((mv) => ({ ...mv, label: game.describeMove?.(mv, v.view) ?? { key: `move.${mv.type}` } }));
     // Prazos absolutos dos timers, para a UI mostrar contagens decrescentes.
     // `now` deixa o cliente corrigir a diferença de relógio.
     const timers = room.match.timers.map((t) => ({ key: t.key, event: t.event, at: room.timerDue?.[t.key]?.at ?? null }));

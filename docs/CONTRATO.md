@@ -78,6 +78,16 @@ Na simulação, os timers vencem num relógio simulado com a mesma regra do serv
 
 Não são timers do jogo, e ficam fora das regras: o ritmo dos bots, a animação e a substituição de quem se desliga (o servidor põe um bot no lugar).
 
+**`describeMove(move, view)`** (opcional) traduz uma jogada numa frase: `{ key, params }`. É o que dá nome aos botões da UI genérica e às linhas do histórico enquanto o jogo não tem tabuleiro próprio. O motor (`describeMove(game, move, view)`, usado pelo `viewFor`) tenta, por esta ordem:
+
+1. o `describeMove` do pacote (se lançar uma exceção, é ignorado: a mesa não parte);
+2. a chave `moveLabel.TIPO`, se existir, com o payload como parâmetros (`'moveLabel.PLACE_TILE': 'Colocar peça em ({r},{c})'`);
+3. `move.TIPO`, sem parâmetros.
+
+Jogos simples não precisam da função. É necessária quando a frase depende do `view` (no Catania, o recurso do hexágono). O servidor envia só a chave e os parâmetros; cada cliente traduz na língua do jogador.
+
+Estado de interface (cartas selecionadas, destaques) não entra no `state`: uma jogada é uma decisão completa (`PLAY_CARDS { idx: [...] }`, não `SELECT_CARD` repetido).
+
 ## O match
 
 `createMatch(game, { numPlayers, seed })` devolve um objeto JSON com `seed`, `rng`, `seq`, `state`, `moves`, `log`, `timers` e `result`. É isto que o servidor guarda. `replay(game, match)` reconstrói o estado a partir da seed e das jogadas: se o resultado não bater certo, há não-determinismo nas regras.
@@ -127,4 +137,4 @@ Validadas uma a uma e registadas em [DECISOES.md](DECISOES.md).
 2. **Timers declarativos** em vez de `setTimeout` nas regras. Na migração só 2 timers são regras (desempate do Bulbous, pausa da revelação das Capivaras); os prazos vão no `ROOM` e a simulação exercita os timeouts. Aceite: ADR-002.
 3. **Um RNG por match, guardado no estado do match.** Bots usam um RNG derivado de `seed + seq + lugar` e jogam sobre o `view`; `checkPurity` impede aleatoriedade e relógio fora do motor. Não serve jogos a dinheiro. Aceite: ADR-003.
 4. **Incompatibilidade por versão (semver à letra, incluindo `0.x` e o motor).** Mesas solo antigas ficam `expired` em vez de apagadas; avisos e janela de manutenção antes de um deploy. Aceite: ADR-004.
-5. **`describeMove` no pacote**, para a UI genérica mostrar jogadas legíveis sem UI própria.
+5. **`describeMove` no pacote, opcional**, com rede de segurança no motor e rótulo por convenção (`moveLabel.TIPO` + payload). Aceite: ADR-005.

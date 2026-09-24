@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove, defineGame, checkPurity,
-  compatibleVersions, matchIncompatibility, ENGINE_VERSION,
+  compatibleVersions, matchIncompatibility, ENGINE_VERSION, describeMove,
 } from '../src/index.js';
 import race from './fixtures/race.js';
 
@@ -204,5 +204,21 @@ test('replay avisa quando a versão do jogo não é a da partida', () => {
   assert.deepEqual(avisos, []);
   replay({ ...race, version: '0.0.9' }, m, { onWarn: (w) => avisos.push(w) });
   assert.equal(avisos.length, 1);
+});
+
+test('describeMove: pacote, depois convenção moveLabel com o payload, depois move.TIPO; nunca lança', () => {
+  const base = { ...race, i18n: { pt: { 'moveLabel.PLACE': 'Colocar em ({r},{c})' }, en: { 'moveLabel.PLACE': 'Place at ({r},{c})' } } };
+  const place = { type: 'PLACE', payload: { r: 3, c: 4 } };
+  assert.deepEqual(describeMove(base, place, {}), { key: 'moveLabel.PLACE', params: { r: 3, c: 4 } });
+  assert.deepEqual(describeMove(base, { type: 'ROLL' }, {}), { key: 'move.ROLL', params: {} });
+  const own = { ...base, describeMove: (mv) => ({ key: 'x.CUSTOM', params: { n: mv.payload.r } }) };
+  assert.deepEqual(describeMove(own, place, {}), { key: 'x.CUSTOM', params: { n: 3 } });
+  const buggy = { ...base, describeMove: (mv, view) => ({ key: view.hexes[mv.payload.r].type }) };
+  assert.deepEqual(describeMove(buggy, place, {}), { key: 'moveLabel.PLACE', params: { r: 3, c: 4 } }, 'um bug cai no rótulo por convenção');
+});
+
+test('viewFor devolve as jogadas legais já rotuladas', () => {
+  const m = createMatch(race, { numPlayers: 2, seed: 1 });
+  assert.deepEqual(viewFor(race, m, 0).legal, [{ type: 'ROLL', label: { key: 'move.ROLL', params: {} } }]);
 });
 

@@ -114,3 +114,30 @@ Alternativas consideradas: `migrate(state, fromVersion)` no pacote (cada mudanç
 - Sem `migrate` por agora: pode entrar mais tarde como hook opcional sem partir nada.
 - **Evolução futura:** instalar duas versões ao mesmo tempo (`catania@3` e `catania@4`, indexadas por `id@major`, com aliases npm), para as partidas a decorrer acabarem na versão antiga. Elimina o kick por completo; rever quando houver um cliente com partidas longas ou muitos jogadores em simultâneo.
 
+---
+
+## ADR-005: `describeMove` no pacote, para a UI genérica
+
+**Estado:** aceite (2026-09-24)
+
+### Contexto
+
+A UI genérica do Studio mostra as jogadas legais como botões, agrupados por tipo. O servidor pede ao pacote uma frase para cada uma (`describeMove(move, view)` → `{ key, params }`). Sem ela, o fallback era `move.TIPO`, sem payload, e todos os botões do mesmo tipo ficavam iguais. Se o `describeMove` lançasse uma exceção, partia o `ROOM` de toda a mesa.
+
+Nos 4 jogos a migrar: Capivaras (apostar numa de N posições) e Praia (`PLACE_TILE {r,c}`) cabem bem numa lista de botões. Bulbous (apostas com subconjuntos da mão, sequências com permutações, ~150 opções) e Nine Oils têm demasiadas combinações para jogar à mão numa lista. O Nine Oils guarda também a seleção da UI no estado (`SELECT_CARD` → `g.sel`).
+
+Alternativas consideradas: só convenção, sem função (não resolve frases que dependem do `view`, como o recurso de um hexágono no Catania) e um esquema declarativo das jogadas para gerar formulários (mini-linguagem a manter e a gerar pela Forge; custo alto para já).
+
+### Decisão
+
+- `describeMove` fica no pacote, opcional.
+- O motor passa a ter `describeMove(game, move, view)`, usado pelo `viewFor` (as jogadas legais já vêm rotuladas para o servidor, o Studio e qualquer UI): primeiro o do pacote, depois `moveLabel.TIPO` com o payload como parâmetros, depois `move.TIPO`. Nunca lança.
+- Estado de interface não entra no `state`: uma jogada é uma decisão completa.
+
+### Consequências
+
+- Jogos simples (Capivaras, Praia) só precisam das chaves `moveLabel.*` no i18n.
+- A UI genérica chega para testar e aprovar jogos simples e serve bots e simulação para todos. Bulbous e Nine Oils vão precisar do seu tabuleiro portado para o SDK (como o Catania na Fase 0b); o `describeMove` continua a servir-lhes para o histórico.
+- Na migração do Nine Oils, `SELECT_CARD` + `ROLL` passam a uma jogada só (`PLAY_CARDS { idx }`).
+- O esquema declarativo das jogadas fica como opção a reavaliar na Fase 1, se a Forge precisar de gerar UI.
+

@@ -229,14 +229,32 @@ export function legalMoves(game, match, seat) {
   return game.enumerate(match.state, seat);
 }
 
-/** O que um lugar (ou espectador, seat=null) pode ver. */
+/**
+ * Rótulo legível de uma jogada, `{ key, params }`, para a UI genérica e o
+ * histórico. Ordem: `describeMove` do pacote; senão `moveLabel.TIPO` com o
+ * payload como parâmetros (se a chave existir); senão `move.TIPO`.
+ * Nunca lança: um bug no `describeMove` não pode partir a mesa.
+ */
+export function describeMove(game, move, view) {
+  try {
+    const label = game.describeMove?.(move, view);
+    if (label?.key) return { key: label.key, params: label.params ?? {} };
+  } catch { /* cai no rótulo por convenção */ }
+  const key = `moveLabel.${move.type}`;
+  if (key in (game.i18n?.[game.defaultLang || 'pt'] ?? {})) return { key, params: { ...move.payload } };
+  return { key: `move.${move.type}`, params: {} };
+}
+
+/** O que um lugar (ou espectador, seat=null) pode ver, com as jogadas legais já rotuladas. */
 export function viewFor(game, match, seat) {
+  const view = game.view(match.state, seat);
+  const legal = seat == null ? [] : legalMoves(game, match, seat);
   return {
     gameId: match.gameId,
     seq: match.seq,
-    view: game.view(match.state, seat),
+    view,
     active: activeSeats(game, match),
-    legal: seat == null ? [] : legalMoves(game, match, seat),
+    legal: legal.map((mv) => ({ ...mv, label: describeMove(game, mv, view) })),
     log: match.log.slice(-40),
     result: match.result,
   };

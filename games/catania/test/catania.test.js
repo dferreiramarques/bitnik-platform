@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { createMatch, applyMove, simulate, checkGame, checkPurity, botMove } from '@bitnik/engine';
+import { createMatch, applyMove, simulate, checkGame, checkPurity, botMove, viewFor } from '@bitnik/engine';
 import catania from '../index.js';
 
 const newMatch = (n = 2, seed = 'catania') => createMatch(catania, { numPlayers: n, seed });
@@ -238,3 +238,14 @@ test('O bot joga sobre o view do seu lugar, não sobre o estado completo', () =>
   assert.ok(seen.ctx.legal.some((x) => x.type === mv.type), 'recebe as jogadas legais');
   assert.ok(applyMove(catania, m, 0, mv).ok);
 });
+
+test('Rótulos: cada jogada legal tem uma frase com recurso e território', () => {
+  const m = newMatch(2, 'rotulos');
+  const { legal } = viewFor(catania, m, 0);
+  const collect = legal.find((x) => x.type === 'COLLECT' && x.payload.take2);
+  assert.equal(collect.label.key, 'moveLabel.COLLECT');
+  assert.equal(collect.label.params.n, 2);
+  assert.match(collect.label.params.res, /^@res\./);
+  assert.ok(legal.every((x) => x.label.key in catania.i18n.pt));
+});
+
