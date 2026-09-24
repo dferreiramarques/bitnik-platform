@@ -333,7 +333,7 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   const auth = { Authorization: 'Bearer segredo' };
   const page = await fetch(`${base}/console`);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /Bitnik Studio/);
+  assert.match(await page.text(), /<title>Consola · Bitnik<\/title>/);
   assert.equal((await fetch(`${base}/console.js`)).status, 200);
   assert.equal((await fetch(`${base}/admin/status`)).status, 401);
   await s.client();

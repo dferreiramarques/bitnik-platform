@@ -7,7 +7,7 @@ import catania from '@bitnik/game-catania';
 
 export const bitnikBrand = {
   id: 'bitnik',
-  name: 'Bitnik Studio',
+  name: 'Bitnik',
   lang: 'pt',
   fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap',
   stylesheets: [
