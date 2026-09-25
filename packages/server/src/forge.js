@@ -175,6 +175,23 @@ export function normalizeTests(input = {}) {
   };
 }
 
+/**
+ * Junta funções auxiliares: as atuais ficam (os testes aprovados dependem delas)
+ * e das novas só entram as que têm nomes novos.
+ */
+export function mergeHelpers(current, incoming) {
+  const DECL = /^(?:export\s+)?(?:const|let|var|(?:async\s+)?function\*?)\s+([A-Za-z_$][\w$]*)/;
+  const names = new Set(String(current).split('\n').map((l) => DECL.exec(l)?.[1]).filter(Boolean));
+  const chunks = [];
+  for (const line of String(incoming).split('\n')) {
+    const m = DECL.exec(line);
+    if (m || !chunks.length) chunks.push({ name: m?.[1] ?? null, lines: [line] });
+    else chunks.at(-1).lines.push(line);
+  }
+  const added = chunks.filter((c) => c.name && !names.has(c.name)).map((c) => c.lines.join('\n').trimEnd());
+  return added.length ? `${String(current).trimEnd()}\n${added.join('\n')}` : current;
+}
+
 /** Junta uma resposta nova da IA aos testes existentes: os aprovados não mudam. */
 export function mergeTests(current, incoming, versaoRegras) {
   const kept = (current?.itens || []).filter((t) => t.aprovado);
@@ -186,7 +203,9 @@ export function mergeTests(current, incoming, versaoRegras) {
   const next = normalizeTests(incoming);
   return {
     estado: next.estado.trim() ? next.estado : current?.estado ?? '',
-    auxiliares: next.auxiliares.trim() ? next.auxiliares : current?.auxiliares ?? '',
+    // Com testes aprovados, as funções atuais ficam; sem nenhum, a resposta nova substitui tudo.
+    auxiliares: !next.auxiliares.trim() ? current?.auxiliares ?? ''
+      : kept.length && current?.auxiliares?.trim() ? mergeHelpers(current.auxiliares, next.auxiliares) : next.auxiliares,
     versaoRegras,
     itens: [...kept, ...fresh],
   };

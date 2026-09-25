@@ -34,7 +34,10 @@ const T = {
     tab_testes: 'Testes', tsTitle: 'Testes a partir dos cartões',
     tsLead: 'Copia o prompt para a tua IA: ela propõe o modelo do estado e escreve um teste por cartão de regra (e um por partida narrada aprovada). Lê cada teste como Dado / Quando / Então e aprova. Os aprovados ficam fixos.',
     tsSave: 'Guardar testes', tsBadJson: 'Não encontrei o JSON dos testes na resposta.', tsList: '{n} testes ({a} aprovados)',
-    tsOld: 'escritos com as regras {v}', tsApproveAll: 'Aprovar todos', tsMissing: 'Cartões de regra sem teste: {list}',
+    tsOld: 'escritos com as regras {v}', tsApproveAll: 'Aprovar todos', tsUnlockAll: 'Desbloquear todos',
+    tsUnlockAllConfirm: 'Desbloquear todos os testes? A próxima resposta da IA substitui-os, com funções auxiliares novas.',
+    tsOffCards: 'Há testes de cartões que já não são de regra ({list}): a plataforma ou o bot tratam disso. Desbloqueia-os e apaga-os (✕).',
+    tsOffCard: 'cartão de {cat}', tsMissing: 'Cartões de regra sem teste: {list}',
     tsCovered: 'Todos os cartões de regra têm teste.', tsOrphans: 'Testes de cartões que já não existem: {list}',
     tsModel: 'Modelo do estado', tsGame: 'partida', tsApproved: 'Aprovado', tsUnlock: 'Desbloquear', tsApprove: 'Aprovar',
     tsDelete: 'Apagar teste', tsCode: 'Código', tsNone: 'Ainda não há testes.',
@@ -97,7 +100,10 @@ const T = {
     tab_testes: 'Tests', tsTitle: 'Tests from the cards',
     tsLead: 'Copy the prompt into your AI: it proposes the state model and writes one test per rule card (and one per approved narrated game). Read each test as Given / When / Then and approve. Approved tests are frozen.',
     tsSave: 'Save tests', tsBadJson: 'Could not find the tests JSON in the answer.', tsList: '{n} tests ({a} approved)',
-    tsOld: 'written with rules {v}', tsApproveAll: 'Approve all', tsMissing: 'Rule cards without a test: {list}',
+    tsOld: 'written with rules {v}', tsApproveAll: 'Approve all', tsUnlockAll: 'Unlock all',
+    tsUnlockAllConfirm: 'Unlock all tests? The next AI answer replaces them, with new helper functions.',
+    tsOffCards: 'Some tests belong to cards that are no longer rules ({list}): the platform or the bot handle that. Unlock and delete them (✕).',
+    tsOffCard: '{cat} card', tsMissing: 'Rule cards without a test: {list}',
     tsCovered: 'Every rule card has a test.', tsOrphans: 'Tests for cards that no longer exist: {list}',
     tsModel: 'State model', tsGame: 'game', tsApproved: 'Approved', tsUnlock: 'Unlock', tsApprove: 'Approve',
     tsDelete: 'Delete test', tsCode: 'Code', tsNone: 'No tests yet.',
@@ -470,6 +476,11 @@ export function after(root) {
         ctx.rerender();
       } catch (err) { ctx.toast(err.message); }
       return;
+    }
+    if (d.ts === 'unlock-all') {
+      if (!confirm(f('tsUnlockAllConfirm'))) return;
+      for (const x of p.tests.itens) x.aprovado = false;
+      changed(); ctx.rerender(); return;
     }
     if (d.ts === 'approve-all') { for (const x of p.tests.itens) x.aprovado = true; changed(); ctx.rerender(); return; }
     if (d.tt) {

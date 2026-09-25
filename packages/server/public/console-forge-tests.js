@@ -10,6 +10,7 @@ export function buildTestsPrompt(p) {
   const regra = p.cards.filter((c) => c.category === 'regra');
   const data = p.nodes.filter((n) => n.kind === 'DATA');
   const approved = p.narrations.filter((n) => n.aprovada);
+  const done = (p.tests?.itens || []).filter((t) => t.aprovado);
   const card = (c) => `- [${c.id}] ${c.title}${c.ref ? ` (bloco "${nodeName(c.ref)}")` : ''}\n  Dado ${c.given}\n  Quando ${c.when}\n  Então ${c.then}`;
   return `Vais escrever os TESTES de um jogo de tabuleiro, "${p.gameName}", ANTES de o código existir. Os testes são a especificação: o código vai ser escrito depois para os passar.
 
@@ -35,8 +36,15 @@ ${regra.map(card).join('\n') || '(nenhum)'}
 ${approved.length ? `PARTIDAS NARRADAS APROVADAS (um teste de ponta a ponta por partida: joga as mesmas jogadas e confirma o estado e o fim)
 ${approved.map((n) => `### ${n.id}: ${n.cenario} (${n.jogadores} jogadores)\n${n.jogadas.map((m) => `${m.n}. J${m.jogador ?? '-'}: ${m.acao} → ${m.resultado}`).join('\n')}\nFim: ${n.fim}`).join('\n\n')}` : ''}
 
-REGRAS
-1. Um teste por cartão de regra; o nome do teste é o título do cartão.
+${done.length ? `TESTES JÁ APROVADOS (ficam como estão: NÃO os escrevas outra vez)
+${done.map((t) => `- ${t.cartao ? `[${t.cartao}]` : `partida ${t.narracao}`} ${t.nome}`).join('
+')}
+
+${p.tests.auxiliares?.trim() ? `FUNÇÕES AUXILIARES ATUAIS (os testes aprovados usam-nas: reutiliza-as e NÃO as redefinas; se precisares de outras, dá-lhes nomes novos e põe só essas no campo "auxiliares")
+${p.tests.auxiliares.trim()}
+
+` : ''}` : ''}REGRAS
+1. Um teste por cartão de regra${done.length ? ' ainda sem teste aprovado' : ''}; o nome do teste é o título do cartão.
 2. Não inventes regras. Se um cartão não chegar para escrever o teste, escreve o teste com o que há e diz a dúvida no campo "entao".
 3. Usa nomes de jogadas em MAIÚSCULAS (ex.: "APOSTAR") e códigos de erro "err.X"; mantém-nos iguais em todos os testes.
 
@@ -61,6 +69,8 @@ export function viewTestes(p, f) {
   const orphans = t.itens.filter((x) => x.cartao && !p.cards.some((c) => c.id === x.cartao));
   const approvedN = t.itens.filter((x) => x.aprovado).length;
   const cardTitle = (id) => p.cards.find((c) => c.id === id)?.title;
+  const notRule = (x) => { const c = x.cartao && p.cards.find((y) => y.id === x.cartao); return c && c.category !== 'regra' ? c.category : null; };
+  const offCards = t.itens.filter(notRule);
   return `<div class="fg-play">
     <section class="panel">
       <h2>${f('tsTitle')}</h2>
@@ -76,8 +86,10 @@ export function viewTestes(p, f) {
         <h2>${f('tsList', { n: t.itens.length, a: approvedN })}</h2>
         ${t.versaoRegras && t.versaoRegras !== p.version ? `<span class="pill pill-bad">${f('tsOld', { v: t.versaoRegras })}</span>` : ''}
         <button class="btn btn-primary" data-ts="approve-all" ${approvedN === t.itens.length ? 'disabled' : ''}>${f('tsApproveAll')}</button>
+        <button class="btn btn-ghost" data-ts="unlock-all" ${approvedN ? '' : 'disabled'}>${f('tsUnlockAll')}</button>
       </div>
       <p>${missing.length ? `⚠ ${esc(f('tsMissing', { list: missing.map((c) => `${c.id} ${c.title}`).join(', ') }))}` : `✓ ${f('tsCovered')}`}</p>
+      ${offCards.length ? `<p class="ff-warn">⚠ ${esc(f('tsOffCards', { list: offCards.map((x) => x.cartao).join(', ') }))}</p>` : ''}
       ${orphans.length ? `<p class="ff-warn">⚠ ${esc(f('tsOrphans', { list: orphans.map((x) => x.cartao).join(', ') }))}</p>` : ''}
       ${t.estado ? `<details><summary>${f('tsModel')}</summary><pre class="fg-pre">${esc(t.estado)}</pre></details>` : ''}
       <details ${t.auxiliares ? '' : 'open'}><summary>${f('tsHelpers')}</summary>
@@ -88,6 +100,7 @@ export function viewTestes(p, f) {
         <div class="fg-card-head">
           <span class="pill">${x.cartao ? esc(x.cartao) : x.narracao ? `${f('tsGame')} ${esc(x.narracao)}` : '—'}</span>
           <strong>${esc(x.nome || cardTitle(x.cartao) || '')}</strong>
+          ${notRule(x) ? `<span class="pill pill-bad">${f('tsOffCard', { cat: f(`cat_${notRule(x)}`) })}</span>` : ''}
           ${x.aprovado
             ? `<span class="pill pill-ok">${f('tsApproved')}</span><button class="btn btn-ghost" data-tt="unlock">${f('tsUnlock')}</button>`
             : `<button class="btn btn-outline" data-tt="approve">${f('tsApprove')}</button><button class="btn btn-ghost" data-tt="delete" aria-label="${f('tsDelete')}">✕</button>`}

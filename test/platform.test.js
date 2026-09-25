@@ -818,3 +818,15 @@ test('Forge: cada mesa fica presa à versão do protótipo com que começou; as 
   assert.deepEqual(p.prototypes.map((x) => x.version), ['0.2.0']);
   await s.stop();
 });
+
+test('Forge: com testes aprovados, as funções auxiliares atuais ficam e só entram as novas', async () => {
+  const { mergeTests, mergeHelpers } = await import('../packages/server/src/forge.js');
+  const antigas = "const novo = (n) => createMatch(game, { numPlayers: n });\nconst iniciado = (n) => novo(n);";
+  const novas = "import x from 'y';\nconst novo = (n = 3) => createMatch(game, { numPlayers: n, seed: 2 });\nconst ronda = (m, letras) =>\n  letras.reduce((a) => a, m);";
+  assert.equal(mergeHelpers(antigas, novas), `${antigas}\nconst ronda = (m, letras) =>\n  letras.reduce((a) => a, m);`);
+  const atual = { auxiliares: antigas, itens: [{ id: 't1', cartao: 'c1', nome: 'A', aprovado: true, codigo: 'iniciado(2)' }] };
+  assert.match(mergeTests(atual, { auxiliares: novas, testes: [] }, '0.1.0').auxiliares, /iniciado[\s\S]*ronda/);
+  // Sem aprovados, a resposta nova substitui tudo.
+  const livre = mergeTests({ ...atual, itens: [{ ...atual.itens[0], aprovado: false }] }, { auxiliares: novas, testes: [] }, '0.1.0');
+  assert.equal(livre.auxiliares, novas);
+});
