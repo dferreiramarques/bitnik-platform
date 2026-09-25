@@ -227,7 +227,7 @@ function viewMesas() {
         const url = `${location.origin}${t.link}`;
         const names = t.result ? t.result.winners.map((w) => t.seats[w]?.name).filter(Boolean).join(', ') : '';
         return `<tr>
-          <td><strong>${esc(t.name || gameName(t.gameId))}</strong><small>${esc(gameName(t.gameId))} · ${u('nPlayers', { n: t.numPlayers })} · ${u('created', { when: fmtTime(t.createdAt) })}</small></td>
+          <td><strong>${esc(t.name || gameName(t.gameId))}</strong><small>${esc(gameName(t.gameId))}${t.version ? ` ${esc(t.version)}` : ''} · ${u('nPlayers', { n: t.numPlayers })} · ${u('created', { when: fmtTime(t.createdAt) })}</small></td>
           <td>${esc(u(t.status === 'over' ? 'over' : t.status))}${names ? `<small>${esc(u('winners', { names }))}</small>` : ''}</td>
           <td>${t.seats.map((s) => esc(s.taken ? `${s.name}${s.bot ? ` (${u('bot')})` : ''}` : u('free'))).join('<br>')}</td>
           <td><div class="linkbox"><code>${esc(url)}</code><button class="btn btn-outline" data-copy="${esc(url)}">${u('copy')}</button></div></td>

@@ -141,7 +141,7 @@ function renderLobby() {
       <div class="lobby-cols">
         <div><h3>${u('myTables')}</h3>
           ${mine.length ? `<ul class="rows">${mine.map((r) => `<li>
-            <span class="grow">${r.kind === 'invite' ? esc(r.name || u('inviteTable')) : u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}</small></span>
+            <span class="grow">${r.kind === 'invite' ? esc(r.name || u('inviteTable')) : u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}${g.prototype && r.version && r.version !== g.version ? ` · ${esc(r.version)}` : ''}</small></span>
             <button class="btn btn-outline" data-open="${r.id}">${u(r.status === 'over' || r.status === 'expired' ? 'view' : 'resume')}</button>
             ${r.kind === 'solo' ? `<button class="btn btn-ghost" data-remove="${r.id}" aria-label="${u('remove')}">✕</button>` : ''}
           </li>`).join('')}</ul>` : `<p class="empty">${u('noMine')}</p>`}

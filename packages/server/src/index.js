@@ -9,7 +9,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { readFileSync, readdirSync } from 'node:fs';
-import { mkdir, writeFile, symlink } from 'node:fs/promises';
+import { mkdir, writeFile, symlink, rm } from 'node:fs/promises';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
@@ -102,6 +102,7 @@ export function createPlatform({
 } = {}) {
   // ─── Jogos ──────────────────────────────────────────────────
   const G = new Map();
+  const PV = new Map(); // protótipos da Forge: id → Map(versão → jogo); o G tem a mais recente
   for (const g of games) {
     const problems = checkGame(g);
     if (problems.length) throw new Error(`Pacote ${g?.id}: ${problems.join('; ')}`);
@@ -179,6 +180,7 @@ export function createPlatform({
         name: s.name, bot: s.bot, away: s.away, taken: !!(s.userId || s.bot), isYou: !!userId && s.userId === userId,
       })),
       round: room.match?.state?.round ?? null,
+      version: room.match?.gameVersion ?? null,
       expired: room.expired ?? null,
     };
   }
@@ -197,10 +199,18 @@ export function createPlatform({
     for (const [ws, c] of conns) if (c.user) send(ws, { type: 'ROOMS', ...roomsFor(c.user.userId) });
   }
 
+  // Uma partida fica presa à versão com que começou: nos protótipos, as versões
+  // anteriores continuam carregadas enquanto houver mesas a usá-las.
+  function gameFor(room) {
+    const g = G.get(room.gameId);
+    const v = room.match?.gameVersion;
+    return (g?.prototype && v && v !== g.version && PV.get(room.gameId)?.get(v)) || g;
+  }
+
   const seatOf = (room, userId) => room.seats.findIndex((s) => s.userId === userId);
 
   function roomMessage(room, userId) {
-    const game = G.get(room.gameId);
+    const game = gameFor(room);
     const seat = seatOf(room, userId);
     const base = { type: 'ROOM', room: summary(room, userId), seat: seat < 0 ? null : seat };
     // Uma partida de versão incompatível não passa pelo view: o estado antigo pode não encaixar.
@@ -271,7 +281,7 @@ export function createPlatform({
   function onTimer(roomId, key) {
     const room = rooms.get(roomId);
     if (!room?.match) return;
-    const r = fireTimer(G.get(room.gameId), room.match, key);
+    const r = fireTimer(gameFor(room), room.match, key);
     if (r.ok) commit(room, r.match);
     else logger.warn(`[timer] ${roomId} ${key}: ${r.error.code}`);
   }
@@ -282,7 +292,7 @@ export function createPlatform({
   function scheduleBots(room) {
     clearTimeout(botTimers.get(room.id));
     if (room.status !== 'playing') return;
-    const game = G.get(room.gameId);
+    const game = gameFor(room);
     const seat = activeSeats(game, room.match).find((s) => botControls(room, s));
     if (seat == null) return;
     const [a, b] = botDelayMs;
@@ -541,7 +551,7 @@ export function createPlatform({
       if (room.status === 'expired') return fail(ws, 'server.EXPIRED');
       const seat = seatOf(room, c.user.userId);
       if (seat < 0) return fail(ws, 'server.NOT_SEATED');
-      const game = G.get(room.gameId);
+      const game = gameFor(room);
       // `seq` é o estado que o jogador viu. Se o jogo já avançou (reenvio
       // após reconexão, clique sobre um estado antigo), a jogada é recusada.
       const r = applyMove(game, room.match, seat, { type: move?.type, payload: move?.payload }, { expectSeq: seq });
@@ -738,7 +748,7 @@ export function createPlatform({
   // ─── Protótipos da Forge (etapa 5) ──────────────────────────
   // Cada instalação fica numa pasta própria (versão + marca de tempo): o import
   // de ESM fica em cache por caminho, por isso uma pasta nova carrega sempre o código novo.
-  async function loadPrototype(slug, proto) {
+  async function loadPrototype(slug, proto, { latest = true } = {}) {
     const file = join(prototypeDir, slug, proto.folder, 'index.js');
     const game = (await import(pathToFileURL(file).href)).default;
     const problems = checkGame(game);
@@ -746,9 +756,14 @@ export function createPlatform({
     if (game.id !== slug) throw new Error(`o id do pacote é "${game.id}", devia ser "${slug}"`);
     const current = G.get(slug);
     if (current && !current.prototype) throw new Error(`já existe um jogo publicado com o id "${slug}"`);
-    G.set(slug, Object.freeze({ ...game, prototype: true }));
-    return game;
+    const g = Object.freeze({ ...game, prototype: true });
+    if (!PV.has(slug)) PV.set(slug, new Map());
+    PV.get(slug).set(g.version, g);
+    if (latest) G.set(slug, g);
+    return g;
   }
+
+  const versionInUse = (slug, v) => [...rooms.values()].some((r) => r.gameId === slug && r.match?.gameVersion === v);
 
   async function installPrototype(slug, p) {
     if (!prototypeDir) throw new Error('este servidor não aceita protótipos');
@@ -766,10 +781,19 @@ export function createPlatform({
       await mkdir(dirname(join(dir, rel)), { recursive: true });
       await writeFile(join(dir, rel), String(content));
     }
-    await loadPrototype(slug, { folder });
-    const game = G.get(slug);
+    const game = await loadPrototype(slug, { folder });
     for (const r of publicRoomsFor(game)) if (!rooms.has(r.id)) { rooms.set(r.id, r); persist(r); }
-    return { version: p.version, folder, ts: now(), buildTs: b.ts };
+    // Versões anteriores: ficam as que ainda têm mesas; as outras saem do disco e da memória.
+    const entry = { version: p.version, folder, ts: now(), buildTs: b.ts };
+    const keep = [];
+    for (const x of p.prototypes || []) {
+      if (x.version !== p.version && versionInUse(slug, x.version)) keep.push(x);
+      else {
+        if (x.version !== p.version) PV.get(slug)?.delete(x.version);
+        await rm(join(prototypeDir, slug, x.folder), { recursive: true, force: true }).catch(() => {});
+      }
+    }
+    return [...keep, entry];
   }
 
   async function forgeRoute(req, res, url) {
@@ -840,9 +864,9 @@ export function createPlatform({
       const p = forge.get(im[1]);
       if (!p) return json(res, 404, { error: 'projeto não encontrado' });
       try {
-        const prototype = await installPrototype(im[1], p);
-        const saved = saveForge(im[1], { ...p, prototype }, p);
-        return json(res, 200, { prototype, project: saved });
+        const prototypes = await installPrototype(im[1], p);
+        const saved = saveForge(im[1], { ...p, prototypes }, p);
+        return json(res, 200, { prototype: saved.prototype, project: saved });
       } catch (e) {
         return json(res, 400, { error: e.message });
       }
@@ -862,6 +886,7 @@ export function createPlatform({
     if (req.method === 'GET') return json(res, 200, { slug, project: forge.get(slug) });
     if (req.method === 'PUT') {
       // Os commits das regras só se criam pelo /commit, e um teste aprovado não muda de conteúdo.
+      // A verificação e os protótipos instalados são do servidor: um PUT não lhes mexe.
       const body = await readJson(req, FORGE_MAX);
       const p = forge.get(slug);
       const approved = new Map((p.tests?.itens || []).filter((t) => t.aprovado).map((t) => [t.id, t]));
@@ -869,7 +894,7 @@ export function createPlatform({
         ...body.tests,
         itens: (body.tests.itens || []).map((t) => (approved.has(t.id) && t.aprovado ? approved.get(t.id) : t)),
       };
-      return json(res, 200, { slug, project: saveForge(slug, { ...body, tests: tests ?? p.tests, ruleCommits: p.ruleCommits }, p) });
+      return json(res, 200, { slug, project: saveForge(slug, { ...body, tests: tests ?? p.tests, ruleCommits: p.ruleCommits, build: p.build, prototypes: p.prototypes }, p) });
     }
     if (req.method === 'DELETE') {
       forge.delete(slug);
@@ -995,11 +1020,12 @@ export function createPlatform({
     }
     // Protótipos instalados antes do restart voltam a entrar (antes das mesas, que precisam do jogo).
     for (const [slug, p] of forge) {
-      if (!p.prototype) continue;
-      try { await loadPrototype(slug, p.prototype); } catch (e) { logger.warn(`[load] protótipo ${slug}: ${e.message}`); }
+      for (const [i, x] of p.prototypes.entries()) {
+        try { await loadPrototype(slug, x, { latest: i === p.prototypes.length - 1 }); } catch (e) { logger.warn(`[load] protótipo ${slug} ${x.version}: ${e.message}`); }
+      }
     }
     for (const room of saved.rooms || []) {
-      const game = G.get(room.gameId);
+      const game = gameFor(room);
       if (!game) { logger.warn(`[load] ${room.id}: jogo ${room.gameId} não instalado, ignorada`); continue; }
       const inc = room.match && room.status !== 'expired' && matchIncompatibility(game, room.match);
       if (inc) {

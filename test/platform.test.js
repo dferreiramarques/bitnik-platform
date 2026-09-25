@@ -742,3 +742,64 @@ test('Forge: instalar o pacote verificado como protótipo, sem reiniciar, e volt
   assert.ok(games.find((x) => x.id === slug)?.prototype);
   await s.stop();
 });
+
+test('Forge: cada mesa fica presa à versão do protótipo com que começou; as versões sem mesas saem', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const base = new URL('./fixtures/forge-pacote/', import.meta.url);
+  const v1 = Object.fromEntries(await Promise.all(['index.js', 'i18n/pt.js', 'i18n/en.js'].map(async (f) => [f, await readFile(new URL(f, base), 'utf8')])));
+  // A 0.2.0 deixa avançar 3 passos; a 0.1.0 não.
+  const v2 = { ...v1, 'index.js': v1['index.js'].replace("version: '0.1.0'", "version: '0.2.0'").replace('passos !== 1 && passos !== 2', 'passos < 1 || passos > 3') };
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const opts = { adminToken: 'segredo', dataDir: dir, botDelayMs: [60_000, 60_001] };
+  let s = await boot(makeStudio, opts);
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const post = async (path, body = {}) => (await fetch(`${url}${path}`, { method: 'POST', headers: auth, body: JSON.stringify(body) })).json();
+  const { slug } = await post('', { gameName: 'Corrida Simples' });
+  const { project } = await post(`/${slug}/tests`, { testes: [{ cartao: 'c1', nome: 'Soma', codigo: "test('Soma', () => { assert.equal(applyMove(game, createMatch(game, { numPlayers: 2, seed: 1 }), 0, { type: 'AVANCAR', payload: { passos: 1 } }).match.state.pontos[0], 1); });" }] });
+  project.tests.itens[0].aprovado = true;
+  await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(project) });
+  const install = async (files) => {
+    await post(`/${slug}/commit`, { message: 'regras' });
+    assert.ok((await post(`/${slug}/verify`, { files })).report.ok);
+    return (await post(`/${slug}/install`)).project;
+  };
+  await install(v1);
+
+  const c = await s.client();
+  const created = c.next('room');
+  c.createSolo(slug, 2);
+  const { room: antiga } = await created;
+  assert.equal(antiga.version, '0.1.0');
+
+  let p = await install(v2);
+  assert.deepEqual(p.prototypes.map((x) => x.version), ['0.1.0', '0.2.0'], 'a 0.1.0 fica: tem uma mesa');
+  const tres = { type: 'AVANCAR', payload: { passos: 3 } };
+  const recusa = c.next('error');
+  c.move(antiga.id, tres);
+  assert.equal((await recusa).code, 'err.PASSOS', 'a mesa antiga continua com as regras 0.1.0');
+
+  const nova = c.next('room');
+  c.createSolo(slug, 2);
+  const { room } = await nova;
+  assert.equal(room.version, '0.2.0');
+  const ok = c.next('room', (m) => m.room.id === room.id && m.seq === 1);
+  c.move(room.id, tres);
+  assert.equal((await ok).view.pontos[0], 3);
+  await s.stop();
+
+  // Depois de reiniciar, a mesa antiga continua na 0.1.0 (não fica "versão antiga").
+  s = await boot(makeStudio, opts);
+  const c2 = await s.client(c.storage);
+  const reaberta = c2.next('room');
+  c2.open(antiga.id);
+  const r = await reaberta;
+  assert.equal(r.room.status, 'playing');
+  assert.equal(r.room.version, '0.1.0');
+
+  // Sem mesas na 0.1.0, a instalação seguinte limpa-a.
+  c2.remove(antiga.id);
+  await new Promise((res) => setTimeout(res, 100));
+  p = (await (await fetch(`http://localhost:${s.port}/admin/forge/${slug}/install`, { method: 'POST', headers: auth, body: '{}' })).json()).project;
+  assert.deepEqual(p.prototypes.map((x) => x.version), ['0.2.0']);
+  await s.stop();
+});

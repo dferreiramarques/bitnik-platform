@@ -87,6 +87,9 @@ export function normalizeProject(input = {}) {
       rules: Array.isArray(c?.snapshot?.rules) ? c.snapshot.rules : [],
     },
   }));
+  const prototypes = (Array.isArray(input.prototypes) ? input.prototypes : input.prototype ? [input.prototype] : [])
+    .filter((x) => x && /^[\w.-]{1,60}$/.test(x.folder ?? '')).slice(-20)
+    .map((x) => ({ version: str(x.version, 20), folder: x.folder, ts: num(x.ts), buildTs: num(x.buildTs) }));
   return {
     gameName: str(input.gameName, 120).trim() || 'Jogo sem nome',
     nodes, edges, cards, rules, legacyCommits, narrations, ruleCommits,
@@ -97,11 +100,10 @@ export function normalizeProject(input = {}) {
       files: Object.fromEntries(Object.entries(input.build.files || {}).slice(0, 60).map(([k, v]) => [str(k, 200), str(v, 500_000)])),
       report: input.build.report ?? null,
     } : null,
-    // Protótipo instalado no Studio (etapa 5): a pasta tem nome seguro, é o servidor que a escolhe.
-    prototype: input.prototype && /^[\w.-]{1,60}$/.test(input.prototype.folder ?? '') ? {
-      version: str(input.prototype.version, 20), folder: input.prototype.folder,
-      ts: num(input.prototype.ts), buildTs: num(input.prototype.buildTs),
-    } : null,
+    // Protótipos instalados no Studio (etapa 5), o mais recente no fim. A pasta
+    // tem nome seguro e é o servidor que a escolhe.
+    prototypes,
+    prototype: prototypes.at(-1) ?? null,
     version: ruleCommits.at(-1)?.version ?? '0.0.0',
   };
 }

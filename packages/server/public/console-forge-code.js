@@ -110,6 +110,7 @@ export function viewCodigo(p, f) {
       <p class="con-lead">${f('cdLead')}</p>
       ${approved ? '' : `<p class="ff-warn">⚠ ${f('cdNoTests')}</p>`}
       ${p.prototype ? `<p class="fg-installed">✓ ${f('cdInstalled', { v: p.prototype.version, d: new Date(p.prototype.ts).toLocaleString() })}
+        ${p.prototypes.length > 1 ? `<small>${f('cdOlder', { list: p.prototypes.slice(0, -1).map((x) => x.version).join(', ') })}</small>` : ''}
         <a class="btn btn-outline" href="/" target="_blank" rel="noopener">${f('cdOpenLobby')}</a></p>` : ''}
       <form class="form" id="fgCode" onsubmit="return false">
         <button type="button" class="btn btn-primary" data-cd="copy" ${approved ? '' : 'disabled'}>${f('ptCopy')}</button>
