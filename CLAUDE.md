@@ -13,7 +13,7 @@ Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `README.md
 ## Estado e fases
 
 - **Fase 0 (feita)**: engine, server, client SDK, Catania como primeiro pacote, Studio e runtime limpo.
-- Catania 3.0.0: regra de "ronda completa" no fim do jogo, para equilibrar a vantagem do 1.º jogador a 2 jogadores.
+- Catania 3.0.0: regra de "ronda completa" no fim do jogo. Catania 4.0.0: regra de abertura (no 1.º turno, a 2.ª recolha do 1.º jogador é de 1 carta), que tira a vantagem do 1.º lugar a 2, 3 e 4 jogadores (ver `games/catania/CHANGELOG.md`).
 - **Fase 0c (feita)**: consola em `/console` (painel, jogos com simulação, mesas de aprovação por convite, avisos), protegida por `ADMIN_TOKEN`.
 - Fora do MVP: deploy público para partilhar o link das mesas de aprovação com clientes (as mesas funcionam localmente).
 - **Fase 0b** (em curso): UI própria do Catania, por etapas: (1) infraestrutura da UI no pacote ✔; (2) tabuleiro do Catania ✔; (3) tutorial com o motor verdadeiro e cenários no pacote ✔; (4) "Aparência" na consola (tokens, temas, pré-visualização) ✔; (5) template vanilla no Figma: preparação feita ✔ (`design/vanilla/skin.json`, `npm run figma`, `design/figma/TEMPLATE.md`); falta montar o ficheiro no Figma; (6) service worker (PWA) ✔.

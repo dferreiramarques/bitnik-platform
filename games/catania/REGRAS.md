@@ -35,6 +35,8 @@ Podes recolher em **até 2 territórios diferentes**. Em cada um colocas um trab
 - **1 carta** — recebes 1 carta desse recurso. O valor não muda.
 - **2 cartas** — recebes 2 cartas e tiras o disco do topo da torre para a pilha desse recurso: o recurso **deprecia**. Não podes escolher esta opção se a torre estiver vazia.
 
+**Abertura:** no primeiro turno do jogo, a 2.ª recolha do primeiro jogador só pode ser de **1 carta** (a 1.ª pode ser de 1 ou 2). É o que compensa a vantagem de abrir o jogo.
+
 Não podes recolher:
 
 - no território onde está o Fogo do Etna;

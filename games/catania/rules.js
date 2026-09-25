@@ -7,6 +7,13 @@ const top = (pile) => pile.discs[pile.discs.length - 1];
 const handTotal = (p) => RESOURCES.reduce((s, r) => s + p.hand[r], 0);
 const freshTurn = () => ({ collects: 0, founded: false, firePending: false, visited: [] });
 
+/**
+ * Abertura (4.0.0): no primeiro turno do jogo, a 2.ª recolha do 1.º jogador
+ * só pode ser de 1 carta. Reduz a vantagem do 1.º lugar (simulação com 10 000
+ * partidas: 2j 50,5/49,5; 3j 34,7/32,3/33,0; 4j 25,9/25,3/23,4/25,5).
+ */
+const openingLimit = (s, seat, t) => s.round === 1 && seat === 0 && t.collects >= 1;
+
 export function setup(ctx) {
   // Cenário fixo (tutorial, pré-visualização, testes): ADR-007.
   const scenario = ctx.options?.scenario;
@@ -59,6 +66,7 @@ export const moves = {
     if (hex.workers.some((w) => w !== ctx.seat)) return ctx.invalid('err.OCCUPIED');
     if (t.visited.includes(hex.id)) return ctx.invalid('err.SAME_HEX');
     if (take2 && !s.tower.length) return ctx.invalid('err.TOWER_EMPTY');
+    if (take2 && openingLimit(s, ctx.seat, t)) return ctx.invalid('err.OPENING_TAKE2');
 
     if (!hex.workers.includes(ctx.seat)) hex.workers.push(ctx.seat);
     t.visited.push(hex.id);
@@ -176,7 +184,7 @@ export function enumerate(s, seat) {
     for (const h of s.hexes) {
       if (!canCollectAt(s, seat, h)) continue;
       out.push({ type: 'COLLECT', payload: { hex: h.id, take2: false } });
-      if (s.tower.length) out.push({ type: 'COLLECT', payload: { hex: h.id, take2: true } });
+      if (s.tower.length && !openingLimit(s, seat, t)) out.push({ type: 'COLLECT', payload: { hex: h.id, take2: true } });
     }
   }
   if (!t.founded) {

@@ -58,6 +58,27 @@ test('Os trabalhadores voltam no início do turno do dono', () => {
   m = ok(move(m, 0, 'COLLECT', { hex: h.id }));
 });
 
+test('Abertura (4.0.0): no 1.º turno do jogo, a 2.ª recolha do 1.º jogador é de 1 carta', () => {
+  let m = newMatch(3, 'abertura');
+  const [a, b, c] = m.state.hexes.filter((h) => h.type !== 'vulcao' && h.id !== m.state.fire);
+  m = ok(move(m, 0, 'COLLECT', { hex: a.id, take2: true }));
+  if (m.state.players[0].turn.firePending) m = ok(applyMove(catania, m, 0, catania.enumerate(m.state, 0)[0]));
+  const hexB = m.state.hexes[b.id].workers.length ? c : b;
+  assert.equal(move(m, 0, 'COLLECT', { hex: hexB.id, take2: true }).error.code, 'err.OPENING_TAKE2');
+  assert.ok(!catania.enumerate(m.state, 0).some((x) => x.type === 'COLLECT' && x.payload.take2), 'não aparece nas jogadas legais');
+  m = ok(move(m, 0, 'COLLECT', { hex: hexB.id }));
+  m = ok(move(m, 0, 'END_TURN'));
+  // Os outros jogadores, no mesmo 1.º turno, não têm o limite.
+  const d = m.state.hexes.find((h) => h.type !== 'vulcao' && h.id !== m.state.fire && !h.workers.length);
+  m = ok(move(m, 1, 'COLLECT', { hex: d.id }));
+  assert.ok(catania.enumerate(m.state, 1).some((x) => x.type === 'COLLECT' && x.payload.take2));
+});
+
+test('Abertura: a partir da 2.ª ronda, o 1.º jogador volta a poder recolher 2 cartas duas vezes', () => {
+  const m = tweak(newMatch(2), (s) => { s.round = 2; s.players[0].turn.collects = 1; s.players[0].turn.visited = []; });
+  assert.ok(catania.enumerate(m.state, 0).some((x) => x.type === 'COLLECT' && x.payload.take2));
+});
+
 test('Recolher 2 cartas nunca sobe o valor da pilha', () => {
   let m = tweak(newMatch(), (s) => { s.tower = [2, 4, 12]; });
   const h = hexOf(m, 'vinho');

@@ -2,7 +2,7 @@
 // Joga sobre o view do seu lugar: vê o mesmo que um humano.
 import { RESOURCES } from './board.js';
 
-export function defaultBot(v, seat, { rng }) {
+export function defaultBot(v, seat, { rng, legal = [] }) {
   const p = v.players[seat];
   const t = p.turn;
   const topOf = (r) => v.piles[r].value;
@@ -20,7 +20,9 @@ export function defaultBot(v, seat, { rng }) {
     if (avail.length) {
       // Prefere o recurso mais barato (valor atual mais baixo).
       avail.sort((a, b) => topOf(a.type) - topOf(b.type));
-      return { type: 'COLLECT', payload: { hex: avail[0].id, take2: v.tower > 2 && rng.chance(0.38) } };
+      const wants2 = v.tower > 2 && rng.chance(0.38);
+      const can2 = legal.some((m) => m.type === 'COLLECT' && m.payload.hex === avail[0].id && m.payload.take2);
+      return { type: 'COLLECT', payload: { hex: avail[0].id, take2: wants2 && can2 } };
     }
   }
 

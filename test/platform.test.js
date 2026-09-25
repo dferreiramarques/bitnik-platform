@@ -194,7 +194,7 @@ async function oldSolo(dir, match) {
   await st.saveRoom({
     id: 'solo-old', gameId: 'catania', kind: 'solo', owner: 'u', name: '', numPlayers: 2, level: 'default',
     seats: [{ userId: 'u', name: 'Ana', bot: false, away: false }, { userId: null, name: 'Bot 1', bot: true, away: false }],
-    match: { gameVersion: '3.0.0', engineVersion: '0.2.0', seq: 4, timers: [{ key: 't', delayMs: 1, event: 'X', seq: 4 }], state: {}, ...match },
+    match: { gameVersion: '4.0.0', engineVersion: '0.2.0', seq: 4, timers: [{ key: 't', delayMs: 1, event: 'X', seq: 4 }], state: {}, ...match },
     status: 'playing', timerDue: {}, createdAt: 0, updatedAt: 0,
   });
   return st;
@@ -209,7 +209,7 @@ test('ficheiros de storage de outro jogo ou versão incompatível não partem o 
   assert.ok(!s.platform.rooms.has('x'));
   const old = s.platform.rooms.get('solo-old');
   assert.equal(old.status, 'expired', 'não é apagada: fica marcada');
-  assert.deepEqual(old.expired, { reason: 'game', from: '1.0.0', to: '3.0.1' });
+  assert.deepEqual(old.expired, { reason: 'game', from: '1.0.0', to: '4.0.0' });
   assert.ok(old.match, 'o match fica guardado para replay');
   await s.stop();
 });
@@ -240,7 +240,7 @@ test('mesa solo expirada: aparece com aviso, não aceita jogadas e pode recomeç
 
 test('um match de outra versão major do motor também expira', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
-  await oldSolo(dir, { gameVersion: '3.0.1', engineVersion: '0.1.0' });
+  await oldSolo(dir, { gameVersion: '4.0.0', engineVersion: '0.1.0' });
   const s = await boot(makeStudio, { dataDir: dir });
   assert.equal(s.platform.rooms.get('solo-old').expired.reason, 'engine');
   await s.stop();

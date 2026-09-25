@@ -235,11 +235,13 @@ function renderActions(v) {
   const foundWhy = t.founded ? ctx.t('ui.foundDone') : total < 5 ? ctx.t('ui.foundNeed5', { n: total }) : types < 2 ? ctx.t('ui.foundNeed2') : '';
   const step = t.founded || t.collects >= 2 ? 'ui.collectDone' : t.collects === 0 ? 'ui.collectStep1' : 'ui.collectStep2';
   const done = t.collects > 0 || t.founded;
+  const opening = v.round === 1 && v.me === 0 && t.collects === 1 && !t.founded && v.tower > 0;
   return `<div class="cat-acts">
     <div class="cat-step">${ctx.t(step)}</div>
     ${!t.founded && t.collects < 2 ? `
       ${btn(ctx.t('ui.collect1'), `data-act="c1" ${c1 ? '' : 'disabled'}`, 'pri')}
-      ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`)}` : ''}
+      ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`)}
+      ${opening ? `<div class="cat-step">${ctx.t('ui.openingRule')}</div>` : ''}` : ''}
     <div class="cat-sep"></div>
     ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : `disabled title="${esc(foundWhy)}"`}`, found ? 'pri' : '')}
     ${btn(ctx.t(done ? 'ui.endTurn' : 'ui.pass'), `data-act="end" ${legal('END_TURN').length ? '' : 'disabled'}`)}
