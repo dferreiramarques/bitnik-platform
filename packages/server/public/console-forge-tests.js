@@ -24,6 +24,7 @@ COMO É UM JOGO NESTA PLATAFORMA
 - Já estão disponíveis: test, assert, createMatch, applyMove, fireTimer, simulate, viewFor, legalMoves, game, tweak.
 - Funções comuns a vários testes (ex.: novo(n), jogar(m, lugar, tipo, payload), montar uma mesa) vão TODAS no campo "auxiliares", nunca no "estado" nem só num teste.
 - A PLATAFORMA já trata de: sentar e começar a mesa (anfitrião, "Iniciar"), jogadores que se desligam, bots nos lugares vazios, "jogar outra vez". Não escrevas jogadas para isso; a partida começa já no createMatch.
+- Só os lugares de activePlayers(state) podem jogar. A jogada de um lugar que não está lá (ex.: quem já apostou, fora da sua vez, durante uma pausa) é recusada pelo motor com o código 'engine.NOT_ACTIVE', antes de chegar às regras. Os códigos 'err.X' das regras são só para jogadas de lugares ativos.
 - O TEMPO (esperas, revelações com pausa, limites) é um evento: a regra faz ctx.schedule(chave, ms, 'EVENTO') e o teste dispara-o com fireTimer(game, match, chave). Nunca uses um jogador falso (ex.: 'sistema') para jogadas de tempo: só os lugares de activePlayers podem jogar.
 
 MODELO DO ESTADO
