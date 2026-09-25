@@ -156,6 +156,8 @@ export function normalizeTests(input = {}) {
   }));
   return {
     estado: str(input.estado, 20_000),
+    // Funções comuns a todos os testes (montar um "Dado", jogar várias jogadas…).
+    auxiliares: str(input.auxiliares, 50_000),
     versaoRegras: input.versaoRegras ? str(input.versaoRegras, 20) : null,
     itens,
   };
@@ -169,8 +171,10 @@ export function mergeTests(current, incoming, versaoRegras) {
   const fresh = normalizeTests(incoming).itens
     .filter((t) => !keptKeys.has(keyOf(t)))
     .map((t, i) => ({ ...t, id: `t${Date.now().toString(36)}${i}`, aprovado: false }));
+  const next = normalizeTests(incoming);
   return {
-    estado: String(incoming.estado ?? '').trim() ? normalizeTests(incoming).estado : current?.estado ?? '',
+    estado: next.estado.trim() ? next.estado : current?.estado ?? '',
+    auxiliares: next.auxiliares.trim() ? next.auxiliares : current?.auxiliares ?? '',
     versaoRegras,
     itens: [...kept, ...fresh],
   };

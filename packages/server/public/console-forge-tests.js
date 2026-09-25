@@ -20,6 +20,10 @@ COMO É UM JOGO NESTA PLATAFORMA
 - \`game.enumerate(state, lugar)\` lista as jogadas legais; \`game.view(state, lugar)\` o que cada lugar vê.
 - Testes com node:test e node:assert/strict. Para montar um "Dado", copia o match e mexe no estado:
   const tweak = (m, fn) => { const c = structuredClone(m); fn(c.state); return c; };
+- Já estão disponíveis: test, assert, createMatch, applyMove, fireTimer, simulate, viewFor, legalMoves, game, tweak.
+- Funções comuns a vários testes (ex.: novo(n), jogar(m, lugar, tipo, payload), montar uma mesa) vão TODAS no campo "auxiliares", nunca no "estado" nem só num teste.
+- A PLATAFORMA já trata de: sentar e começar a mesa (anfitrião, "Iniciar"), jogadores que se desligam, bots nos lugares vazios, "jogar outra vez". Não escrevas jogadas para isso; a partida começa já no createMatch.
+- O TEMPO (esperas, revelações com pausa, limites) é um evento: a regra faz ctx.schedule(chave, ms, 'EVENTO') e o teste dispara-o com fireTimer(game, match, chave). Nunca uses um jogador falso (ex.: 'sistema') para jogadas de tempo: só os lugares de activePlayers podem jogar.
 
 MODELO DO ESTADO
 Propõe a forma do estado a partir dos blocos DATA (o que existe no jogo) e usa-a em todos os testes:
@@ -39,7 +43,8 @@ REGRAS
 FORMATO DA RESPOSTA
 Responde só com um objeto JSON:
 {
-  "estado": "a forma do estado, em JSON comentado ou texto",
+  "estado": "a forma do estado, em JSON comentado ou texto (sem código)",
+  "auxiliares": "código JavaScript com as funções comuns aos testes (const novo = …; const jogar = …;)",
   "testes": [
     { "cartao": "c4", "nome": "título do cartão", "dado": "em português simples", "quando": "…", "entao": "…",
       "codigo": "test('título do cartão', () => { … });" },
@@ -75,6 +80,10 @@ export function viewTestes(p, f) {
       <p>${missing.length ? `⚠ ${esc(f('tsMissing', { list: missing.map((c) => `${c.id} ${c.title}`).join(', ') }))}` : `✓ ${f('tsCovered')}`}</p>
       ${orphans.length ? `<p class="ff-warn">⚠ ${esc(f('tsOrphans', { list: orphans.map((x) => x.cartao).join(', ') }))}</p>` : ''}
       ${t.estado ? `<details><summary>${f('tsModel')}</summary><pre class="fg-pre">${esc(t.estado)}</pre></details>` : ''}
+      <details ${t.auxiliares ? '' : 'open'}><summary>${f('tsHelpers')}</summary>
+        <p class="con-lead"><small>${f('tsHelpersHint')}</small></p>
+        <textarea class="fg-code" data-ts-helpers rows="10" spellcheck="false">${esc(t.auxiliares || '')}</textarea>
+      </details>
       <div class="fg-tests">${t.itens.map((x) => `<article class="fg-test ${x.aprovado ? 'ok' : ''}" data-test="${esc(x.id)}">
         <div class="fg-card-head">
           <span class="pill">${x.cartao ? esc(x.cartao) : x.narracao ? `${f('tsGame')} ${esc(x.narracao)}` : '—'}</span>

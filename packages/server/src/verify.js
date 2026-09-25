@@ -15,15 +15,18 @@ const FILE = /^(?:[\w-]+\/)*[\w.-]+\.(?:js|json|md)$/;
 const MAX_FILES = 60;
 const MAX_BYTES = 1_000_000;
 
-/** Junta os testes aprovados num ficheiro node:test, com o cabeçalho comum. */
-export function composeTests(items) {
+/** Junta os testes aprovados num ficheiro node:test, com o cabeçalho comum e as funções auxiliares. */
+export function composeTests(items, auxiliares = '') {
+  // As IAs repetem muitas vezes os imports e o tweak do cabeçalho: saem, para não dar "already declared".
+  auxiliares = String(auxiliares).split('\n')
+    .filter((l) => !/^\s*import\s/.test(l) && !/^\s*const\s+tweak\s*=/.test(l)).join('\n');
   const header = `// Gerado pela Forge a partir dos testes aprovados (não editar à mão).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createMatch, applyMove, fireTimer, simulate, viewFor, legalMoves } from '@bitnik/engine';
 import game from '../index.js';
 const tweak = (m, fn) => { const c = structuredClone(m); fn(c.state); return c; };
-`;
+${auxiliares.trim() ? `\n// Funções auxiliares dos testes\n${auxiliares}\n` : ''}`;
   return header + items.map((t) => `\n// ${t.cartao ? `cartão ${t.cartao}` : `partida ${t.narracao}`}: ${String(t.nome).replace(/\n/g, ' ')}\n${t.codigo}\n`).join('');
 }
 
@@ -31,7 +34,7 @@ const tweak = (m, fn) => { const c = structuredClone(m); fn(c.state); return c; 
  * @param {{ files: Record<string,string>, tests: Array, timeoutMs?: number }} input
  * @returns {Promise<{ ok, steps, tests, simulation, ms }>}
  */
-export async function verifyPackage({ files, tests, timeoutMs = 60_000 }) {
+export async function verifyPackage({ files, tests, auxiliares = '', timeoutMs = 60_000 }) {
   const t0 = Date.now();
   const report = { ok: false, steps: [], tests: { pass: 0, fail: 0, failures: [] }, simulation: [], ms: 0 };
   const step = (id, ok, details = []) => { report.steps.push({ id, ok, details }); return ok; };
@@ -65,7 +68,7 @@ export async function verifyPackage({ files, tests, timeoutMs = 60_000 }) {
     }
     await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'forge-candidato', type: 'module' }));
     await mkdir(join(pkg, 'test'), { recursive: true });
-    await writeFile(join(pkg, 'test', 'forge.test.js'), composeTests(approved));
+    await writeFile(join(pkg, 'test', 'forge.test.js'), composeTests(approved, auxiliares));
     await mkdir(join(pkg, 'node_modules', '@bitnik'), { recursive: true });
     await symlink(ENGINE_ROOT, join(pkg, 'node_modules', '@bitnik', 'engine'), 'junction');
 
@@ -98,6 +101,11 @@ export async function verifyPackage({ files, tests, timeoutMs = 60_000 }) {
     report.tests = inner.tests;
     report.simulation = inner.simulation;
     report.game = inner.game ?? null;
+    // "X is not defined" nos testes: faltam funções auxiliares. É um problema dos testes, não do código.
+    const missing = [...new Set(report.tests.failures.map((f) => /^(\w+) is not defined/.exec(f.error)?.[1]).filter(Boolean))];
+    if (missing.length) {
+      report.steps.push({ id: 'testes-auxiliares', ok: false, details: [`os testes usam funções que não existem: ${missing.join(', ')}`, 'o problema é dos testes, não do código: acrescenta-as às funções auxiliares (separador Testes)'] });
+    }
   } finally {
     await rm(work, { recursive: true, force: true }).catch(() => {});
   }

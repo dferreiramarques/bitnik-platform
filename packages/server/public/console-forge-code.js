@@ -44,8 +44,8 @@ ${p.rules.filter((r) => r.text.trim()).map((r) => `## ${r.ref ? nodeName(r.ref) 
 CARTÕES (regra e bot)
 ${regra.map((c) => `- [${c.id}] (${c.category}) ${c.title}: Dado ${c.given}; Quando ${c.when}; Então ${c.then}`).join('\n') || '(nenhum)'}
 
-TESTES APROVADOS (não podem mudar; o código tem de os passar; têm à mão createMatch, applyMove, fireTimer, simulate, viewFor, legalMoves, game, tweak, assert)
-${approved.map((t) => t.codigo).join('\n\n') || '(nenhum: aprova os testes primeiro)'}
+TESTES APROVADOS (não podem mudar; o código tem de os passar; têm à mão createMatch, applyMove, fireTimer, simulate, viewFor, legalMoves, game, tweak, assert e as funções auxiliares abaixo)
+${p.tests?.auxiliares?.trim() ? `// Funções auxiliares dos testes\n${p.tests.auxiliares}\n\n` : ''}${approved.map((t) => t.codigo).join('\n\n') || '(nenhum: aprova os testes primeiro)'}
 
 A plataforma vai também simular 50 partidas com bots por número de jogadores: todas têm de acabar sem erros.
 
@@ -74,13 +74,36 @@ ${Object.entries(p.build?.files || {}).map(([f, c]) => `### ${f}\n${c}`).join('\
 const STEP_NAMES = {
   ficheiros: 'Ficheiros', pureza: 'Regras puras', 'testes-aprovados': 'Há testes aprovados', importar: 'O pacote carrega',
   contrato: 'Cumpre o contrato', testes: 'Testes aprovados passam', simulacao: 'Partidas simuladas acabam', identidade: 'Nome e versão',
-  tempo: 'Tempo limite', processo: 'Processo isolado',
+  tempo: 'Tempo limite', processo: 'Processo isolado', 'testes-auxiliares': 'Funções dos testes',
 };
+
+/** O relatório em texto, para copiar e colar numa conversa. */
+export function reportText(p, slug) {
+  const b = p.build;
+  const r = b?.report;
+  if (!r) return '';
+  const lines = [
+    `Relatório da Forge: ${p.gameName} (${slug}), regras ${b.versaoRegras ?? '—'}, ${new Date(b.ts).toISOString()}`,
+    `Resultado: ${r.ok ? 'passou em tudo' : 'há falhas'} (${r.ms} ms)`,
+    '',
+    ...r.steps.map((s) => `${s.ok ? '✓' : '✗'} ${STEP_NAMES[s.id] ?? s.id}${s.details?.length ? `\n    ${s.details.join('\n    ')}` : ''}`),
+    '',
+    `Testes: ${r.tests.pass} passaram, ${r.tests.fail} falharam`,
+    ...r.tests.failures.map((t) => `  ✗ ${t.name}: ${t.error.replace(/\s+/g, ' ')}`),
+    '',
+    'Simulação:',
+    ...(r.simulation || []).map((x) => `  ${x.numPlayers} jogadores: ${x.error ? `erro ${x.error}` : `${x.finished}/${x.games} acabadas${x.failures?.length ? `, falha: ${x.failures[0].reason}` : ''}, vitórias ${(x.winRateBySeat || []).join('/')}`}`),
+    '',
+    `Ficheiros: ${Object.keys(b.files).join(', ')}`,
+  ];
+  return lines.join('\n');
+}
 
 export function viewCodigo(p, f) {
   const approved = (p.tests?.itens || []).filter((t) => t.aprovado).length;
   const b = p.build;
   const r = b?.report;
+  const testSide = r && r.steps.some((s) => s.id === 'testes-auxiliares' && !s.ok);
   return `<div class="fg-play">
     <section class="panel">
       <h2>${f('cdTitle', { v: p.version })}</h2>
@@ -88,7 +111,7 @@ export function viewCodigo(p, f) {
       ${approved ? '' : `<p class="ff-warn">⚠ ${f('cdNoTests')}</p>`}
       <form class="form" id="fgCode" onsubmit="return false">
         <button type="button" class="btn btn-primary" data-cd="copy" ${approved ? '' : 'disabled'}>${f('ptCopy')}</button>
-        ${r && !r.ok ? `<button type="button" class="btn btn-outline" data-cd="fix">${f('cdCopyFix')}</button>` : ''}
+        ${r && !r.ok && !testSide ? `<button type="button" class="btn btn-outline" data-cd="fix">${f('cdCopyFix')}</button>` : ''}
         <label class="wide">${f('cdPaste')}<textarea name="resposta" rows="5" placeholder='{ "files": { "index.js": "…" } }'></textarea></label>
         <button type="button" class="btn btn-primary" data-cd="verify">${f('cdVerify')}</button>
       </form>
@@ -98,7 +121,10 @@ export function viewCodigo(p, f) {
         <h2>${f('cdReport')}</h2>
         <span class="pill ${r.ok ? 'pill-ok' : 'pill-bad'}">${r.ok ? f('cdOk') : f('cdFail')}</span>
         <small>${new Date(b.ts).toLocaleString()} · ${f('ptRulesV', { v: b.versaoRegras ?? '—' })} · ${r.ms} ms</small>
+        <button type="button" class="btn btn-ghost" data-cd="report">${f('cdCopyReport')}</button>
+        <button type="button" class="btn btn-outline" data-cd="reverify">${f('cdReverify')}</button>
       </div>
+      ${testSide ? `<p class="ff-warn">⚠ ${f('cdTestSide')}</p>` : ''}
       ${b.versaoRegras !== p.version ? `<p class="ff-warn">⚠ ${f('cdOld', { v: p.version })}</p>` : ''}
       <ul class="fg-steps">${r.steps.map((s) => `<li class="${s.ok ? 'ok' : 'bad'}"><b>${s.ok ? '✓' : '✗'} ${esc(STEP_NAMES[s.id] ?? s.id)}</b>
         ${s.details?.length ? `<pre class="fg-pre">${esc(s.details.join('\n'))}</pre>` : ''}</li>`).join('')}</ul>

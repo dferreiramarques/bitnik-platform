@@ -777,7 +777,7 @@ export function createPlatform({
       const p = forge.get(vm[1]);
       if (!p) return json(res, 404, { error: 'projeto não encontrado' });
       const body = await readJson(req, FORGE_MAX);
-      const report = await verifyPackage({ files: body.files, tests: p.tests?.itens });
+      const report = await verifyPackage({ files: body.files, tests: p.tests?.itens, auxiliares: p.tests?.auxiliares });
       // O pacote tem de ser deste projeto e da versão atual das regras (ADR-013).
       if (report.game) {
         const idOk = report.game.id === vm[1];

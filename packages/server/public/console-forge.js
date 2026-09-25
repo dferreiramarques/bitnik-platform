@@ -5,7 +5,7 @@
 import { mountFlow } from '/console-forge-flow.js';
 import { buildPrompt, parseNarration, viewPartida } from '/console-forge-play.js';
 import { buildTestsPrompt, viewTestes } from '/console-forge-tests.js';
-import { buildCodePrompt, buildFixPrompt, viewCodigo } from '/console-forge-code.js';
+import { buildCodePrompt, buildFixPrompt, viewCodigo, reportText } from '/console-forge-code.js';
 
 const T = {
   pt: {
@@ -22,6 +22,9 @@ const T = {
     cdOk: 'Passou em tudo', cdFail: 'Há falhas', cdOld: 'Este pacote é de outra versão das regras; as regras estão na {v}.',
     cdTests: 'Testes: {pass} passaram, {fail} falharam.', cdPlayers: 'Jogadores', cdFinished: 'Partidas acabadas', cdWins: 'Vitórias por lugar',
     cdFiles: 'Ficheiros ({n})', cdNext: 'Próximo passo: instalar este protótipo no Studio (etapa 5).',
+    cdCopyReport: 'Copiar relatório', cdReportCopied: 'Relatório copiado em texto.', cdReverify: 'Verificar outra vez',
+    cdTestSide: 'Os testes usam funções que não existem. O problema é dos testes, não do código: acrescenta essas funções em Testes › Funções auxiliares e carrega em "Verificar outra vez" (o mesmo código).',
+    tsHelpers: 'Funções auxiliares dos testes', tsHelpersHint: 'Código comum a vários testes (ex.: novo, jogar, montar a mesa). Entra no ficheiro de testes antes de todos os testes.',
     tab_testes: 'Testes', tsTitle: 'Testes a partir dos cartões',
     tsLead: 'Copia o prompt para a tua IA: ela propõe o modelo do estado e escreve um teste por cartão de regra (e um por partida narrada aprovada). Lê cada teste como Dado / Quando / Então e aprova. Os aprovados ficam fixos.',
     tsSave: 'Guardar testes', tsBadJson: 'Não encontrei o JSON dos testes na resposta.', tsList: '{n} testes ({a} aprovados)',
@@ -76,6 +79,9 @@ const T = {
     cdOk: 'Passed everything', cdFail: 'There are failures', cdOld: 'This package is from another rules version; the rules are at {v}.',
     cdTests: 'Tests: {pass} passed, {fail} failed.', cdPlayers: 'Players', cdFinished: 'Games finished', cdWins: 'Wins by seat',
     cdFiles: 'Files ({n})', cdNext: 'Next step: install this prototype in the Studio (stage 5).',
+    cdCopyReport: 'Copy report', cdReportCopied: 'Report copied as text.', cdReverify: 'Verify again',
+    cdTestSide: 'The tests use functions that do not exist. The problem is in the tests, not the code: add those functions under Tests › Helper functions and press "Verify again" (same code).',
+    tsHelpers: 'Test helper functions', tsHelpersHint: 'Code shared by several tests (e.g. new game, play, set up the table). It goes into the test file before all the tests.',
     tab_testes: 'Tests', tsTitle: 'Tests from the cards',
     tsLead: 'Copy the prompt into your AI: it proposes the state model and writes one test per rule card (and one per approved narrated game). Read each test as Given / When / Then and approve. Approved tests are frozen.',
     tsSave: 'Save tests', tsBadJson: 'Could not find the tests JSON in the answer.', tsList: '{n} tests ({a} approved)',
@@ -301,6 +307,7 @@ export function after(root) {
   root.addEventListener('input', (e) => {
     if (!st.project) return;
     if (e.target.id === 'fgName') { st.project.gameName = e.target.value; changed(); return; }
+    if (e.target.hasAttribute('data-ts-helpers')) { st.project.tests.auxiliares = e.target.value; changed(); return; }
     if (e.target.hasAttribute('data-dnote')) {
       const nar = st.project.narrations.find((n) => n.id === st.narration) ?? st.project.narrations.at(-1);
       const doubt = nar?.duvidas.find((x) => x.id === e.target.closest('[data-doubt]')?.dataset.doubt);
@@ -397,9 +404,15 @@ export function after(root) {
       ctx.toast(f('ptCopied'));
       return;
     }
-    if (d.cd === 'verify') {
+    if (d.cd === 'report') {
+      await navigator.clipboard.writeText(reportText(p, st.slug));
+      ctx.toast(f('cdReportCopied'));
+      return;
+    }
+    if (d.cd === 'verify' || d.cd === 'reverify') {
       let files;
-      try { files = parseNarration(b.closest('form').resposta.value).files; } catch { /* abaixo */ }
+      if (d.cd === 'reverify') files = p.build?.files;
+      else try { files = parseNarration(b.closest('form').resposta.value).files; } catch { /* abaixo */ }
       if (!files || typeof files !== 'object') { ctx.toast(f('cdBadJson')); return; }
       await flush();
       b.disabled = true;

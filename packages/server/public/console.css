@@ -213,3 +213,5 @@
 .fg-steps li { padding: 6px 10px; border-radius: var(--ui-r-sm); background: color-mix(in srgb, #3b7d3a 8%, var(--ui-card)); }
 .fg-steps li.bad { background: color-mix(in srgb, #c0392b 10%, var(--ui-card)); }
 .fg-steps li.ok b { color: #2c5e2b; } .fg-steps li.bad b { color: #8e2a1f; }
+
+.fg-code { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: .8rem; padding: 8px; border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-bg); color: var(--ui-text); resize: vertical; }

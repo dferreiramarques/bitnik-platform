@@ -681,5 +681,16 @@ test('Forge: verificação isolada de um pacote gerado (contrato, pureza, testes
   assert.equal(ciclo.steps.find((s) => s.id === 'tempo')?.ok, false);
 
   assert.equal((await verifyPackage({ files: { '../fora.js': 'x' }, tests: [passa] })).steps[0].ok, false);
+
+  // Testes que usam funções auxiliares: sem elas, o relatório diz que o problema é dos testes; com elas, passam.
+  const usaAux = t('Com auxiliar', "test('Com auxiliar', () => { assert.equal(avancar(novo(), 0, 2).state.pontos[0], 2); });");
+  const semAux = await verifyPackage({ files, tests: [usaAux] });
+  assert.match(semAux.steps.find((s) => s.id === 'testes-auxiliares')?.details[0] ?? '', /avancar|novo/);
+  const aux = [
+    'const novo = () => createMatch(game, { numPlayers: 2, seed: 1 });',
+    "const avancar = (m, lugar, passos) => applyMove(game, m, lugar, { type: 'AVANCAR', payload: { passos } }).match;",
+  ].join('\n');
+  const comAux = await verifyPackage({ files, tests: [usaAux], auxiliares: aux });
+  assert.ok(comAux.ok, JSON.stringify(comAux.steps.filter((s) => !s.ok)));
   assert.equal((await verifyPackage({ files, tests: [] })).steps.find((s) => s.id === 'testes-aprovados').ok, false);
 });
