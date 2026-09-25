@@ -20,6 +20,7 @@ index.js:
     bots: { default(view, lugar, { rng, legal }) → uma jogada de legal } (opcional),
   });
 ctx nas jogadas: ctx.seat, ctx.rng (next, int(n), chance(p), pick(arr), shuffle(arr)), ctx.log('log.CHAVE', params), ctx.invalid(code), ctx.schedule, ctx.cancel.
+A PLATAFORMA já trata de: sentar e começar a mesa, jogadores que se desligam (joga um bot por eles), bots nos lugares vazios e "jogar outra vez". Não há jogadas para isso: a partida começa já em jogo no setup (sem fase de espera nem "Iniciar"). O tempo (pausas, limites) são eventos: ctx.schedule(chave, ms, 'EVENTO') + events. Não inventes lugares extra (ex.: 'sistema'): só jogam os lugares 0..n-1 que activePlayers devolve.
 Regras PURAS: sem Math.random (usa ctx.rng), sem Date, sem setTimeout, sem rede; só importam '@bitnik/engine' e ficheiros próprios ('./...').
 i18n/pt.js e i18n/en.js: export default { 'game.name': '…', 'game.tagline': 'uma frase curta', 'move.NOME': '…', 'err.CODIGO': '…', 'log.CHAVE': '…' } com AS MESMAS CHAVES nas duas línguas.`;
 
