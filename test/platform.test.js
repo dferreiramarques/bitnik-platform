@@ -694,3 +694,12 @@ test('Forge: verificação isolada de um pacote gerado (contrato, pureza, testes
   assert.ok(comAux.ok, JSON.stringify(comAux.steps.filter((s) => !s.ok)));
   assert.equal((await verifyPackage({ files, tests: [] })).steps.find((s) => s.id === 'testes-aprovados').ok, false);
 });
+
+test('Forge: lê o JSON colado mesmo com texto à volta ou colado duas vezes', async () => {
+  const { parseNarration } = await import('../packages/server/public/console-forge-play.js');
+  const obj = { files: { 'index.js': "const a = '}{';\nexport default { x: \"{\" };" } };
+  const j = JSON.stringify(obj);
+  assert.deepEqual(parseNarration(j + j), obj);
+  assert.deepEqual(parseNarration(`Aqui está {o pacote}:\n\`\`\`json\n${j}\n\`\`\`\nBom jogo!`), obj);
+  assert.throws(() => parseNarration('sem nada'), /sem JSON/);
+});

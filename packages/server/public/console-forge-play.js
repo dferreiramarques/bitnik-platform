@@ -55,12 +55,26 @@ Responde só com um objeto JSON, sem texto à volta:
 }
 
 /** Extrai o JSON da resposta da IA (tolera blocos ``` e texto à volta). */
+// Devolve o primeiro objeto JSON válido do texto: aguenta texto à volta,
+// blocos ``` e a mesma resposta colada duas vezes seguidas.
 export function parseNarration(text) {
   const t = String(text ?? '').replace(/```(?:json)?/gi, '');
-  const a = t.indexOf('{');
-  const b = t.lastIndexOf('}');
-  if (a < 0 || b <= a) throw new Error('sem JSON');
-  return JSON.parse(t.slice(a, b + 1));
+  for (let a = t.indexOf('{'); a >= 0; a = t.indexOf('{', a + 1)) {
+    let depth = 0;
+    let inStr = false;
+    for (let i = a; i < t.length; i++) {
+      const c = t[i];
+      if (inStr) {
+        if (c === '\\') i++;
+        else if (c === '"') inStr = false;
+      } else if (c === '"') inStr = true;
+      else if (c === '{') depth++;
+      else if (c === '}' && --depth === 0) {
+        try { return JSON.parse(t.slice(a, i + 1)); } catch { break; }
+      }
+    }
+  }
+  throw new Error('sem JSON');
 }
 
 export function viewPartida(p, st, f) {
