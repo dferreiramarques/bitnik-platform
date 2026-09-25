@@ -4,6 +4,7 @@
 
 import { mountFlow } from '/console-forge-flow.js';
 import { buildPrompt, parseNarration, viewPartida } from '/console-forge-play.js';
+import { buildTestsPrompt, viewTestes } from '/console-forge-tests.js';
 
 const T = {
   pt: {
@@ -12,6 +13,13 @@ const T = {
     open: 'Abrir', remove: 'Apagar', confirmRemove: 'Apagar o projeto "{name}"? Não dá para desfazer.', back: '← Projetos',
     cards: '{n} cartões', nodes: '{n} blocos', updated: 'alterado {when}', badJson: 'Não é um projeto do Rule Forge (JSON).',
     tab_fluxo: 'Fluxo', tab_cartoes: 'Cartões', tab_regras: 'Regras', tab_partida: 'Partida narrada',
+    tab_testes: 'Testes', tsTitle: 'Testes a partir dos cartões',
+    tsLead: 'Copia o prompt para a tua IA: ela propõe o modelo do estado e escreve um teste por cartão de regra (e um por partida narrada aprovada). Lê cada teste como Dado / Quando / Então e aprova. Os aprovados ficam fixos.',
+    tsSave: 'Guardar testes', tsBadJson: 'Não encontrei o JSON dos testes na resposta.', tsList: '{n} testes ({a} aprovados)',
+    tsOld: 'escritos com as regras {v}', tsApproveAll: 'Aprovar todos', tsMissing: 'Cartões de regra sem teste: {list}',
+    tsCovered: 'Todos os cartões de regra têm teste.', tsOrphans: 'Testes de cartões que já não existem: {list}',
+    tsModel: 'Modelo do estado', tsGame: 'partida', tsApproved: 'Aprovado', tsUnlock: 'Desbloquear', tsApprove: 'Aprovar',
+    tsDelete: 'Apagar teste', tsCode: 'Código', tsNone: 'Ainda não há testes.',
     ptRules: 'Regras (versão {v})', ptCommitMsg: 'O que mudou', ptCommitHint: 'ex.: o baralho acabar a meio da ronda termina o jogo',
     ptCommitKind: 'Tipo', ptKindRules: 'Regras (sobe a versão)', ptKindText: 'Só texto (gralhas)', ptCommit: 'Commit das regras',
     ptNoCommits: 'Ainda não há commits: o primeiro dá a versão 0.1.0.', ptCommitted: 'Commit feito: versão {v}.',
@@ -51,6 +59,13 @@ const T = {
     open: 'Open', remove: 'Delete', confirmRemove: 'Delete project "{name}"? This cannot be undone.', back: '← Projects',
     cards: '{n} cards', nodes: '{n} blocks', updated: 'changed {when}', badJson: 'Not a Rule Forge project (JSON).',
     tab_fluxo: 'Flow', tab_cartoes: 'Cards', tab_regras: 'Rules', tab_partida: 'Narrated game',
+    tab_testes: 'Tests', tsTitle: 'Tests from the cards',
+    tsLead: 'Copy the prompt into your AI: it proposes the state model and writes one test per rule card (and one per approved narrated game). Read each test as Given / When / Then and approve. Approved tests are frozen.',
+    tsSave: 'Save tests', tsBadJson: 'Could not find the tests JSON in the answer.', tsList: '{n} tests ({a} approved)',
+    tsOld: 'written with rules {v}', tsApproveAll: 'Approve all', tsMissing: 'Rule cards without a test: {list}',
+    tsCovered: 'Every rule card has a test.', tsOrphans: 'Tests for cards that no longer exist: {list}',
+    tsModel: 'State model', tsGame: 'game', tsApproved: 'Approved', tsUnlock: 'Unlock', tsApprove: 'Approve',
+    tsDelete: 'Delete test', tsCode: 'Code', tsNone: 'No tests yet.',
     ptRules: 'Rules (version {v})', ptCommitMsg: 'What changed', ptCommitHint: 'e.g. running out of deck mid-round ends the game',
     ptCommitKind: 'Type', ptKindRules: 'Rules (bumps the version)', ptKindText: 'Text only (typos)', ptCommit: 'Commit rules',
     ptNoCommits: 'No commits yet: the first gives version 0.1.0.', ptCommitted: 'Committed: version {v}.',
@@ -88,7 +103,7 @@ const T = {
 const KINDS = ['DATA', 'FLOW', 'ACTION', 'SCORE'];
 const SCOPES = ['general', 'player', 'component', 'node'];
 const CATS = ['regra', 'plataforma', 'bot'];
-const TABS = ['fluxo', 'cartoes', 'regras', 'partida'];
+const TABS = ['fluxo', 'cartoes', 'regras', 'partida', 'testes'];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const fill = (s, p = {}) => s.replace(/\{(\w+)\}/g, (_, k) => p[k] ?? '');
@@ -163,7 +178,7 @@ export function view() {
       <button class="btn btn-ghost" data-fg="export">${f('export')}</button>
     </div>
     <nav class="fg-tabs" role="tablist">${TABS.map((t) => `<a role="tab" href="#/forge/${encodeURIComponent(st.slug)}/${t}" ${t === tab ? 'aria-selected="true"' : ''}>${f(`tab_${t}`)}</a>`).join('')}</nav>
-    ${tab === 'fluxo' ? viewFluxo() : tab === 'regras' ? viewRegras() : tab === 'partida' ? viewPartida(p, st, f) : viewCartoes()}`;
+    ${tab === 'fluxo' ? viewFluxo() : tab === 'regras' ? viewRegras() : tab === 'partida' ? viewPartida(p, st, f) : tab === 'testes' ? viewTestes(p, f) : viewCartoes()}`;
 }
 
 function viewList() {
@@ -357,6 +372,33 @@ export function after(root) {
         st.narration = r.narration.id;
         ctx.rerender();
       } catch (err) { ctx.toast(err.message); }
+      return;
+    }
+    if (d.ts === 'copy') {
+      await navigator.clipboard.writeText(buildTestsPrompt(p));
+      ctx.toast(f('ptCopied'));
+      return;
+    }
+    if (d.ts === 'save') {
+      let tests;
+      try { tests = parseNarration(b.closest('form').resposta.value); } catch { ctx.toast(f('tsBadJson')); return; }
+      await flush();
+      try {
+        st.project = (await ctx.api(`forge/${encodeURIComponent(st.slug)}/tests`, { method: 'POST', body: { tests } })).project;
+        ctx.rerender();
+      } catch (err) { ctx.toast(err.message); }
+      return;
+    }
+    if (d.ts === 'approve-all') { for (const x of p.tests.itens) x.aprovado = true; changed(); ctx.rerender(); return; }
+    if (d.tt) {
+      const id = b.closest('[data-test]')?.dataset.test;
+      const x = p.tests.itens.find((y) => y.id === id);
+      if (!x) return;
+      if (d.tt === 'approve') x.aprovado = true;
+      if (d.tt === 'unlock') x.aprovado = false;
+      if (d.tt === 'delete') p.tests.itens = p.tests.itens.filter((y) => y !== x);
+      changed();
+      ctx.rerender();
       return;
     }
     if (d.pt === 'approve' && nar) { nar.aprovada = true; changed(); ctx.rerender(); return; }
