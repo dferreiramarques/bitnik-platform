@@ -224,3 +224,103 @@ Toda a skin define `--table-bg`, o aspeto da mesa onde o jogo assenta (cor, grad
 - Na migração, cada jogo ganha um `skin.json` com a paleta que já tem, e os temas que fizerem sentido.
 - Mudar o design system passa a ser uma versão nova, adotada deploy a deploy.
 
+---
+
+## ADR-009: A Forge vive na consola do Studio
+
+**Estado:** aceite (2026-09-25), a implementar na Fase 1
+
+### Contexto
+
+Há dois protótipos anteriores. O `bitnik-studio` (agosto) descreve os jogos em BGE, um grafo JSON executado por um motor genérico. O `bitnik-logic` / Rule Forge (setembro) é um ficheiro HTML com quatro separadores: Fluxo (nós DATA/FLOW/ACTION/SCORE), Cartões Gherkin (com tipo e âmbito), documento de Regras e Gerar & Rever (prompt para uma IA gerar um PWA de ficheiro único). Os projetos do Rule Forge vivem no `localStorage` de um browser.
+
+Alternativa considerada: manter o Rule Forge à parte com um botão "Enviar para o Studio" (duas ferramentas a manter em sincronia, projetos presos a um browser, validação longe de onde se escreve o cartão).
+
+### Decisão
+
+A Forge passa a ser uma secção da consola do Studio (atrás do `ADMIN_TOKEN`), com o Rule Forge portado: fluxo, cartões, regras e geração. Os projetos ficam guardados no servidor (`/admin/forge/*`) e importam-se os projetos JSON do Rule Forge (`{ nodes, edges, cards, rules, commits }`). Só existe no Studio, nunca nos runtimes dos clientes.
+
+### Consequências
+
+- Do cartão ao jogo testável num só sítio. O Rule Forge continua disponível enquanto a migração não fica completa.
+
+---
+
+## ADR-010: A Forge gera pacotes do contrato
+
+**Estado:** aceite (2026-09-25)
+
+### Contexto
+
+O Rule Forge gera um PWA descartável: não entra na plataforma (sem lobby, bots, simulação, mesas de aprovação) e não se vende. O BGE declarativo exigia programar o motor para cada mecânica nova; dos 5 jogos em BGE só 2 chegaram a correr.
+
+### Decisão
+
+A Forge gera um pacote igual ao Catania: `index.js`, `rules.js`, `i18n/pt.js` e `en.js`, `test/` (testes dos cartões e da partida narrada), `REGRAS.md` e `forge.json` (o projeto de origem, para voltar a gerar). O `enumerate` é obrigatório. Joga-se logo na UI genérica; o tabuleiro próprio vem depois (ADR-006/008).
+
+### Consequências
+
+- Um protótipo aprovado vende-se tal como está.
+- Na Fase 2, a Forge pode gerar os 4 jogos a partir dos seus cartões, com o código atual como referência no prompt.
+
+---
+
+## ADR-011: Gerar por copiar/colar com verificação automática; a API é opcional
+
+**Estado:** aceite (2026-09-25)
+
+### Contexto
+
+Gerar código a partir de cartões em prosa livre exige uma IA. A geração direta pela API precisa de uma chave e tem custo por geração.
+
+### Decisão
+
+- Caminho principal: a Forge monta o prompt, o designer usa a IA que quiser e cola o resultado. Tudo o que é colado passa pela verificação automática (contrato, pureza, testes dos cartões, partida narrada, simulação).
+- A geração pela API (Claude, a partir do servidor do Studio, com a chave só aí e até 3 voltas de correção automática) entra como opção quando se quiser.
+- **Hipótese a verificar na Fase 2:** uma biblioteca de blocos de mecânicas (baralho, ordem de turno, apostas simultâneas, maioria…) que nasce da migração dos 4 jogos, para gerar sem IA os jogos que só usem blocos conhecidos. Se se concluir que não é viável, fica registado porquê e não se faz.
+
+### Consequências
+
+- Sem chave nem custos de API para começar; a IA continua a ser precisa, mas é a do designer.
+
+---
+
+## ADR-012: Partida narrada e testes antes do código
+
+**Estado:** aceite (2026-09-25)
+
+### Contexto
+
+Corrigir lógica de jogo depois de haver código custa muito. Se a IA escrever testes e código de uma vez, pode escrever testes que confirmam os próprios erros.
+
+### Decisão
+
+A ordem da Forge é: **cartões → partida narrada → commit das regras → testes (o designer aprova) → código → verificação → jogar no Studio.**
+
+1. **Partida narrada:** a IA joga uma partida inteira em texto, jogada a jogada, com o cartão aplicado e o estado depois de cada jogada. Onde as regras não cobrem a situação, marca uma **dúvida** ("os cartões não dizem X; assumi Y") em vez de inventar. O Studio mostra a partida numa linha do tempo, com as dúvidas ligadas aos cartões. O designer corrige e faz commit das regras; repete-se até não haver dúvidas. Podem pedir-se partidas de casos difíceis (fim do jogo, empates, número de jogadores).
+2. **A partida aprovada passa a teste de ponta a ponta:** o código tem de jogar essa sequência e chegar aos mesmos estados.
+3. **Categoria de cada cartão:** *regra* (vira teste), *plataforma* (tratado pela plataforma: desligar, avisos, tempos) ou *bot* (só se testa que o bot faz jogadas válidas).
+4. **Testes primeiro:** a IA escreve os testes a partir dos cartões, lidos como Dado / Quando / Então; o designer aprova e ficam fixos entre gerações. Só depois vem o código, que tem de os passar.
+5. **Cobertura:** cada teste mostra o cartão de origem; cartões sem teste e testes sem cartão ficam assinalados.
+
+### Consequências
+
+- Os erros de regras apanham-se em texto, onde corrigir é barato.
+
+---
+
+## ADR-013: Versões dos protótipos, instalação a quente e publicação
+
+**Estado:** aceite (2026-09-25)
+
+### Decisão
+
+1. Cada commit de regras sobe o minor do protótipo (`0.1.0` → `0.2.0`); pela ADR-004, as partidas de teste antigas ficam "versão antiga". Correções só de texto sobem o patch (`0.2.1`).
+2. O pacote aceite entra no Studio sem reiniciar, com a etiqueta "Protótipo 0.x" no lobby e na consola. As versões anteriores ficam guardadas para comparar e fazer replay.
+3. As mesas de aprovação ficam associadas à versão com que se jogou.
+4. **Publicar:** o pacote passa a `games/<jogo>` no repositório como `1.0.0`, com commit; a partir daí vai para clientes como o Catania.
+
+### Consequências
+
+- O código gerado corre dentro do servidor do Studio. Antes de entrar é verificado num processo isolado (sem rede, com limite de tempo) e só o designer instala. Um erro nas regras é recusado como `RULE_ERROR`; um ciclo infinito ainda pode parar o Studio até reiniciar (risco aceite num estúdio interno). Os runtimes dos clientes só recebem pacotes publicados.
+
