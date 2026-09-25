@@ -219,3 +219,19 @@
 .fg-installed { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
 .fg-published { border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); padding: 8px 12px; margin: 8px 0; }
+
+/* Fluxo em ecrã inteiro e cartões editáveis no painel do bloco */
+.ff.ff-full { position: fixed; inset: 0; z-index: 900; background: var(--ui-bg); padding: 12px 16px; grid-template-rows: auto minmax(0, 1fr) auto; }
+.ff-full .ff-area { min-height: 0; height: 100%; }
+.ff-full .ff-canvas { height: 100%; }
+.ff-full .ff-panel { width: 400px; max-height: 100%; }
+body.ff-noscroll { overflow: hidden; }
+.ff-cards { display: grid; gap: 6px; }
+.ff-card { border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-bg); }
+.ff-card > summary { cursor: pointer; padding: 6px 8px; font-size: .85rem; list-style-position: inside; }
+.ff-card[open] > summary { border-bottom: 1px solid var(--ui-line); }
+.ff-cform { display: grid; gap: 6px; padding: 8px; }
+.ff-cform input, .ff-cform select, .ff-cform textarea { font: inherit; font-size: .85rem; padding: 5px 8px; border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); color: var(--ui-text); width: 100%; box-sizing: border-box; }
+.ff-cform textarea { resize: vertical; }
+.ff-cform label { display: grid; gap: 2px; font-size: .8rem; }
+.ff-cform .btn { justify-self: start; }

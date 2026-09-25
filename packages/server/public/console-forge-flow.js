@@ -9,6 +9,9 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const GRID = 12;
 const snap = (v) => Math.round(v / GRID) * GRID;
 const uid = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+const CATS = ['regra', 'plataforma', 'bot'];
+// Fica entre montagens (a consola volta a montar o editor ao mudar de separador).
+let fullscreen = false;
 
 export function mountFlow(host, project, { t, onChange }) {
   const view = { x: 40, y: 40, z: 1 };
@@ -42,8 +45,9 @@ export function mountFlow(host, project, { t, onChange }) {
   }
   let selected = null;      // id do nó selecionado
   let selectedEdge = null;  // { from, to }
+  const openCards = new Set(); // cartões abertos no painel do bloco
 
-  host.innerHTML = `<div class="ff">
+  host.innerHTML = `<div class="ff${fullscreen ? ' ff-full' : ''}">
     <div class="ff-bar">
       <select class="ff-kind" aria-label="${t('ffKind')}">${KINDS.map((k) => `<option>${k}</option>`).join('')}</select>
       <button class="btn btn-primary" data-ff="add">${t('ffAdd')}</button>
@@ -58,6 +62,7 @@ export function mountFlow(host, project, { t, onChange }) {
       <button class="btn btn-ghost" data-ff="zout" aria-label="${t('ffZoomOut')}">−</button>
       <button class="btn btn-ghost" data-ff="zin" aria-label="${t('ffZoomIn')}">+</button>
       <button class="btn btn-ghost" data-ff="fit" aria-label="${t('ffFit')}">⤢</button>
+      <button class="btn btn-outline" data-ff="full" aria-pressed="${fullscreen}" title="${t('ffFullHint')}">${t(fullscreen ? 'ffFullExit' : 'ffFull')}</button>
     </div>
     <div class="ff-area">
       <div class="ff-canvas" tabindex="0" aria-label="${t('ffCanvas')}">
@@ -199,7 +204,15 @@ export function mountFlow(host, project, { t, onChange }) {
       ${warn.length ? `<ul class="ff-warn">${warn.map((w) => `<li>⚠ ${esc(w)}</li>`).join('')}</ul>` : ''}
       ${mismatch.length ? `<button class="btn btn-outline" data-fp="fixkind">${t('ffFixKind', { kind: n.kind })}</button>` : ''}
       <h4>${t('ffCardsOf', { n: cards.length })}</h4>
-      <ul class="ff-cards">${cards.map((c) => `<li><span class="pill">${esc(t(`cat_${c.category}`))}</span> ${esc(c.title || '—')}</li>`).join('')}</ul>
+      <div class="ff-cards">${cards.map((c) => `<details class="ff-card" data-pc="${esc(c.id)}" ${openCards.has(c.id) ? 'open' : ''}>
+        <summary><span class="pill cat-${esc(c.category)}">${esc(t(`cat_${c.category}`))}</span> <span class="ff-ct">${esc(c.title || t('ffNoTitle'))}</span></summary>
+        <div class="ff-cform">
+          <input data-pf="title" value="${esc(c.title)}" placeholder="${t('title')}">
+          <select data-pf="category" aria-label="${t('category')}">${CATS.map((k) => `<option value="${k}" ${k === c.category ? 'selected' : ''}>${esc(t(`cat_${k}`))}</option>`).join('')}</select>
+          ${['given', 'when', 'then'].map((k) => `<label><b>${t(k)}</b><textarea data-pf="${k}" rows="2">${esc(c[k])}</textarea></label>`).join('')}
+          <button class="btn btn-ghost" data-fp="delcard">${t('ffDelCard')}</button>
+        </div>
+      </details>`).join('')}</div>
       <button class="btn btn-outline" data-fp="card">${t('ffAddCard')}</button>
       <h4>${t('ffRuleText')}</h4>
       <textarea class="ff-rule" rows="6" placeholder="${t('ffRuleHint')}">${esc(rule?.text ?? '')}</textarea>`;
@@ -372,7 +385,27 @@ export function mountFlow(host, project, { t, onChange }) {
     if (a === 'undo') restore(past, future);
     if (a === 'redo') restore(future, past);
     if (a === 'layout') { remember(); layout(); onChange(); draw(); fit(); }
+    if (a === 'full') setFull(!fullscreen);
   });
+
+  // Ecrã inteiro: o editor ocupa a página toda (Esc sai).
+  function setFull(on) {
+    fullscreen = on;
+    $('.ff').classList.toggle('ff-full', on);
+    document.body.classList.toggle('ff-noscroll', on);
+    const b = $('[data-ff="full"]');
+    b.textContent = t(on ? 'ffFullExit' : 'ffFull');
+    b.setAttribute('aria-pressed', String(on));
+    requestAnimationFrame(() => { apply(); drawMini(); });
+  }
+  const onKey = (e) => {
+    if (e.key !== 'Escape' || !fullscreen) return;
+    if (e.target.closest?.('.ff-panel, .ff-bar input')) return; // Esc num campo não fecha o editor
+    if (selected && e.target === canvas) return; // o primeiro Esc tira a seleção
+    setFull(false);
+  };
+  document.addEventListener('keydown', onKey);
+  document.body.classList.toggle('ff-noscroll', fullscreen);
 
   // Minimapa: clicar leva a vista para esse ponto.
   $('.ff-mini').addEventListener('pointerdown', (e) => {
@@ -389,7 +422,28 @@ export function mountFlow(host, project, { t, onChange }) {
 
   // Painel do bloco: cartões e texto das regras deste bloco.
   const panelEl = $('.ff-panel');
+  const cardOf = (el) => project.cards.find((c) => c.id === el.closest('[data-pc]')?.dataset.pc);
+  panelEl.addEventListener('toggle', (e) => {
+    const id = e.target.dataset?.pc;
+    if (id) { if (e.target.open) openCards.add(id); else openCards.delete(id); }
+  }, true);
   panelEl.addEventListener('input', (e) => {
+    const field = e.target.dataset.pf;
+    if (field) {
+      // Os cartões editam-se aqui sem voltar a desenhar o painel (não perde o foco).
+      e.stopPropagation();
+      const c = cardOf(e.target);
+      if (!c) return;
+      c[field] = e.target.value;
+      if (field === 'title') e.target.closest('[data-pc]').querySelector('.ff-ct').textContent = c.title || t('ffNoTitle');
+      if (field === 'category') {
+        const pill = e.target.closest('[data-pc]').querySelector('summary .pill');
+        pill.className = `pill cat-${c.category}`;
+        pill.textContent = t(`cat_${c.category}`);
+      }
+      onChange();
+      return;
+    }
     if (!e.target.classList.contains('ff-rule') || !selected) return;
     const n = nodeById(selected);
     let rule = project.rules.find((r) => r.ref === n.id);
@@ -404,11 +458,20 @@ export function mountFlow(host, project, { t, onChange }) {
     const n = selected && nodeById(selected);
     if (!a || !n) return;
     if (a === 'fixkind') for (const c of project.cards) if (c.ref === n.id) c.kind = n.kind;
+    let fresh = null;
     if (a === 'card') {
-      project.cards.unshift({ id: `c${Date.now().toString(36)}`, kind: n.kind, category: 'regra', scope: n.kind === 'DATA' ? 'component' : 'node', ref: n.id, title: '', given: '', when: '', then: '' });
+      fresh = { id: `c${Date.now().toString(36)}`, kind: n.kind, category: 'regra', scope: n.kind === 'DATA' ? 'component' : 'node', ref: n.id, title: '', given: '', when: '', then: '' };
+      project.cards.push(fresh);
+      openCards.add(fresh.id);
+    }
+    if (a === 'delcard') {
+      const c = cardOf(e.target);
+      if (!c || !confirm(t('ffDelCardConfirm', { title: c.title || t('ffNoTitle') }))) return;
+      project.cards = project.cards.filter((x) => x !== c);
     }
     onChange();
     draw();
+    if (fresh) panelEl.querySelector(`[data-pc="${CSS.escape(fresh.id)}"] [data-pf="title"]`)?.focus();
   });
 
   /**
@@ -469,5 +532,11 @@ export function mountFlow(host, project, { t, onChange }) {
 
   draw();
   requestAnimationFrame(fit);
-  return { destroy() { host.replaceChildren(); } };
+  return {
+    destroy() {
+      document.removeEventListener('keydown', onKey);
+      document.body.classList.remove('ff-noscroll');
+      host.replaceChildren();
+    },
+  };
 }
