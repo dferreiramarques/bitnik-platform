@@ -181,3 +181,20 @@
 .ff-mini rect.k-data { fill: var(--k-data); } .ff-mini rect.k-flow { fill: var(--k-flow); } .ff-mini rect.k-score { fill: var(--k-score); }
 .ff-mini rect.vp { fill: none; stroke: var(--ui-text); stroke-width: 6; opacity: .6; }
 @media (max-width: 900px) { .ff-area { grid-template-columns: 1fr; } .ff-panel { width: auto; } }
+
+/* Forge › Partida narrada */
+.fg-play { display: grid; gap: 14px; }
+.fg-commits { margin: 10px 0 0; padding-left: 18px; font-size: .9rem; }
+.fg-commits small { color: var(--ui-muted); }
+.fg-timeline { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.fg-timeline > li { padding: 8px 10px; border-left: 3px solid var(--ui-line); background: var(--ui-bg); border-radius: 0 var(--ui-r-sm) var(--ui-r-sm) 0; }
+.fg-result { color: var(--ui-muted); margin-top: 2px; }
+.fg-timeline details { margin-top: 4px; font-size: .85rem; }
+.fg-timeline pre { white-space: pre-wrap; margin: 4px 0 0; font-size: .8rem; }
+.fg-doubt { margin-top: 8px; padding: 8px 10px; border: 2px solid #c0392b; border-radius: var(--ui-r-sm); background: color-mix(in srgb, #c0392b 8%, var(--ui-card)); display: grid; gap: 6px; }
+.fg-doubt.st-resolvida { border-color: #3b7d3a; background: color-mix(in srgb, #3b7d3a 8%, var(--ui-card)); }
+.fg-doubt.st-ignorada { border-color: var(--ui-line); background: var(--ui-card); opacity: .8; }
+.fg-assumed { font-size: .9rem; color: var(--ui-muted); }
+.fg-doubt-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.fg-doubt-acts input { flex: 1; min-width: 180px; font: inherit; font-size: .85rem; padding: 6px 8px; border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); color: var(--ui-text); }
+.fg-end { margin: 12px 0 0; padding: 8px 10px; background: var(--ui-alt); border-radius: var(--ui-r-sm); }

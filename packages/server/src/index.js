@@ -877,7 +877,7 @@ export function createPlatform({
     }
     const eng = url.match(/^\/engine\/([a-z0-9]+\.js)$/);
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
-    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js)$/);
+    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });
@@ -896,7 +896,10 @@ export function createPlatform({
     users = saved.users || {};
     notices = (saved.notices || []).filter((n) => n.until > now());
     if (saved.appearance) appearance = { brand: { tokens: {} }, games: {}, ...saved.appearance };
-    for (const [slug, p] of Object.entries(saved.forge || {})) forge.set(slug, p);
+    // Normaliza ao carregar: projetos guardados por versões anteriores ganham os campos novos.
+    for (const [slug, p] of Object.entries(saved.forge || {})) {
+      forge.set(slug, { ...normalizeProject(p), createdAt: p.createdAt ?? now(), updatedAt: p.updatedAt ?? now() });
+    }
     for (const room of saved.rooms || []) {
       const game = G.get(room.gameId);
       if (!game) { logger.warn(`[load] ${room.id}: jogo ${room.gameId} não instalado, ignorada`); continue; }

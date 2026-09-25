@@ -3,6 +3,7 @@
 // e Fluxo (a geração chega nas etapas seguintes). Guarda sozinho.
 
 import { mountFlow } from '/console-forge-flow.js';
+import { buildPrompt, parseNarration, viewPartida } from '/console-forge-play.js';
 
 const T = {
   pt: {
@@ -10,7 +11,19 @@ const T = {
     newName: 'Nome do jogo', create: 'Criar projeto', import: 'Importar do Rule Forge (.json)', none: 'Ainda não há projetos.',
     open: 'Abrir', remove: 'Apagar', confirmRemove: 'Apagar o projeto "{name}"? Não dá para desfazer.', back: '← Projetos',
     cards: '{n} cartões', nodes: '{n} blocos', updated: 'alterado {when}', badJson: 'Não é um projeto do Rule Forge (JSON).',
-    tab_fluxo: 'Fluxo', tab_cartoes: 'Cartões', tab_regras: 'Regras',
+    tab_fluxo: 'Fluxo', tab_cartoes: 'Cartões', tab_regras: 'Regras', tab_partida: 'Partida narrada',
+    ptRules: 'Regras (versão {v})', ptCommitMsg: 'O que mudou', ptCommitHint: 'ex.: o baralho acabar a meio da ronda termina o jogo',
+    ptCommitKind: 'Tipo', ptKindRules: 'Regras (sobe a versão)', ptKindText: 'Só texto (gralhas)', ptCommit: 'Commit das regras',
+    ptNoCommits: 'Ainda não há commits: o primeiro dá a versão 0.1.0.', ptCommitted: 'Commit feito: versão {v}.',
+    ptNew: 'Nova partida narrada', ptNewLead: 'Copia o prompt para a IA que quiseres; ela joga uma partida em texto e marca as dúvidas. Cola aqui a resposta.',
+    ptScenario: 'Cenário', ptScenarioHint: 'ex.: jogo completo; ou: o baralho acaba a meio de uma ronda', ptPlayers: 'Jogadores',
+    ptCopy: 'Copiar prompt', ptCopied: 'Prompt copiado. Cola-o na tua IA.', ptPaste: 'Resposta da IA (JSON)', ptSave: 'Guardar partida',
+    ptBadJson: 'Não encontrei o JSON da partida na resposta.', ptWhich: 'Partida', ptRulesV: 'regras {v}',
+    ptApproved: 'Aprovada', ptOpenDoubts: '{n} dúvidas em aberto', ptApprove: 'Aprovar partida', ptDelete: 'Apagar partida',
+    ptConfirmDelete: 'Apagar esta partida narrada?', ptOldRules: 'Partida jogada com as regras {v}; as regras estão na {now}. Pede uma partida nova.',
+    ptPlayer: 'Jogador {n}', ptState: 'Estado depois', ptEnd: 'Fim:', ptDoubt: 'Dúvida:', ptAssumed: 'A IA assumiu:',
+    ptResolved: 'Resolvida', ptIgnore: 'Ignorar', ptIsResolved: 'resolvida', ptIsIgnored: 'ignorada', ptReopen: 'Reabrir',
+    ptNote: 'Nota (o que corrigiste nos cartões)', ptUnknownCard: 'cartão que não existe',
     saving: 'A guardar…', saved: 'Guardado', unsaved: 'Por guardar', export: 'Exportar .json',
     fluxoSoon: 'O editor de fluxo chega na etapa 1d. Por agora, os blocos do projeto:',
     coverage: 'Cobertura', coverageOk: 'Todos os blocos têm pelo menos um cartão.', coverageMissing: 'Blocos sem cartões: {list}',
@@ -37,7 +50,19 @@ const T = {
     newName: 'Game name', create: 'Create project', import: 'Import from Rule Forge (.json)', none: 'No projects yet.',
     open: 'Open', remove: 'Delete', confirmRemove: 'Delete project "{name}"? This cannot be undone.', back: '← Projects',
     cards: '{n} cards', nodes: '{n} blocks', updated: 'changed {when}', badJson: 'Not a Rule Forge project (JSON).',
-    tab_fluxo: 'Flow', tab_cartoes: 'Cards', tab_regras: 'Rules',
+    tab_fluxo: 'Flow', tab_cartoes: 'Cards', tab_regras: 'Rules', tab_partida: 'Narrated game',
+    ptRules: 'Rules (version {v})', ptCommitMsg: 'What changed', ptCommitHint: 'e.g. running out of deck mid-round ends the game',
+    ptCommitKind: 'Type', ptKindRules: 'Rules (bumps the version)', ptKindText: 'Text only (typos)', ptCommit: 'Commit rules',
+    ptNoCommits: 'No commits yet: the first gives version 0.1.0.', ptCommitted: 'Committed: version {v}.',
+    ptNew: 'New narrated game', ptNewLead: 'Copy the prompt into the AI of your choice; it plays a game in text and marks the doubts. Paste the answer here.',
+    ptScenario: 'Scenario', ptScenarioHint: 'e.g. full game; or: the deck runs out mid-round', ptPlayers: 'Players',
+    ptCopy: 'Copy prompt', ptCopied: 'Prompt copied. Paste it into your AI.', ptPaste: 'AI answer (JSON)', ptSave: 'Save game',
+    ptBadJson: 'Could not find the game JSON in the answer.', ptWhich: 'Game', ptRulesV: 'rules {v}',
+    ptApproved: 'Approved', ptOpenDoubts: '{n} open doubts', ptApprove: 'Approve game', ptDelete: 'Delete game',
+    ptConfirmDelete: 'Delete this narrated game?', ptOldRules: 'Game played with rules {v}; the rules are now at {now}. Ask for a new game.',
+    ptPlayer: 'Player {n}', ptState: 'State after', ptEnd: 'End:', ptDoubt: 'Doubt:', ptAssumed: 'The AI assumed:',
+    ptResolved: 'Resolved', ptIgnore: 'Ignore', ptIsResolved: 'resolved', ptIsIgnored: 'ignored', ptReopen: 'Reopen',
+    ptNote: 'Note (what you fixed in the cards)', ptUnknownCard: 'card that does not exist',
     saving: 'Saving…', saved: 'Saved', unsaved: 'Unsaved', export: 'Export .json',
     fluxoSoon: 'The flow editor arrives in stage 1d. For now, the project blocks:',
     coverage: 'Coverage', coverageOk: 'Every block has at least one card.', coverageMissing: 'Blocks without cards: {list}',
@@ -63,7 +88,7 @@ const T = {
 const KINDS = ['DATA', 'FLOW', 'ACTION', 'SCORE'];
 const SCOPES = ['general', 'player', 'component', 'node'];
 const CATS = ['regra', 'plataforma', 'bot'];
-const TABS = ['fluxo', 'cartoes', 'regras'];
+const TABS = ['fluxo', 'cartoes', 'regras', 'partida'];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const fill = (s, p = {}) => s.replace(/\{(\w+)\}/g, (_, k) => p[k] ?? '');
@@ -138,7 +163,7 @@ export function view() {
       <button class="btn btn-ghost" data-fg="export">${f('export')}</button>
     </div>
     <nav class="fg-tabs" role="tablist">${TABS.map((t) => `<a role="tab" href="#/forge/${encodeURIComponent(st.slug)}/${t}" ${t === tab ? 'aria-selected="true"' : ''}>${f(`tab_${t}`)}</a>`).join('')}</nav>
-    ${tab === 'fluxo' ? viewFluxo() : tab === 'regras' ? viewRegras() : viewCartoes()}`;
+    ${tab === 'fluxo' ? viewFluxo() : tab === 'regras' ? viewRegras() : tab === 'partida' ? viewPartida(p, st, f) : viewCartoes()}`;
 }
 
 function viewList() {
@@ -244,6 +269,12 @@ export function after(root) {
   root.addEventListener('input', (e) => {
     if (!st.project) return;
     if (e.target.id === 'fgName') { st.project.gameName = e.target.value; changed(); return; }
+    if (e.target.hasAttribute('data-dnote')) {
+      const nar = st.project.narrations.find((n) => n.id === st.narration) ?? st.project.narrations.at(-1);
+      const doubt = nar?.duvidas.find((x) => x.id === e.target.closest('[data-doubt]')?.dataset.doubt);
+      if (doubt) { doubt.nota = e.target.value; changed(); }
+      return;
+    }
     const card = e.target.closest('[data-card]');
     const field = e.target.dataset.field;
     if (card && field && e.target.tagName !== 'SELECT') {
@@ -259,6 +290,7 @@ export function after(root) {
   });
   root.addEventListener('change', async (e) => {
     if (e.target.dataset.fgFilter) { st.filters[e.target.dataset.fgFilter] = e.target.value; ctx.rerender(); return; }
+    if (e.target.hasAttribute('data-pt-pick')) { st.narration = e.target.value; ctx.rerender(); return; }
     const card = e.target.closest('[data-card]');
     if (card && e.target.tagName === 'SELECT' && st.project) {
       const c = st.project.cards.find((x) => x.id === card.dataset.card);
@@ -281,6 +313,19 @@ export function after(root) {
     }
   });
   root.addEventListener('submit', async (e) => {
+    if (e.target.id === 'fgCommit') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const data = new FormData(e.target);
+      await flush();
+      try {
+        const r = await ctx.api(`forge/${encodeURIComponent(st.slug)}/commit`, { method: 'POST', body: { message: data.get('message'), kind: data.get('kind') } });
+        st.project = r.project;
+        ctx.toast(f('ptCommitted', { v: r.commit.version }));
+        ctx.rerender();
+      } catch (err) { ctx.toast(err.message); }
+      return;
+    }
     if (e.target.id !== 'fgNew') return;
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -293,6 +338,45 @@ export function after(root) {
     if (!b) return;
     const p = st.project;
     const d = b.dataset;
+    const nar = p && (p.narrations.find((n) => n.id === st.narration) ?? p.narrations.at(-1));
+    if (d.pt === 'copy') {
+      const form = b.closest('form');
+      st.cenario = form.cenario.value;
+      st.jogadores = Number(form.jogadores.value) || 2;
+      await navigator.clipboard.writeText(buildPrompt(p, { cenario: st.cenario, jogadores: st.jogadores }));
+      ctx.toast(f('ptCopied'));
+      return;
+    }
+    if (d.pt === 'save') {
+      let narration;
+      try { narration = parseNarration(b.closest('form').resposta.value); } catch { ctx.toast(f('ptBadJson')); return; }
+      await flush();
+      try {
+        const r = await ctx.api(`forge/${encodeURIComponent(st.slug)}/narrations`, { method: 'POST', body: { narration } });
+        st.project = r.project;
+        st.narration = r.narration.id;
+        ctx.rerender();
+      } catch (err) { ctx.toast(err.message); }
+      return;
+    }
+    if (d.pt === 'approve' && nar) { nar.aprovada = true; changed(); ctx.rerender(); return; }
+    if (d.pt === 'delete' && nar) {
+      if (!confirm(f('ptConfirmDelete'))) return;
+      p.narrations = p.narrations.filter((n) => n !== nar);
+      st.narration = null;
+      changed();
+      ctx.rerender();
+      return;
+    }
+    if (d.dt && nar) {
+      const doubt = nar.duvidas.find((x) => x.id === b.closest('[data-doubt]')?.dataset.doubt);
+      if (!doubt) return;
+      doubt.estado = d.dt;
+      if (d.dt === 'aberta') nar.aprovada = false;
+      changed();
+      ctx.rerender();
+      return;
+    }
     if (d.fgDel) {
       if (!confirm(f('confirmRemove', { name: d.name }))) return;
       await ctx.api(`forge/${encodeURIComponent(d.fgDel)}`, { method: 'DELETE' });

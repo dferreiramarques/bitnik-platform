@@ -606,3 +606,17 @@ test('Forge: partida narrada com dúvidas e commits das regras com versão 0.x',
   assert.equal(saved.narrations[0].aprovada, true);
   await s.stop();
 });
+
+test('Forge: um projeto guardado por uma versão anterior ganha os campos novos ao carregar', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const st = fileStorage(dir);
+  await st.load();
+  await st.saveForgeProject('antigo', { gameName: 'Antigo', nodes: [{ id: 'n1', kind: 'FLOW', label: 'Início', x: 0, y: 0 }], edges: [], cards: [], rules: [], createdAt: 1, updatedAt: 2 });
+  const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const { project } = await (await fetch(`http://localhost:${s.port}/admin/forge/antigo`, { headers: { Authorization: 'Bearer segredo' } })).json();
+  assert.deepEqual(project.narrations, []);
+  assert.deepEqual(project.ruleCommits, []);
+  assert.equal(project.version, '0.0.0');
+  assert.equal(project.createdAt, 1);
+  await s.stop();
+});
