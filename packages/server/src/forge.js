@@ -99,6 +99,7 @@ export function normalizeProject(input = {}) {
       ts: num(input.build.ts), versaoRegras: input.build.versaoRegras ? str(input.build.versaoRegras, 20) : null,
       files: Object.fromEntries(Object.entries(input.build.files || {}).slice(0, 60).map(([k, v]) => [str(k, 200), str(v, 500_000)])),
       report: input.build.report ?? null,
+      testsKey: input.build.testsKey ? str(input.build.testsKey, 20) : null,
     } : null,
     // Protótipos instalados no Studio (etapa 5), o mais recente no fim. A pasta
     // tem nome seguro e é o servidor que a escolhe.
@@ -212,6 +213,14 @@ export function mergeTests(current, incoming, versaoRegras) {
 }
 
 /** Versão do protótipo: 0.x (ADR-013). Mudança de regras sobe o minor; só texto, o patch. */
+/** Marca dos testes aprovados e das funções auxiliares (para saber se mudaram desde uma verificação). */
+export function testsKey(tests) {
+  const s = JSON.stringify([(tests?.itens || []).filter((t) => t.aprovado).map((t) => t.codigo), tests?.auxiliares || '']);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 export function bumpVersion(v, kind) {
   const [maj, min, pat] = String(v || '0.0.0').split('.').map((x) => parseInt(x, 10) || 0);
   return kind === 'texto' ? `${maj}.${min}.${pat + 1}` : `${maj}.${min + 1}.0`;

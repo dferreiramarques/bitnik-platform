@@ -846,3 +846,18 @@ test('os ficheiros do browser (lobby e consola) não têm erros de sintaxe', asy
     assert.equal(r.status, 0, `${f}: ${r.stderr.split('\n').slice(0, 5).join('\n')}`);
   }
 });
+
+test('Forge: o separador Código avisa quando os testes mudaram desde a verificação', async () => {
+  const { testsKey } = await import('../packages/server/src/forge.js');
+  const { viewCodigo } = await import('../packages/server/public/console-forge-code.js');
+  const tests = { auxiliares: 'const a = 1;', itens: [{ id: 't1', aprovado: true, codigo: "test('x', () => {})" }] };
+  const report = { ok: false, ms: 1, steps: [{ id: 'testes', ok: false, details: [] }], tests: { pass: 0, fail: 1, failures: [] }, simulation: [] };
+  const p = { version: '0.1.0', cards: [], nodes: [], prototypes: [], tests, build: { ts: 1, versaoRegras: '0.1.0', files: {}, report, testsKey: testsKey(tests) } };
+  const f = (k) => k;
+  assert.ok(!viewCodigo(p, f).includes('cdTestsChanged'));
+  assert.ok(viewCodigo(p, f).includes('data-cd="fix"'), 'com os mesmos testes, há prompt de correção');
+  tests.itens[0].codigo = "test('x', () => { assert.ok(1); })";
+  const html = viewCodigo(p, f);
+  assert.ok(html.includes('cdTestsChanged'));
+  assert.ok(!html.includes('data-cd="fix"'), 'com testes novos, só código novo');
+});

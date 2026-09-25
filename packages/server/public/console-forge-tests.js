@@ -28,8 +28,9 @@ COMO É UM JOGO NESTA PLATAFORMA
 - O TEMPO (esperas, revelações com pausa, limites) é um evento: a regra faz ctx.schedule(chave, ms, 'EVENTO') e o teste dispara-o com fireTimer(game, match, chave). Nunca uses um jogador falso (ex.: 'sistema') para jogadas de tempo: só os lugares de activePlayers podem jogar.
 
 MODELO DO ESTADO
-Propõe a forma do estado a partir dos blocos DATA (o que existe no jogo) e usa-a em todos os testes:
-${data.map((n) => `- ${n.label}`).join('\n') || '(sem blocos DATA)'}
+${done.length && p.tests.estado?.trim() ? `Os testes aprovados usam este modelo: mantém-no (só podes acrescentar campos) e devolve-o completo no campo "estado".
+${p.tests.estado.trim()}` : `Propõe a forma do estado a partir dos blocos DATA (o que existe no jogo) e usa-a em todos os testes:
+${data.map((n) => `- ${n.label}`).join('\n') || '(sem blocos DATA)'}`}
 
 CARTÕES DE REGRA (um teste por cartão)
 ${regra.map(card).join('\n') || '(nenhum)'}
@@ -47,6 +48,8 @@ ${p.tests.auxiliares.trim()}
 1. Um teste por cartão de regra${done.length ? ' ainda sem teste aprovado' : ''}; o nome do teste é o título do cartão.
 2. Não inventes regras. Se um cartão não chegar para escrever o teste, escreve o teste com o que há e diz a dúvida no campo "entao".
 3. Usa nomes de jogadas em MAIÚSCULAS (ex.: "APOSTAR") e códigos de erro "err.X"; mantém-nos iguais em todos os testes.
+4. Não inventes campos do estado, jogadas nem códigos de erro que não estejam no modelo do estado ou nos cartões. Se um teste precisar de um campo novo, acrescenta-o ao modelo no campo "estado": é esse modelo que o código recebe.
+5. Não testes mensagens que o jogador nunca vê: uma jogada de um lugar que não pode jogar é recusada com 'engine.NOT_ACTIVE' (ver acima), não com um 'err.X' das regras.
 
 FORMATO DA RESPOSTA
 Responde só com um objeto JSON:

@@ -36,7 +36,7 @@ IDENTIDADE (obrigatório)
 id: '${slug}'
 version: '${p.version}'
 
-MODELO DO ESTADO (acordado nos testes)
+MODELO DO ESTADO (acordado nos testes: usa exatamente estes nomes de campos, jogadas e códigos de erro)
 ${p.tests?.estado || '(não definido: segue os testes)'}
 
 DOCUMENTO DE REGRAS
@@ -72,6 +72,14 @@ CÓDIGO ANTERIOR
 ${Object.entries(p.build?.files || {}).map(([f, c]) => `### ${f}\n${c}`).join('\n\n')}`;
 }
 
+/** A mesma marca dos testes que o servidor guarda na verificação (forge.js › testsKey). */
+function testsKey(tests) {
+  const s = JSON.stringify([(tests?.itens || []).filter((t) => t.aprovado).map((t) => t.codigo), tests?.auxiliares || '']);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 const STEP_NAMES = {
   ficheiros: 'Ficheiros', pureza: 'Regras puras', 'testes-aprovados': 'Há testes aprovados', importar: 'O pacote carrega',
   contrato: 'Cumpre o contrato', testes: 'Testes aprovados passam', simulacao: 'Partidas simuladas acabam', identidade: 'Nome e versão',
@@ -105,6 +113,8 @@ export function viewCodigo(p, f) {
   const b = p.build;
   const r = b?.report;
   const testSide = r && r.steps.some((s) => s.id === 'testes-auxiliares' && !s.ok);
+  // Testes ou funções auxiliares mudaram desde esta verificação: é preciso código novo, não uma correção.
+  const testsChanged = !!(b?.testsKey && b.testsKey !== testsKey(p.tests));
   return `<div class="fg-play">
     <section class="panel">
       <h2>${f('cdTitle', { v: p.version })}</h2>
@@ -119,8 +129,14 @@ export function viewCodigo(p, f) {
         ${p.prototypes.length > 1 ? `<small>${f('cdOlder', { list: p.prototypes.slice(0, -1).map((x) => x.version).join(', ') })}</small>` : ''}
         <a class="btn btn-outline" href="/" target="_blank" rel="noopener">${f('cdOpenLobby')}</a></p>` : ''}
       <form class="form" id="fgCode" onsubmit="return false">
-        <button type="button" class="btn btn-primary" data-cd="copy" ${approved ? '' : 'disabled'}>${f('ptCopy')}</button>
-        ${r && !r.ok && !testSide ? `<button type="button" class="btn btn-outline" data-cd="fix">${f('cdCopyFix')}</button>` : ''}
+        <div class="fg-choice">
+          <button type="button" class="btn btn-primary" data-cd="copy" ${approved ? '' : 'disabled'}>${f('cdCopyNew')}</button>
+          <small>${f('cdCopyNewHint')}</small>
+        </div>
+        ${r && !r.ok && !testSide && !testsChanged ? `<div class="fg-choice">
+          <button type="button" class="btn btn-outline" data-cd="fix">${f('cdCopyFix')}</button>
+          <small>${f('cdCopyFixHint')}</small>
+        </div>` : ''}
         <label class="wide">${f('cdPaste')}<textarea name="resposta" rows="5" placeholder='{ "files": { "index.js": "…" } }'></textarea></label>
         <button type="button" class="btn btn-primary" data-cd="verify">${f('cdVerify')}</button>
       </form>
@@ -134,6 +150,7 @@ export function viewCodigo(p, f) {
         <button type="button" class="btn btn-outline" data-cd="reverify">${f('cdReverify')}</button>
       </div>
       ${testSide ? `<p class="ff-warn">⚠ ${f('cdTestSide')}</p>` : ''}
+      ${testsChanged ? `<p class="ff-warn">⚠ ${f('cdTestsChanged')}</p>` : ''}
       ${b.versaoRegras !== p.version ? `<p class="ff-warn">⚠ ${f('cdOld', { v: p.version })}</p>` : ''}
       <ul class="fg-steps">${r.steps.map((s) => `<li class="${s.ok ? 'ok' : 'bad'}"><b>${s.ok ? '✓' : '✗'} ${esc(STEP_NAMES[s.id] ?? s.id)}</b>
         ${s.details?.length ? `<pre class="fg-pre">${esc(s.details.join('\n'))}</pre>` : ''}</li>`).join('')}</ul>

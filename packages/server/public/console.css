@@ -235,3 +235,6 @@ body.ff-noscroll { overflow: hidden; }
 .ff-cform textarea { resize: vertical; }
 .ff-cform label { display: grid; gap: 2px; font-size: .8rem; }
 .ff-cform .btn { justify-self: start; }
+
+.fg-choice { display: grid; gap: 2px; justify-items: start; }
+.fg-choice small { color: var(--ui-muted); max-width: 46ch; }

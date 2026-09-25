@@ -20,7 +20,7 @@ import {
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
-import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests } from './forge.js';
+import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests, testsKey } from './forge.js';
 import { verifyPackage, ENGINE_ROOT } from './verify.js';
 import { publishProblem, publicationFiles, setVersion, PUBLISH_VERSION } from './publish.js';
 
@@ -856,7 +856,7 @@ export function createPlatform({
         report.steps.push({ id: 'identidade', ok: idOk && vOk, details });
         report.ok = report.steps.every((s) => s.ok);
       }
-      const build = { ts: now(), versaoRegras: p.version, files: body.files ?? {}, report };
+      const build = { ts: now(), versaoRegras: p.version, files: body.files ?? {}, report, testsKey: testsKey(p.tests) };
       const saved = saveForge(vm[1], { ...p, build }, p);
       return json(res, 200, { report, project: saved });
     }
