@@ -40,7 +40,7 @@ const T = {
     tsOffCard: 'cartão de {cat}', tsMissing: 'Cartões de regra sem teste: {list}',
     tsCovered: 'Todos os cartões de regra têm teste.', tsOrphans: 'Testes de cartões que já não existem: {list}',
     tsModel: 'Modelo do estado', tsGame: 'partida', tsApproved: 'Aprovado', tsUnlock: 'Desbloquear', tsApprove: 'Aprovar',
-    tsDelete: 'Apagar teste', tsCode: 'Código', tsNone: 'Ainda não há testes.',
+    tsDelete: 'Apagar teste', tsCode: 'Código', tsCodeEdit: 'Código (editável enquanto não estiver aprovado)', tsNone: 'Ainda não há testes.',
     ptRules: 'Regras (versão {v})', ptCommitMsg: 'O que mudou', ptCommitHint: 'ex.: o baralho acabar a meio da ronda termina o jogo',
     ptCommitKind: 'Tipo', ptKindRules: 'Regras (sobe a versão)', ptKindText: 'Só texto (gralhas)', ptCommit: 'Commit das regras',
     ptNoCommits: 'Ainda não há commits: o primeiro dá a versão 0.1.0.', ptCommitted: 'Commit feito: versão {v}.',
@@ -108,7 +108,7 @@ const T = {
     tsOffCard: '{cat} card', tsMissing: 'Rule cards without a test: {list}',
     tsCovered: 'Every rule card has a test.', tsOrphans: 'Tests for cards that no longer exist: {list}',
     tsModel: 'State model', tsGame: 'game', tsApproved: 'Approved', tsUnlock: 'Unlock', tsApprove: 'Approve',
-    tsDelete: 'Delete test', tsCode: 'Code', tsNone: 'No tests yet.',
+    tsDelete: 'Delete test', tsCode: 'Code', tsCodeEdit: 'Code (editable until approved)', tsNone: 'No tests yet.',
     ptRules: 'Rules (version {v})', ptCommitMsg: 'What changed', ptCommitHint: 'e.g. running out of deck mid-round ends the game',
     ptCommitKind: 'Type', ptKindRules: 'Rules (bumps the version)', ptKindText: 'Text only (typos)', ptCommit: 'Commit rules',
     ptNoCommits: 'No commits yet: the first gives version 0.1.0.', ptCommitted: 'Committed: version {v}.',
@@ -330,6 +330,11 @@ export function after(root) {
     if (!st.project) return;
     if (e.target.id === 'fgName') { st.project.gameName = e.target.value; changed(); return; }
     if (e.target.hasAttribute('data-ts-helpers')) { st.project.tests.auxiliares = e.target.value; changed(); return; }
+    if (e.target.hasAttribute('data-tt-code')) {
+      const x = st.project.tests.itens.find((y) => y.id === e.target.closest('[data-test]')?.dataset.test);
+      if (x && !x.aprovado) { x.codigo = e.target.value; changed(); }
+      return;
+    }
     if (e.target.hasAttribute('data-dnote')) {
       const nar = st.project.narrations.find((n) => n.id === st.narration) ?? st.project.narrations.at(-1);
       const doubt = nar?.duvidas.find((x) => x.id === e.target.closest('[data-doubt]')?.dataset.doubt);

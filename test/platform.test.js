@@ -647,6 +647,10 @@ test('Forge: testes a partir dos cartões; os aprovados ficam fixos', async () =
   saved.tests.itens[0].entao = 'outra coisa';
   saved = (await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(saved) })).json()).project;
   assert.equal(saved.tests.itens[0].entao, 'ganha a carta', 'um teste aprovado está fixo');
+  // Um teste por aprovar edita-se na consola (código incluído).
+  saved.tests.itens[1].codigo = "test('y', () => { assert.ok(true); })";
+  saved = (await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(saved) })).json()).project;
+  assert.equal(saved.tests.itens[1].codigo, "test('y', () => { assert.ok(true); })");
 
   // Nova resposta da IA: o aprovado fica, o outro é substituído.
   r = await (await post(`/${slug}/tests`, { testes: [{ cartao: 'c1', nome: 'mudado' }, { cartao: 'c2', nome: 'Empate v2' }] })).json();

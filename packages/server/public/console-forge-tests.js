@@ -106,7 +106,9 @@ export function viewTestes(p, f) {
             : `<button class="btn btn-outline" data-tt="approve">${f('tsApprove')}</button><button class="btn btn-ghost" data-tt="delete" aria-label="${f('tsDelete')}">✕</button>`}
         </div>
         <dl class="fg-gwt"><dt>${f('given')}</dt><dd>${esc(x.dado)}</dd><dt>${f('when')}</dt><dd>${esc(x.quando)}</dd><dt>${f('then')}</dt><dd>${esc(x.entao)}</dd></dl>
-        <details><summary>${f('tsCode')}</summary><pre class="fg-pre">${esc(x.codigo)}</pre></details>
+        ${x.aprovado
+          ? `<details><summary>${f('tsCode')}</summary><pre class="fg-pre">${esc(x.codigo)}</pre></details>`
+          : `<details><summary>${f('tsCodeEdit')}</summary><textarea class="fg-code" data-tt-code rows="${Math.min(30, String(x.codigo).split('\n').length + 1)}" spellcheck="false">${esc(x.codigo)}</textarea></details>`}
       </article>`).join('')}</div>
     </section>` : `<p class="empty">${f('tsNone')}</p>`}
   </div>`;
