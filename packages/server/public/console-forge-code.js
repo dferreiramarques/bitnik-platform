@@ -21,7 +21,7 @@ index.js:
   });
 ctx nas jogadas: ctx.seat, ctx.rng (next, int(n), chance(p), pick(arr), shuffle(arr)), ctx.log('log.CHAVE', params), ctx.invalid(code), ctx.schedule, ctx.cancel.
 Regras PURAS: sem Math.random (usa ctx.rng), sem Date, sem setTimeout, sem rede; só importam '@bitnik/engine' e ficheiros próprios ('./...').
-i18n/pt.js e i18n/en.js: export default { 'game.name': '…', 'move.NOME': '…', 'err.CODIGO': '…', 'log.CHAVE': '…' } com AS MESMAS CHAVES nas duas línguas.`;
+i18n/pt.js e i18n/en.js: export default { 'game.name': '…', 'game.tagline': 'uma frase curta', 'move.NOME': '…', 'err.CODIGO': '…', 'log.CHAVE': '…' } com AS MESMAS CHAVES nas duas línguas.`;
 
 export function buildCodePrompt(p, slug) {
   const approved = (p.tests?.itens || []).filter((t) => t.aprovado);
@@ -109,6 +109,8 @@ export function viewCodigo(p, f) {
       <h2>${f('cdTitle', { v: p.version })}</h2>
       <p class="con-lead">${f('cdLead')}</p>
       ${approved ? '' : `<p class="ff-warn">⚠ ${f('cdNoTests')}</p>`}
+      ${p.prototype ? `<p class="fg-installed">✓ ${f('cdInstalled', { v: p.prototype.version, d: new Date(p.prototype.ts).toLocaleString() })}
+        <a class="btn btn-outline" href="/" target="_blank" rel="noopener">${f('cdOpenLobby')}</a></p>` : ''}
       <form class="form" id="fgCode" onsubmit="return false">
         <button type="button" class="btn btn-primary" data-cd="copy" ${approved ? '' : 'disabled'}>${f('ptCopy')}</button>
         ${r && !r.ok && !testSide ? `<button type="button" class="btn btn-outline" data-cd="fix">${f('cdCopyFix')}</button>` : ''}
@@ -134,7 +136,10 @@ export function viewCodigo(p, f) {
         ${r.simulation.map((x) => `<tr><td>${x.numPlayers}</td><td>${x.error ? `✗ ${esc(x.error)}` : `${x.finished}/${x.games}${x.failures?.length ? ` · ✗ ${esc(x.failures[0].reason)}` : ''}`}</td><td>${(x.winRateBySeat || []).map((w) => `${w}%`).join(' / ')}</td></tr>`).join('')}
       </tbody></table>` : ''}
       <details><summary>${f('cdFiles', { n: Object.keys(b.files).length })}</summary>${Object.entries(b.files).map(([n, c]) => `<p><b>${esc(n)}</b></p><pre class="fg-pre">${esc(c)}</pre>`).join('')}</details>
-      ${r.ok ? `<p class="con-lead">${f('cdNext')}</p>` : ''}
+      ${r.ok ? `<div class="fg-card-head">
+        <button type="button" class="btn btn-primary" data-cd="install">${f(p.prototype ? 'cdReinstall' : 'cdInstall')}</button>
+        <span class="con-lead">${f('cdInstallHint')}</span>
+      </div>` : ''}
     </section>` : ''}
   </div>`;
 }

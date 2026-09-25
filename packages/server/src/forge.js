@@ -97,6 +97,11 @@ export function normalizeProject(input = {}) {
       files: Object.fromEntries(Object.entries(input.build.files || {}).slice(0, 60).map(([k, v]) => [str(k, 200), str(v, 500_000)])),
       report: input.build.report ?? null,
     } : null,
+    // Protótipo instalado no Studio (etapa 5): a pasta tem nome seguro, é o servidor que a escolhe.
+    prototype: input.prototype && /^[\w.-]{1,60}$/.test(input.prototype.folder ?? '') ? {
+      version: str(input.prototype.version, 20), folder: input.prototype.folder,
+      ts: num(input.prototype.ts), buildTs: num(input.prototype.buildTs),
+    } : null,
     version: ruleCommits.at(-1)?.version ?? '0.0.0',
   };
 }

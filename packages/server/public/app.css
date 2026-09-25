@@ -154,3 +154,5 @@ button { font: inherit; }
   background: var(--ui-text); color: var(--ui-bg); padding: 10px 18px; border-radius: var(--ui-r-pill);
   max-width: min(90vw, 480px); z-index: 10;
 }
+
+.proto-badge { display: inline-block; vertical-align: middle; font-size: .8rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px dashed currentColor; opacity: .75; }

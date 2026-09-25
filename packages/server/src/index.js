@@ -9,8 +9,9 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { readFileSync, readdirSync } from 'node:fs';
+import { mkdir, writeFile, symlink } from 'node:fs/promises';
 import { dirname, join, extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import {
@@ -20,7 +21,7 @@ import {
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
 import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests } from './forge.js';
-import { verifyPackage } from './verify.js';
+import { verifyPackage, ENGINE_ROOT } from './verify.js';
 
 export { memoryStorage, fileStorage };
 
@@ -95,6 +96,7 @@ export function createPlatform({
   botDelayMs = [700, 1400],
   graceMs = 60_000,
   studio = false,
+  prototypeDir = null, // Studio: pasta onde a Forge instala os protótipos 0.x (etapa 5)
   logger = console,
   adminToken = process.env.ADMIN_TOKEN, // sem token, as rotas /admin não existem
 } = {}) {
@@ -444,6 +446,7 @@ export function createPlatform({
         platformI18n: PLATFORM_I18N,
         games: [...G.values()].map((g) => ({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
+          prototype: !!g.prototype,
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),
@@ -652,7 +655,7 @@ export function createPlatform({
   function gameInfo(g) {
     const list = [...rooms.values()].filter((r) => r.gameId === g.id);
     return {
-      id: g.id, name: gameName(g), version: g.version, players: g.players,
+      id: g.id, name: gameName(g), version: g.version, players: g.players, prototype: !!g.prototype,
       author: g.author ?? null, license: g.license ?? null, langs: Object.keys(g.i18n),
       bots: Object.keys(g.bots || {}), enumerate: !!g.enumerate, describeMove: !!g.describeMove,
       events: Object.keys(g.events || {}), problems: checkGame(g),
@@ -731,6 +734,44 @@ export function createPlatform({
     storage.saveForgeProject?.(slug, p);
     return p;
   }
+
+  // ─── Protótipos da Forge (etapa 5) ──────────────────────────
+  // Cada instalação fica numa pasta própria (versão + marca de tempo): o import
+  // de ESM fica em cache por caminho, por isso uma pasta nova carrega sempre o código novo.
+  async function loadPrototype(slug, proto) {
+    const file = join(prototypeDir, slug, proto.folder, 'index.js');
+    const game = (await import(pathToFileURL(file).href)).default;
+    const problems = checkGame(game);
+    if (problems.length) throw new Error(problems.join('; '));
+    if (game.id !== slug) throw new Error(`o id do pacote é "${game.id}", devia ser "${slug}"`);
+    const current = G.get(slug);
+    if (current && !current.prototype) throw new Error(`já existe um jogo publicado com o id "${slug}"`);
+    G.set(slug, Object.freeze({ ...game, prototype: true }));
+    return game;
+  }
+
+  async function installPrototype(slug, p) {
+    if (!prototypeDir) throw new Error('este servidor não aceita protótipos');
+    const b = p.build;
+    if (!b?.report?.ok) throw new Error('o pacote ainda não passou a verificação');
+    if (b.versaoRegras !== p.version) throw new Error(`o pacote verificado é das regras ${b.versaoRegras}; verifica outra vez com as regras ${p.version}`);
+    // A pasta dos protótipos é um "projeto" ESM com o motor ligado (junction), como na verificação.
+    await mkdir(join(prototypeDir, 'node_modules', '@bitnik'), { recursive: true });
+    await writeFile(join(prototypeDir, 'package.json'), JSON.stringify({ name: 'bitnik-prototipos', private: true, type: 'module' }));
+    await symlink(ENGINE_ROOT, join(prototypeDir, 'node_modules', '@bitnik', 'engine'), 'junction').catch((e) => { if (e.code !== 'EEXIST') throw e; });
+    const folder = `${p.version}-${now().toString(36)}`;
+    const dir = join(prototypeDir, slug, folder);
+    for (const [rel, content] of Object.entries(b.files)) {
+      if (rel.includes('..')) throw new Error(`ficheiro não permitido: ${rel}`);
+      await mkdir(dirname(join(dir, rel)), { recursive: true });
+      await writeFile(join(dir, rel), String(content));
+    }
+    await loadPrototype(slug, { folder });
+    const game = G.get(slug);
+    for (const r of publicRoomsFor(game)) if (!rooms.has(r.id)) { rooms.set(r.id, r); persist(r); }
+    return { version: p.version, folder, ts: now(), buildTs: b.ts };
+  }
+
   async function forgeRoute(req, res, url) {
     const slug = decodeURIComponent(url.slice('/admin/forge/'.length));
     if (url === '/admin/forge' && req.method === 'GET') {
@@ -792,6 +833,19 @@ export function createPlatform({
       const build = { ts: now(), versaoRegras: p.version, files: body.files ?? {}, report };
       const saved = saveForge(vm[1], { ...p, build }, p);
       return json(res, 200, { report, project: saved });
+    }
+    // Instalar o pacote verificado como protótipo 0.x no Studio, sem reiniciar.
+    const im = slug.match(/^([a-z0-9-]{1,80})\/install$/);
+    if (im && req.method === 'POST') {
+      const p = forge.get(im[1]);
+      if (!p) return json(res, 404, { error: 'projeto não encontrado' });
+      try {
+        const prototype = await installPrototype(im[1], p);
+        const saved = saveForge(im[1], { ...p, prototype }, p);
+        return json(res, 200, { prototype, project: saved });
+      } catch (e) {
+        return json(res, 400, { error: e.message });
+      }
     }
     // Testes colados da IA: { estado, testes: [...] }; os aprovados ficam fixos.
     const tm = slug.match(/^([a-z0-9-]{1,80})\/tests$/);
@@ -938,6 +992,11 @@ export function createPlatform({
     // Normaliza ao carregar: projetos guardados por versões anteriores ganham os campos novos.
     for (const [slug, p] of Object.entries(saved.forge || {})) {
       forge.set(slug, { ...normalizeProject(p), createdAt: p.createdAt ?? now(), updatedAt: p.updatedAt ?? now() });
+    }
+    // Protótipos instalados antes do restart voltam a entrar (antes das mesas, que precisam do jogo).
+    for (const [slug, p] of forge) {
+      if (!p.prototype) continue;
+      try { await loadPrototype(slug, p.prototype); } catch (e) { logger.warn(`[load] protótipo ${slug}: ${e.message}`); }
     }
     for (const room of saved.rooms || []) {
       const game = G.get(room.gameId);

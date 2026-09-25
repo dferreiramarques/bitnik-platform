@@ -703,3 +703,42 @@ test('Forge: lê o JSON colado mesmo com texto à volta ou colado duas vezes', a
   assert.deepEqual(parseNarration(`Aqui está {o pacote}:\n\`\`\`json\n${j}\n\`\`\`\nBom jogo!`), obj);
   assert.throws(() => parseNarration('sem nada'), /sem JSON/);
 });
+
+test('Forge: instalar o pacote verificado como protótipo, sem reiniciar, e voltar a carregá-lo no arranque', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const base = new URL('./fixtures/forge-pacote/', import.meta.url);
+  const files = Object.fromEntries(await Promise.all(['index.js', 'i18n/pt.js', 'i18n/en.js'].map(async (f) => [f, await readFile(new URL(f, base), 'utf8')])));
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  let s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const post = (path, body = {}) => fetch(`${url}${path}`, { method: 'POST', headers: auth, body: JSON.stringify(body) });
+  const { slug } = await (await post('', { gameName: 'Corrida Simples' })).json();
+  assert.equal(slug, 'corrida-simples');
+  assert.equal((await post(`/${slug}/install`)).status, 400, 'sem verificação não instala');
+
+  await post(`/${slug}/commit`, { message: 'regras' });
+  const { project } = await (await post(`/${slug}/tests`, { testes: [{ cartao: 'c1', nome: 'Soma', codigo: "test('Soma', () => { assert.equal(applyMove(game, createMatch(game, { numPlayers: 2, seed: 1 }), 0, { type: 'AVANCAR', payload: { passos: 1 } }).match.state.pontos[0], 1); });" }] })).json();
+  project.tests.itens[0].aprovado = true;
+  await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(project) });
+  const v = await (await post(`/${slug}/verify`, { files })).json();
+  assert.ok(v.report.ok, JSON.stringify(v.report.steps.filter((x) => !x.ok)));
+
+  const inst = await (await post(`/${slug}/install`)).json();
+  assert.equal(inst.prototype.version, '0.1.0');
+  const c = await s.client();
+  const g = c.welcome.games.find((x) => x.id === slug);
+  assert.ok(g?.prototype, 'aparece no lobby como protótipo');
+  const rooms = await new Promise((r) => { c.on('rooms', r); c.list(); });
+  assert.ok(rooms.public.some((r) => r.gameId === slug), 'com mesas públicas');
+  // Joga-se: uma mesa com bots começa com o protótipo.
+  const created = c.next('room');
+  c.createSolo(slug, 2);
+  assert.equal((await created).room.gameId, slug);
+  await s.stop();
+
+  // Depois de reiniciar, o protótipo volta a estar instalado.
+  s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const games = (await (await fetch(`http://localhost:${s.port}/admin/games`, { headers: auth })).json()).games;
+  assert.ok(games.find((x) => x.id === slug)?.prototype);
+  await s.stop();
+});

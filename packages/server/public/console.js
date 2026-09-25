@@ -12,7 +12,7 @@ const UI = {
     brand: 'Marca', studio: 'Studio', runtime: 'Runtime', engine: 'Motor', node: 'Node', uptime: 'Ligado há',
     games: 'Jogos', rooms: 'Mesas', playing: 'a decorrer', waiting: 'à espera', expired: 'expiradas', over: 'acabadas', online: 'Jogadores ligados',
     jogosLead: 'Pacotes instalados neste servidor. A simulação joga partidas só com bots, sem bloquear as mesas.',
-    game: 'Jogo', version: 'Versão', players: 'Jogadores', langs: 'Línguas', contract: 'Contrato', live: 'A decorrer',
+    game: 'Jogo', prototype: 'protótipo', version: 'Versão', players: 'Jogadores', langs: 'Línguas', contract: 'Contrato', live: 'A decorrer',
     ok: 'ok', simulate: 'Simular', matches: 'Partidas', idle: 'Tempo esgotado (%)', run: 'Correr', running: 'A simular…',
     finished: 'Acabadas', failures: 'Falhas', avgMoves: 'Jogadas (média)', winBySeat: 'Vitórias por lugar', seat: 'Lugar {n}',
     nPlayers: '{n} jogadores', timers: '{n} timers',
@@ -46,7 +46,7 @@ const UI = {
     brand: 'Brand', studio: 'Studio', runtime: 'Runtime', engine: 'Engine', node: 'Node', uptime: 'Up for',
     games: 'Games', rooms: 'Tables', playing: 'in progress', waiting: 'waiting', expired: 'expired', over: 'finished', online: 'Players online',
     jogosLead: 'Packages installed on this server. Simulation plays bot-only games without blocking live tables.',
-    game: 'Game', version: 'Version', players: 'Players', langs: 'Languages', contract: 'Contract', live: 'Live',
+    game: 'Game', prototype: 'prototype', version: 'Version', players: 'Players', langs: 'Languages', contract: 'Contract', live: 'Live',
     ok: 'ok', simulate: 'Simulate', matches: 'Games', idle: 'Timeouts (%)', run: 'Run', running: 'Simulating…',
     finished: 'Finished', failures: 'Failures', avgMoves: 'Moves (avg)', winBySeat: 'Wins by seat', seat: 'Seat {n}',
     nPlayers: '{n} players', timers: '{n} timers',
@@ -172,7 +172,7 @@ function gamesTable(withSim) {
     <thead><tr><th>${u('game')}</th><th>${u('version')}</th><th>${u('players')}</th><th>${u('langs')}</th><th>${u('contract')}</th><th>${u('live')}</th>${withSim ? '<th></th>' : ''}</tr></thead>
     <tbody>${app.games.map((g) => `<tr>
       <td><strong>${esc(g.name)}</strong><small>${esc(g.id)}${g.author ? ` · ${esc(g.author)}` : ''}</small></td>
-      <td>${esc(g.version)}</td>
+      <td>${esc(g.version)}${g.prototype ? ` <span class="pill">${u('prototype')}</span>` : ''}</td>
       <td>${g.players.min}–${g.players.max}</td>
       <td>${g.langs.map(esc).join(', ')}</td>
       <td>${g.problems.length ? `<span class="pill pill-bad" title="${esc(g.problems.join('; '))}">${g.problems.length}</span>` : `<span class="pill pill-ok">${u('ok')}</span>`}</td>

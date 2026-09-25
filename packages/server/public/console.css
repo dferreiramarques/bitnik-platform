@@ -215,3 +215,5 @@
 .fg-steps li.ok b { color: #2c5e2b; } .fg-steps li.bad b { color: #8e2a1f; }
 
 .fg-code { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: .8rem; padding: 8px; border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-bg); color: var(--ui-text); resize: vertical; }
+
+.fg-installed { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

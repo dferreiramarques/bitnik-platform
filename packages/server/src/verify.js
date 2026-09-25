@@ -10,7 +10,7 @@ import { randomBytes } from 'node:crypto';
 import { checkPurity } from '@bitnik/engine';
 
 const RUNNER = fileURLToPath(new URL('./verify-runner.mjs', import.meta.url));
-const ENGINE_ROOT = resolve(dirname(fileURLToPath(import.meta.resolve('@bitnik/engine'))), '..');
+export const ENGINE_ROOT = resolve(dirname(fileURLToPath(import.meta.resolve('@bitnik/engine'))), '..');
 const FILE = /^(?:[\w-]+\/)*[\w.-]+\.(?:js|json|md)$/;
 const MAX_FILES = 60;
 const MAX_BYTES = 1_000_000;

@@ -2,6 +2,8 @@
 // Fase 0: servidor com todos os jogos da Bitnik e a UI genérica de protótipo.
 // Fases seguintes: Forge, simulação e mesas de aprovação por convite.
 import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { createPlatform, fileStorage, memoryStorage } from '@bitnik/server';
 import catania from '@bitnik/game-catania';
 
@@ -22,6 +24,8 @@ export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
     games: [catania],
     storage: dataDir ? fileStorage(dataDir) : memoryStorage(),
     studio: true,
+    // Protótipos da Forge: ficam com os dados; sem pasta de dados, numa pasta temporária.
+    prototypeDir: join(dataDir || join(tmpdir(), 'bitnik-studio'), 'prototipos'),
     ...opts,
   });
 }

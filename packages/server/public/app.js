@@ -9,7 +9,7 @@ import { applyGameSkin, applyOverrides } from '/appearance.js';
 const UI = {
   pt: {
     connecting: 'A ligar…', open: '', closed: 'Sem ligação, a tentar de novo…',
-    yourName: 'O teu nome', lang: 'EN',
+    yourName: 'O teu nome', lang: 'EN', prototype: 'protótipo {v}',
     playBots: 'Jogar contra bots:', players: '{n} jogadores',
     publicTables: 'Mesas públicas', myTables: 'As minhas mesas',
     noMine: 'Ainda não tens mesas. Começa um jogo contra bots.',
@@ -33,7 +33,7 @@ const UI = {
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
-    yourName: 'Your name', lang: 'PT',
+    yourName: 'Your name', lang: 'PT', prototype: 'prototype {v}',
     playBots: 'Play against bots:', players: '{n} players',
     publicTables: 'Public tables', myTables: 'My tables',
     noMine: 'No tables yet. Start a game against bots.',
@@ -131,8 +131,8 @@ function renderLobby() {
     const mine = app.rooms.mine.filter((r) => r.gameId === g.id);
     return `<article class="game-block">
       <div>
-        <h1 class="game-title">${esc(t('game.name', {}, g.id))}</h1>
-        <p class="game-tagline">${esc(t('game.tagline', {}, g.id))}</p>
+        <h1 class="game-title">${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="proto-badge">${u('prototype', { v: g.version })}</span>` : ''}</h1>
+        ${t('game.tagline', {}, g.id) !== 'game.tagline' ? `<p class="game-tagline">${esc(t('game.tagline', {}, g.id))}</p>` : ''}
       </div>
       <div class="solo-start"><span>${u('playBots')}</span>
         ${counts.map((n) => `<button class="btn btn-primary" data-solo="${g.id}" data-n="${n}">${u('players', { n })}</button>`).join('')}

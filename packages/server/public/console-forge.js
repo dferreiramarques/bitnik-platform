@@ -21,7 +21,9 @@ const T = {
     cdVerifying: 'A verificar…', cdBadJson: 'Não encontrei { "files": { … } } na resposta.', cdReport: 'Relatório',
     cdOk: 'Passou em tudo', cdFail: 'Há falhas', cdOld: 'Este pacote é de outra versão das regras; as regras estão na {v}.',
     cdTests: 'Testes: {pass} passaram, {fail} falharam.', cdPlayers: 'Jogadores', cdFinished: 'Partidas acabadas', cdWins: 'Vitórias por lugar',
-    cdFiles: 'Ficheiros ({n})', cdNext: 'Próximo passo: instalar este protótipo no Studio (etapa 5).',
+    cdFiles: 'Ficheiros ({n})',
+    cdInstall: 'Instalar protótipo', cdReinstall: 'Instalar esta versão', cdInstallHint: 'Fica a jogar no lobby do Studio, sem reiniciar.',
+    cdInstalled: 'Protótipo {v} instalado ({d}).', cdOpenLobby: 'Abrir o lobby', cdInstallDone: 'Protótipo instalado: já está no lobby.',
     cdCopyReport: 'Copiar relatório', cdReportCopied: 'Relatório copiado em texto.', cdReverify: 'Verificar outra vez',
     cdTestSide: 'Os testes usam funções que não existem. O problema é dos testes, não do código: acrescenta essas funções em Testes › Funções auxiliares e carrega em "Verificar outra vez" (o mesmo código).',
     tsHelpers: 'Funções auxiliares dos testes', tsHelpersHint: 'Código comum a vários testes (ex.: novo, jogar, montar a mesa). Entra no ficheiro de testes antes de todos os testes.',
@@ -78,7 +80,9 @@ const T = {
     cdVerifying: 'Verifying…', cdBadJson: 'Could not find { "files": { … } } in the answer.', cdReport: 'Report',
     cdOk: 'Passed everything', cdFail: 'There are failures', cdOld: 'This package is from another rules version; the rules are at {v}.',
     cdTests: 'Tests: {pass} passed, {fail} failed.', cdPlayers: 'Players', cdFinished: 'Games finished', cdWins: 'Wins by seat',
-    cdFiles: 'Files ({n})', cdNext: 'Next step: install this prototype in the Studio (stage 5).',
+    cdFiles: 'Files ({n})',
+    cdInstall: 'Install prototype', cdReinstall: 'Install this version', cdInstallHint: 'It becomes playable in the Studio lobby, no restart.',
+    cdInstalled: 'Prototype {v} installed ({d}).', cdOpenLobby: 'Open the lobby', cdInstallDone: 'Prototype installed: it is in the lobby.',
     cdCopyReport: 'Copy report', cdReportCopied: 'Report copied as text.', cdReverify: 'Verify again',
     cdTestSide: 'The tests use functions that do not exist. The problem is in the tests, not the code: add those functions under Tests › Helper functions and press "Verify again" (same code).',
     tsHelpers: 'Test helper functions', tsHelpersHint: 'Code shared by several tests (e.g. new game, play, set up the table). It goes into the test file before all the tests.',
@@ -407,6 +411,16 @@ export function after(root) {
     if (d.cd === 'report') {
       await navigator.clipboard.writeText(reportText(p, st.slug));
       ctx.toast(f('cdReportCopied'));
+      return;
+    }
+    if (d.cd === 'install') {
+      await flush();
+      b.disabled = true;
+      try {
+        st.project = (await ctx.api(`forge/${encodeURIComponent(st.slug)}/install`, { method: 'POST', body: {} })).project;
+        ctx.toast(f('cdInstallDone'));
+      } catch (err) { ctx.toast(err.message); }
+      ctx.rerender();
       return;
     }
     if (d.cd === 'verify' || d.cd === 'reverify') {
