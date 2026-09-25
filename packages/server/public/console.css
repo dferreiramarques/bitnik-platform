@@ -126,3 +126,44 @@
 .fg-blocks { list-style: none; padding: 0; display: grid; gap: 6px; }
 .fg-kind { display: inline-block; font-size: .7rem; font-weight: 700; color: #fff; padding: 2px 6px; border-radius: 6px; margin-right: 8px; background: var(--k-action); }
 .fg-kind.k-data { background: var(--k-data); } .fg-kind.k-flow { background: var(--k-flow); } .fg-kind.k-score { background: var(--k-score); }
+
+/* Forge › Fluxo */
+.ff { display: grid; gap: 8px; }
+.ff-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ff-bar select, .ff-bar input { font: inherit; padding: 6px 10px; min-height: 40px; border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); color: var(--ui-text); }
+.ff-label { min-width: 200px; }
+.ff-sep { width: 1px; height: 28px; background: var(--ui-line); margin: 0 4px; }
+.ff-grow { flex: 1; }
+.ff-canvas {
+  position: relative; overflow: hidden; height: min(68vh, 640px); border: 2px solid var(--ui-line); border-radius: var(--ui-r-md);
+  background-color: var(--ui-card); background-image: radial-gradient(circle, color-mix(in srgb, var(--ui-muted) 35%, transparent) 1px, transparent 1.2px);
+  cursor: grab; touch-action: none; user-select: none;
+}
+.ff-canvas.panning { cursor: grabbing; }
+.ff-canvas:focus-visible { outline: 3px solid var(--ui-accent); }
+.ff-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.ff-edges { position: absolute; left: 0; top: 0; width: 8000px; height: 8000px; max-width: none; max-height: none; overflow: visible; pointer-events: none; } /* sem tamanho o Chrome não pinta; o reset do design system limita os svg */
+.ff-edge { stroke: #8b8a92; stroke-width: 1.5; pointer-events: none; }
+.ff-edge.hl { stroke: var(--ui-muted); stroke-width: 2; }
+.ff-edge.sel { stroke: var(--ui-text); stroke-width: 3; color: var(--ui-text); }
+.ff-edge.ghost { stroke: var(--ui-primary); stroke-dasharray: 6 4; }
+.ff-hit { stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.ff-node {
+  position: absolute; min-width: 120px; max-width: 220px; padding: 6px 12px 8px; border-radius: 10px; cursor: move;
+  background: var(--ui-card); border: 2px solid var(--k-action); box-shadow: 0 2px 8px -4px rgb(0 0 0 / .25);
+}
+.ff-node[data-kind="DATA"] { border-color: var(--k-data); } .ff-node[data-kind="FLOW"] { border-color: var(--k-flow); }
+.ff-node[data-kind="SCORE"] { border-color: var(--k-score); }
+.ff-node.sel { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 40%, transparent); }
+.ff-node.drop { outline: 3px dashed var(--k-flow); }
+.ff-node:focus-visible { outline: 3px solid var(--ui-accent); }
+.ff-k { display: block; font-size: .65rem; font-weight: 700; letter-spacing: .06em; color: var(--k-action); }
+.ff-node[data-kind="DATA"] .ff-k { color: var(--k-data); } .ff-node[data-kind="FLOW"] .ff-k { color: var(--k-flow); }
+.ff-node[data-kind="SCORE"] .ff-k { color: var(--k-score); }
+.ff-l { display: block; font-weight: 600; line-height: 1.25; }
+.ff-badges { display: flex; gap: 6px; font-size: .7rem; color: var(--ui-muted); margin-top: 4px; }
+.ff-badges .miss { opacity: .45; text-decoration: line-through dotted; }
+.ff-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%;
+  background: var(--ui-card); border: 2px solid var(--ui-muted); cursor: crosshair; }
+.ff-handle:hover { background: var(--ui-primary); border-color: var(--ui-primary); }
+.ff-help { font-size: .85rem; color: var(--ui-muted); margin: 0; }

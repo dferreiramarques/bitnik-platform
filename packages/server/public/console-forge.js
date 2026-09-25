@@ -1,6 +1,8 @@
 // Consola › Forge (ADR-009 a 013): projetos de jogo no Studio. Lista de
 // projetos, importação do Rule Forge, e os separadores Cartões e Regras
-// (o Fluxo e a geração chegam nas etapas seguintes). Guarda sozinho.
+// e Fluxo (a geração chega nas etapas seguintes). Guarda sozinho.
+
+import { mountFlow } from '/console-forge-flow.js';
 
 const T = {
   pt: {
@@ -22,6 +24,9 @@ const T = {
     addSection: '+ Secção geral', createAll: 'Criar as secções em falta', up: 'Subir', down: 'Descer', delSection: 'Apagar secção',
     sectionTitle: 'Título da secção', sectionText: 'Texto (linha em branco separa parágrafos; "- " faz lista; **negrito**)',
     exportMd: 'Exportar .md', rulesEmpty: 'Ainda não há secções. Cria as secções dos blocos ou uma secção geral (Objetivo, Preparação…).',
+    ffKind: 'Tipo', ffAdd: '+ Bloco', ffLabel: 'Nome do bloco', ffDelete: 'Apagar', ffZoomIn: 'Aproximar', ffZoomOut: 'Afastar', ffFit: 'Ver tudo',
+    ffCanvas: 'Fluxo do jogo', ffNew: 'Novo', ffCards: 'Cartões deste bloco', ffText: 'Texto nas regras', ffHandle: 'Arrasta para ligar a outro bloco',
+    ffHelp: 'Duplo clique no fundo cria um bloco. Arrasta a bolinha de um bloco para outro para os ligar (largar no vazio cria um bloco já ligado). Arrasta o fundo para mover a vista; a roda faz zoom. Del apaga; setas movem o bloco selecionado.',
   },
   en: {
     lead: 'Game projects: flow, Gherkin cards and rules document. The narrated game, the tests and the code come from here.',
@@ -42,6 +47,9 @@ const T = {
     addSection: '+ General section', createAll: 'Create missing sections', up: 'Up', down: 'Down', delSection: 'Delete section',
     sectionTitle: 'Section title', sectionText: 'Text (blank line separates paragraphs; "- " makes a list; **bold**)',
     exportMd: 'Export .md', rulesEmpty: 'No sections yet. Create the block sections or a general one (Goal, Setup…).',
+    ffKind: 'Type', ffAdd: '+ Block', ffLabel: 'Block name', ffDelete: 'Delete', ffZoomIn: 'Zoom in', ffZoomOut: 'Zoom out', ffFit: 'Fit all',
+    ffCanvas: 'Game flow', ffNew: 'New', ffCards: 'Cards for this block', ffText: 'Text in the rules', ffHandle: 'Drag to link to another block',
+    ffHelp: 'Double-click the background to create a block. Drag a block’s dot onto another to link them (dropping on empty space creates a linked block). Drag the background to pan; the wheel zooms. Del deletes; arrows move the selected block.',
   },
 };
 const KINDS = ['DATA', 'FLOW', 'ACTION', 'SCORE'];
@@ -54,7 +62,7 @@ const fill = (s, p = {}) => s.replace(/\{(\w+)\}/g, (_, k) => p[k] ?? '');
 const uid = (p) => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 let ctx = null;
-const st = { list: null, slug: null, project: null, status: 'saved', timer: null, filters: { scope: '', cat: '' }, handlers: false };
+const st = { list: null, slug: null, project: null, status: 'saved', timer: null, rev: 0, filters: { scope: '', cat: '' }, handlers: false, flow: null };
 const f = (key, params) => fill((T[ctx.lang()] || T.pt)[key] ?? key, params);
 
 export function init(context) {
@@ -83,6 +91,7 @@ export async function leave() { await flush(); }
 
 // ─── Guardar (automático, com atraso) ───────────────────────
 function changed() {
+  st.rev++;
   st.status = 'unsaved';
   paintStatus();
   clearTimeout(st.timer);
@@ -93,9 +102,13 @@ async function flush() {
   if (!st.project || st.status === 'saved') return;
   st.status = 'saving';
   paintStatus();
+  const rev = st.rev;
   try {
-    st.project = (await ctx.api(`forge/${encodeURIComponent(st.slug)}`, { method: 'PUT', body: st.project })).project;
-    st.status = 'saved';
+    // O projeto local é a fonte: o editor de fluxo e os cartões mexem neste objeto.
+    const saved = (await ctx.api(`forge/${encodeURIComponent(st.slug)}`, { method: 'PUT', body: st.project })).project;
+    st.project.updatedAt = saved.updatedAt;
+    st.status = st.rev === rev ? 'saved' : 'unsaved'; // mudou entretanto: guarda outra vez
+    if (st.status === 'unsaved') st.timer = setTimeout(flush, 800);
   } catch (e) { st.status = 'unsaved'; ctx.toast(e.message); }
   paintStatus();
 }
@@ -139,9 +152,7 @@ function viewList() {
 }
 
 function viewFluxo() {
-  const p = st.project;
-  return `<div class="panel"><p class="con-lead">${f('fluxoSoon')}</p>
-    <ul class="fg-blocks">${p.nodes.map((n) => `<li><span class="fg-kind k-${n.kind.toLowerCase()}">${n.kind}</span>${esc(n.label)}</li>`).join('')}</ul></div>`;
+  return '<div id="fgFlow"></div>';
 }
 
 const nodeName = (id) => st.project.nodes.find((n) => n.id === id)?.label;
@@ -215,6 +226,11 @@ function download(name, text, type) {
 
 // ─── Eventos ────────────────────────────────────────────────
 export function after(root) {
+  // O editor de fluxo tem DOM próprio: monta-se de novo a cada vista do separador.
+  st.flow?.destroy();
+  st.flow = null;
+  const host = root.querySelector('#fgFlow');
+  if (host && st.project) st.flow = mountFlow(host, st.project, { t: f, onChange: changed });
   if (st.handlers) return;
   st.handlers = true;
   root.addEventListener('input', (e) => {
