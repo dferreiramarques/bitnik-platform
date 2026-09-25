@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createPlatform, fileStorage, memoryStorage } from '@bitnik/server';
 import catania from '@bitnik/game-catania';
+import bulbous from '@bitnik/game-bulbous';
 
 export const bitnikBrand = {
   id: 'bitnik',
@@ -21,7 +22,7 @@ export const bitnikBrand = {
 export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
   return createPlatform({
     brand: bitnikBrand,
-    games: [catania],
+    games: [catania, bulbous],
     storage: dataDir ? fileStorage(dataDir) : memoryStorage(),
     studio: true,
     // Protótipos da Forge: ficam com os dados; sem pasta de dados, numa pasta temporária.

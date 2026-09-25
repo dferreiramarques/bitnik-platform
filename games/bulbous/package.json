@@ -1,0 +1,14 @@
+{
+  "name": "@bitnik/game-bulbous",
+  "version": "1.0.0",
+  "description": "Bulbous — pacote de jogo para @bitnik/engine.",
+  "type": "module",
+  "main": "index.js",
+  "exports": { ".": "./index.js" },
+  "files": ["index.js", "rules.js", "bot.js", "i18n/", "REGRAS.md", "CHANGELOG.md"],
+  "license": "UNLICENSED",
+  "author": "David Marques",
+  "peerDependencies": { "@bitnik/engine": "^0.2.1" },
+  "scripts": { "test": "node --test test/*.test.js" },
+  "bitnik": { "engine": "^0.2.1", "langs": ["pt", "en"] }
+}
