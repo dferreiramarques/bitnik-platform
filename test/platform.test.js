@@ -508,3 +508,57 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
   assert.equal(manifest.display, 'standalone');
   await s.stop();
 });
+
+test('Forge: projetos no Studio; importar do Rule Forge; guardar normalizado; sobrevive a restart', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  assert.equal((await fetch(url)).status, 401);
+
+  // Importar o exemplo do Rule Forge (bitnik-logic/examples/capivaras.json).
+  const rf = JSON.parse(await readFile(new URL('./fixtures/rule-forge-capivaras.json', import.meta.url), 'utf8'));
+  const imp = await (await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ project: rf }) })).json();
+  assert.equal(imp.slug, 'capivaras');
+  assert.equal(imp.project.nodes.length, rf.nodes.length);
+  assert.equal(imp.project.cards.length, rf.cards.length);
+  assert.ok(imp.project.cards.every((c) => c.category === 'regra'), 'sem categoria, cada cartão começa como regra');
+
+  // Um segundo com o mesmo nome ganha outro slug; um projeto novo só com nome.
+  const again = await (await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ project: rf }) })).json();
+  assert.equal(again.slug, 'capivaras-2');
+  const novo = await (await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ gameName: 'Farol à Vista!' }) })).json();
+  assert.equal(novo.slug, 'farol-a-vista');
+  assert.deepEqual(novo.project.cards, []);
+
+  // Guardar: campos desconhecidos saem, ligações inválidas saem, categoria válida fica.
+  const p = structuredClone(imp.project);
+  p.cards[4].category = 'plataforma';
+  p.cards[0].kind = 'NAO_EXISTE';
+  p.edges.push({ from: 'n1', to: 'nao-existe' }, { from: 'n1', to: 'n1' });
+  p.intruso = '<script>';
+  const saved = await (await fetch(`${url}/capivaras`, { method: 'PUT', headers: auth, body: JSON.stringify(p) })).json();
+  assert.equal(saved.project.cards[4].category, 'plataforma');
+  assert.equal(saved.project.cards[0].kind, 'ACTION');
+  assert.equal(saved.project.edges.length, rf.edges.length);
+  assert.equal(saved.project.intruso, undefined);
+
+  const list = (await (await fetch(url, { headers: auth })).json()).projects;
+  assert.deepEqual(list.map((x) => x.slug).sort(), ['capivaras', 'capivaras-2', 'farol-a-vista']);
+  assert.equal((await fetch(`${url}/capivaras-2`, { method: 'DELETE', headers: auth })).status, 204);
+  assert.equal((await fetch(`${url}/capivaras-2`, { headers: auth })).status, 404);
+  assert.equal((await fetch(`${url}/..%2F..%2Fusers`, { headers: auth })).status, 404);
+  await new Promise((r) => setTimeout(r, 50));
+  await s.stop();
+
+  const s2 = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const back = await (await fetch(`http://localhost:${s2.port}/admin/forge/capivaras`, { headers: auth })).json();
+  assert.equal(back.project.cards[4].category, 'plataforma');
+  assert.equal((await (await fetch(`http://localhost:${s2.port}/admin/forge`, { headers: auth })).json()).projects.length, 2);
+  await s2.stop();
+
+  // Nos runtimes dos clientes a Forge não existe.
+  const rt = await boot(makeRuntime, { adminToken: 'segredo' });
+  assert.equal((await fetch(`http://localhost:${rt.port}/admin/forge`, { headers: auth })).status, 404);
+  await rt.stop();
+});

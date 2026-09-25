@@ -1,0 +1,534 @@
+{
+  "gameName": "Capivaras",
+  "nodes": [
+    {
+      "id": "n1",
+      "kind": "FLOW",
+      "label": "Iniciar jogo",
+      "x": 10,
+      "y": 10
+    },
+    {
+      "id": "n2",
+      "kind": "DATA",
+      "label": "Baralho: 36 cartas",
+      "x": 210,
+      "y": 10
+    },
+    {
+      "id": "n3",
+      "kind": "FLOW",
+      "label": "Pôr n cartas na mesa",
+      "x": 610,
+      "y": 10
+    },
+    {
+      "id": "n4",
+      "kind": "FLOW",
+      "label": "Fase de apostas",
+      "x": 210,
+      "y": 100
+    },
+    {
+      "id": "n5",
+      "kind": "ACTION",
+      "label": "Apostar numa carta",
+      "x": 10,
+      "y": 100
+    },
+    {
+      "id": "n6",
+      "kind": "ACTION",
+      "label": "Aposta automática",
+      "x": 410,
+      "y": 100
+    },
+    {
+      "id": "n7",
+      "kind": "FLOW",
+      "label": "Revelação simultânea",
+      "x": 210,
+      "y": 190
+    },
+    {
+      "id": "n8",
+      "kind": "SCORE",
+      "label": "Aposta única ganha",
+      "x": 10,
+      "y": 280
+    },
+    {
+      "id": "n9",
+      "kind": "SCORE",
+      "label": "Empate: ninguém ganha",
+      "x": 410,
+      "y": 190
+    },
+    {
+      "id": "n10",
+      "kind": "DATA",
+      "label": "Token do pássaro",
+      "x": 410,
+      "y": 280
+    },
+    {
+      "id": "n11",
+      "kind": "SCORE",
+      "label": "Atribuir/roubar token",
+      "x": 210,
+      "y": 280
+    },
+    {
+      "id": "n12",
+      "kind": "FLOW",
+      "label": "Baralho esgotado?",
+      "x": 610,
+      "y": 370
+    },
+    {
+      "id": "n13",
+      "kind": "FLOW",
+      "label": "Fim de jogo",
+      "x": 410,
+      "y": 370
+    },
+    {
+      "id": "n14",
+      "kind": "SCORE",
+      "label": "Pontuação final",
+      "x": 210,
+      "y": 370
+    },
+    {
+      "id": "n15",
+      "kind": "DATA",
+      "label": "Cartas apanhadas",
+      "x": 10,
+      "y": 370
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2"
+    },
+    {
+      "from": "n2",
+      "to": "n3"
+    },
+    {
+      "from": "n3",
+      "to": "n4"
+    },
+    {
+      "from": "n4",
+      "to": "n5"
+    },
+    {
+      "from": "n4",
+      "to": "n6"
+    },
+    {
+      "from": "n5",
+      "to": "n7"
+    },
+    {
+      "from": "n6",
+      "to": "n7"
+    },
+    {
+      "from": "n7",
+      "to": "n8"
+    },
+    {
+      "from": "n7",
+      "to": "n9"
+    },
+    {
+      "from": "n8",
+      "to": "n11"
+    },
+    {
+      "from": "n10",
+      "to": "n11"
+    },
+    {
+      "from": "n8",
+      "to": "n15"
+    },
+    {
+      "from": "n9",
+      "to": "n12"
+    },
+    {
+      "from": "n11",
+      "to": "n12"
+    },
+    {
+      "from": "n12",
+      "to": "n3"
+    },
+    {
+      "from": "n12",
+      "to": "n13"
+    },
+    {
+      "from": "n13",
+      "to": "n14"
+    },
+    {
+      "from": "n15",
+      "to": "n14"
+    }
+  ],
+  "cards": [
+    {
+      "id": "c1",
+      "kind": "DATA",
+      "scope": "component",
+      "ref": "n2",
+      "title": "Composição do baralho",
+      "given": "que um jogo vai começar",
+      "when": "o baralho é montado",
+      "then": "tem 36 cartas: 6 com 1 capivara, 13 com 2, 11 com 3, 4 com 4 e 2 com 5; algumas têm um pássaro e/ou nenúfares de cor Amarelo (Y), Vermelho (R), Branco (W) ou Azul (B)"
+    },
+    {
+      "id": "c2",
+      "kind": "DATA",
+      "scope": "component",
+      "ref": "n15",
+      "title": "Estado de cada jogador",
+      "given": "que um jogo está em curso",
+      "when": "se consulta o estado de um jogador",
+      "then": "tem as cartas que apanhou (as cores de nenúfar contam-se a partir delas), o nº de cartas com pássaro que apanhou, e pode ou não ter o token do pássaro"
+    },
+    {
+      "id": "c3",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n1",
+      "title": "Início do jogo",
+      "given": "que a mesa tem 2 a 6 jogadores (multijogador: o anfitrião carrega em \"Iniciar Jogo\"; mesa solo: 1 humano + Bot Capivaras 1 e 2, começa logo)",
+      "when": "o jogo começa",
+      "then": "o baralho é baralhado e começa a primeira ronda"
+    },
+    {
+      "id": "c4",
+      "kind": "ACTION",
+      "scope": "node",
+      "ref": "n5",
+      "title": "Apostar em segredo",
+      "given": "que é a fase de apostas e o jogador ainda não apostou nesta ronda",
+      "when": "o jogador escolhe uma das cartas da mesa",
+      "then": "a aposta fica registada, não pode ser alterada, e os outros jogadores não a veem até à revelação"
+    },
+    {
+      "id": "c5",
+      "kind": "ACTION",
+      "scope": "node",
+      "ref": "n6",
+      "title": "Aposta automática (lugar desligado)",
+      "given": "que numa mesa multijogador o jogador está desligado durante a fase de apostas e ainda não apostou",
+      "when": "passam 10 segundos",
+      "then": "é feita uma aposta aleatória numa das cartas da mesa em nome desse jogador; enquanto estiver ligado nunca há aposta automática nem limite de tempo"
+    },
+    {
+      "id": "c6",
+      "kind": "ACTION",
+      "scope": "node",
+      "ref": "n6",
+      "title": "Bots apostam (mesa solo)",
+      "given": "que a mesa é solo e é a fase de apostas",
+      "when": "passam entre 0,9 e 2,6 segundos desde o início da ronda",
+      "then": "cada bot aposta na carta com melhor pontuação (10 por capivara + 8 por cor de nenúfar que ainda não tem + bónus de pássaro: 20 se o token está por atribuir, 15 se não é o detentor e já tem pelo menos as cartas de pássaro do detentor, senão 4; menos 30 se o outro bot já escolheu essa carta; mais ruído aleatório), e em 25% das vezes escolhe a segunda melhor"
+    },
+    {
+      "id": "c7",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n7",
+      "title": "Revelação simultânea",
+      "given": "que todos os jogadores já apostaram nesta ronda",
+      "when": "a última aposta é registada",
+      "then": "todas as apostas são reveladas ao mesmo tempo e a ronda é resolvida; o resultado fica visível durante 5 segundos"
+    },
+    {
+      "id": "c8",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n8",
+      "title": "Aposta única ganha a carta",
+      "given": "que as apostas foram reveladas",
+      "when": "só um jogador escolheu uma determinada carta",
+      "then": "essa carta junta-se às cartas apanhadas desse jogador; se tiver pássaro, o nº de cartas com pássaro desse jogador aumenta em 1"
+    },
+    {
+      "id": "c9",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n9",
+      "title": "Empate: ninguém ganha a carta",
+      "given": "que as apostas foram reveladas",
+      "when": "dois ou mais jogadores escolheram a mesma carta",
+      "then": "nenhum deles a ganha (as capivaras fogem) e a carta não entra em nenhuma coleção"
+    },
+    {
+      "id": "c10",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n11",
+      "title": "Token do pássaro: primeira atribuição",
+      "given": "que ninguém tem ainda o token do pássaro",
+      "when": "exatamente um jogador apanha uma carta com pássaro nesta ronda",
+      "then": "esse jogador fica com o token do pássaro"
+    },
+    {
+      "id": "c11",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n11",
+      "title": "Token do pássaro: empate na primeira atribuição",
+      "given": "que ninguém tem ainda o token do pássaro",
+      "when": "dois ou mais jogadores apanham cada um uma carta com pássaro na mesma ronda",
+      "then": "o token continua por atribuir (só conta o que foi apanhado nessa ronda)"
+    },
+    {
+      "id": "c12",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n11",
+      "title": "Roubar o token do pássaro",
+      "given": "que alguém tem o token do pássaro",
+      "when": "um único outro jogador passa a ter estritamente mais cartas com pássaro do que o detentor (igualar não chega)",
+      "then": "esse jogador rouba o token ao detentor"
+    },
+    {
+      "id": "c13",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n11",
+      "title": "Token do pássaro: empate no roubo",
+      "given": "que alguém tem o token do pássaro",
+      "when": "dois ou mais outros jogadores ultrapassam o detentor ao mesmo tempo",
+      "then": "o token fica com o detentor atual"
+    },
+    {
+      "id": "c14",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n12",
+      "title": "Fim da ronda: mesa vai para o descarte",
+      "given": "que a ronda foi resolvida",
+      "when": "termina a revelação",
+      "then": "todas as cartas que estavam na mesa (ganhas ou não) vão para o descarte"
+    },
+    {
+      "id": "c15",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n12",
+      "title": "Baralho esgotado",
+      "given": "que vai começar uma nova ronda e restam no baralho menos cartas do que jogadores",
+      "when": "é a primeira vez que isso acontece",
+      "then": "o descarte é baralhado e junta-se ao baralho, e o jogo continua; à segunda vez o jogo termina"
+    },
+    {
+      "id": "c16",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n14",
+      "title": "Pontuação final",
+      "given": "que o jogo terminou",
+      "when": "se calculam os pontos de cada jogador",
+      "then": "soma-se o nº de capivaras de cada carta apanhada, +5 se tiver o token do pássaro e +10 se as cartas apanhadas reunirem as 4 cores de nenúfar (Amarelo, Vermelho, Branco e Azul, mesmo em cartas diferentes)"
+    },
+    {
+      "id": "c17",
+      "kind": "SCORE",
+      "scope": "node",
+      "ref": "n14",
+      "title": "Vencedor",
+      "given": "que as pontuações finais estão calculadas",
+      "when": "há empate na pontuação mais alta",
+      "then": "vence o primeiro jogador (por ordem de lugar) com essa pontuação"
+    },
+    {
+      "id": "c18",
+      "kind": "FLOW",
+      "scope": "player",
+      "title": "Ligação caída (45 segundos)",
+      "given": "que numa mesa multijogador um jogador perde a ligação a meio do jogo",
+      "when": "não volta a abrir a página em 45 segundos",
+      "then": "o lugar é libertado e, se ficarem menos de 2 jogadores, o jogo termina"
+    },
+    {
+      "id": "c19",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n13",
+      "title": "Jogar novamente",
+      "given": "que o jogo terminou",
+      "when": "o anfitrião (multijogador, com pelo menos 2 jogadores) ou o jogador da mesa solo pede para jogar novamente",
+      "then": "começa um novo jogo com um baralho novo baralhado e pontuações a zero"
+    },
+    {
+      "id": "c20",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n3",
+      "title": "Cartas na mesa",
+      "given": "que começa uma ronda",
+      "when": "as cartas são postas na mesa",
+      "then": "ficam na mesa tantas cartas quantos os jogadores, viradas para cima e identificadas por letra (A, B, C…)"
+    },
+    {
+      "id": "c21",
+      "kind": "FLOW",
+      "scope": "node",
+      "ref": "n4",
+      "title": "Fase de apostas",
+      "given": "que as cartas estão na mesa",
+      "when": "a fase de apostas começa",
+      "then": "cada jogador pode apostar numa carta, e a fase só termina quando todos apostaram"
+    },
+    {
+      "id": "c22",
+      "kind": "DATA",
+      "scope": "component",
+      "ref": "n10",
+      "title": "Token do pássaro",
+      "given": "que um jogo está em curso",
+      "when": "se consulta o token do pássaro",
+      "then": "está com um único jogador ou ainda por atribuir, e vale +5 pontos no final a quem o tiver"
+    },
+    {
+      "id": "c23",
+      "kind": "DATA",
+      "scope": "general",
+      "title": "Número de jogadores",
+      "given": "que uma mesa vai iniciar um jogo",
+      "when": "se contam os jogadores",
+      "then": "jogam de 2 a 6 jogadores humanos; a mesa solo tem 1 humano e 2 bots"
+    },
+    {
+      "id": "c24",
+      "kind": "ACTION",
+      "scope": "player",
+      "title": "Ninguém vê as apostas dos outros",
+      "given": "que é a fase de apostas",
+      "when": "um jogador quer saber o que os outros apostaram",
+      "then": "só vê quem já apostou, nunca em que carta, até à revelação simultânea"
+    }
+  ],
+  "commits": [],
+  "rules": [
+    {
+      "id": "r1",
+      "ref": null,
+      "title": "O Pantanal acorda…",
+      "text": "No coração húmido do Pantanal, uma colónia de capivaras relaxa ao sol. Chegaram os humanos: cada um quer dar festinhas nas suas favoritas. Mas as capivaras são tímidas: se dois humanos se aproximarem ao mesmo tempo, fogem imediatamente. Só o jogador que chegar **sozinho** ganha a sua capivara."
+    },
+    {
+      "id": "r2",
+      "ref": null,
+      "title": "Objetivo",
+      "text": "Terminar o jogo com mais pontos do que os outros jogadores. Os pontos vêm de três fontes: as capivaras que apanhas, o token do pássaro e o bónus dos nenúfares."
+    },
+    {
+      "id": "r3",
+      "ref": "n1",
+      "title": "Iniciar jogo",
+      "text": "Escreve o teu nome no ecrã inicial e escolhe uma mesa.\n\n- **Mesas multijogador (Mesa 1 a Mesa 5):** até 6 jogadores humanos por mesa. O primeiro a entrar é o anfitrião e é quem carrega em «Iniciar Jogo» quando houver pelo menos 2 jogadores sentados.\n- **Mesa Solo (vs 2 IAs):** entras sozinho e o jogo começa logo, contra dois bots. Esta mesa é sempre privada: é criada só para ti."
+    },
+    {
+      "id": "r4",
+      "ref": "n2",
+      "title": "Baralho: 36 cartas",
+      "text": "O baralho tem **36 cartas**, com capivaras representando de 1 a 5 pontos cada:\n\n- 6 cartas com 1 capivara\n- 13 cartas com 2 capivaras\n- 11 cartas com 3 capivaras\n- 4 cartas com 4 capivaras\n- 2 cartas com 5 capivaras\n\nAlgumas cartas têm um pássaro amarelo e algumas têm nenúfares de quatro cores: Amarelo, Vermelho, Branco e Azul."
+    },
+    {
+      "id": "r5",
+      "ref": "n3",
+      "title": "Pôr n cartas na mesa",
+      "text": "A cada ronda são colocadas na mesa **tantas cartas quantos os jogadores**, viradas para cima e identificadas por letra (A, B, C, …)."
+    },
+    {
+      "id": "r6",
+      "ref": "n4",
+      "title": "Fase de apostas",
+      "text": "Em segredo, cada jogador escolhe **uma** das cartas da mesa para apostar. Ninguém vê a escolha dos outros até todos terem decidido.\n\nNuma mesa multijogador, tens tanto tempo quanto precisares para apostar enquanto estiveres ligado."
+    },
+    {
+      "id": "r7",
+      "ref": "n5",
+      "title": "Apostar numa carta",
+      "text": "Escolhe a carta que queres apanhar. A aposta é definitiva: depois de a fazeres, não a podes mudar.\n\nApostar sempre na carta de maior valor nem sempre compensa: se for óbvia, é provável que outro jogador escolha a mesma e a carta escape a ambos."
+    },
+    {
+      "id": "r8",
+      "ref": "n6",
+      "title": "Aposta automática",
+      "text": "Só é feita uma aposta automática (aleatória) em teu nome se ficares desligado a meio de uma ronda, para o jogo não ficar bloqueado à tua espera.\n\nSe a ligação cair a meio do jogo, tens **45 segundos** para voltar a abrir a página (o teu lugar fica reservado). Se não voltares a tempo, o teu lugar é libertado e, em jogos multijogador com menos de 2 jogadores restantes, o jogo termina.\n\nNa Mesa Solo, os bots apostam sozinhos, normalmente entre 1 a 3 segundos depois de a ronda começar."
+    },
+    {
+      "id": "r9",
+      "ref": "n7",
+      "title": "Revelação simultânea",
+      "text": "Quando todos estiverem prontos, as apostas revelam-se **ao mesmo tempo**.\n\nDepois da revelação há uma pequena pausa (uns segundos) antes de a próxima ronda começar automaticamente. Não precisas de fazer nada entre rondas."
+    },
+    {
+      "id": "r10",
+      "ref": "n8",
+      "title": "Aposta única ganha",
+      "text": "**Sozinho:** foste o único a escolher essa carta? É tua! Junta-se à tua coleção."
+    },
+    {
+      "id": "r11",
+      "ref": "n15",
+      "title": "Cartas apanhadas",
+      "text": "Certas cartas têm nenúfares de quatro cores possíveis: Amarelo, Vermelho, Branco e Azul. Se conseguires reunir as **quatro cores** entre as cartas que apanhaste ao longo do jogo (não precisam de estar todas na mesma carta), ganhas um bónus de **+10 pontos** no final.\n\nRepara nas cores de nenúfar que já tens e nas que ainda te faltam: vale a pena arriscar numa carta de valor mais baixo se te faltar só uma cor para o bónus."
+    },
+    {
+      "id": "r12",
+      "ref": "n9",
+      "title": "Empate: ninguém ganha",
+      "text": "**Empate:** mais de um jogador escolheu a mesma carta? Ninguém ganha essa carta: as capivaras fugiram."
+    },
+    {
+      "id": "r13",
+      "ref": "n10",
+      "title": "Token do pássaro",
+      "text": "Algumas cartas têm um pássaro amarelo desenhado. Quem tiver o **token do pássaro** no final do jogo ganha **+5 pontos**."
+    },
+    {
+      "id": "r14",
+      "ref": "n11",
+      "title": "Atribuir/roubar token",
+      "text": "A **primeira** vez que alguém apanha uma carta com pássaro, esse jogador fica com o token do pássaro.\n\nPara **roubar** o token a quem o tem, precisas de acumular **mais** cartas com pássaro do que o detentor atual: não basta empatar, tens mesmo de o ultrapassar.\n\n**Empates não movem o token:** se dois jogadores apanham a primeira carta com pássaro na mesma ronda, ou dois jogadores ultrapassam o detentor ao mesmo tempo, o token fica onde está (ou por atribuir, se ainda ninguém o tiver)."
+    },
+    {
+      "id": "r15",
+      "ref": "n12",
+      "title": "Baralho esgotado?",
+      "text": "O baralho **joga-se duas vezes**: quando as cartas acabam pela primeira vez, o descarte é baralhado e volta a ser usado. Quando acaba pela segunda vez, o jogo termina."
+    },
+    {
+      "id": "r16",
+      "ref": "n13",
+      "title": "Fim de jogo",
+      "text": "Quando o baralho acaba pela segunda vez, o jogo termina e contam-se os pontos finais.\n\nNo fim, o anfitrião de uma mesa multijogador pode iniciar uma nova partida com «Jogar Novamente»; na Mesa Solo isso está sempre disponível."
+    },
+    {
+      "id": "r17",
+      "ref": "n14",
+      "title": "Pontuação final",
+      "text": "Cada jogador soma:\n\n- **1 ponto por capivara** nas cartas que recolheu (o valor de cada carta);\n- **+5** por ter o token do pássaro no final do jogo;\n- **+10** por ter as 4 cores de nenúfar (Amarelo, Vermelho, Branco e Azul).\n\nGanha quem tiver mais pontos no total. Em caso de empate no valor máximo, o primeiro jogador com essa pontuação é indicado como vencedor."
+    },
+    {
+      "id": "r18",
+      "ref": null,
+      "title": "Dicas",
+      "text": "- Ficar de olho em quem tem o token do pássaro (e quantas cartas de pássaro cada um já tem) ajuda a decidir se vale a pena tentar roubá-lo.\n- Apostar sempre na carta de maior valor nem sempre compensa."
+    }
+  ]
+}

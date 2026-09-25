@@ -2,6 +2,7 @@
 //   load()            → { users: {token: user}, rooms: [room] }
 //   saveRoom(room)    / deleteRoom(id) / saveUsers(users)
 //   saveNotices(list) / saveAppearance(obj) (opcionais; load() devolve também { notices, appearance })
+//   saveForgeProject(slug, p) / deleteForgeProject(slug) (opcionais, só no Studio; load() devolve { forge })
 // O match é JSON puro, por isso guardar uma sala é só serializá-la.
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -11,11 +12,13 @@ export function memoryStorage() {
   let users = {};
   let notices = [];
   let appearance = null;
+  const forge = new Map();
   return {
     async load() {
       return {
         users: structuredClone(users), rooms: [...rooms.values()].map((r) => structuredClone(r)),
         notices: structuredClone(notices), appearance: structuredClone(appearance),
+        forge: Object.fromEntries([...forge].map(([k, v]) => [k, structuredClone(v)])),
       };
     },
     async saveRoom(room) { rooms.set(room.id, structuredClone(room)); },
@@ -23,6 +26,8 @@ export function memoryStorage() {
     async saveUsers(u) { users = structuredClone(u); },
     async saveNotices(n) { notices = structuredClone(n); },
     async saveAppearance(a) { appearance = structuredClone(a); },
+    async saveForgeProject(slug, p) { forge.set(slug, structuredClone(p)); },
+    async deleteForgeProject(slug) { forge.delete(slug); },
   };
 }
 
@@ -33,6 +38,7 @@ export function memoryStorage() {
  */
 export function fileStorage(dir) {
   const roomsDir = join(dir, 'rooms');
+  const forgeDir = join(dir, 'forge');
   const queues = new Map();
   const safe = (id) => id.replace(/[^a-zA-Z0-9_-]/g, '_');
 
@@ -63,7 +69,15 @@ export function fileStorage(dir) {
       try { notices = JSON.parse(await readFile(join(dir, 'notices.json'), 'utf8')); } catch { /* sem avisos */ }
       let appearance = null;
       try { appearance = JSON.parse(await readFile(join(dir, 'appearance.json'), 'utf8')); } catch { /* sem afinações */ }
-      return { users, rooms, notices, appearance };
+      const forge = {};
+      await mkdir(forgeDir, { recursive: true });
+      for (const f of await readdir(forgeDir)) {
+        if (!f.endsWith('.json')) continue;
+        try { forge[f.slice(0, -5)] = JSON.parse(await readFile(join(forgeDir, f), 'utf8')); } catch (e) {
+          console.error('[storage] projeto da Forge ilegível', f, e.message);
+        }
+      }
+      return { users, rooms, notices, appearance, forge };
     },
     saveRoom: (room) => write(join(roomsDir, `${safe(room.id)}.json`), room),
     async deleteRoom(id) {
@@ -74,5 +88,11 @@ export function fileStorage(dir) {
     saveUsers: (users) => write(join(dir, 'users.json'), users),
     saveNotices: (notices) => write(join(dir, 'notices.json'), notices),
     saveAppearance: (appearance) => write(join(dir, 'appearance.json'), appearance),
+    saveForgeProject: (slug, p) => write(join(forgeDir, `${safe(slug)}.json`), p),
+    async deleteForgeProject(slug) {
+      const file = join(forgeDir, `${safe(slug)}.json`);
+      await (queues.get(file) || Promise.resolve());
+      await rm(file, { force: true });
+    },
   };
 }

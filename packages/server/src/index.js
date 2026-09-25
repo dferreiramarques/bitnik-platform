@@ -19,6 +19,7 @@ import {
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
+import { normalizeProject, projectSummary, slugify } from './forge.js';
 
 export { memoryStorage, fileStorage };
 
@@ -139,6 +140,7 @@ export function createPlatform({
   const graceTimers = new Map();   // userId → timeout
   let notices = [];                // avisos do publisher para todos os ligados
   let appearance = { brand: { tokens: {} }, games: {} }; // afinações da consola (ADR-008)
+  const forge = new Map();         // slug → projeto da Forge (só no Studio, ADR-009)
   let now = () => Date.now();
   let closing = false;
   const startedAt = now();
@@ -626,9 +628,9 @@ export function createPlatform({
     res.end(body === undefined ? '' : JSON.stringify(body));
   };
 
-  const readJson = (req) => new Promise((resolve, reject) => {
+  const readJson = (req, max = 10_000) => new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (d) => { body += d; if (body.length > 10_000) req.destroy(); });
+    req.on('data', (d) => { body += d; if (body.length > max) req.destroy(); });
     req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch (e) { reject(e); } });
   });
 
@@ -714,6 +716,44 @@ export function createPlatform({
     broadcastLobby();
   }
 
+  // ─── Forge: projetos guardados no storage do Studio ─────────
+  const FORGE_MAX = 2_000_000; // um projeto grande (fluxo, cartões, regras e histórico) cabe à vontade
+  function uniqueSlug(name) {
+    const base = slugify(name);
+    let slug = base;
+    for (let i = 2; forge.has(slug); i++) slug = `${base}-${i}`;
+    return slug;
+  }
+  function saveForge(slug, input, existing) {
+    const p = { ...normalizeProject(input), createdAt: existing?.createdAt ?? now(), updatedAt: now() };
+    forge.set(slug, p);
+    storage.saveForgeProject?.(slug, p);
+    return p;
+  }
+  async function forgeRoute(req, res, url) {
+    const slug = decodeURIComponent(url.slice('/admin/forge/'.length));
+    if (url === '/admin/forge' && req.method === 'GET') {
+      return json(res, 200, { projects: [...forge].map(([s, p]) => projectSummary(s, p)).sort((a, b) => b.updatedAt - a.updatedAt) });
+    }
+    // Criar um projeto novo ou importar um do Rule Forge: { gameName } ou { project }.
+    if (url === '/admin/forge' && req.method === 'POST') {
+      const body = await readJson(req, FORGE_MAX);
+      const input = body.project && typeof body.project === 'object' ? body.project : { gameName: body.gameName };
+      const s = uniqueSlug(input.gameName);
+      const p = saveForge(s, input);
+      return json(res, 201, { slug: s, project: p });
+    }
+    if (!/^[a-z0-9-]{1,80}$/.test(slug) || !forge.has(slug)) return json(res, 404, { error: 'projeto não encontrado' });
+    if (req.method === 'GET') return json(res, 200, { slug, project: forge.get(slug) });
+    if (req.method === 'PUT') return json(res, 200, { slug, project: saveForge(slug, await readJson(req, FORGE_MAX), forge.get(slug)) });
+    if (req.method === 'DELETE') {
+      forge.delete(slug);
+      storage.deleteForgeProject?.(slug);
+      return json(res, 204);
+    }
+    return json(res, 405, { error: 'método não suportado' });
+  }
+
   async function admin(req, res, url) {
     if (!authorized(req)) return json(res, 401, { error: 'unauthorized' });
     try {
@@ -732,6 +772,11 @@ export function createPlatform({
       }
       if (url === '/admin/appearance' && req.method === 'GET') return json(res, 200, await appearanceCatalog());
       if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req)) });
+      // ─── Forge (ADR-009): projetos de jogo, só no Studio ─────
+      if (url === '/admin/forge' || url.startsWith('/admin/forge/')) {
+        if (!studio) return json(res, 404, { error: 'a Forge só existe no Studio' });
+        return forgeRoute(req, res, url);
+      }
       if (url === '/admin/tables' && req.method === 'GET') {
         return json(res, 200, { tables: [...rooms.values()].filter((r) => r.kind === 'invite').sort((a, b) => b.createdAt - a.createdAt).map(inviteInfo) });
       }
@@ -819,6 +864,7 @@ export function createPlatform({
     users = saved.users || {};
     notices = (saved.notices || []).filter((n) => n.until > now());
     if (saved.appearance) appearance = { brand: { tokens: {} }, games: {}, ...saved.appearance };
+    for (const [slug, p] of Object.entries(saved.forge || {})) forge.set(slug, p);
     for (const room of saved.rooms || []) {
       const game = G.get(room.gameId);
       if (!game) { logger.warn(`[load] ${room.id}: jogo ${room.gameId} não instalado, ignorada`); continue; }
