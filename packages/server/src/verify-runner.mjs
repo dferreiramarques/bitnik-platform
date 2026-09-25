@@ -24,6 +24,7 @@ try {
   done();
 }
 
+out.game = { id: game?.id ?? null, version: game?.version ?? null, players: game?.players ?? null };
 const problems = engine.checkGame(game);
 if (!game.enumerate) problems.push('falta "enumerate" (obrigatório nos jogos da Forge: bots, simulação e UI genérica)');
 step('contrato', !problems.length, problems);

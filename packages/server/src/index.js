@@ -778,6 +778,17 @@ export function createPlatform({
       if (!p) return json(res, 404, { error: 'projeto não encontrado' });
       const body = await readJson(req, FORGE_MAX);
       const report = await verifyPackage({ files: body.files, tests: p.tests?.itens });
+      // O pacote tem de ser deste projeto e da versão atual das regras (ADR-013).
+      if (report.game) {
+        const idOk = report.game.id === vm[1];
+        const vOk = report.game.version === p.version;
+        const details = [
+          ...(idOk ? [] : [`id "${report.game.id}" devia ser "${vm[1]}"`]),
+          ...(vOk ? [] : [`versão "${report.game.version}" devia ser "${p.version}" (a das regras)`]),
+        ];
+        report.steps.push({ id: 'identidade', ok: idOk && vOk, details });
+        report.ok = report.steps.every((s) => s.ok);
+      }
       const build = { ts: now(), versaoRegras: p.version, files: body.files ?? {}, report };
       const saved = saveForge(vm[1], { ...p, build }, p);
       return json(res, 200, { report, project: saved });
@@ -905,7 +916,7 @@ export function createPlatform({
     }
     const eng = url.match(/^\/engine\/([a-z0-9]+\.js)$/);
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
-    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js)$/);
+    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });

@@ -97,6 +97,7 @@ export async function verifyPackage({ files, tests, timeoutMs = 60_000 }) {
     report.steps.push(...inner.steps);
     report.tests = inner.tests;
     report.simulation = inner.simulation;
+    report.game = inner.game ?? null;
   } finally {
     await rm(work, { recursive: true, force: true }).catch(() => {});
   }

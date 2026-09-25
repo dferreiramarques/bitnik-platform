@@ -5,6 +5,7 @@
 import { mountFlow } from '/console-forge-flow.js';
 import { buildPrompt, parseNarration, viewPartida } from '/console-forge-play.js';
 import { buildTestsPrompt, viewTestes } from '/console-forge-tests.js';
+import { buildCodePrompt, buildFixPrompt, viewCodigo } from '/console-forge-code.js';
 
 const T = {
   pt: {
@@ -13,6 +14,14 @@ const T = {
     open: 'Abrir', remove: 'Apagar', confirmRemove: 'Apagar o projeto "{name}"? Não dá para desfazer.', back: '← Projetos',
     cards: '{n} cartões', nodes: '{n} blocos', updated: 'alterado {when}', badJson: 'Não é um projeto do Rule Forge (JSON).',
     tab_fluxo: 'Fluxo', tab_cartoes: 'Cartões', tab_regras: 'Regras', tab_partida: 'Partida narrada',
+    tab_codigo: 'Código', cdTitle: 'Código do jogo (versão {v})',
+    cdLead: 'Copia o prompt para a tua IA: ela escreve o pacote do jogo para passar os testes aprovados. Cola a resposta e carrega em Verificar: o Studio corre tudo num processo isolado.',
+    cdNoTests: 'Ainda não há testes aprovados. Aprova os testes primeiro (separador Testes).',
+    cdCopyFix: 'Copiar prompt de correção', cdPaste: 'Resposta da IA (JSON com os ficheiros)', cdVerify: 'Verificar',
+    cdVerifying: 'A verificar…', cdBadJson: 'Não encontrei { "files": { … } } na resposta.', cdReport: 'Relatório',
+    cdOk: 'Passou em tudo', cdFail: 'Há falhas', cdOld: 'Este pacote é de outra versão das regras; as regras estão na {v}.',
+    cdTests: 'Testes: {pass} passaram, {fail} falharam.', cdPlayers: 'Jogadores', cdFinished: 'Partidas acabadas', cdWins: 'Vitórias por lugar',
+    cdFiles: 'Ficheiros ({n})', cdNext: 'Próximo passo: instalar este protótipo no Studio (etapa 5).',
     tab_testes: 'Testes', tsTitle: 'Testes a partir dos cartões',
     tsLead: 'Copia o prompt para a tua IA: ela propõe o modelo do estado e escreve um teste por cartão de regra (e um por partida narrada aprovada). Lê cada teste como Dado / Quando / Então e aprova. Os aprovados ficam fixos.',
     tsSave: 'Guardar testes', tsBadJson: 'Não encontrei o JSON dos testes na resposta.', tsList: '{n} testes ({a} aprovados)',
@@ -59,6 +68,14 @@ const T = {
     open: 'Open', remove: 'Delete', confirmRemove: 'Delete project "{name}"? This cannot be undone.', back: '← Projects',
     cards: '{n} cards', nodes: '{n} blocks', updated: 'changed {when}', badJson: 'Not a Rule Forge project (JSON).',
     tab_fluxo: 'Flow', tab_cartoes: 'Cards', tab_regras: 'Rules', tab_partida: 'Narrated game',
+    tab_codigo: 'Code', cdTitle: 'Game code (version {v})',
+    cdLead: 'Copy the prompt into your AI: it writes the game package to pass the approved tests. Paste the answer and press Verify: the Studio runs everything in an isolated process.',
+    cdNoTests: 'No approved tests yet. Approve the tests first (Tests tab).',
+    cdCopyFix: 'Copy fix prompt', cdPaste: 'AI answer (JSON with the files)', cdVerify: 'Verify',
+    cdVerifying: 'Verifying…', cdBadJson: 'Could not find { "files": { … } } in the answer.', cdReport: 'Report',
+    cdOk: 'Passed everything', cdFail: 'There are failures', cdOld: 'This package is from another rules version; the rules are at {v}.',
+    cdTests: 'Tests: {pass} passed, {fail} failed.', cdPlayers: 'Players', cdFinished: 'Games finished', cdWins: 'Wins by seat',
+    cdFiles: 'Files ({n})', cdNext: 'Next step: install this prototype in the Studio (stage 5).',
     tab_testes: 'Tests', tsTitle: 'Tests from the cards',
     tsLead: 'Copy the prompt into your AI: it proposes the state model and writes one test per rule card (and one per approved narrated game). Read each test as Given / When / Then and approve. Approved tests are frozen.',
     tsSave: 'Save tests', tsBadJson: 'Could not find the tests JSON in the answer.', tsList: '{n} tests ({a} approved)',
@@ -103,7 +120,7 @@ const T = {
 const KINDS = ['DATA', 'FLOW', 'ACTION', 'SCORE'];
 const SCOPES = ['general', 'player', 'component', 'node'];
 const CATS = ['regra', 'plataforma', 'bot'];
-const TABS = ['fluxo', 'cartoes', 'regras', 'partida', 'testes'];
+const TABS = ['fluxo', 'cartoes', 'regras', 'partida', 'testes', 'codigo'];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const fill = (s, p = {}) => s.replace(/\{(\w+)\}/g, (_, k) => p[k] ?? '');
@@ -178,7 +195,7 @@ export function view() {
       <button class="btn btn-ghost" data-fg="export">${f('export')}</button>
     </div>
     <nav class="fg-tabs" role="tablist">${TABS.map((t) => `<a role="tab" href="#/forge/${encodeURIComponent(st.slug)}/${t}" ${t === tab ? 'aria-selected="true"' : ''}>${f(`tab_${t}`)}</a>`).join('')}</nav>
-    ${tab === 'fluxo' ? viewFluxo() : tab === 'regras' ? viewRegras() : tab === 'partida' ? viewPartida(p, st, f) : tab === 'testes' ? viewTestes(p, f) : viewCartoes()}`;
+    ${tab === 'fluxo' ? viewFluxo() : tab === 'regras' ? viewRegras() : tab === 'partida' ? viewPartida(p, st, f) : tab === 'testes' ? viewTestes(p, f) : tab === 'codigo' ? viewCodigo(p, f) : viewCartoes()}`;
 }
 
 function viewList() {
@@ -372,6 +389,25 @@ export function after(root) {
         st.narration = r.narration.id;
         ctx.rerender();
       } catch (err) { ctx.toast(err.message); }
+      return;
+    }
+    if (d.cd === 'copy' || d.cd === 'fix') {
+      await flush();
+      await navigator.clipboard.writeText(d.cd === 'fix' ? buildFixPrompt(p, st.slug) : buildCodePrompt(p, st.slug));
+      ctx.toast(f('ptCopied'));
+      return;
+    }
+    if (d.cd === 'verify') {
+      let files;
+      try { files = parseNarration(b.closest('form').resposta.value).files; } catch { /* abaixo */ }
+      if (!files || typeof files !== 'object') { ctx.toast(f('cdBadJson')); return; }
+      await flush();
+      b.disabled = true;
+      b.textContent = f('cdVerifying');
+      try {
+        st.project = (await ctx.api(`forge/${encodeURIComponent(st.slug)}/verify`, { method: 'POST', body: { files } })).project;
+      } catch (err) { ctx.toast(err.message); }
+      ctx.rerender();
       return;
     }
     if (d.ts === 'copy') {
