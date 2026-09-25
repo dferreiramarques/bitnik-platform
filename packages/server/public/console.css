@@ -167,3 +167,17 @@
   background: var(--ui-card); border: 2px solid var(--ui-muted); cursor: crosshair; }
 .ff-handle:hover { background: var(--ui-primary); border-color: var(--ui-primary); }
 .ff-help { font-size: .85rem; color: var(--ui-muted); margin: 0; }
+
+.ff-area { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.ff-panel { width: 300px; display: grid; gap: 8px; padding: 12px; border: 2px solid var(--ui-line); border-radius: var(--ui-r-md); background: var(--ui-card); max-height: min(68vh, 640px); overflow: auto; }
+.ff-panel h3 { margin: 0; font-size: 1.05rem; }
+.ff-panel h4 { margin: 6px 0 0; font-size: .9rem; color: var(--ui-muted); }
+.ff-warn { margin: 0; padding-left: 18px; color: #8e2a1f; font-size: .85rem; }
+.ff-cards { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: .85rem; }
+.ff-rule { font: inherit; font-size: .9rem; padding: 6px 8px; border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-bg); color: var(--ui-text); resize: vertical; }
+.ff-mini { position: absolute; right: 10px; bottom: 10px; width: 160px; height: 110px; background: color-mix(in srgb, var(--ui-card) 90%, transparent);
+  border: 1px solid var(--ui-line); border-radius: 8px; cursor: pointer; max-width: none; }
+.ff-mini rect { fill: var(--k-action); opacity: .7; }
+.ff-mini rect.k-data { fill: var(--k-data); } .ff-mini rect.k-flow { fill: var(--k-flow); } .ff-mini rect.k-score { fill: var(--k-score); }
+.ff-mini rect.vp { fill: none; stroke: var(--ui-text); stroke-width: 6; opacity: .6; }
+@media (max-width: 900px) { .ff-area { grid-template-columns: 1fr; } .ff-panel { width: auto; } }

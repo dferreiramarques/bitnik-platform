@@ -12,6 +12,34 @@ const uid = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice
 
 export function mountFlow(host, project, { t, onChange }) {
   const view = { x: 40, y: 40, z: 1 };
+  const past = [];
+  const future = [];
+  const snapshot = () => JSON.stringify({ nodes: project.nodes, edges: project.edges });
+  /** Guarda o estado antes de uma alteração (anular volta a ele). */
+  function remember() {
+    past.push(snapshot());
+    if (past.length > 100) past.shift();
+    future.length = 0;
+    syncHistory();
+  }
+  function restore(from, to) {
+    if (!from.length) return;
+    to.push(snapshot());
+    const s = JSON.parse(from.pop());
+    project.nodes = s.nodes;
+    project.edges = s.edges;
+    if (selected && !project.nodes.some((n) => n.id === selected)) selected = null;
+    selectedEdge = null;
+    onChange();
+    draw();
+    syncHistory();
+  }
+  function syncHistory() {
+    const u = host.querySelector('[data-ff="undo"]');
+    if (!u) return;
+    u.disabled = !past.length;
+    host.querySelector('[data-ff="redo"]').disabled = !future.length;
+  }
   let selected = null;      // id do nó selecionado
   let selectedEdge = null;  // { from, to }
 
@@ -24,12 +52,19 @@ export function mountFlow(host, project, { t, onChange }) {
       <select class="ff-selkind" aria-label="${t('ffKind')}" disabled>${KINDS.map((k) => `<option>${k}</option>`).join('')}</select>
       <button class="btn btn-ghost" data-ff="del" disabled>${t('ffDelete')}</button>
       <span class="ff-grow"></span>
+      <button class="btn btn-ghost" data-ff="undo" aria-label="${t('ffUndo')}" title="${t('ffUndo')} (Ctrl+Z)" disabled>↶</button>
+      <button class="btn btn-ghost" data-ff="redo" aria-label="${t('ffRedo')}" title="${t('ffRedo')} (Ctrl+Y)" disabled>↷</button>
+      <button class="btn btn-ghost" data-ff="layout">${t('ffLayout')}</button>
       <button class="btn btn-ghost" data-ff="zout" aria-label="${t('ffZoomOut')}">−</button>
       <button class="btn btn-ghost" data-ff="zin" aria-label="${t('ffZoomIn')}">+</button>
       <button class="btn btn-ghost" data-ff="fit" aria-label="${t('ffFit')}">⤢</button>
     </div>
-    <div class="ff-canvas" tabindex="0" aria-label="${t('ffCanvas')}">
-      <div class="ff-world"><svg class="ff-edges" width="1" height="1" overflow="visible"></svg></div>
+    <div class="ff-area">
+      <div class="ff-canvas" tabindex="0" aria-label="${t('ffCanvas')}">
+        <div class="ff-world"><svg class="ff-edges" width="1" height="1" overflow="visible"></svg></div>
+        <svg class="ff-mini" aria-hidden="true"></svg>
+      </div>
+      <aside class="ff-panel" hidden></aside>
     </div>
     <p class="ff-help">${t('ffHelp')}</p>
   </div>`;
@@ -127,7 +162,48 @@ export function mountFlow(host, project, { t, onChange }) {
     }
     edges.innerHTML = html;
   }
-  function draw() { drawNodes(); drawEdges(); syncBar(); }
+  function draw() { drawNodes(); drawEdges(); syncBar(); drawMini(); drawPanel(); }
+
+  // ─── Minimapa ────────────────────────────────────────────
+  function drawMini() {
+    const mini = $('.ff-mini');
+    const els = [...world.querySelectorAll('.ff-node')];
+    if (!els.length) { mini.innerHTML = ''; return; }
+    const minX = Math.min(...els.map((e) => e.offsetLeft)) - 40;
+    const minY = Math.min(...els.map((e) => e.offsetTop)) - 40;
+    const maxX = Math.max(...els.map((e) => e.offsetLeft + e.offsetWidth)) + 40;
+    const maxY = Math.max(...els.map((e) => e.offsetTop + e.offsetHeight)) + 40;
+    mini.setAttribute('viewBox', `${minX} ${minY} ${maxX - minX} ${maxY - minY}`);
+    const vw = canvas.clientWidth / view.z;
+    const vh = canvas.clientHeight / view.z;
+    mini.innerHTML = els.map((e) => `<rect class="k-${e.dataset.kind.toLowerCase()}" x="${e.offsetLeft}" y="${e.offsetTop}" width="${e.offsetWidth}" height="${e.offsetHeight}" rx="6"/>`).join('')
+      + `<rect class="vp" x="${-view.x / view.z}" y="${-view.y / view.z}" width="${vw}" height="${vh}"/>`;
+    mini.dataset.box = JSON.stringify([minX, minY, maxX - minX, maxY - minY]);
+  }
+
+  // ─── Painel do bloco ─────────────────────────────────────
+  function drawPanel() {
+    const panel = $('.ff-panel');
+    const n = selected && nodeById(selected);
+    panel.hidden = !n;
+    if (!n) return;
+    const cards = project.cards.filter((c) => c.ref === n.id);
+    const rule = project.rules.find((r) => r.ref === n.id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const warn = [];
+    if (!cards.length) warn.push(t('ffNoCards'));
+    const mismatch = cards.filter((c) => c.kind !== n.kind);
+    if (mismatch.length) warn.push(t('ffKindMismatch', { n: mismatch.length, kind: n.kind }));
+    if (!rule?.text.trim()) warn.push(t('ffNoText'));
+    panel.innerHTML = `<h3><span class="ff-k">${n.kind}</span>${esc(n.label)}</h3>
+      ${warn.length ? `<ul class="ff-warn">${warn.map((w) => `<li>⚠ ${esc(w)}</li>`).join('')}</ul>` : ''}
+      ${mismatch.length ? `<button class="btn btn-outline" data-fp="fixkind">${t('ffFixKind', { kind: n.kind })}</button>` : ''}
+      <h4>${t('ffCardsOf', { n: cards.length })}</h4>
+      <ul class="ff-cards">${cards.map((c) => `<li><span class="pill">${esc(t(`cat_${c.category}`))}</span> ${esc(c.title || '—')}</li>`).join('')}</ul>
+      <button class="btn btn-outline" data-fp="card">${t('ffAddCard')}</button>
+      <h4>${t('ffRuleText')}</h4>
+      <textarea class="ff-rule" rows="6" placeholder="${t('ffRuleHint')}">${esc(rule?.text ?? '')}</textarea>`;
+  }
 
   function syncBar() {
     const n = selected && nodeById(selected);
@@ -141,6 +217,7 @@ export function mountFlow(host, project, { t, onChange }) {
 
   // ─── Edição ──────────────────────────────────────────────
   function addNode(x, y, kind = $('.ff-kind').value) {
+    remember();
     const n = { id: uid(), kind, label: `${t('ffNew')} ${kind}`, x: snap(x), y: snap(y) };
     project.nodes.push(n);
     onChange();
@@ -150,13 +227,15 @@ export function mountFlow(host, project, { t, onChange }) {
     input.select();
     return n;
   }
-  function link(from, to) {
+  function link(from, to, record = true) {
     if (from === to || project.edges.some((e) => e.from === from && e.to === to)) return false;
+    if (record) remember();
     project.edges.push({ from, to });
     onChange();
     return true;
   }
   function removeSelection() {
+    if (selectedEdge || selected) remember();
     if (selectedEdge) {
       project.edges = project.edges.filter((e) => !(e.from === selectedEdge.from && e.to === selectedEdge.to));
     } else if (selected) {
@@ -209,7 +288,7 @@ export function mountFlow(host, project, { t, onChange }) {
         if (!target) {
           const p = toWorld(ev.clientX, ev.clientY);
           const n = addNode(p.x - 60, p.y - 20);
-          link(from, n.id);
+          link(from, n.id, false); // o mesmo passo de anular que a criação
           draw();
         }
       });
@@ -221,6 +300,7 @@ export function mountFlow(host, project, { t, onChange }) {
       const ox = n.x;
       const oy = n.y;
       if (selected !== id) select(id);
+      const before = snapshot();
       track(e, (ev, dx, dy) => {
         n.x = snap(ox + dx / view.z);
         n.y = snap(oy + dy / view.z);
@@ -228,7 +308,12 @@ export function mountFlow(host, project, { t, onChange }) {
         el.style.left = `${n.x}px`;
         el.style.top = `${n.y}px`;
         drawEdges();
-      }, (ev, moved) => { if (moved) onChange(); });
+      }, (ev, moved) => {
+        if (!moved) return;
+        past.push(before); future.length = 0; syncHistory();
+        onChange();
+        drawMini();
+      });
       return;
     }
     const hit = e.target.closest('.ff-hit');
@@ -237,7 +322,7 @@ export function mountFlow(host, project, { t, onChange }) {
     const vx = view.x;
     const vy = view.y;
     canvas.classList.add('panning');
-    track(e, (ev, dx, dy) => { view.x = vx + dx; view.y = vy + dy; apply(); }, (ev, moved) => {
+    track(e, (ev, dx, dy) => { view.x = vx + dx; view.y = vy + dy; apply(); drawMini(); }, (ev, moved) => {
       canvas.classList.remove('panning');
       if (!moved && (selected || selectedEdge)) select(null);
     });
@@ -253,16 +338,21 @@ export function mountFlow(host, project, { t, onChange }) {
     e.preventDefault();
     const r = canvas.getBoundingClientRect();
     zoomAt(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
+    drawMini();
   }, { passive: false });
 
   canvas.addEventListener('keydown', (e) => {
     if (e.target.closest('input, select, textarea')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) restore(future, past); else restore(past, future); return; }
+    if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); restore(future, past); return; }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSelection(); }
     if (e.key === 'Escape') select(null);
     if (e.key === 'Enter' && e.target.classList.contains('ff-node')) select(e.target.dataset.id);
     const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (d && selected) {
       e.preventDefault();
+      remember();
       const n = nodeById(selected);
       n.x += d[0] * GRID; n.y += d[1] * GRID;
       onChange();
@@ -279,7 +369,86 @@ export function mountFlow(host, project, { t, onChange }) {
     if (a === 'zin') zoomAt(1.2, r.width / 2, r.height / 2);
     if (a === 'zout') zoomAt(1 / 1.2, r.width / 2, r.height / 2);
     if (a === 'fit') fit();
+    if (a === 'undo') restore(past, future);
+    if (a === 'redo') restore(future, past);
+    if (a === 'layout') { remember(); layout(); onChange(); draw(); fit(); }
   });
+
+  // Minimapa: clicar leva a vista para esse ponto.
+  $('.ff-mini').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    const [bx, by, bw, bh] = JSON.parse(e.currentTarget.dataset.box || '[0,0,1,1]');
+    const r = e.currentTarget.getBoundingClientRect();
+    const wx = bx + ((e.clientX - r.left) / r.width) * bw;
+    const wy = by + ((e.clientY - r.top) / r.height) * bh;
+    view.x = canvas.clientWidth / 2 - wx * view.z;
+    view.y = canvas.clientHeight / 2 - wy * view.z;
+    apply();
+    drawMini();
+  });
+
+  // Painel do bloco: cartões e texto das regras deste bloco.
+  const panelEl = $('.ff-panel');
+  panelEl.addEventListener('input', (e) => {
+    if (!e.target.classList.contains('ff-rule') || !selected) return;
+    const n = nodeById(selected);
+    let rule = project.rules.find((r) => r.ref === n.id);
+    if (!rule) { rule = { id: `r${Date.now().toString(36)}`, ref: n.id, title: n.label, text: '' }; project.rules.push(rule); }
+    rule.text = e.target.value;
+    onChange();
+    const el = nodeEl(n.id)?.querySelector('.ff-badges span:last-child');
+    if (el) el.classList.toggle('miss', !rule.text.trim());
+  });
+  panelEl.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-fp]')?.dataset.fp;
+    const n = selected && nodeById(selected);
+    if (!a || !n) return;
+    if (a === 'fixkind') for (const c of project.cards) if (c.ref === n.id) c.kind = n.kind;
+    if (a === 'card') {
+      project.cards.unshift({ id: `c${Date.now().toString(36)}`, kind: n.kind, category: 'regra', scope: n.kind === 'DATA' ? 'component' : 'node', ref: n.id, title: '', given: '', when: '', then: '' });
+    }
+    onChange();
+    draw();
+  });
+
+  /**
+   * Organizar: camadas de cima para baixo pela ordem do fluxo (profundidade
+   * a partir dos blocos sem entradas; ligações para trás não contam).
+   */
+  function layout() {
+    const incoming = new Map(project.nodes.map((n) => [n.id, 0]));
+    for (const e of project.edges) incoming.set(e.to, (incoming.get(e.to) || 0) + 1);
+    const out = new Map(project.nodes.map((n) => [n.id, []]));
+    for (const e of project.edges) out.get(e.from)?.push(e.to);
+    const depth = new Map();
+    const roots = project.nodes.filter((n) => !incoming.get(n.id)).map((n) => n.id);
+    const queue = (roots.length ? roots : [project.nodes[0]?.id]).filter(Boolean).map((id) => [id, 0]);
+    const onPath = new Set();
+    const visit = (id, d) => {
+      if (onPath.has(id)) return; // ciclo: ligação para trás
+      if ((depth.get(id) ?? -1) >= d) return;
+      depth.set(id, d);
+      onPath.add(id);
+      for (const to of out.get(id) || []) visit(to, d + 1);
+      onPath.delete(id);
+    };
+    for (const [id, d] of queue) visit(id, d);
+    for (const n of project.nodes) if (!depth.has(n.id)) depth.set(n.id, 0);
+    const layers = new Map();
+    for (const n of project.nodes) {
+      const d = depth.get(n.id);
+      if (!layers.has(d)) layers.set(d, []);
+      layers.get(d).push(n);
+    }
+    // Muitos níveis (um fluxo quase em cadeia): dobra em colunas de até 6 níveis.
+    const ROWS = 6;
+    const widest = Math.max(1, ...[...layers.values()].map((l) => l.length));
+    const colWidth = widest * 220 + 80;
+    for (const [d, list] of layers) {
+      const col = Math.floor(d / ROWS);
+      list.forEach((n, i) => { n.x = snap(col * colWidth + i * 220); n.y = snap((d % ROWS) * 120); });
+    }
+  }
   $('.ff-label').addEventListener('input', (e) => {
     const n = selected && nodeById(selected);
     if (!n) return;

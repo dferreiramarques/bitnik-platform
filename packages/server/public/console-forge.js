@@ -26,7 +26,11 @@ const T = {
     exportMd: 'Exportar .md', rulesEmpty: 'Ainda não há secções. Cria as secções dos blocos ou uma secção geral (Objetivo, Preparação…).',
     ffKind: 'Tipo', ffAdd: '+ Bloco', ffLabel: 'Nome do bloco', ffDelete: 'Apagar', ffZoomIn: 'Aproximar', ffZoomOut: 'Afastar', ffFit: 'Ver tudo',
     ffCanvas: 'Fluxo do jogo', ffNew: 'Novo', ffCards: 'Cartões deste bloco', ffText: 'Texto nas regras', ffHandle: 'Arrasta para ligar a outro bloco',
-    ffHelp: 'Duplo clique no fundo cria um bloco. Arrasta a bolinha de um bloco para outro para os ligar (largar no vazio cria um bloco já ligado). Arrasta o fundo para mover a vista; a roda faz zoom. Del apaga; setas movem o bloco selecionado.',
+    ffUndo: 'Anular', ffRedo: 'Refazer', ffLayout: 'Organizar', ffNoCards: 'Este bloco ainda não tem cartões.',
+    ffKindMismatch: '{n} cartão(ões) com tipo diferente do bloco ({kind}).', ffFixKind: 'Pôr os cartões como {kind}',
+    ffNoText: 'Falta o texto deste bloco nas regras.', ffCardsOf: 'Cartões ({n})', ffAddCard: '+ Cartão para este bloco',
+    ffRuleText: 'Texto nas regras', ffRuleHint: 'Como se joga esta parte, para o documento de regras.',
+    ffHelp: 'Duplo clique no fundo cria um bloco. Arrasta a bolinha de um bloco para outro para os ligar (largar no vazio cria um bloco já ligado). Arrasta o fundo para mover a vista; a roda faz zoom. Del apaga; setas movem o bloco selecionado; Ctrl+Z anula.',
   },
   en: {
     lead: 'Game projects: flow, Gherkin cards and rules document. The narrated game, the tests and the code come from here.',
@@ -49,7 +53,11 @@ const T = {
     exportMd: 'Export .md', rulesEmpty: 'No sections yet. Create the block sections or a general one (Goal, Setup…).',
     ffKind: 'Type', ffAdd: '+ Block', ffLabel: 'Block name', ffDelete: 'Delete', ffZoomIn: 'Zoom in', ffZoomOut: 'Zoom out', ffFit: 'Fit all',
     ffCanvas: 'Game flow', ffNew: 'New', ffCards: 'Cards for this block', ffText: 'Text in the rules', ffHandle: 'Drag to link to another block',
-    ffHelp: 'Double-click the background to create a block. Drag a block’s dot onto another to link them (dropping on empty space creates a linked block). Drag the background to pan; the wheel zooms. Del deletes; arrows move the selected block.',
+    ffUndo: 'Undo', ffRedo: 'Redo', ffLayout: 'Arrange', ffNoCards: 'This block has no cards yet.',
+    ffKindMismatch: '{n} card(s) with a different type from the block ({kind}).', ffFixKind: 'Set the cards to {kind}',
+    ffNoText: 'This block has no text in the rules.', ffCardsOf: 'Cards ({n})', ffAddCard: '+ Card for this block',
+    ffRuleText: 'Text in the rules', ffRuleHint: 'How this part is played, for the rules document.',
+    ffHelp: 'Double-click the background to create a block. Drag a block’s dot onto another to link them (dropping on empty space creates a linked block). Drag the background to pan; the wheel zooms. Del deletes; arrows move the selected block; Ctrl+Z undoes.',
   },
 };
 const KINDS = ['DATA', 'FLOW', 'ACTION', 'SCORE'];
