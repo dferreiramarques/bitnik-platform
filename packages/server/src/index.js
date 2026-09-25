@@ -20,6 +20,7 @@ import {
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
 import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests } from './forge.js';
+import { verifyPackage } from './verify.js';
 
 export { memoryStorage, fileStorage };
 
@@ -769,6 +770,17 @@ export function createPlatform({
       const narration = normalizeNarration({ ...input, id: `p${p.narrations.length + 1}`, criada: now(), versaoRegras: p.version, aprovada: false });
       const saved = saveForge(nm[1], { ...p, narrations: [...p.narrations, narration] }, p);
       return json(res, 201, { narration, project: saved });
+    }
+    // Verificação de um pacote gerado (ADR-012/013): { files: { 'index.js': '…', … } }.
+    const vm = slug.match(/^([a-z0-9-]{1,80})\/verify$/);
+    if (vm && req.method === 'POST') {
+      const p = forge.get(vm[1]);
+      if (!p) return json(res, 404, { error: 'projeto não encontrado' });
+      const body = await readJson(req, FORGE_MAX);
+      const report = await verifyPackage({ files: body.files, tests: p.tests?.itens });
+      const build = { ts: now(), versaoRegras: p.version, files: body.files ?? {}, report };
+      const saved = saveForge(vm[1], { ...p, build }, p);
+      return json(res, 200, { report, project: saved });
     }
     // Testes colados da IA: { estado, testes: [...] }; os aprovados ficam fixos.
     const tm = slug.match(/^([a-z0-9-]{1,80})\/tests$/);

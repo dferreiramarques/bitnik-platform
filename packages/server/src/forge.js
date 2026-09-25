@@ -91,6 +91,12 @@ export function normalizeProject(input = {}) {
     gameName: str(input.gameName, 120).trim() || 'Jogo sem nome',
     nodes, edges, cards, rules, legacyCommits, narrations, ruleCommits,
     tests: normalizeTests(input.tests),
+    // Última verificação de um pacote gerado: ficheiros e relatório (o servidor escreve-a).
+    build: input.build && typeof input.build === 'object' ? {
+      ts: num(input.build.ts), versaoRegras: input.build.versaoRegras ? str(input.build.versaoRegras, 20) : null,
+      files: Object.fromEntries(Object.entries(input.build.files || {}).slice(0, 60).map(([k, v]) => [str(k, 200), str(v, 500_000)])),
+      report: input.build.report ?? null,
+    } : null,
     version: ruleCommits.at(-1)?.version ?? '0.0.0',
   };
 }

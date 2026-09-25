@@ -654,3 +654,32 @@ test('Forge: testes a partir dos cartões; os aprovados ficam fixos', async () =
   assert.equal(r.tests.estado, resposta.estado, 'sem modelo novo, mantém o anterior');
   await s.stop();
 });
+
+test('Forge: verificação isolada de um pacote gerado (contrato, pureza, testes, simulação, limites)', async () => {
+  const { verifyPackage } = await import('../packages/server/src/verify.js');
+  const base = new URL('./fixtures/forge-pacote/', import.meta.url);
+  const files = Object.fromEntries(await Promise.all(['index.js', 'i18n/pt.js', 'i18n/en.js'].map(async (f) => [f, await readFile(new URL(f, base), 'utf8')])));
+  const t = (nome, codigo) => ({ cartao: 'c1', nome, aprovado: true, codigo });
+  const passa = t('Avançar soma', "test('Avançar soma', () => { const m = createMatch(game, { numPlayers: 2, seed: 1 }); assert.equal(applyMove(game, m, 0, { type: 'AVANCAR', payload: { passos: 2 } }).match.state.pontos[0], 2); });");
+
+  const ok = await verifyPackage({ files, tests: [passa] });
+  assert.ok(ok.ok, JSON.stringify(ok.steps.filter((s) => !s.ok)));
+  assert.equal(ok.tests.pass, 1);
+  assert.ok(ok.simulation.every((x) => x.finished === x.games));
+
+  const falha = await verifyPackage({ files, tests: [passa, t('Três passos', "test('Três passos', () => { assert.equal(1, 2); });")] });
+  assert.equal(falha.ok, false);
+  assert.deepEqual(falha.tests.failures.map((x) => x.name), ['Três passos']);
+
+  const impuro = await verifyPackage({ files: { ...files, 'index.js': `${files['index.js']}\nconst x = Math.random();` }, tests: [passa] });
+  assert.equal(impuro.steps.find((s) => s.id === 'pureza').ok, false);
+
+  // Isolamento: ler fora da pasta é recusado; um ciclo infinito é parado.
+  const fora = await verifyPackage({ files, tests: [t('Ler fora', "import('node:fs').then(); test('Ler fora', async () => { const fs = await import('node:fs'); fs.readFileSync(process.execPath); });")] });
+  assert.match(fora.tests.failures[0]?.error ?? '', /restricted|permission|ERR_ACCESS_DENIED/i);
+  const ciclo = await verifyPackage({ files, tests: [t('Ciclo', "test('Ciclo', () => { while (true) {} });")], timeoutMs: 4000 });
+  assert.equal(ciclo.steps.find((s) => s.id === 'tempo')?.ok, false);
+
+  assert.equal((await verifyPackage({ files: { '../fora.js': 'x' }, tests: [passa] })).steps[0].ok, false);
+  assert.equal((await verifyPackage({ files, tests: [] })).steps.find((s) => s.id === 'testes-aprovados').ok, false);
+});
