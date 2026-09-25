@@ -830,3 +830,15 @@ test('Forge: com testes aprovados, as funções auxiliares atuais ficam e só en
   const livre = mergeTests({ ...atual, itens: [{ ...atual.itens[0], aprovado: false }] }, { auxiliares: novas, testes: [] }, '0.1.0');
   assert.equal(livre.auxiliares, novas);
 });
+
+test('os ficheiros do browser (lobby e consola) não têm erros de sintaxe', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { readdirSync } = await import('node:fs');
+  const dir = new URL('../packages/server/public/', import.meta.url);
+  const { fileURLToPath } = await import('node:url');
+  // sw.js é um modelo: o servidor preenche {{PRECACHE}} antes de o servir.
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.js') && x !== 'sw.js')) {
+    const r = spawnSync(process.execPath, ['--check', fileURLToPath(new URL(f, dir))], { encoding: 'utf8' });
+    assert.equal(r.status, 0, `${f}: ${r.stderr.split('\n').slice(0, 5).join('\n')}`);
+  }
+});

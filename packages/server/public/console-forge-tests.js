@@ -37,8 +37,7 @@ ${approved.length ? `PARTIDAS NARRADAS APROVADAS (um teste de ponta a ponta por 
 ${approved.map((n) => `### ${n.id}: ${n.cenario} (${n.jogadores} jogadores)\n${n.jogadas.map((m) => `${m.n}. J${m.jogador ?? '-'}: ${m.acao} → ${m.resultado}`).join('\n')}\nFim: ${n.fim}`).join('\n\n')}` : ''}
 
 ${done.length ? `TESTES JÁ APROVADOS (ficam como estão: NÃO os escrevas outra vez)
-${done.map((t) => `- ${t.cartao ? `[${t.cartao}]` : `partida ${t.narracao}`} ${t.nome}`).join('
-')}
+${done.map((t) => `- ${t.cartao ? `[${t.cartao}]` : `partida ${t.narracao}`} ${t.nome}`).join('\n')}
 
 ${p.tests.auxiliares?.trim() ? `FUNÇÕES AUXILIARES ATUAIS (os testes aprovados usam-nas: reutiliza-as e NÃO as redefinas; se precisares de outras, dá-lhes nomes novos e põe só essas no campo "auxiliares")
 ${p.tests.auxiliares.trim()}
