@@ -90,6 +90,7 @@ export function normalizeProject(input = {}) {
   return {
     gameName: str(input.gameName, 120).trim() || 'Jogo sem nome',
     nodes, edges, cards, rules, legacyCommits, narrations, ruleCommits,
+    tests: normalizeTests(input.tests),
     version: ruleCommits.at(-1)?.version ?? '0.0.0',
   };
 }
@@ -126,6 +127,46 @@ export function normalizeNarration(input = {}, i = 0) {
     fim: str(typeof input.fim === 'string' ? input.fim : JSON.stringify(input.fim ?? ''), 2000),
     aprovada: !!input.aprovada && doubts.every((d) => d.estado !== 'aberta'),
     versaoRegras: input.versaoRegras ? str(input.versaoRegras, 20) : null,
+  };
+}
+
+// ─── Testes a partir dos cartões (ADR-012) ──────────────────
+/**
+ * Um teste por cartão de regra (e um por partida narrada aprovada), com o
+ * Dado/Quando/Então legível e o código. Os aprovados ficam fixos: uma nova
+ * resposta da IA só substitui os que ainda não foram aprovados.
+ */
+export function normalizeTests(input = {}) {
+  const itens = (Array.isArray(input.itens) ? input.itens : Array.isArray(input.testes) ? input.testes : []).slice(0, 1000).map((t, i) => ({
+    id: idOf(t?.id, 't', i),
+    cartao: t?.cartao == null ? null : str(t.cartao, 40),
+    narracao: t?.narracao == null ? null : str(t.narracao, 40),
+    nome: str(t?.nome, 300),
+    dado: str(t?.dado),
+    quando: str(t?.quando),
+    entao: str(t?.entao),
+    codigo: str(t?.codigo, 50_000),
+    aprovado: !!t?.aprovado,
+  }));
+  return {
+    estado: str(input.estado, 20_000),
+    versaoRegras: input.versaoRegras ? str(input.versaoRegras, 20) : null,
+    itens,
+  };
+}
+
+/** Junta uma resposta nova da IA aos testes existentes: os aprovados não mudam. */
+export function mergeTests(current, incoming, versaoRegras) {
+  const kept = (current?.itens || []).filter((t) => t.aprovado);
+  const keyOf = (t) => t.cartao ? `c:${t.cartao}` : t.narracao ? `p:${t.narracao}` : `n:${t.nome}`;
+  const keptKeys = new Set(kept.map(keyOf));
+  const fresh = normalizeTests(incoming).itens
+    .filter((t) => !keptKeys.has(keyOf(t)))
+    .map((t, i) => ({ ...t, id: `t${Date.now().toString(36)}${i}`, aprovado: false }));
+  return {
+    estado: String(incoming.estado ?? '').trim() ? normalizeTests(incoming).estado : current?.estado ?? '',
+    versaoRegras,
+    itens: [...kept, ...fresh],
   };
 }
 

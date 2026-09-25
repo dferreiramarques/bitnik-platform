@@ -620,3 +620,37 @@ test('Forge: um projeto guardado por uma versão anterior ganha os campos novos 
   assert.equal(project.createdAt, 1);
   await s.stop();
 });
+
+test('Forge: testes a partir dos cartões; os aprovados ficam fixos', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const post = (path, body) => fetch(`${url}${path}`, { method: 'POST', headers: auth, body: JSON.stringify(body) });
+  const { slug } = await (await post('', { gameName: 'Farol' })).json();
+  assert.equal((await post(`/${slug}/tests`, { testes: [] })).status, 400);
+  const resposta = {
+    estado: '{ jogadores: [{ mao: [] }], mesa: [] }',
+    testes: [
+      { cartao: 'c1', nome: 'Aposta única ganha', dado: 'uma mesa com 4 cartas', quando: 'só um jogador aposta na carta 2', entao: 'ganha a carta', codigo: "test('x', () => {})" },
+      { cartao: 'c2', nome: 'Empate', dado: 'a', quando: 'b', entao: 'c', codigo: "test('y', () => {})" },
+    ],
+  };
+  let r = await (await post(`/${slug}/tests`, resposta)).json();
+  assert.equal(r.tests.itens.length, 2);
+  assert.ok(r.tests.itens.every((t) => !t.aprovado), 'chegam por aprovar');
+
+  // Aprovar o primeiro e tentar mudá-lo por PUT: não muda.
+  const p = r.project;
+  p.tests.itens[0].aprovado = true;
+  let saved = (await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(p) })).json()).project;
+  assert.equal(saved.tests.itens[0].aprovado, true);
+  saved.tests.itens[0].entao = 'outra coisa';
+  saved = (await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(saved) })).json()).project;
+  assert.equal(saved.tests.itens[0].entao, 'ganha a carta', 'um teste aprovado está fixo');
+
+  // Nova resposta da IA: o aprovado fica, o outro é substituído.
+  r = await (await post(`/${slug}/tests`, { testes: [{ cartao: 'c1', nome: 'mudado' }, { cartao: 'c2', nome: 'Empate v2' }] })).json();
+  assert.deepEqual(r.tests.itens.map((t) => t.nome), ['Aposta única ganha', 'Empate v2']);
+  assert.equal(r.tests.estado, resposta.estado, 'sem modelo novo, mantém o anterior');
+  await s.stop();
+});

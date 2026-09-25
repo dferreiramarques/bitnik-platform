@@ -19,7 +19,7 @@ import {
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
-import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion } from './forge.js';
+import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests } from './forge.js';
 
 export { memoryStorage, fileStorage };
 
@@ -770,13 +770,29 @@ export function createPlatform({
       const saved = saveForge(nm[1], { ...p, narrations: [...p.narrations, narration] }, p);
       return json(res, 201, { narration, project: saved });
     }
+    // Testes colados da IA: { estado, testes: [...] }; os aprovados ficam fixos.
+    const tm = slug.match(/^([a-z0-9-]{1,80})\/tests$/);
+    if (tm && req.method === 'POST') {
+      const p = forge.get(tm[1]);
+      if (!p) return json(res, 404, { error: 'projeto não encontrado' });
+      const body = await readJson(req, FORGE_MAX);
+      const input = body.tests ?? body;
+      if (!Array.isArray(input.testes ?? input.itens) || !(input.testes ?? input.itens).length) return json(res, 400, { error: 'a resposta não tem testes' });
+      const saved = saveForge(tm[1], { ...p, tests: mergeTests(p.tests, input, p.version) }, p);
+      return json(res, 201, { tests: saved.tests, project: saved });
+    }
     if (!/^[a-z0-9-]{1,80}$/.test(slug) || !forge.has(slug)) return json(res, 404, { error: 'projeto não encontrado' });
     if (req.method === 'GET') return json(res, 200, { slug, project: forge.get(slug) });
     if (req.method === 'PUT') {
-      // Os commits das regras só se criam pelo /commit: um PUT não os reescreve.
+      // Os commits das regras só se criam pelo /commit, e um teste aprovado não muda de conteúdo.
       const body = await readJson(req, FORGE_MAX);
       const p = forge.get(slug);
-      return json(res, 200, { slug, project: saveForge(slug, { ...body, ruleCommits: p.ruleCommits }, p) });
+      const approved = new Map((p.tests?.itens || []).filter((t) => t.aprovado).map((t) => [t.id, t]));
+      const tests = body.tests && {
+        ...body.tests,
+        itens: (body.tests.itens || []).map((t) => (approved.has(t.id) && t.aprovado ? approved.get(t.id) : t)),
+      };
+      return json(res, 200, { slug, project: saveForge(slug, { ...body, tests: tests ?? p.tests, ruleCommits: p.ruleCommits }, p) });
     }
     if (req.method === 'DELETE') {
       forge.delete(slug);
