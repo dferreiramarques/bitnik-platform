@@ -8,7 +8,7 @@
 // adaptador de storage. Um deploy por marca/cliente.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { mkdir, writeFile, symlink, rm } from 'node:fs/promises';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -22,6 +22,7 @@ import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
 import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests } from './forge.js';
 import { verifyPackage, ENGINE_ROOT } from './verify.js';
+import { publishProblem, publicationFiles, setVersion, PUBLISH_VERSION } from './publish.js';
 
 export { memoryStorage, fileStorage };
 
@@ -97,6 +98,7 @@ export function createPlatform({
   graceMs = 60_000,
   studio = false,
   prototypeDir = null, // Studio: pasta onde a Forge instala os protótipos 0.x (etapa 5)
+  gamesDir = null,     // Studio: pasta games/ do repositório, onde "Publicar" grava o jogo 1.0.0
   logger = console,
   adminToken = process.env.ADMIN_TOKEN, // sem token, as rotas /admin não existem
 } = {}) {
@@ -871,6 +873,29 @@ export function createPlatform({
         return json(res, 400, { error: e.message });
       }
     }
+    // Publicar o protótipo instalado como jogo 1.0.0 em games/<id>/ (sem Git: o commit vem depois).
+    const pm = slug.match(/^([a-z0-9-]{1,80})\/publish$/);
+    if (pm && req.method === 'POST') {
+      const p = forge.get(pm[1]);
+      if (!p) return json(res, 404, { error: 'projeto não encontrado' });
+      if (!gamesDir) return json(res, 400, { error: 'este servidor não publica jogos' });
+      const problem = publishProblem(p);
+      if (problem) return json(res, 400, { error: problem });
+      const target = join(gamesDir, pm[1]);
+      if (existsSync(target)) return json(res, 409, { error: `já existe a pasta games/${pm[1]}` });
+      // Verifica outra vez, já com a versão 1.0.0, antes de escrever.
+      const files = publicationFiles(p, pm[1], { engineVersion: ENGINE_VERSION, date: new Date(now()) });
+      const pkg = { ...p.build.files, 'index.js': setVersion(p.build.files['index.js'], PUBLISH_VERSION) };
+      const report = await verifyPackage({ files: pkg, tests: p.tests?.itens, auxiliares: p.tests?.auxiliares });
+      if (!report.ok || report.game?.version !== PUBLISH_VERSION) return json(res, 400, { error: `a versão ${PUBLISH_VERSION} não passou a verificação`, report });
+      for (const [rel, content] of Object.entries(files)) {
+        await mkdir(dirname(join(target, rel)), { recursive: true });
+        await writeFile(join(target, rel), content);
+      }
+      const published = { version: PUBLISH_VERSION, ts: now(), dir: `games/${pm[1]}`, files: Object.keys(files).sort() };
+      const saved = saveForge(pm[1], { ...p, published }, p);
+      return json(res, 200, { published, project: saved });
+    }
     // Testes colados da IA: { estado, testes: [...] }; os aprovados ficam fixos.
     const tm = slug.match(/^([a-z0-9-]{1,80})\/tests$/);
     if (tm && req.method === 'POST') {
@@ -894,7 +919,7 @@ export function createPlatform({
         ...body.tests,
         itens: (body.tests.itens || []).map((t) => (approved.has(t.id) && t.aprovado ? approved.get(t.id) : t)),
       };
-      return json(res, 200, { slug, project: saveForge(slug, { ...body, tests: tests ?? p.tests, ruleCommits: p.ruleCommits, build: p.build, prototypes: p.prototypes }, p) });
+      return json(res, 200, { slug, project: saveForge(slug, { ...body, tests: tests ?? p.tests, ruleCommits: p.ruleCommits, build: p.build, prototypes: p.prototypes, published: p.published }, p) });
     }
     if (req.method === 'DELETE') {
       forge.delete(slug);

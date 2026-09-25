@@ -109,6 +109,11 @@ export function viewCodigo(p, f) {
       <h2>${f('cdTitle', { v: p.version })}</h2>
       <p class="con-lead">${f('cdLead')}</p>
       ${approved ? '' : `<p class="ff-warn">⚠ ${f('cdNoTests')}</p>`}
+      ${p.published ? `<div class="fg-published">
+        <p>✓ <b>${f('cdPublished', { v: p.published.version, dir: p.published.dir, d: new Date(p.published.ts).toLocaleString() })}</b></p>
+        <p>${f('cdPublishedNext')}</p>
+        <details><summary>${f('cdFiles', { n: p.published.files.length })}</summary><pre class="fg-pre">${esc(p.published.files.join('\n'))}</pre></details>
+      </div>` : ''}
       ${p.prototype ? `<p class="fg-installed">✓ ${f('cdInstalled', { v: p.prototype.version, d: new Date(p.prototype.ts).toLocaleString() })}
         ${p.prototypes.length > 1 ? `<small>${f('cdOlder', { list: p.prototypes.slice(0, -1).map((x) => x.version).join(', ') })}</small>` : ''}
         <a class="btn btn-outline" href="/" target="_blank" rel="noopener">${f('cdOpenLobby')}</a></p>` : ''}
@@ -140,6 +145,10 @@ export function viewCodigo(p, f) {
       ${r.ok ? `<div class="fg-card-head">
         <button type="button" class="btn btn-primary" data-cd="install">${f(p.prototype ? 'cdReinstall' : 'cdInstall')}</button>
         <span class="con-lead">${f('cdInstallHint')}</span>
+      </div>` : ''}
+      ${r.ok && !p.published && p.prototype?.buildTs === b.ts ? `<div class="fg-card-head">
+        <button type="button" class="btn btn-outline" data-cd="publish">${f('cdPublish')}</button>
+        <span class="con-lead">${f('cdPublishHint')}</span>
       </div>` : ''}
     </section>` : ''}
   </div>`;

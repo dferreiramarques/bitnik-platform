@@ -104,6 +104,11 @@ export function normalizeProject(input = {}) {
     // tem nome seguro e é o servidor que a escolhe.
     prototypes,
     prototype: prototypes.at(-1) ?? null,
+    // Publicação em games/<id>/ (etapa 5c); escrita só pelo servidor.
+    published: input.published && typeof input.published === 'object' ? {
+      version: str(input.published.version, 20), ts: num(input.published.ts), dir: str(input.published.dir, 200),
+      files: (Array.isArray(input.published.files) ? input.published.files : []).slice(0, 100).map((f) => str(f, 200)),
+    } : null,
     version: ruleCommits.at(-1)?.version ?? '0.0.0',
   };
 }

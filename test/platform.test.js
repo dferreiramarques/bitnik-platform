@@ -709,12 +709,14 @@ test('Forge: instalar o pacote verificado como protótipo, sem reiniciar, e volt
   const base = new URL('./fixtures/forge-pacote/', import.meta.url);
   const files = Object.fromEntries(await Promise.all(['index.js', 'i18n/pt.js', 'i18n/en.js'].map(async (f) => [f, await readFile(new URL(f, base), 'utf8')])));
   const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
-  let s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const gamesDir = join(dir, 'games');
+  let s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir, gamesDir });
   const url = `http://localhost:${s.port}/admin/forge`;
   const post = (path, body = {}) => fetch(`${url}${path}`, { method: 'POST', headers: auth, body: JSON.stringify(body) });
   const { slug } = await (await post('', { gameName: 'Corrida Simples' })).json();
   assert.equal(slug, 'corrida-simples');
   assert.equal((await post(`/${slug}/install`)).status, 400, 'sem verificação não instala');
+  assert.equal((await post(`/${slug}/publish`)).status, 400, 'sem protótipo não publica');
 
   await post(`/${slug}/commit`, { message: 'regras' });
   const { project } = await (await post(`/${slug}/tests`, { testes: [{ cartao: 'c1', nome: 'Soma', codigo: "test('Soma', () => { assert.equal(applyMove(game, createMatch(game, { numPlayers: 2, seed: 1 }), 0, { type: 'AVANCAR', payload: { passos: 1 } }).match.state.pontos[0], 1); });" }] })).json();
@@ -734,10 +736,23 @@ test('Forge: instalar o pacote verificado como protótipo, sem reiniciar, e volt
   const created = c.next('room');
   c.createSolo(slug, 2);
   assert.equal((await created).room.gameId, slug);
+
+  // Publicar: grava games/<id>/ como 1.0.0, com testes, regras e histórico; só uma vez.
+  const pub = await (await post(`/${slug}/publish`)).json();
+  assert.equal(pub.published.version, '1.0.0', JSON.stringify(pub));
+  for (const f of ['index.js', 'i18n/pt.js', 'i18n/en.js', 'test/forge.test.js', 'REGRAS.md', 'CHANGELOG.md', 'package.json']) {
+    assert.ok(pub.published.files.includes(f), f);
+  }
+  const pubDir = join(gamesDir, slug);
+  assert.match(await readFile(join(pubDir, 'index.js'), 'utf8'), /version: '1\.0\.0'/);
+  assert.match(await readFile(join(pubDir, 'test', 'forge.test.js'), 'utf8'), /test\('Soma'/);
+  assert.equal(JSON.parse(await readFile(join(pubDir, 'package.json'), 'utf8')).name, '@bitnik/game-corrida-simples');
+  assert.match(await readFile(join(pubDir, 'CHANGELOG.md'), 'utf8'), /## 1\.0\.0/);
+  assert.equal((await post(`/${slug}/publish`)).status, 400, 'não publica duas vezes');
   await s.stop();
 
   // Depois de reiniciar, o protótipo volta a estar instalado.
-  s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir, gamesDir });
   const games = (await (await fetch(`http://localhost:${s.port}/admin/games`, { headers: auth })).json()).games;
   assert.ok(games.find((x) => x.id === slug)?.prototype);
   await s.stop();

@@ -26,6 +26,8 @@ export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
     studio: true,
     // Protótipos da Forge: ficam com os dados; sem pasta de dados, numa pasta temporária.
     prototypeDir: join(dataDir || join(tmpdir(), 'bitnik-studio'), 'prototipos'),
+    // "Publicar" grava o jogo 1.0.0 na pasta games/ deste repositório.
+    gamesDir: fileURLToPath(new URL('../../games/', import.meta.url)),
     ...opts,
   });
 }

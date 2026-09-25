@@ -217,3 +217,5 @@
 .fg-code { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: .8rem; padding: 8px; border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-bg); color: var(--ui-text); resize: vertical; }
 
 .fg-installed { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.fg-published { border: 1px solid var(--ui-line); border-radius: var(--ui-r-sm); padding: 8px 12px; margin: 8px 0; }
