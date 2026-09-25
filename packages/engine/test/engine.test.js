@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createMatch, applyMove, fireTimer, replay, viewFor, checkGame, translate, simulate, botMove, defineGame, checkPurity,
-  compatibleVersions, matchIncompatibility, ENGINE_VERSION, describeMove,
+  compatibleVersions, matchIncompatibility, ENGINE_VERSION, describeMove, playerCounts,
 } from '../src/index.js';
 import race from './fixtures/race.js';
 
@@ -222,3 +222,12 @@ test('viewFor devolve as jogadas legais já rotuladas', () => {
   assert.deepEqual(viewFor(race, m, 0).legal, [{ type: 'ROLL', label: { key: 'move.ROLL', params: {} } }]);
 });
 
+
+test('players.counts: um jogo pode aceitar só alguns números de jogadores', () => {
+  const base = { ...race, players: { min: 2, max: 4, counts: [2, 4] } };
+  assert.deepEqual(playerCounts(base), [2, 4]);
+  assert.deepEqual(playerCounts(race), Array.from({ length: race.players.max - race.players.min + 1 }, (_, i) => race.players.min + i));
+  assert.throws(() => createMatch(base, { numPlayers: 3, seed: 1 }), /3 jogadores/);
+  assert.equal(createMatch(base, { numPlayers: 4, seed: 1 }).numPlayers, 4);
+  assert.deepEqual(checkGame({ ...race, players: { min: 2, max: 4, counts: [2, 5] } }), ['players.counts tem de ser uma lista de números entre min e max']);
+});

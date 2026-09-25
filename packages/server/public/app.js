@@ -122,11 +122,12 @@ window.addEventListener('hashchange', () => {
 });
 
 // ─── Lobby ───────────────────────────────────────────────────
+// Números de jogadores de uma mesa (players.counts do jogo, ou de min a max; a partir de 2).
+const tableCounts = (p) => (p.counts ?? Array.from({ length: p.max - p.min + 1 }, (_, i) => p.min + i)).filter((n) => n >= 2);
 function renderLobby() {
   const games = W()?.games || [];
   return `<section class="lobby">${games.map((g) => {
-    const counts = [];
-    for (let n = Math.max(2, g.players.min); n <= g.players.max; n++) counts.push(n);
+    const counts = tableCounts(g.players);
     const pub = app.rooms.public.filter((r) => r.gameId === g.id);
     const mine = app.rooms.mine.filter((r) => r.gameId === g.id);
     return `<article class="game-block">

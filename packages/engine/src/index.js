@@ -11,7 +11,7 @@ import { checkPurity } from './purity.js';
 
 export { createRng, seedFrom, translate, i18nGaps, ENGINE_I18N, checkPurity };
 
-export const ENGINE_VERSION = '0.2.0';
+export const ENGINE_VERSION = '0.2.1';
 const INVALID = Symbol('invalid');
 const LOG_CAP = 200;
 
@@ -26,6 +26,10 @@ export function checkGame(game) {
   if (problems.length) return problems;
   const { min, max } = game.players;
   if (!(min >= 1 && max >= min)) problems.push('players.min/max inválidos');
+  const { counts } = game.players;
+  if (counts != null && (!Array.isArray(counts) || !counts.length || counts.some((n) => !Number.isInteger(n) || n < min || n > max))) {
+    problems.push('players.counts tem de ser uma lista de números entre min e max');
+  }
   if (!game.i18n || !Object.keys(game.i18n).length) problems.push('falta i18n');
   for (const gap of i18nGaps(game)) problems.push(`i18n sem chave ${gap}`);
   for (const [name, fn] of Object.entries(game.moves)) {
@@ -40,6 +44,16 @@ export function defineGame(game) {
   const problems = checkGame(game);
   if (problems.length) throw new Error(`Jogo "${game?.id}" inválido: ${problems.join('; ')}`);
   return Object.freeze({ defaultLang: 'pt', events: {}, bots: {}, enumerate: null, ...game });
+}
+
+/**
+ * Números de jogadores aceites: `players.counts` (ex.: [2, 4] num jogo que não
+ * se joga a 3) ou, sem ela, todos de `min` a `max`.
+ */
+export function playerCounts(game) {
+  const { min, max, counts } = game.players;
+  if (Array.isArray(counts)) return [...new Set(counts)].sort((a, b) => a - b);
+  return Array.from({ length: max - min + 1 }, (_, i) => min + i);
 }
 
 // ─── Versões ────────────────────────────────────────────────────
@@ -109,9 +123,8 @@ function applyTimerOps(timers, ops, seq) {
  * @param {{numPlayers:number, seed?:number|string, options?:object}} opts
  */
 export function createMatch(game, { numPlayers, seed, options = {} }) {
-  const { min, max } = game.players;
-  if (!(numPlayers >= min && numPlayers <= max)) {
-    throw new Error(`${game.id}: ${numPlayers} jogadores fora de [${min}, ${max}]`);
+  if (!playerCounts(game).includes(numPlayers)) {
+    throw new Error(`${game.id}: ${numPlayers} jogadores não é aceite (${playerCounts(game).join(', ')})`);
   }
   const s = seedFrom(seed ?? `${Date.now()}-${Math.random()}`);
   const rng = createRng(s);

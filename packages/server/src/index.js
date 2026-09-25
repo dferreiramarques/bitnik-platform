@@ -16,7 +16,7 @@ import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import {
   checkGame, createMatch, applyMove, fireTimer, viewFor, activeSeats, botMove, matchIncompatibility, simulate,
-  translate, ENGINE_VERSION,
+  translate, ENGINE_VERSION, playerCounts,
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
@@ -162,9 +162,12 @@ export function createPlatform({
   const emptySeat = () => ({ userId: null, name: '', bot: false, away: false });
   const shared = (room) => room.kind === 'public' || room.kind === 'invite';
 
+  // Mesas a partir de 2 jogadores (a 1 não há mesa: é o modo solo do próprio jogo).
+  const tableCounts = (game) => playerCounts(game).filter((n) => n >= 2);
+
   function publicRoomsFor(game) {
     const out = [];
-    for (let n = Math.max(2, game.players.min); n <= game.players.max; n++) {
+    for (const n of tableCounts(game)) {
       out.push({
         id: `${game.id}-${n}p`, gameId: game.id, kind: 'public', owner: null,
         name: `${n}`, numPlayers: n, seats: Array.from({ length: n }, emptySeat),
@@ -488,7 +491,7 @@ export function createPlatform({
       if (!game) return fail(ws, 'server.UNKNOWN_GAME');
       if (inMaintenance(gameId)) return fail(ws, 'server.MAINTENANCE');
       const n = Number(numPlayers);
-      if (!(n >= Math.max(2, game.players.min) && n <= game.players.max)) return fail(ws, 'server.BAD_PLAYERS');
+      if (!tableCounts(game).includes(n)) return fail(ws, 'server.BAD_PLAYERS');
       const room = {
         id: `solo-${id(8)}`, gameId, kind: 'solo', owner: c.user.userId, name: '', numPlayers: n,
         level: level || 'default',
@@ -708,7 +711,7 @@ export function createPlatform({
     const game = G.get(gameId);
     if (!game) throw new Error('jogo não instalado');
     const n = Number(numPlayers);
-    if (!(n >= Math.max(2, game.players.min) && n <= game.players.max)) throw new Error('número de jogadores inválido');
+    if (!tableCounts(game).includes(n)) throw new Error('número de jogadores inválido');
     const room = {
       id: `inv-${id(9)}`, gameId, kind: 'invite', owner: null, name: cleanName(name, ''), numPlayers: n,
       seats: Array.from({ length: n }, emptySeat),
@@ -940,7 +943,7 @@ export function createPlatform({
         if (!game) return json(res, 404, { error: 'jogo não instalado' });
         const body = await readJson(req);
         const counts = body.numPlayers ? [Number(body.numPlayers)]
-          : Array.from({ length: game.players.max - Math.max(2, game.players.min) + 1 }, (_, i) => Math.max(2, game.players.min) + i);
+          : tableCounts(game);
         const results = [];
         for (const n of counts) results.push(await simulateGame(game, { ...body, numPlayers: n }));
         return json(res, 200, { gameId: game.id, version: game.version, results });

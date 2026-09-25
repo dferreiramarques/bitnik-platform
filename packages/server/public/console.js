@@ -173,7 +173,7 @@ function gamesTable(withSim) {
     <tbody>${app.games.map((g) => `<tr>
       <td><strong>${esc(g.name)}</strong><small>${esc(g.id)}${g.author ? ` · ${esc(g.author)}` : ''}</small></td>
       <td>${esc(g.version)}${g.prototype ? ` <span class="pill">${u('prototype')}</span>` : ''}</td>
-      <td>${g.players.min}–${g.players.max}</td>
+      <td>${g.players.counts ? g.players.counts.join(', ') : `${g.players.min}–${g.players.max}`}</td>
       <td>${g.langs.map(esc).join(', ')}</td>
       <td>${g.problems.length ? `<span class="pill pill-bad" title="${esc(g.problems.join('; '))}">${g.problems.length}</span>` : `<span class="pill pill-ok">${u('ok')}</span>`}</td>
       <td>${g.rooms.playing}</td>
@@ -211,7 +211,7 @@ function viewJogos() {
 function viewMesas() {
   const opts = app.games.map((g) => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
   const g0 = app.games[0];
-  const counts = (g) => (g ? Array.from({ length: g.players.max - Math.max(2, g.players.min) + 1 }, (_, i) => Math.max(2, g.players.min) + i) : []);
+  const counts = (g) => (g ? tableCounts(g.players) : []);
   return `<div><h1>${u('nav_mesas')}</h1><p class="con-lead">${u('mesasLead')}</p></div>
     <div class="panel"><h2>${u('newTable')}</h2>
       <form class="form" id="tableForm">
@@ -294,6 +294,9 @@ function render() {
   if (cur === 'aparencia') appearanceUi.after($('#view'));
   if (cur === 'forge') forgeUi.after($('#view'));
 }
+
+// Números de jogadores de uma mesa (players.counts do jogo, ou de min a max; a partir de 2).
+const tableCounts = (p) => (p.counts ?? Array.from({ length: p.max - p.min + 1 }, (_, i) => p.min + i)).filter((n) => n >= 2);
 
 async function load() {
   if (!app.token) return render();
@@ -386,9 +389,7 @@ $('#view').addEventListener('submit', async (e) => {
 $('#view').addEventListener('change', (e) => {
   if (e.target.id === 'tableGame') {
     const g = app.games.find((x) => x.id === e.target.value);
-    const n = [];
-    for (let i = Math.max(2, g.players.min); i <= g.players.max; i++) n.push(`<option>${i}</option>`);
-    $('#tableN').innerHTML = n.join('');
+    $('#tableN').innerHTML = tableCounts(g.players).map((i) => `<option>${i}</option>`).join('');
   }
   if (e.target.id === 'noticeKind') {
     document.querySelectorAll('[data-for="text"]').forEach((el) => { el.hidden = e.target.value !== 'text'; });

@@ -3,7 +3,7 @@
 //   npm run simulate -- bulbous 500 0.2   (idleRate: 20% das vezes o tempo esgota)
 // Mostra, por número de jogadores: partidas acabadas, falhas,
 // média de jogadas e % de vitórias por lugar (deteta vantagem de lugar).
-import { simulate } from '@bitnik/engine';
+import { simulate, playerCounts } from '@bitnik/engine';
 
 const [gameId = 'catania', gamesArg = '300', idleArg = '0'] = process.argv.slice(2);
 const game = (await import(`@bitnik/game-${gameId}`)).default;
@@ -11,7 +11,7 @@ const games = Number(gamesArg);
 const idleRate = Number(idleArg);
 
 console.log(`${game.id} v${game.version}, ${games} partidas por configuração\n`);
-for (let n = Math.max(2, game.players.min); n <= game.players.max; n++) {
+for (const n of playerCounts(game).filter((x) => x >= 2)) {
   const t0 = Date.now();
   const r = simulate(game, { numPlayers: n, games, seed: `cli-${n}`, idleRate });
   console.log(`${n} jogadores: ${r.finished}/${games} acabadas, ${r.failures.length} falhas, `

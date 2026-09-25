@@ -48,7 +48,8 @@ try {
 // Simulação: partidas só com bots para cada número de jogadores.
 if (problems.length === 0) {
   let ok = true;
-  for (let n = Math.max(1, game.players.min); n <= game.players.max; n++) {
+  const counts = engine.playerCounts ? engine.playerCounts(game) : Array.from({ length: game.players.max - game.players.min + 1 }, (_, i) => game.players.min + i);
+  for (const n of counts) {
     try {
       const r = engine.simulate(game, { numPlayers: n, games: 50, seed: `forge-${n}`, maxSteps: 3000 });
       out.simulation.push({ numPlayers: n, finished: r.finished, games: r.games, failures: r.failures.slice(0, 3), winRateBySeat: r.winRateBySeat, avgMoves: r.avgMoves });

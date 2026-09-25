@@ -14,7 +14,7 @@ import { defineGame } from '@bitnik/engine';
 export default defineGame({
   id: 'catania',            // único dentro de um deploy
   version: '4.0.0',         // semver; uma versão incompatível não retoma partidas guardadas
-  players: { min: 2, max: 4 },
+  players: { min: 2, max: 4 },       // opcional: counts: [2, 4] se o jogo não se jogar com todos os números entre min e max
   defaultLang: 'pt',
   i18n: { pt: {...}, en: {...} },   // mesmas chaves em todas as línguas (verificado)
 

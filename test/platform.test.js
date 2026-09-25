@@ -5,6 +5,7 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BitnikClient } from '@bitnik/client';
+import { ENGINE_VERSION } from '@bitnik/engine';
 import { fileStorage, createPlatform } from '@bitnik/server';
 import race from '../packages/engine/test/fixtures/race.js';
 import { makeStudio } from '../apps/studio/server.js';
@@ -338,7 +339,7 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   assert.equal((await fetch(`${base}/admin/status`)).status, 401);
   await s.client();
   const st = await (await fetch(`${base}/admin/status`, { headers: auth })).json();
-  assert.equal(st.engineVersion, '0.2.0');
+  assert.equal(st.engineVersion, ENGINE_VERSION);
   assert.equal(st.studio, true);
   assert.equal(st.online, 1);
   assert.equal(st.rooms.total, 3);
