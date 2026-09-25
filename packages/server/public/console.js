@@ -26,8 +26,6 @@ const UI = {
     drain: 'Suspender partidas novas até à atualização', drainGames: 'Jogos afetados', allGames: 'Todos',
     publish: 'Publicar aviso', noNotices: 'Não há avisos ativos.', until: 'até {when}', drainOn: 'partidas novas suspensas',
     needWhen: 'Indica a hora da atualização.', needText: 'Escreve o texto do aviso.',
-    forgeLead: 'A Forge chega na Fase 1: cartões Gherkin (Dado / Quando / Então) que geram as regras e os testes de um jogo novo.',
-    forgeNext: 'Até lá, os jogos novos entram como pacotes escritos à mão, como o Catania.',
     nav_aparencia: 'Aparência',
     apLead: 'A marca (moldura) e a aparência de cada jogo neste deploy. As alterações aparecem já na pré-visualização; só chegam aos jogadores quando guardas.',
     apTarget: 'Editar', apBrand: 'Marca (moldura)', apTheme: 'Tema', apThemeDefault: 'Por omissão (skin do pacote)',
@@ -62,8 +60,6 @@ const UI = {
     drain: 'Stop new games until the update', drainGames: 'Affected games', allGames: 'All',
     publish: 'Publish notice', noNotices: 'No active notices.', until: 'until {when}', drainOn: 'new games stopped',
     needWhen: 'Set the update time.', needText: 'Write the notice text.',
-    forgeLead: 'The Forge arrives in Phase 1: Gherkin cards (Given / When / Then) that generate the rules and tests for a new game.',
-    forgeNext: 'Until then, new games come in as hand-written packages, like Catania.',
     nav_aparencia: 'Appearance',
     apLead: 'The brand (frame) and the look of each game on this deploy. Changes show in the preview right away; players only get them when you save.',
     apTarget: 'Edit', apBrand: 'Brand (frame)', apTheme: 'Theme', apThemeDefault: 'Default (package skin)',
@@ -78,6 +74,7 @@ const UI = {
 };
 
 import * as appearanceUi from '/console-appearance.js';
+import * as forgeUi from '/console-forge.js';
 
 const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'aparencia', 'forge'];
 const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', aparencia: '🎨', forge: '⚒' };
@@ -128,7 +125,7 @@ async function api(path, { method = 'GET', body } = {}) {
 }
 
 const section = () => {
-  const s = location.hash.slice(2);
+  const s = location.hash.slice(2).split('/')[0];
   return SECTIONS.includes(s) ? s : 'painel';
 };
 
@@ -269,11 +266,6 @@ function viewAvisos() {
     }).join('')}</ul>` : `<p class="empty">${u('noNotices')}</p>`}</div>`;
 }
 
-function viewForge() {
-  return `<div><h1>${u('nav_forge')}</h1></div>
-    <div class="panel"><p style="margin-top:0">${u('forgeLead')}</p><p class="con-lead">${u('forgeNext')}</p></div>`;
-}
-
 // ─── Render ─────────────────────────────────────────────────
 function render() {
   document.documentElement.lang = app.lang;
@@ -287,17 +279,20 @@ function render() {
   if (!app.token) { $('#view').innerHTML = viewLogin(render.error); return; }
   const cur = section();
   $('#nav').innerHTML = SECTIONS.map((s) => `<a href="#/${s}" ${s === cur ? 'aria-current="page"' : ''}>
-    <span aria-hidden="true">${ICONS[s]}</span>${u(`nav_${s}`)}${s === 'forge' ? `<span class="soon">${u('soon')}</span>` : ''}</a>`).join('');
+    <span aria-hidden="true">${ICONS[s]}</span>${u(`nav_${s}`)}</a>`).join('');
   const views = {
-    painel: viewPainel, jogos: viewJogos, mesas: viewMesas, avisos: viewAvisos, forge: viewForge,
+    painel: viewPainel, jogos: viewJogos, mesas: viewMesas, avisos: viewAvisos,
     aparencia: () => appearanceUi.view(),
+    forge: () => forgeUi.view(),
   };
   // Não redesenha um formulário que está a ser preenchido.
   if (document.activeElement?.closest?.('form') && render.section === cur) return;
   if (render.section === 'aparencia' && cur !== 'aparencia') appearanceUi.leave();
+  if (render.section === 'forge' && cur !== 'forge') forgeUi.leave();
   render.section = cur;
   $('#view').innerHTML = views[cur]();
   if (cur === 'aparencia') appearanceUi.after($('#view'));
+  if (cur === 'forge') forgeUi.after($('#view'));
 }
 
 async function load() {
@@ -308,8 +303,8 @@ async function load() {
     app.status = status; app.games = games.games;
     if (cur === 'mesas') app.tables = (await api('tables')).tables;
     if (cur === 'avisos') app.notices = (await api('notices')).notices;
-    if (cur === 'aparencia') await appearanceUi.appearanceUi.init({ api, u, lang: () => app.lang, toast, rerender: () => { render.section = null; render(); } });
-load();
+    if (cur === 'aparencia') await appearanceUi.load();
+    if (cur === 'forge') await forgeUi.load();
     $('#status').textContent = '';
   } catch (e) {
     $('#status').textContent = e.message;
@@ -436,4 +431,7 @@ $('#logout').addEventListener('click', logout);
 window.addEventListener('hashchange', () => { render.section = null; load(); });
 setInterval(() => { if (app.token && section() === 'painel') load(); }, 10_000);
 
+const rerender = () => { render.section = null; render(); };
+appearanceUi.init({ api, u, lang: () => app.lang, toast, rerender });
+forgeUi.init({ api, lang: () => app.lang, toast, rerender });
 load();
