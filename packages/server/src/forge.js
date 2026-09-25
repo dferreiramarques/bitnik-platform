@@ -72,10 +72,67 @@ export function normalizeProject(input = {}) {
       nodeCount: num(c?.nodeCount),
       code: str(c?.code, 500_000),
     }));
+  const narrations = (Array.isArray(input.narrations) ? input.narrations : []).slice(0, 100).map(normalizeNarration);
+  // Commits das regras: fotografias do fluxo, cartões e regras, com a versão 0.x que deram.
+  const ruleCommits = (Array.isArray(input.ruleCommits) ? input.ruleCommits : []).slice(0, 500).map((c, i) => ({
+    id: idOf(c?.id, 'rc', i),
+    ts: num(c?.ts),
+    version: /^\d+\.\d+\.\d+$/.test(String(c?.version)) ? String(c.version) : '0.1.0',
+    kind: c?.kind === 'texto' ? 'texto' : 'regras',
+    message: str(c?.message, 500),
+    snapshot: {
+      nodes: Array.isArray(c?.snapshot?.nodes) ? c.snapshot.nodes : [],
+      edges: Array.isArray(c?.snapshot?.edges) ? c.snapshot.edges : [],
+      cards: Array.isArray(c?.snapshot?.cards) ? c.snapshot.cards : [],
+      rules: Array.isArray(c?.snapshot?.rules) ? c.snapshot.rules : [],
+    },
+  }));
   return {
     gameName: str(input.gameName, 120).trim() || 'Jogo sem nome',
-    nodes, edges, cards, rules, legacyCommits,
+    nodes, edges, cards, rules, legacyCommits, narrations, ruleCommits,
+    version: ruleCommits.at(-1)?.version ?? '0.0.0',
   };
+}
+
+// ─── Partida narrada (ADR-012) ──────────────────────────────
+export const DOUBT_STATUS = ['aberta', 'resolvida', 'ignorada'];
+
+/** Normaliza uma partida narrada (colada da IA ou editada na consola). */
+export function normalizeNarration(input = {}, i = 0) {
+  const moves = (Array.isArray(input.jogadas) ? input.jogadas : []).slice(0, 2000).map((m, k) => ({
+    n: num(m?.n) || k + 1,
+    jogador: m?.jogador == null ? null : str(m.jogador, 60),
+    acao: str(m?.acao, 1000),
+    cartoes: (Array.isArray(m?.cartoes) ? m.cartoes : []).slice(0, 20).map((c) => str(c, 40)),
+    resultado: str(m?.resultado, 2000),
+    estado: str(typeof m?.estado === 'string' ? m.estado : JSON.stringify(m?.estado ?? ''), 4000),
+  }));
+  const doubts = (Array.isArray(input.duvidas) ? input.duvidas : []).slice(0, 500).map((d, k) => ({
+    id: idOf(d?.id, 'd', k),
+    jogada: d?.jogada == null ? null : num(d.jogada),
+    pergunta: str(d?.pergunta, 2000),
+    assumido: str(d?.assumido, 2000),
+    cartoes: (Array.isArray(d?.cartoes) ? d.cartoes : []).slice(0, 20).map((c) => str(c, 40)),
+    estado: DOUBT_STATUS.includes(d?.estado) ? d.estado : 'aberta',
+    nota: str(d?.nota, 2000),
+  }));
+  return {
+    id: idOf(input.id, 'p', i),
+    criada: num(input.criada) || null,
+    cenario: str(input.cenario, 500),
+    jogadores: Math.max(0, Math.min(12, num(input.jogadores))),
+    jogadas: moves,
+    duvidas: doubts,
+    fim: str(typeof input.fim === 'string' ? input.fim : JSON.stringify(input.fim ?? ''), 2000),
+    aprovada: !!input.aprovada && doubts.every((d) => d.estado !== 'aberta'),
+    versaoRegras: input.versaoRegras ? str(input.versaoRegras, 20) : null,
+  };
+}
+
+/** Versão do protótipo: 0.x (ADR-013). Mudança de regras sobe o minor; só texto, o patch. */
+export function bumpVersion(v, kind) {
+  const [maj, min, pat] = String(v || '0.0.0').split('.').map((x) => parseInt(x, 10) || 0);
+  return kind === 'texto' ? `${maj}.${min}.${pat + 1}` : `${maj}.${min + 1}.0`;
 }
 
 /** Resumo para a lista de projetos. */

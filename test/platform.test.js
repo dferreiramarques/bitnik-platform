@@ -562,3 +562,47 @@ test('Forge: projetos no Studio; importar do Rule Forge; guardar normalizado; so
   assert.equal((await fetch(`http://localhost:${rt.port}/admin/forge`, { headers: auth })).status, 404);
   await rt.stop();
 });
+
+test('Forge: partida narrada com dúvidas e commits das regras com versão 0.x', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const post = (path, body) => fetch(`${url}${path}`, { method: 'POST', headers: auth, body: JSON.stringify(body) });
+  const { slug } = await (await post('', { gameName: 'Farol' })).json();
+  assert.equal((await (await fetch(`${url}/${slug}`, { headers: auth })).json()).project.version, '0.0.0');
+
+  // Commit das regras: 0.1.0; só texto: 0.1.1; regras outra vez: 0.2.0.
+  const c1 = await (await post(`/${slug}/commit`, { message: 'primeira versão' })).json();
+  assert.equal(c1.commit.version, '0.1.0');
+  assert.equal((await (await post(`/${slug}/commit`, { kind: 'texto', message: 'gralha' })).json()).commit.version, '0.1.1');
+  const c3 = await (await post(`/${slug}/commit`, { message: 'fim do jogo' })).json();
+  assert.equal(c3.project.version, '0.2.0');
+  assert.equal(c3.project.ruleCommits.length, 3);
+
+  // Um PUT não reescreve os commits.
+  const put = await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify({ ...c3.project, ruleCommits: [] }) })).json();
+  assert.equal(put.project.ruleCommits.length, 3);
+
+  // Partida narrada colada da IA, com uma dúvida em aberto.
+  const narrada = {
+    cenario: '2 jogadores, jogo completo', jogadores: 2,
+    jogadas: [{ n: 1, jogador: 1, acao: 'Aposta na carta 3', cartoes: ['c4'], resultado: 'aposta registada', estado: { mesa: [1, 2, 3] } }],
+    duvidas: [{ jogada: 1, pergunta: 'E se o baralho acabar a meio?', assumido: 'termina o jogo', cartoes: ['c12'] }],
+    fim: { vencedor: 1 },
+  };
+  assert.equal((await post(`/${slug}/narrations`, { cenario: 'vazia', jogadas: [] })).status, 400);
+  const n = await (await post(`/${slug}/narrations`, narrada)).json();
+  assert.equal(n.narration.versaoRegras, '0.2.0', 'fica ligada à versão das regras');
+  assert.equal(n.narration.duvidas[0].estado, 'aberta');
+  assert.equal(typeof n.narration.jogadas[0].estado, 'string');
+
+  // Não se aprova com dúvidas em aberto; resolvida, já dá.
+  const p = n.project;
+  p.narrations[0].aprovada = true;
+  let saved = (await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(p) })).json()).project;
+  assert.equal(saved.narrations[0].aprovada, false);
+  p.narrations[0].duvidas[0].estado = 'resolvida';
+  saved = (await (await fetch(`${url}/${slug}`, { method: 'PUT', headers: auth, body: JSON.stringify(p) })).json()).project;
+  assert.equal(saved.narrations[0].aprovada, true);
+  await s.stop();
+});

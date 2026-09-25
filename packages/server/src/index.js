@@ -19,7 +19,7 @@ import {
 } from '@bitnik/engine';
 import { memoryStorage, fileStorage } from './storage.js';
 import { PLATFORM_I18N } from './i18n.js';
-import { normalizeProject, projectSummary, slugify } from './forge.js';
+import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion } from './forge.js';
 
 export { memoryStorage, fileStorage };
 
@@ -743,9 +743,41 @@ export function createPlatform({
       const p = saveForge(s, input);
       return json(res, 201, { slug: s, project: p });
     }
+    // Commit das regras (ADR-012/013): fotografia do fluxo, cartões e regras; sobe a versão 0.x.
+    const cm = slug.match(/^([a-z0-9-]{1,80})\/commit$/);
+    if (cm && req.method === 'POST') {
+      const p = forge.get(cm[1]);
+      if (!p) return json(res, 404, { error: 'projeto não encontrado' });
+      const body = await readJson(req, 10_000);
+      const kind = body.kind === 'texto' ? 'texto' : 'regras';
+      const version = bumpVersion(p.version, kind);
+      const commit = {
+        id: `rc${p.ruleCommits.length + 1}`, ts: now(), version, kind, message: String(body.message ?? '').slice(0, 500),
+        snapshot: structuredClone({ nodes: p.nodes, edges: p.edges, cards: p.cards, rules: p.rules }),
+      };
+      const saved = saveForge(cm[1], { ...p, ruleCommits: [...p.ruleCommits, commit] }, p);
+      return json(res, 201, { commit, project: saved });
+    }
+    // Partida narrada colada da IA: { narration } (ou o JSON da IA diretamente).
+    const nm = slug.match(/^([a-z0-9-]{1,80})\/narrations$/);
+    if (nm && req.method === 'POST') {
+      const p = forge.get(nm[1]);
+      if (!p) return json(res, 404, { error: 'projeto não encontrado' });
+      const body = await readJson(req, FORGE_MAX);
+      const input = body.narration ?? body;
+      if (!Array.isArray(input.jogadas) || !input.jogadas.length) return json(res, 400, { error: 'a partida não tem jogadas' });
+      const narration = normalizeNarration({ ...input, id: `p${p.narrations.length + 1}`, criada: now(), versaoRegras: p.version, aprovada: false });
+      const saved = saveForge(nm[1], { ...p, narrations: [...p.narrations, narration] }, p);
+      return json(res, 201, { narration, project: saved });
+    }
     if (!/^[a-z0-9-]{1,80}$/.test(slug) || !forge.has(slug)) return json(res, 404, { error: 'projeto não encontrado' });
     if (req.method === 'GET') return json(res, 200, { slug, project: forge.get(slug) });
-    if (req.method === 'PUT') return json(res, 200, { slug, project: saveForge(slug, await readJson(req, FORGE_MAX), forge.get(slug)) });
+    if (req.method === 'PUT') {
+      // Os commits das regras só se criam pelo /commit: um PUT não os reescreve.
+      const body = await readJson(req, FORGE_MAX);
+      const p = forge.get(slug);
+      return json(res, 200, { slug, project: saveForge(slug, { ...body, ruleCommits: p.ruleCommits }, p) });
+    }
     if (req.method === 'DELETE') {
       forge.delete(slug);
       storage.deleteForgeProject?.(slug);
