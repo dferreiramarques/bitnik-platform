@@ -38,6 +38,8 @@ const UI = {
     playWith: 'Jogar com', oneBot: '1 bot', nBots: '{n} bots', continueRound: 'Continuar · ronda {n}', continue: 'Continuar',
     newGame: 'Nova', startGame: 'Começar', otherTables: 'Mesas com outras pessoas', freeOne: '1 lugar livre',
     enter: 'Entrar', noOther: 'Ainda não há mesas com outras pessoas.', earlier: 'Partidas anteriores', inviteNote: 'por convite',
+    botsFill: 'Os lugares vazios ficam com bots quando começares.', copyInvite: 'Copiar convite', inviteCopied: 'Convite copiado.',
+    startShort: 'Começar', ready: 'pronto', waitingStart: 'À espera de que alguém carregue em Começar.',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -70,6 +72,8 @@ const UI = {
     playWith: 'Play with', oneBot: '1 bot', nBots: '{n} bots', continueRound: 'Continue · round {n}', continue: 'Continue',
     newGame: 'New', startGame: 'Start', otherTables: 'Tables with other people', freeOne: '1 seat free',
     enter: 'Enter', noOther: 'No tables with other people yet.', earlier: 'Earlier games', inviteNote: 'by invitation',
+    botsFill: 'Empty seats get bots when you start.', copyInvite: 'Copy invite', inviteCopied: 'Invite copied.',
+    startShort: 'Start', ready: 'ready', waitingStart: 'Waiting for someone to press Start.',
   },
 };
 
@@ -195,9 +199,8 @@ function renderLobby(only = null) {
       </div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
       <div class="lob-grid">
-        <div class="lob-card mine">
-          <h3>${u('vsBots')}</h3>
-          <p>${u('vsBotsNote')}</p>
+        <div class="lob-card mine solo">
+          <div class="lob-solo-id"><h3>${u('vsBots')}</h3><p>${u('vsBotsNote')}</p></div>
           <div class="lob-bots"><span>${u('playWith')}</span>${counts.map((n) => `<button class="lob-btn sm${n === sel ? ' on' : ''}" data-bots="${esc(g.id)}" data-n="${n}" aria-pressed="${n === sel}">${bots(n)}</button>`).join('')}</div>
           <div class="lob-acts">${current
             ? `<button class="lob-btn pri" data-open="${current.id}">${current.round ? u('continueRound', { n: current.round }) : u('continue')}</button>
@@ -432,9 +435,53 @@ function renderFullTable(msg) {
   </section>`;
 }
 
+// Cores dos lugares na entrada (como --cat-p1…p4 do template).
+const SEAT_COLORS = ['#b03a2e', '#1a5276', '#1d6a27', '#7d6608', '#6c3483', '#117a65'];
+
+/**
+ * Entrada na mesa (quadro "Entrada" do template): à espera de jogadores, no
+ * fundo da marca. Lugares ocupados e livres, "Começar" (os vazios ficam com
+ * bots), "Como se joga" e "Copiar convite".
+ */
+function renderEntrada(msg) {
+  const g = msg.room.gameId;
+  const meta = gameMeta(g);
+  const brand = W()?.brand?.name || $('#brand').textContent;
+  const seated = msg.seat != null;
+  const canLeave = msg.room.kind !== 'solo' && seated;
+  const tagline = t('game.tagline', {}, g);
+  const info = msg.room.kind === 'invite' ? esc(msg.room.name || u('inviteTable')) : u('tableOf', { n: msg.room.numPlayers });
+  const guide = meta?.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(g)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${u('howToPlay')}</a>` : '';
+  return `<section class="home ent">
+    <header class="home-top">
+      <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong><span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, g))}</strong><span class="ent-meta">${info}</span></div>
+      <div class="mesa-actions"><span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
+        ${canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : ''}
+        <button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <button class="mesa-btn" data-lang>${u('lang')}</button></div>
+    </header>
+    <div class="ent-main">
+      <h1>${esc(t('game.name', {}, g))}</h1>
+      <p class="ent-lead">${tagline !== 'game.tagline' ? `${esc(tagline.replace(/\.$/, ''))} · ` : ''}${playersText(meta?.players || { min: msg.room.numPlayers, max: msg.room.numPlayers })}</p>
+      <div class="ent-seats">${msg.room.seats.map((x, i) => x.taken
+        ? `<div class="ent-seat${x.isYou ? ' you' : ''}"><div class="ent-name"><i style="background:${SEAT_COLORS[i % SEAT_COLORS.length]}"></i><b>${esc(x.name)}${x.isYou ? ` (${u('you')})` : ''}</b></div>
+            <small>${x.bot ? u('bot') : x.away ? u('away') : u('ready')}</small></div>`
+        : `<div class="ent-seat free"><small>${u('emptySeat')}</small>${!seated && msg.room.kind !== 'solo' ? `<button class="lob-btn sm" data-join="${msg.room.id}">${u('join')}</button>` : ''}</div>`).join('')}</div>
+      ${renderTimers(msg)}
+      <p class="ent-note">${seated ? u('botsFill') : msg.room.kind === 'invite' ? u('inviteJoin') : u('waitingStart')}</p>
+      <div class="ent-bar">
+        ${seated ? `<button class="lob-btn pri" data-start>${u('startShort')}</button>` : ''}
+        ${guide}
+        ${msg.room.kind !== 'solo' ? `<button class="lob-btn" data-copyinvite>${u('copyInvite')}</button>` : ''}
+      </div>
+    </div>
+  </section>`;
+}
+
 function renderTable() {
   const msg = app.room;
   if (!msg) return `<p class="empty">${u('connecting')}</p>`;
+  if (msg.room.status === 'waiting') return renderEntrada(msg);
   if (useGameUi(msg)) return renderFullTable(msg);
   const g = msg.room.gameId;
   const round = msg.view?.round;
@@ -607,7 +654,8 @@ function render() {
   const inRoom = !!routeRoom();
   const gameLobby = routeGame();
   const home = !tut && !inRoom && !gameLobby && manyGames();
-  document.body.classList.toggle('is-home', !tut && !inRoom);
+  const entrada = inRoom && app.room?.room.status === 'waiting';
+  document.body.classList.toggle('is-home', !tut && (!inRoom || entrada));
   $('#back').hidden = !inRoom && !tut && !gameLobby;
   $('#lang').textContent = u('lang');
   // Só no Studio: atalho para a consola (nos runtimes dos clientes não aparece).
@@ -657,6 +705,10 @@ $('#view').addEventListener('click', (e) => {
   if ('lobby' in d) { goGame(app.room?.room.gameId || routeTutorial()); return; }
   if ('lang' in d) { toggleLang(); return; }
   if ('home' in d) { location.hash = '#/'; return; }
+  if ('copyinvite' in d) {
+    navigator.clipboard?.writeText(location.href).then(() => toast(u('inviteCopied')), () => toast(location.href));
+    return;
+  }
   if (d.bots) { app.botSel = { ...app.botSel, [d.bots]: Number(d.n) }; render(); return; }
   if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
   if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
