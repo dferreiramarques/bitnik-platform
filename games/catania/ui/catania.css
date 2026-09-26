@@ -26,7 +26,7 @@
 .cat img { display: block; }
 
 /* Vidro: jogadores, fichas, a minha área, barra de ações, controlos da vista */
-.cat-player, .cat-chip, .cat-me, .cat-bar, .cat-zoombar, .cat-more {
+.cat-player, .cat-chip, .cat-me, .cat-bar, .cat-zoombar {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
@@ -61,7 +61,6 @@
 .cat-vill { border-left: 3px solid; padding-left: 4px; }
 .cat-mini.zero { opacity: .4; }
 .cat-pnote { font-size: 11px; color: var(--cat-muted); }
-.cat-more { display: none; }
 
 /* ── Fichas da ronda e da torre ── */
 .cat-chips { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 47px; }
@@ -92,7 +91,7 @@
 .cat-view:active { cursor: grabbing; }
 .cat-zoom { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
 .cat-layout > :not(.cat-view, .cat-ovl) { z-index: 1; pointer-events: none; }
-.cat-layout :is(.cat-player, .cat-more, .cat-chip, .cat-me, .cat-bar, .cat-zoombar, .cat-log-head) { pointer-events: auto; }
+.cat-layout :is(.cat-player, .cat-chip, .cat-me, .cat-bar, .cat-zoombar, .cat-log-head) { pointer-events: auto; }
 .cat-board { position: relative; min-height: 0; }
 .cat-zoom svg { display: block; width: 100%; height: 100%; }
 .cat-hex { cursor: default; }
@@ -240,12 +239,15 @@
 /* ── Telemóvel na vertical ── */
 @container (max-width: 760px) {
   .cat-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 40px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
-  .cat-players { flex-wrap: nowrap; }
-  .cat-player { width: 148px; flex-shrink: 0; padding: 6px 8px; }
-  .cat-extra { display: none; }
-  .show-all .cat-players { flex-wrap: wrap; }
-  .show-all .cat-extra { display: grid; }
-  .cat-more { display: block; width: 62px; flex-shrink: 0; border-radius: 8px; color: var(--cat-text); font-weight: 700; font-size: 11px; min-height: 44px; }
+  /* Jogadores numa faixa com scroll horizontal: a mesma altura, os restantes com swipe
+     (o 3.º espreita à direita para se perceber que há mais). */
+  .cat-layout > .cat-players {
+    flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding: 0 8px; scrollbar-width: none; pointer-events: auto;
+    margin: 0 -8px; padding: 0 8px;
+  }
+  .cat-players::-webkit-scrollbar { display: none; }
+  .cat-player { width: 148px; flex-shrink: 0; padding: 6px 8px; scroll-snap-align: start; }
   .cat-mini.zero { display: none; }
   .cat-minis:not(:has(.cat-mini:not(.zero))):not(:has(.cat-pnote)) { display: none; }
   .cat-vills:has(> .cat-pnote:only-child) { display: none; }
@@ -295,8 +297,6 @@
   }
   .cat-players { grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; overflow-y: auto; gap: 6px; }
   .cat-player { width: auto; padding: 5px 8px; gap: 3px; }
-  .cat-extra, .show-all .cat-extra { display: grid; }
-  .cat-more { display: none; }
   .cat-pstate { display: none; }
   .cat-mini.zero { display: none; }
   .cat-minis:not(:has(.cat-mini:not(.zero))), .cat-minis:has(.cat-pnote) { display: none; }

@@ -103,6 +103,16 @@ button { font: inherit; }
 .seat-name { font-weight: 600; display: flex; gap: 6px; align-items: center; }
 .seat small { color: var(--ui-muted); }
 .seat .score { font-family: var(--ui-display); font-size: 1.5rem; line-height: 1; }
+/* Telemóvel: os jogadores ficam numa faixa com a altura de um cartão; os restantes veem-se
+   com swipe (scroll horizontal), sem botão "+N" nem ecrã por cima. O 3.º espreita à direita. */
+@media (max-width: 760px) {
+  .seats {
+    display: flex; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+    scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; scroll-padding: 0 16px;
+  }
+  .seats::-webkit-scrollbar { display: none; }
+  .seat { flex: 0 0 148px; scroll-snap-align: start; }
+}
 
 .play { display: grid; gap: 20px; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 800px) { .play { grid-template-columns: 1fr; } }

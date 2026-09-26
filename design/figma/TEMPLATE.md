@@ -79,7 +79,7 @@ A mesa ocupa o ecrã inteiro (`--table-bg` com `--table-dots` por cima). Não h�
 - **Painel do jogo**: informação partilhada do jogo (pilhas, mercado, objetivos, baralho), à direita, flutuante como o registo, alinhado à direita, a 48 px da margem do ecrã e centrado na vertical com o tabuleiro. No telemóvel é uma ficha "Painel ▾" que abre; na horizontal é uma coluna compacta à direita.
 - **Controlos da vista**: em baixo à direita (mover, aproximar, afastar, ver tudo).
 
-No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os dois primeiros jogadores e um "+2 ›"; fichas a meio entre os jogadores e o tabuleiro; tabuleiro centrado na vertical; a minha área; barra de ações em grelha 2:1:1.
+No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os jogadores numa faixa com a altura de um cartão (148 px de largura cada, o 3.º a espreitar à direita), com scroll horizontal: os restantes veem-se com swipe, sem botão "+N" nem ecrã por cima; quando a vez muda, a faixa mostra quem joga; fichas a meio entre os jogadores e o tabuleiro; tabuleiro centrado na vertical; a minha área; barra de ações em grelha 2:1:1.
 
 No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um; há também botões +, − e "ver tudo" (44 px) no canto do tabuleiro, e a roda do rato aproxima no computador. O zoom vai de 50% a 300% e fica centrado entre os dedos.
 

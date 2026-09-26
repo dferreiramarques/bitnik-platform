@@ -47,7 +47,7 @@ let resizeObs = null;
 const fresh = () => ({
   mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false, prevMine: false, prevPhase: null,
   zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0,
-  showAll: false, showPiles: false, showLog: false, logOpen: true, msgQ: [], msgBusy: false,
+  stripCur: null, showPiles: false, showLog: false, logOpen: true, msgQ: [], msgBusy: false,
 });
 let ui = fresh();
 
@@ -140,10 +140,10 @@ function hexMove(id) {
 function render() {
   if (!view || !msg) return;
   const v = msg.view;
-  root.classList.toggle('show-all', ui.showAll);
   root.classList.toggle('show-piles', ui.showPiles);
   root.classList.toggle('show-log', ui.showLog);
   root.classList.toggle('picking', !!ui.mode || !!legal('MOVE_FIRE').length);
+  const stripX = view.querySelector('.cat-players')?.scrollLeft ?? 0;
   view.innerHTML = `
     <div class="cat-view"><div class="cat-zoom">${renderBoard(v)}</div></div>
     ${renderPlayers(v)}
@@ -165,6 +165,7 @@ function render() {
     ${ui.modal === 'found' ? renderFoundModal(v) : ''}
     ${ui.modal === 'pass' ? renderPassModal() : ''}`;
   applyZoom();
+  keepStrip(stripX, v.cur);
   ctx.afterRender?.(root); // ex.: o tutorial volta a destacar as zonas de que fala
 }
 
@@ -181,22 +182,20 @@ function renderChips(v) {
 }
 
 function renderPlayers(v) {
-  // No telemóvel só cabem dois: eu e quem está a jogar (os outros atrás de "+N").
-  const first = [...new Set([v.me, v.cur, 0, 1].filter((i) => i != null && i < v.players.length))].slice(0, 2);
-  const extra = v.players.length - first.length;
+  // No telemóvel os cartões ficam numa faixa com scroll horizontal (swipe para os restantes).
   return `<div class="cat-players" data-tut="players">${v.players.map((p, i) => {
     const cur = i === v.cur && !msg.result;
     const hand = i === v.me
       ? `<span class="cat-pnote">${esc(ctx.t('ui.handCount', { n: p.handTotal }))}</span>`
       : RES.map((r) => `<span class="cat-mini${p.hand[r] ? '' : ' zero'}" title="${esc(`${p.hand[r]} ${ctx.t(`res.${r}`)}`)}">${img(r, 14)}${p.hand[r]}</span>`).join('');
     const vills = p.villages.map((vl) => `<span class="cat-vill" style="border-left-color:var(--cat-res-${vl.res})" title="${esc(`${vl.cards} ${ctx.t(`res.${vl.res}`)} × ${v.piles[vl.res].value}`)}">${img(vl.res, 14)}×${vl.cards}</span>`).join('');
-    return `<div class="cat-player${cur ? ' cur' : ''}${first.includes(i) ? '' : ' cat-extra'}">
+    return `<div class="cat-player${cur ? ' cur' : ''}" data-seat="${i}">
       <div class="cat-pname"><i class="cat-dot" style="background:${seatColor(i)}"></i><span>${esc(ctx.seatName(i))}</span><b class="cat-score">${p.score}</b></div>
       <div class="cat-pstate">${esc(ctx.t(cur ? 'ui.statePlaying' : 'ui.stateWaiting'))}</div>
       <div class="cat-minis" aria-label="${esc(ctx.t('ui.cards', { n: p.handTotal }))}">${hand}</div>
       <div class="cat-vills">${vills || `<span class="cat-pnote">${esc(ctx.t('ui.noVillages'))}</span>`}</div>
     </div>`;
-  }).join('')}${extra > 0 ? `<button class="cat-more" data-act="more" aria-expanded="${ui.showAll}">${ui.showAll ? '‹' : `+${extra} ›`}</button>` : ''}</div>`;
+  }).join('')}</div>`;
 }
 
 function renderBoard(v) {
@@ -313,6 +312,20 @@ function renderActions(v) {
       ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`, '', opening ? ctx.t('ui.openingRule') : next)}` : ''}
     ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : 'disabled'}`, found ? 'pri' : '', found ? '' : foundWhy)}
     ${btn(ctx.t(done ? 'ui.endTurn' : 'ui.pass'), `data-act="end" ${legal('END_TURN').length ? '' : 'disabled'}`)}`;
+}
+
+/** Faixa de jogadores (telemóvel): o redesenho não a faz voltar ao início; quando a vez muda, mostra quem joga. */
+function keepStrip(x, cur) {
+  const strip = view.querySelector('.cat-players');
+  if (!strip) return;
+  strip.scrollLeft = x;
+  if (ui.stripCur === cur) return;
+  ui.stripCur = cur;
+  const card = strip.querySelector(`[data-seat="${cur}"]`);
+  if (!card || strip.scrollWidth <= strip.clientWidth) return;
+  const s = strip.getBoundingClientRect();
+  const c = card.getBoundingClientRect();
+  if (c.left < s.left || c.right > s.right) strip.scrollTo({ left: strip.scrollLeft + c.left - s.left, behavior: 'smooth' });
 }
 
 // ─── Zoom e arrastar no tabuleiro ───────────────────────────
@@ -502,7 +515,6 @@ function onClick(e) {
   const act = e.target.closest('[data-act]');
   if (!act || act.disabled) return;
   const a = act.dataset.act;
-  if (a === 'more') { ui.showAll = !ui.showAll; render(); return; }
   if (a === 'piles') { ui.showPiles = !ui.showPiles; render(); return; }
   if (a === 'log') { ui.showLog = !ui.showLog; ui.logOpen = true; render(); return; }
   if (a === 'logfold') { ui.logOpen = !ui.logOpen; render(); return; }

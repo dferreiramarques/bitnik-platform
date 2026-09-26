@@ -187,13 +187,32 @@ function renderSeats(msg) {
   return `<div class="seats">${msg.room.seats.map((s, i) => {
     const p = msg.view?.players?.[i];
     const tags = [s.isYou && u('you'), s.bot && u('bot'), s.away && u('away')].filter(Boolean);
-    return `<div class="seat${msg.active?.includes(i) ? ' is-active' : ''}">
+    return `<div class="seat${msg.active?.includes(i) ? ' is-active' : ''}" data-seat="${i}">
       <div class="seat-name">${esc(s.taken ? s.name : u('emptySeat'))}</div>
       <small>${tags.join(', ') || '&nbsp;'}</small>
       ${typeof p?.score === 'number' ? `<div class="score">${p.score}</div>` : ''}
       ${typeof p?.summary === 'string' && p.summary ? `<div class="seat-summary">${esc(p.summary)}</div>` : ''}
     </div>`;
   }).join('')}</div>`;
+}
+
+/**
+ * No telemóvel os jogadores ficam numa faixa com scroll horizontal (swipe para
+ * os restantes), sem botão "+N". Mantém a posição entre desenhos e, quando a
+ * vez muda, mostra quem joga.
+ */
+function keepSeatsStrip(x) {
+  const strip = document.querySelector('.seats');
+  if (!strip) return;
+  strip.scrollLeft = x;
+  const active = strip.querySelector('.seat.is-active');
+  const key = active?.dataset.seat ?? null;
+  if (keepSeatsStrip.last === key) return;
+  keepSeatsStrip.last = key;
+  if (!active || strip.scrollWidth <= strip.clientWidth) return;
+  const s = strip.getBoundingClientRect();
+  const c = active.getBoundingClientRect();
+  if (c.left < s.left || c.right > s.right) strip.scrollTo({ left: strip.scrollLeft + c.left - s.left, behavior: 'smooth' });
 }
 
 function renderPalette(msg) {
@@ -516,9 +535,12 @@ function render() {
   if (app.tut) stopTutorial();
   // Preserva os <details> abertos do inspetor entre renders.
   const openPaths = [...document.querySelectorAll('.inspect details[open]')].map((d) => d.querySelector('summary')?.textContent);
+  // A faixa de jogadores (telemóvel) não volta ao início a cada desenho.
+  const seatsX = document.querySelector('.seats')?.scrollLeft ?? 0;
   // A UI própria não é redesenhada: sai do DOM antes e volta para o #gameHost.
   app.ui?.el.remove();
   $('#view').innerHTML = inRoom ? renderTable() : renderLobby();
+  keepSeatsStrip(seatsX);
   if (inRoom && app.room) syncGameUi(app.room); else if (app.ui) unmountGameUi();
   document.querySelectorAll('.inspect details').forEach((d) => {
     if (openPaths.includes(d.querySelector('summary')?.textContent)) d.open = true;
