@@ -138,3 +138,6 @@
   .cat-board svg { max-height: 48vh; }
   .cat-card { width: 48px; height: 66px; }
 }
+
+.cat-after { grid-column: 2 / -1; margin-top: -4px; font-size: .72rem; color: var(--cat-muted, #8a8a8a); }
+.cat-after.drop { color: var(--cat-red); font-weight: 600; }

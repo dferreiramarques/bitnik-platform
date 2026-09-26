@@ -189,9 +189,13 @@ function renderMe(v) {
 function renderPiles(v) {
   return RES.map((r) => {
     const val = v.piles[r].value;
+    // O que acontece a este recurso se alguém recolher 2: recebe o disco do topo da torre.
+    const next = v.tower ? Math.min(val, v.towerTop) : null;
+    const after = next == null ? '' : ctx.t(next < val ? 'ui.after2' : 'ui.after2Same', { v: next });
     return `<div class="cat-pile">${img(r, 22)}<span>${esc(ctx.t(`res.${r}`))}</span>
       <small title="discos na pilha">${v.piles[r].discs.length}</small>
-      <span class="cat-disc${RED.has(val) ? ' red' : ''}">${val}</span></div>`;
+      <span class="cat-disc${RED.has(val) ? ' red' : ''}">${val}</span>
+      ${after ? `<small class="cat-after${next < val ? ' drop' : ''}">${esc(after)}</small>` : ''}</div>`;
   }).join('');
 }
 
@@ -240,7 +244,7 @@ function renderActions(v) {
     <div class="cat-step">${ctx.t(step)}</div>
     ${!t.founded && t.collects < 2 ? `
       ${btn(ctx.t('ui.collect1'), `data-act="c1" ${c1 ? '' : 'disabled'}`, 'pri')}
-      ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`)}
+      ${btn(v.tower ? ctx.t('ui.collect2Next', { disc: `${v.towerTop}${RED.has(v.towerTop) ? ' 🔴' : ''}` }) : ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`)}
       ${opening ? `<div class="cat-step">${ctx.t('ui.openingRule')}</div>` : ''}` : ''}
     <div class="cat-sep"></div>
     ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : `disabled title="${esc(foundWhy)}"`}`, found ? 'pri' : '')}

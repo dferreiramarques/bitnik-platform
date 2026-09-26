@@ -1,6 +1,6 @@
 {
   "name": "@bitnik/game-catania",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Catania — pacote de jogo para @bitnik/engine.",
   "type": "module",
   "main": "index.js",

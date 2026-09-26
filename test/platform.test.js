@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BitnikClient } from '@bitnik/client';
 import { ENGINE_VERSION } from '@bitnik/engine';
+import catania from '@bitnik/game-catania';
 import { fileStorage, createPlatform } from '@bitnik/server';
 import race from '../packages/engine/test/fixtures/race.js';
 import { makeStudio } from '../apps/studio/server.js';
@@ -210,7 +211,7 @@ test('ficheiros de storage de outro jogo ou versão incompatível não partem o 
   assert.ok(!s.platform.rooms.has('x'));
   const old = s.platform.rooms.get('solo-old');
   assert.equal(old.status, 'expired', 'não é apagada: fica marcada');
-  assert.deepEqual(old.expired, { reason: 'game', from: '1.0.0', to: '4.0.0' });
+  assert.deepEqual(old.expired, { reason: 'game', from: '1.0.0', to: catania.version });
   assert.ok(old.match, 'o match fica guardado para replay');
   await s.stop();
 });

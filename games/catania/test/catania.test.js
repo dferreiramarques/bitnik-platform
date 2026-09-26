@@ -264,9 +264,13 @@ test('Rótulos: cada jogada legal tem uma frase com recurso e território', () =
   const m = newMatch(2, 'rotulos');
   const { legal } = viewFor(catania, m, 0);
   const collect = legal.find((x) => x.type === 'COLLECT' && x.payload.take2);
-  assert.equal(collect.label.key, 'moveLabel.COLLECT');
-  assert.equal(collect.label.params.n, 2);
+  assert.equal(collect.label.key, 'moveLabel.COLLECT_2');
   assert.match(collect.label.params.res, /^@res\./);
+  // Recolher 2 diz com que valor o recurso fica: o disco do topo da torre, se for mais baixo.
+  const res = m.state.hexes[collect.payload.hex].type;
+  const now = m.state.piles[res].discs.at(-1);
+  assert.equal(collect.label.params.from, now);
+  assert.equal(collect.label.params.to, Math.min(now, m.state.tower.at(-1)));
   assert.ok(legal.every((x) => x.label.key in catania.i18n.pt));
 });
 

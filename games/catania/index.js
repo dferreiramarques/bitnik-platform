@@ -7,7 +7,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'catania',
-  version: '4.0.0',
+  version: '4.0.1',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'CC-BY-4.0',
@@ -35,8 +35,13 @@ export default defineGame({
     const hexName = (id) => `#${id}`;
     const p = move.payload || {};
     switch (move.type) {
-      case 'COLLECT':
-        return { key: 'moveLabel.COLLECT', params: { n: p.take2 ? 2 : 1, hex: hexName(p.hex), res: `@res.${view.hexes[p.hex].type}` } };
+      case 'COLLECT': {
+        const res = view.hexes[p.hex].type;
+        if (!p.take2) return { key: 'moveLabel.COLLECT', params: { n: 1, hex: hexName(p.hex), res: `@res.${res}` } };
+        // Recolher 2: diz já com que valor o recurso fica (o disco do topo da torre, se for mais baixo).
+        const now = view.piles[res].value;
+        return { key: 'moveLabel.COLLECT_2', params: { hex: hexName(p.hex), res: `@res.${res}`, from: now, to: Math.min(now, view.towerTop ?? now) } };
+      }
       case 'MOVE_FIRE':
         return p.stay ? { key: 'moveLabel.MOVE_FIRE_STAY' } : { key: 'moveLabel.MOVE_FIRE', params: { hex: hexName(p.hex), res: `@res.${view.hexes[p.hex].type}` } };
       case 'FOUND':

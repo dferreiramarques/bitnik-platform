@@ -2,6 +2,10 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 4.0.1 — Próximo disco à vista
+
+Sem mudança de regras. A UI mostra, em cada pilha, com que valor o recurso fica se alguém recolher 2 cartas (o disco do topo da torre, se for mais baixo), e o botão "Recolher 2" diz qual é o próximo disco. Um recurso em que ninguém mexeu pode cair de uma vez (ex.: de 11 para 3) quando a torre já só tem discos baixos: agora vê-se antes de jogar.
+
 ## 4.0.0 — Abertura
 
 **No primeiro turno do jogo, a 2.ª recolha do primeiro jogador só pode ser de 1 carta.**
