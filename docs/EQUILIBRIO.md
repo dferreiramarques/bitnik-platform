@@ -24,7 +24,7 @@ Atualizado a 2026-09-26.
 | 4 | 28,6 / 28,4 / 20,2 / 22,8 |
 
 - **Paridade das linhas**: a mesa começa com 1 peça e as peças põem-se à vez, por isso quem completa as linhas de comprimento ímpar é quase sempre o mesmo lugar. Na 1.0 o 2.º jogador ganhava 2/3 das partidas a 2. **Resolvido na 2.0.0**: colunas de 4 e 6 (as linhas ficam 5 e 7).
-- **Salva-vidas cedo**: a 3 e 4 jogadores, os primeiros lugares vigiam primeiro as linhas que vão crescer (a 4, o 3.º lugar faz ~35 pontos com salva-vidas contra ~40 do 1.º). Compensações testadas (fichas a mais, baralho igual para todos, sem salva-vidas na 1.ª volta) não resolvem a 4; "sem salva-vidas na 1.ª volta" deixa os 3 jogadores justos (33 / 33 / 34) mas piora os 4. *A confirmar com jogadores reais* (os bots põem salva-vidas por uma regra simples).
+- **Salva-vidas cedo**: a 3 e 4 jogadores, os primeiros lugares vigiam primeiro as linhas que vão crescer (a 4, o 3.º lugar faz ~35 pontos com salva-vidas contra ~40 do 1.º). Compensações testadas (fichas a mais, baralho igual para todos, sem salva-vidas na 1.ª volta) não resolvem a 4; "sem salva-vidas na 1.ª volta" deixa os 3 jogadores justos (33 / 33 / 34) mas piora os 4. **Decidido não mexer**: a intenção do jogo é que cada jogador controle a sua vantagem e anule a dos outros (ex.: tapar com uma rocha a linha vigiada por outro, ou não a esticar); os bots não fazem isso. Confirmar em mesas com jogadores reais.
 - **Número de peças**: o jogo acaba quando o baralho tem menos peças do que jogadores, por isso o 1.º lugar põe mais uma peça do que os outros (a 3: 14 / 13 / 13; a 4: 11 / 10 / 10 / 10). Efeito pequeno.
 
 ## Nine Oils (1.1.0)
