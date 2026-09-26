@@ -342,11 +342,11 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   assert.equal(st.engineVersion, ENGINE_VERSION);
   assert.equal(st.studio, true);
   assert.equal(st.online, 1);
-  assert.equal(st.rooms.total, 3 + 2, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4');
+  assert.equal(st.rooms.total, 3 + 2 + 3, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4');
   const { games } = await (await fetch(`${base}/admin/games`, { headers: auth })).json();
   assert.equal(games[0].id, 'catania');
   assert.equal(games[0].name, 'Catania');
-  assert.deepEqual(games.map((g) => g.problems), [[], []]);
+  assert.deepEqual(games.map((g) => g.problems), [[], [], []]);
   assert.deepEqual(games.find((g) => g.id === 'bulbous').players.counts, [2, 4]);
   await s.stop();
 });
@@ -757,7 +757,9 @@ test('Forge: instalar o pacote verificado como protótipo, sem reiniciar, e volt
   assert.equal((await post(`/${slug}/publish`)).status, 400, 'não publica duas vezes');
   await s.stop();
 
-  // Depois de reiniciar, o protótipo volta a estar instalado.
+  // Depois de reiniciar, o protótipo volta a estar instalado (mesmo que a ligação ao motor tenha desaparecido).
+  const { rm: apagar } = await import('node:fs/promises');
+  await apagar(join(dir, 'prototipos', 'node_modules'), { recursive: true, force: true });
   s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir, gamesDir });
   const games = (await (await fetch(`http://localhost:${s.port}/admin/games`, { headers: auth })).json()).games;
   assert.ok(games.find((x) => x.id === slug)?.prototype);
