@@ -1,0 +1,35 @@
+{
+  "name": "@bitnik/game-capivaras",
+  "version": "1.0.0",
+  "description": "Capivaras — pacote de jogo para @bitnik/engine.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "rules.js",
+    "i18n/",
+    "REGRAS.md",
+    "CHANGELOG.md"
+  ],
+  "license": "UNLICENSED",
+  "author": "Bitnik Games",
+  "peerDependencies": {
+    "@bitnik/engine": "^0.2.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "bitnik": {
+    "engine": "^0.2.0",
+    "langs": [
+      "pt",
+      "en"
+    ],
+    "forge": {
+      "rules": "0.1.0"
+    }
+  }
+}

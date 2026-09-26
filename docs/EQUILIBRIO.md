@@ -44,15 +44,15 @@ Atualizado a 2026-09-26.
 
 - Sem vantagem de lugar. O Governante roda todas as rondas.
 
-## Capivaras (protótipo 0.1.0)
+## Capivaras (1.0.0)
 
 | Jogadores | Vitórias por lugar |
 |---|---|
-| 2 | 49 / 51 |
-| 3 | 35,5 / 32,3 / 32,2 |
-| 4 | 27,2 / 23,8 / 26,6 / 22,4 |
-| 5 | 20,6 / 20,8 / 19,7 / 19,8 / 19,1 |
-| 6 | 18,0 / 19,0 / 16,6 / 14,5 / 16,5 / 15,4 |
+| 2 | 49,7 / 50,3 |
+| 3 | 33,7 / 34,2 / 32,1 |
+| 4 | 25,2 / 25,2 / 25,0 / 24,6 |
+| 5 | 19,7 / 18,7 / 19,8 / 21,3 / 20,6 |
+| 6 | 15,6 / 17,3 / 16,6 / 17,1 / 16,7 / 16,8 |
 
-- **Empates dão a vitória ao lugar mais baixo**: o código escolhe o primeiro com a pontuação máxima. É o que dá ao 1.º lugar os ~3 pontos a mais a 3 e 4 jogadores. *Decidir a regra de desempate* (partilhar a vitória, ou um critério do jogo, ex.: mais pássaros).
-- As apostas são simultâneas: fora os empates, não há vantagem de lugar.
+- **Empates davam a vitória ao lugar mais baixo** (o 1.º lugar tinha 35,5% a 3 jogadores). **Resolvido na 1.0.0**: um empate partilha a vitória.
+- As apostas são simultâneas: não há vantagem de lugar.

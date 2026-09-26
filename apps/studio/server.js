@@ -9,6 +9,7 @@ import catania from '@bitnik/game-catania';
 import bulbous from '@bitnik/game-bulbous';
 import praia from '@bitnik/game-praia-das-percebes';
 import nineOils from '@bitnik/game-nine-oils';
+import capivaras from '@bitnik/game-capivaras';
 
 export const bitnikBrand = {
   id: 'bitnik',
@@ -24,7 +25,7 @@ export const bitnikBrand = {
 export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
   return createPlatform({
     brand: bitnikBrand,
-    games: [catania, bulbous, praia, nineOils],
+    games: [catania, bulbous, praia, nineOils, capivaras],
     storage: dataDir ? fileStorage(dataDir) : memoryStorage(),
     studio: true,
     // Protótipos da Forge: ficam com os dados; sem pasta de dados, numa pasta temporária.

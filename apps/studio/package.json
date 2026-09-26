@@ -4,5 +4,5 @@
   "type": "module",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
-  "dependencies": { "@bitnik/server": "^0.1.0", "@bitnik/game-catania": "^4.0.0", "@bitnik/game-bulbous": "^1.0.0", "@bitnik/game-praia-das-percebes": "^2.0.0", "@bitnik/game-nine-oils": "^1.1.0" }
+  "dependencies": { "@bitnik/server": "^0.1.0", "@bitnik/game-catania": "^4.0.0", "@bitnik/game-bulbous": "^1.0.0", "@bitnik/game-praia-das-percebes": "^2.0.0", "@bitnik/game-nine-oils": "^1.1.0", "@bitnik/game-capivaras": "^1.0.0" }
 }
