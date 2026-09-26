@@ -90,6 +90,7 @@ const app = {
   noticesSkew: 0,     // relógio do servidor − local
   dismissed: new Set(),
   proto: null,        // mesa em "modo protótipo" (UI genérica), só essa e só nesta sessão
+  nameDraft: null,    // nome a meio de ser escrito (sobrevive aos redesenhos)
   uiFailed: new Set(), // jogos cuja UI própria não carregou: ficam na UI genérica
   ui: null,           // UI própria montada: { roomId, gameId, el, mod }
   appearance: null,   // afinações do deploy (consola), ao vivo
@@ -159,13 +160,24 @@ window.addEventListener('hashchange', () => {
 // ─── Lobby ───────────────────────────────────────────────────
 // Números de jogadores de uma mesa (players.counts do jogo, ou de min a max; a partir de 2).
 const tableCounts = (p) => (p.counts ?? Array.from({ length: p.max - p.min + 1 }, (_, i) => p.min + i)).filter((n) => n >= 2);
+/** Nome no campo: o que se está a escrever, senão o último guardado. */
+const shownName = () => app.nameDraft ?? app.welcome?.name ?? '';
+
+/** Guarda o nome do jogador: no servidor e já na página (o WELCOME só chega ao ligar). */
+function saveName(name) {
+  client.setName(name);
+  if (app.welcome) app.welcome.name = name.trim() || app.welcome.name;
+  app.nameDraft = null;
+  $('#name').value = app.welcome?.name ?? name;
+}
+
 /** Linha de cima do Início e do lobby: marca (· jogo), nome, avisos, consola, voltar e língua. */
 function renderBrandTop(game = null) {
   const brand = W()?.brand?.name || $('#brand').textContent;
   return `<header class="home-top">
     <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
     <div class="mesa-actions">
-      ${game ? `<input class="home-name-sm" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}">` : ''}
+      ${game ? `<input class="home-name-sm" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}">` : ''}
       <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
       ${W()?.studio ? `<a class="mesa-btn" href="/console">${u('console')}</a>` : ''}
       ${game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : ''}
@@ -254,7 +266,7 @@ function renderHome() {
         <h1 class="home-brand">${esc(brand)}</h1>
         <p class="home-lead">${u('homeLead')}</p>
         <label class="home-name"><span>${u('writeName')}</span>
-          <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}"></label>
+          <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}"></label>
       </div>
       <div class="home-grid" style="--cols:${Math.min(Math.max(games.length, 1), 5)}">${games.map((g, i) => {
         const tagline = t('game.tagline', {}, g.id);
@@ -694,7 +706,13 @@ function render() {
   const seatsX = document.querySelector('.seats')?.scrollLeft ?? 0;
   // A UI própria não é redesenhada: sai do DOM antes e volta para o #gameHost.
   app.ui?.el.remove();
+  const typing = document.activeElement?.matches?.('[data-name-input]') ? document.activeElement : null;
+  const caret = typing ? [typing.selectionStart, typing.selectionEnd] : null;
   $('#view').innerHTML = inRoom ? renderTable() : home ? renderHome() : renderLobby(gameLobby);
+  if (typing) {
+    const again = $('#view').querySelector('[data-name-input]');
+    if (again) { again.focus(); again.setSelectionRange(...caret); }
+  }
   keepSeatsStrip(seatsX);
   if (inRoom && app.room) syncGameUi(app.room); else if (app.ui) unmountGameUi();
   document.querySelectorAll('.inspect details').forEach((d) => {
@@ -747,11 +765,13 @@ $('#back').addEventListener('click', () => {
   goGame(g);
 });
 $('#lang').addEventListener('click', toggleLang);
-$('#name').addEventListener('change', (e) => client.setName(e.target.value));
+$('#name').addEventListener('change', (e) => saveName(e.target.value));
+$('#view').addEventListener('input', (e) => {
+  if (e.target.matches('[data-name-input]')) app.nameDraft = e.target.value;
+});
 $('#view').addEventListener('change', (e) => {
   if (!e.target.matches('[data-name-input]')) return;
-  client.setName(e.target.value);
-  $('#name').value = e.target.value;
+  saveName(e.target.value);
 });
 
 client.on('status', (s) => {
