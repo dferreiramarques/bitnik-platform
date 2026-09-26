@@ -124,7 +124,7 @@
 .cat-hex.firepick .cat-hex-shape { stroke: var(--cat-red); stroke-width: 3; }
 .cat-hex.firepick .cat-hex-glow { fill: var(--cat-red); }
 .cat-firepicks { pointer-events: none; }
-.cat-firepicks polygon { fill: none; stroke: var(--cat-red); stroke-width: 3; animation: cat-pick 1.3s ease-in-out infinite; }
+.cat-firepicks polygon { fill: none; stroke: var(--cat-red); stroke-width: 3; animation: cat-pick 1.3s ease-in-out infinite; animation-delay: var(--pick-delay, 0s); }
 @keyframes cat-pick {
   0%, 100% { stroke-width: 2; stroke-opacity: .55; filter: drop-shadow(0 0 0 transparent); }
   50% { stroke-width: 5; stroke-opacity: 1; filter: drop-shadow(0 0 8px var(--cat-red)); }

@@ -25,6 +25,12 @@ const hexPts = (cx, cy, r) => Array.from({ length: 6 }, (_, i) => {
   const a = (Math.PI / 180) * (60 * i - 30);
   return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
 }).join(' ');
+/**
+ * Atraso negativo que põe uma animação em loop na fase de um relógio contínuo:
+ * o tabuleiro é redesenhado a cada estado (e ao abrir painéis), mas as ondas,
+ * o fogo e o pulsar continuam onde estavam em vez de recomeçar.
+ */
+const loopDelay = (dur, offset = 0) => `-${(((performance.now() / 1000) + offset) % dur).toFixed(2)}s`;
 const seatColor = (i) => `var(--cat-p${(i % 4) + 1})`;
 const disc = (v, cls = '') => `<span class="cat-disc${RED.has(v) ? ' red' : ''}${cls ? ` ${cls}` : ''}">${v}</span>`;
 const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -237,14 +243,14 @@ function renderBoard(v) {
       ${!isVol && pile ? `<circle cx="${(cx + R * 0.52).toFixed(1)}" cy="${(cy - R * 0.52).toFixed(1)}" r="13" style="fill:var(--cat-panel-2);stroke:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold-dark)'}" stroke-width="1.8"/>
         <text x="${(cx + R * 0.52).toFixed(1)}" y="${(cy - R * 0.52).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" style="font-family:var(--cat-font-display);fill:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold)'};pointer-events:none">${pile.value}</text>` : ''}
       ${workers}
-      ${isFire ? `<g class="cat-fire-wrap" style="pointer-events:none"><ellipse class="cat-fire-glow" cx="${cx}" cy="${cy + 12}" rx="30" ry="18"/>
-        <image class="cat-fire" href="${ICONS.fogo}" x="${cx - 26}" y="${cy - 30}" width="52" height="52"/></g>` : ''}
+      ${isFire ? `<g class="cat-fire-wrap" style="pointer-events:none"><ellipse class="cat-fire-glow" cx="${cx}" cy="${cy + 12}" rx="30" ry="18" style="animation-delay:${loopDelay(2.4)}"/>
+        <image class="cat-fire" href="${ICONS.fogo}" x="${cx - 26}" y="${cy - 30}" width="52" height="52" style="animation-delay:${loopDelay(1.8)}"/></g>` : ''}
     </g>`;
   }).join('');
   // Para onde o fogo pode ir: contorno a pulsar por cima de todos os hexágonos (o brilho não fica tapado pelos vizinhos).
   const picks = v.hexes.filter((hex) => hexMove(hex.id)?.type === 'MOVE_FIRE')
     .map((hex) => `<polygon points="${hexPts(hex.px.x, hex.px.y, R - 1.5)}"/>`).join('');
-  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${renderFoam(v)}${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true">${picks}</g>` : ''}</svg>`;
+  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${renderFoam(v)}${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true" style="--pick-delay:${loopDelay(1.3)}">${picks}</g>` : ''}</svg>`;
 }
 
 
@@ -290,7 +296,7 @@ function renderFoam(v) {
     let ang = Math.atan2(by - ay, bx - ax);
     if (-ox * Math.sin(ang) + oy * Math.cos(ang) < 0) ang += Math.PI;
     const dur = 4.6 + (k % 4) * 0.7;
-    return `<g class="cat-wave" style="--fx:${(ox * 7).toFixed(1)}px;--fy:${(oy * 7).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:-${((k * 1.3) % dur).toFixed(1)}s">
+    return `<g class="cat-wave" style="--fx:${(ox * 7).toFixed(1)}px;--fy:${(oy * 7).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${loopDelay(dur, k * 1.3)}">
       <use href="#cat-wave" x="-23" y="-4.4" width="46" height="8.8" transform="translate(${(mx + ox * 9).toFixed(1)} ${(my + oy * 9).toFixed(1)}) rotate(${(ang * 180 / Math.PI).toFixed(1)})"/></g>`;
   }).join('')}</g>`;
 }
