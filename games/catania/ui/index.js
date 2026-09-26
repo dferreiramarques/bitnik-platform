@@ -227,7 +227,7 @@ function renderBoard(v) {
     const label = move
       ? (move.label ? ctx.t(move.label.key, move.label.params) : name)
       : `${name}${pile && !isVol ? ` · ${pile.value}` : ''}`;
-    return `<g class="cat-hex${move ? ' can' : ''}${isFire ? ' fire' : ''}" data-hex="${hex.id}"
+    return `<g class="cat-hex${move ? ' can' : ''}${move?.type === 'MOVE_FIRE' ? ' firepick' : ''}${isFire ? ' fire' : ''}" data-hex="${hex.id}"
         ${move ? `role="button" tabindex="0" aria-label="${esc(label)}"` : `aria-label="${esc(label)}"`}>
       <title>${esc(label)}</title>
       <polygon class="cat-hex-shape" points="${hexPts(cx, cy, R - 1.5)}" style="fill:var(--cat-res-${hex.type})" stroke="rgb(0 0 0 / .5)" stroke-width="1.2"/>
@@ -237,10 +237,14 @@ function renderBoard(v) {
       ${!isVol && pile ? `<circle cx="${(cx + R * 0.52).toFixed(1)}" cy="${(cy - R * 0.52).toFixed(1)}" r="13" style="fill:var(--cat-panel-2);stroke:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold-dark)'}" stroke-width="1.8"/>
         <text x="${(cx + R * 0.52).toFixed(1)}" y="${(cy - R * 0.52).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" style="font-family:var(--cat-font-display);fill:${RED.has(pile.value) ? 'var(--cat-red)' : 'var(--cat-gold)'};pointer-events:none">${pile.value}</text>` : ''}
       ${workers}
-      ${isFire ? `<image href="${ICONS.fogo}" x="${cx - 26}" y="${cy - 30}" width="52" height="52" style="pointer-events:none"/>` : ''}
+      ${isFire ? `<g class="cat-fire-wrap" style="pointer-events:none"><ellipse class="cat-fire-glow" cx="${cx}" cy="${cy + 12}" rx="30" ry="18"/>
+        <image class="cat-fire" href="${ICONS.fogo}" x="${cx - 26}" y="${cy - 30}" width="52" height="52"/></g>` : ''}
     </g>`;
   }).join('');
-  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${hexes}</svg>`;
+  // Para onde o fogo pode ir: contorno a pulsar por cima de todos os hexágonos (o brilho não fica tapado pelos vizinhos).
+  const picks = v.hexes.filter((hex) => hexMove(hex.id)?.type === 'MOVE_FIRE')
+    .map((hex) => `<polygon points="${hexPts(hex.px.x, hex.px.y, R - 1.5)}"/>`).join('');
+  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true">${picks}</g>` : ''}</svg>`;
 }
 
 
