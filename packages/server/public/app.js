@@ -252,7 +252,7 @@ function renderHome() {
         <label class="home-name"><span>${u('writeName')}</span>
           <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}"></label>
       </div>
-      <div class="home-grid">${games.map((g, i) => {
+      <div class="home-grid" style="--cols:${Math.min(Math.max(games.length, 1), 5)}">${games.map((g, i) => {
         const tagline = t('game.tagline', {}, g.id);
         return `<a class="home-card" href="#/j/${esc(g.id)}" style="--cover:${COVERS[i % COVERS.length]}">
           <div class="home-cover"><span>${esc(t('game.name', {}, g.id))}</span></div>

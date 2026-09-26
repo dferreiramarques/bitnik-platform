@@ -103,11 +103,12 @@
 /* Espuma do mar: pequenas ondas brancas em partes da costa (lentas e subtis). */
 .cat-foam { pointer-events: none; }
 .cat-wave { fill: #fffaf0; opacity: 0; animation: cat-surf 5s ease-in-out infinite; }
+/* do mar para a ilha: nasce mais longe e vem até à costa, onde se desfaz */
 @keyframes cat-surf {
-  0% { opacity: 0; transform: translate(0, 0); }
+  0% { opacity: 0; transform: translate(var(--fx), var(--fy)); }
   35% { opacity: .6; }
-  65% { opacity: .3; transform: translate(var(--fx), var(--fy)); }
-  100% { opacity: 0; transform: translate(var(--fx), var(--fy)); }
+  70% { opacity: .35; transform: translate(0, 0); }
+  100% { opacity: 0; transform: translate(0, 0); }
 }
 /* Fogo do Etna: arde devagar (tremer da chama e brilho por baixo). */
 .cat-fire { transform-box: fill-box; transform-origin: 50% 92%; animation: cat-burn 1.8s ease-in-out infinite; }

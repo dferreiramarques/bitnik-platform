@@ -255,8 +255,8 @@ const WAVE_PATHS = [
 
 /**
  * Espuma do mar na costa da ilha: nos lados dos hexágonos que dão para o mar
- * (os que nenhum vizinho partilha), alguns troços têm uma pequena rebentação
- * branca, lenta e desfasada. Fica por baixo dos hexágonos; só é decoração.
+ * (os que nenhum vizinho partilha), alguns troços têm uma pequena onda branca
+ * que vem do mar até à costa, lenta e desfasada. Fica por baixo dos hexágonos; só é decoração.
  */
 function renderFoam(v) {
   const vert = (hex, r, i) => {
@@ -290,7 +290,7 @@ function renderFoam(v) {
     let ang = Math.atan2(by - ay, bx - ax);
     if (-ox * Math.sin(ang) + oy * Math.cos(ang) < 0) ang += Math.PI;
     const dur = 4.6 + (k % 4) * 0.7;
-    return `<g class="cat-wave" style="--fx:${(ox * 5).toFixed(1)}px;--fy:${(oy * 5).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:-${((k * 1.3) % dur).toFixed(1)}s">
+    return `<g class="cat-wave" style="--fx:${(ox * 7).toFixed(1)}px;--fy:${(oy * 7).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:-${((k * 1.3) % dur).toFixed(1)}s">
       <use href="#cat-wave" x="-23" y="-4.4" width="46" height="8.8" transform="translate(${(mx + ox * 9).toFixed(1)} ${(my + oy * 9).toFixed(1)}) rotate(${(ang * 180 / Math.PI).toFixed(1)})"/></g>`;
   }).join('')}</g>`;
 }
