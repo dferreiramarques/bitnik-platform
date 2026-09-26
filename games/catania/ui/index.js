@@ -248,6 +248,11 @@ function renderBoard(v) {
 }
 
 
+const WAVE_PATHS = [
+  'm 119.52692,120.03656 c -1.11461,-0.39774 -1.49432,-0.65484 -2.88329,-1.95231 -0.96756,-0.90382 -0.96756,-0.90382 -2.22271,-0.0403 -3.25067,2.23652 -7.15961,2.36142 -10.65497,0.34043 -1.27239,-0.73568 -1.37465,-1.1067 -0.13452,-0.48804 3.37049,1.68142 8.18319,0.81169 10.78812,-1.94957 1.04583,-1.1086 1.57301,-1.04046 2.95545,0.38196 2.7855,2.86607 5.66537,2.87377 9.05863,0.0242 1.43223,-1.20275 1.82387,-1.20488 2.96577,-0.0161 2.31388,2.40886 5.40246,2.69281 7.23728,0.66536 0.68227,-0.7539 1.0145,-0.70592 2.39182,0.34542 1.49616,1.14204 2.79204,1.58223 4.69217,1.59385 0.82677,0.005 1.36255,0.0987 1.19063,0.20799 -0.84693,0.5386 -4.32581,0.21359 -5.82884,-0.54455 -1.47081,-0.74189 -1.49569,-0.7449 -1.95551,-0.23643 -1.94175,2.14718 -5.36694,2.14262 -8.24165,-0.011 -0.58976,-0.44182 -1.00643,-0.58962 -1.21719,-0.43178 -3.15085,2.35969 -5.63715,3.00432 -8.14119,2.11078 z',
+  'm 131.02309,123.97385 c -0.84237,-0.30059 -1.12933,-0.49489 -2.17904,-1.47545 -0.73123,-0.68306 -0.73123,-0.68306 -1.6798,-0.0305 -2.45669,1.69024 -5.41084,1.78464 -8.05244,0.25728 -0.96162,-0.55598 -1.0389,-0.83638 -0.1016,-0.36882 2.54723,1.27071 6.18441,0.61342 8.15307,-1.47339 0.79038,-0.83782 1.1888,-0.78632 2.23357,0.28867 2.10513,2.16601 4.28158,2.17183 6.84602,0.0184 1.0824,-0.90897 1.37839,-0.91058 2.24136,-0.0128 1.74871,1.82048 4.0829,2.03507 5.46955,0.50285 0.51562,-0.56977 0.76671,-0.5335 1.80761,0.26103 1.13072,0.8631 2.11006,1.19578 3.54608,1.20456 0.62483,0.004 1.02975,0.0746 0.89982,0.15719 -0.64006,0.40704 -3.26922,0.16141 -4.40512,-0.41154 -1.11156,-0.56069 -1.13036,-0.56296 -1.47786,-0.17869 -1.46749,1.62272 -4.05605,1.61928 -6.22861,-0.009 -0.4457,-0.33391 -0.76059,-0.44561 -0.91988,-0.32632 -2.38124,1.78333 -4.26025,2.27051 -6.15266,1.59522 z',
+];
+
 /**
  * Espuma do mar na costa da ilha: nos lados dos hexágonos que dão para o mar
  * (os que nenhum vizinho partilha), alguns troços têm uma pequena rebentação
@@ -270,18 +275,23 @@ function renderFoam(v) {
     }
   }
   const coast = edges.filter((e) => seen.get(e.key) === 1);
-  return `<g class="cat-foam" aria-hidden="true">${coast.map((e, k) => {
+  // A onda (desenho do David, Inkscape): duas cristas, a maior por cima.
+  const wave = `<defs><symbol id="cat-wave" viewBox="0 0 47.477158 9.0824566"><g transform="translate(-102.7544,-115.18111)">${WAVE_PATHS.map((d) => `<path d="${d}"/>`).join('')}</g></symbol></defs>`;
+  return `${wave}<g class="cat-foam" aria-hidden="true">${coast.map((e, k) => {
     if (k % 3 === 2) return ''; // só algumas partes da costa
-    const [ax, ay] = vert(e.hex, R + 3, e.i);
-    const [bx, by] = vert(e.hex, R + 3, (e.i + 1) % 6);
+    const [ax, ay] = vert(e.hex, R, e.i);
+    const [bx, by] = vert(e.hex, R, (e.i + 1) % 6);
     const [mx, my] = [(ax + bx) / 2, (ay + by) / 2];
     // para fora da ilha (do centro do hexágono para o meio do lado)
     const len = Math.hypot(mx - e.hex.px.x, my - e.hex.px.y);
     const ox = (mx - e.hex.px.x) / len;
     const oy = (my - e.hex.px.y) / len;
-    const d = `M${ax.toFixed(1)},${ay.toFixed(1)} Q${(mx + ox * 7).toFixed(1)},${(my + oy * 7).toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`;
+    // ao longo do lado, com o "de baixo" da onda (y local positivo) virado para o mar
+    let ang = Math.atan2(by - ay, bx - ax);
+    if (-ox * Math.sin(ang) + oy * Math.cos(ang) < 0) ang += Math.PI;
     const dur = 4.6 + (k % 4) * 0.7;
-    return `<path d="${d}" pathLength="1" style="--fx:${(ox * 5).toFixed(1)}px;--fy:${(oy * 5).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:-${((k * 1.3) % dur).toFixed(1)}s"/>`;
+    return `<g class="cat-wave" style="--fx:${(ox * 5).toFixed(1)}px;--fy:${(oy * 5).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:-${((k * 1.3) % dur).toFixed(1)}s">
+      <use href="#cat-wave" x="-23" y="-4.4" width="46" height="8.8" transform="translate(${(mx + ox * 9).toFixed(1)} ${(my + oy * 9).toFixed(1)}) rotate(${(ang * 180 / Math.PI).toFixed(1)})"/></g>`;
   }).join('')}</g>`;
 }
 
