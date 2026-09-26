@@ -882,3 +882,22 @@ test('Forge: o separador Código avisa quando os testes mudaram desde a verifica
   assert.ok(html.includes('cdTestsChanged'));
   assert.ok(!html.includes('data-cd="fix"'), 'com testes novos, só código novo');
 });
+
+test('a mesa em ecrã inteiro (app.css) não apanha classes da consola, que também carrega o app.css', async () => {
+  const pub = new URL('../packages/server/public/', import.meta.url);
+  const css = await readFile(new URL('app.css', pub), 'utf8');
+  // Classes com position: fixed e inset: 0 no app.css (cobrem o ecrã todo; o .toast, partilhado, não).
+  const fixas = new Set();
+  for (const [, sel, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/position:\s*fixed/.test(body) || !/inset:\s*0/.test(body)) continue;
+    for (const [, c] of sel.matchAll(/\.([a-zA-Z][\w-]*)/g)) fixas.add(c);
+  }
+  const consola = ['console.html', 'console.js', 'console-forge.js', 'console-forge-code.js', 'console-forge-flow.js',
+    'console-forge-play.js', 'console-forge-tests.js', 'console-appearance.js'];
+  for (const f of consola) {
+    const src = await readFile(new URL(f, pub), 'utf8');
+    for (const [, attr] of src.matchAll(/class="([^"]*)"/g)) {
+      for (const c of attr.split(/\s+/)) assert.ok(!fixas.has(c), `${f} usa a classe .${c}, que no app.css cobre o ecrã todo`);
+    }
+  }
+});

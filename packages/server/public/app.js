@@ -287,13 +287,13 @@ function useGameUi(msg) {
 /** Linha de cima da mesa em ecrã inteiro (ADR-014): marca, jogo, avisos, guia, sair e língua. */
 function renderTableTop(gameId, meta, extra = '') {
   const brand = W()?.brand?.name || $('#brand').textContent;
-  const offline = app.status === 'closed' ? `<span class="tbl-chip warn" role="status">${esc(u('closed'))}</span>` : '';
-  return `<header class="tbl-top">
-    <div class="tbl-id"><strong class="tbl-brand">${esc(brand)}</strong><span class="tbl-sep">·</span>
-      <strong class="tbl-game">${esc(t('game.name', {}, gameId))}</strong><span class="tbl-meta">${meta}</span></div>
-    <div class="tbl-actions">${offline}<span id="tblNotices" class="tbl-notices">${renderNoticeChip()}</span>${extra}
-      <button class="tbl-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-      <button class="tbl-btn" data-lang>${u('lang')}</button></div>
+  const offline = app.status === 'closed' ? `<span class="mesa-chip warn" role="status">${esc(u('closed'))}</span>` : '';
+  return `<header class="mesa-top">
+    <div class="mesa-id"><strong class="mesa-brand">${esc(brand)}</strong><span class="mesa-sep">·</span>
+      <strong class="mesa-game">${esc(t('game.name', {}, gameId))}</strong><span class="mesa-meta">${meta}</span></div>
+    <div class="mesa-actions">${offline}<span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}
+      <button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+      <button class="mesa-btn" data-lang>${u('lang')}</button></div>
   </header>`;
 }
 
@@ -306,16 +306,16 @@ function renderFullTable(msg) {
   const info = `${msg.room.kind === 'invite' ? `${esc(msg.room.name || u('inviteTable'))} · ` : ''}${u('tableOf', { n: msg.room.numPlayers })}${meta?.prototype ? ` · ${u('prototype', { v: meta.version })}` : ''}`;
   const extra = [
     renderTimers(msg),
-    meta?.tutorial ? `<a class="tbl-btn" href="#/tutorial/${esc(g)}" aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>` : '',
-    app.welcome?.studio ? `<button class="tbl-btn" data-proto>${u('protoUi')}</button>` : '',
-    canLeave ? `<button class="tbl-btn" data-leave>${u('leave')}</button>` : '',
+    meta?.tutorial ? `<a class="mesa-btn" href="#/tutorial/${esc(g)}" aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>` : '',
+    app.welcome?.studio ? `<button class="mesa-btn" data-proto>${u('protoUi')}</button>` : '',
+    canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : '',
   ].join('');
   const key = `${msg.room.id}:${msg.seq}`;
   const result = msg.result && app.resultClosed !== key
-    ? `<div class="tbl-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="tbl-card">${renderPalette(msg)}
-        <div class="tbl-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
-  return `<section class="tbl" data-game="${esc(g)}">
-    <div id="gameHost" class="game-host"><p class="tbl-loading">${u('loadingUi')}</p></div>
+    ? `<div class="mesa-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="mesa-card">${renderPalette(msg)}
+        <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
+  return `<section class="mesa" data-game="${esc(g)}">
+    <div id="gameHost" class="game-host"><p class="mesa-loading">${u('loadingUi')}</p></div>
     ${renderTableTop(g, info + (round ? ` · ${u('round', { n: round })}` : ''), extra)}
     ${result}
   </section>`;
@@ -412,8 +412,8 @@ function renderNoticeChip() {
   if (!list.length) return '';
   const t0 = Date.now() + app.noticesSkew;
   const maint = list.some((n) => n.maintenance && n.maintenance.from <= t0) || list.some((n) => n.level === 'warn');
-  return `<button class="tbl-chip${maint ? ' warn' : ''}" data-notices aria-expanded="${app.noticesOpen}">${u('notices')} · ${list.length}</button>
-    ${app.noticesOpen ? `<div class="tbl-panel" role="region" aria-label="${esc(u('notices'))}">${noticeItems(list)}</div>` : ''}`;
+  return `<button class="mesa-chip${maint ? ' warn' : ''}" data-notices aria-expanded="${app.noticesOpen}">${u('notices')} · ${list.length}</button>
+    ${app.noticesOpen ? `<div class="mesa-panel" role="region" aria-label="${esc(u('notices'))}">${noticeItems(list)}</div>` : ''}`;
 }
 
 function noticeItems(list) {
@@ -432,7 +432,7 @@ function renderNotices() {
   const list = activeNotices();
   el.hidden = !list.length;
   el.innerHTML = noticeItems(list);
-  const chip = document.getElementById('tblNotices');
+  const chip = document.getElementById('mesaNotices');
   if (chip) chip.innerHTML = renderNoticeChip();
 }
 
@@ -455,8 +455,8 @@ $('#notices').addEventListener('click', onDismiss);
 
 // ─── Tutorial (módulo do pacote; corre o motor no browser) ───
 function renderTutorial(gameId) {
-  return `<section class="tbl" data-game="${esc(gameId)}">
-    <div id="tutHost" class="game-host"><p class="tbl-loading">${u('loadingUi')}</p></div>
+  return `<section class="mesa" data-game="${esc(gameId)}">
+    <div id="tutHost" class="game-host"><p class="mesa-loading">${u('loadingUi')}</p></div>
     ${renderTableTop(gameId, u('tutorialOf'))}
   </section>`;
 }
