@@ -244,9 +244,46 @@ function renderBoard(v) {
   // Para onde o fogo pode ir: contorno a pulsar por cima de todos os hexágonos (o brilho não fica tapado pelos vizinhos).
   const picks = v.hexes.filter((hex) => hexMove(hex.id)?.type === 'MOVE_FIRE')
     .map((hex) => `<polygon points="${hexPts(hex.px.x, hex.px.y, R - 1.5)}"/>`).join('');
-  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true">${picks}</g>` : ''}</svg>`;
+  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${renderFoam(v)}${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true">${picks}</g>` : ''}</svg>`;
 }
 
+
+/**
+ * Espuma do mar na costa da ilha: nos lados dos hexágonos que dão para o mar
+ * (os que nenhum vizinho partilha), alguns troços têm uma pequena rebentação
+ * branca, lenta e desfasada. Fica por baixo dos hexágonos; só é decoração.
+ */
+function renderFoam(v) {
+  const vert = (hex, r, i) => {
+    const a = (Math.PI / 180) * (60 * i - 30);
+    return [hex.px.x + r * Math.cos(a), hex.px.y + r * Math.sin(a)];
+  };
+  const seen = new Map();
+  const edges = [];
+  for (const hex of v.hexes) {
+    for (let i = 0; i < 6; i++) {
+      const [ax, ay] = vert(hex, R, i);
+      const [bx, by] = vert(hex, R, (i + 1) % 6);
+      const key = `${Math.round((ax + bx) / 2)},${Math.round((ay + by) / 2)}`;
+      seen.set(key, (seen.get(key) || 0) + 1);
+      edges.push({ key, hex, i });
+    }
+  }
+  const coast = edges.filter((e) => seen.get(e.key) === 1);
+  return `<g class="cat-foam" aria-hidden="true">${coast.map((e, k) => {
+    if (k % 3 === 2) return ''; // só algumas partes da costa
+    const [ax, ay] = vert(e.hex, R + 3, e.i);
+    const [bx, by] = vert(e.hex, R + 3, (e.i + 1) % 6);
+    const [mx, my] = [(ax + bx) / 2, (ay + by) / 2];
+    // para fora da ilha (do centro do hexágono para o meio do lado)
+    const len = Math.hypot(mx - e.hex.px.x, my - e.hex.px.y);
+    const ox = (mx - e.hex.px.x) / len;
+    const oy = (my - e.hex.px.y) / len;
+    const d = `M${ax.toFixed(1)},${ay.toFixed(1)} Q${(mx + ox * 7).toFixed(1)},${(my + oy * 7).toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`;
+    const dur = 4.6 + (k % 4) * 0.7;
+    return `<path d="${d}" pathLength="1" style="--fx:${(ox * 5).toFixed(1)}px;--fy:${(oy * 5).toFixed(1)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:-${((k * 1.3) % dur).toFixed(1)}s"/>`;
+  }).join('')}</g>`;
+}
 
 function renderMe(v) {
   const p = v.players[v.me];

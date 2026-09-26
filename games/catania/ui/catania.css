@@ -100,6 +100,19 @@
 .cat-hex.can:hover .cat-hex-glow, .cat-hex.can:focus .cat-hex-glow { opacity: .28; }
 .cat-hex.fire .cat-hex-shape { stroke: var(--cat-red); stroke-width: 3; }
 .cat-hex-glow { fill: var(--cat-gold); opacity: .14; pointer-events: none; }
+/* Espuma do mar: pequenas rebentações brancas em partes da costa (lentas e subtis). */
+.cat-foam { pointer-events: none; }
+.cat-foam path {
+  fill: none; stroke: #fffaf0; stroke-width: 2.4; stroke-linecap: round;
+  stroke-dasharray: .55 1; opacity: 0;
+  animation: cat-surf 5s ease-in-out infinite;
+}
+@keyframes cat-surf {
+  0% { opacity: 0; stroke-dashoffset: .35; transform: translate(0, 0); }
+  30% { opacity: .55; }
+  60% { opacity: .25; stroke-dashoffset: -.15; transform: translate(var(--fx), var(--fy)); }
+  100% { opacity: 0; stroke-dashoffset: -.35; transform: translate(var(--fx), var(--fy)); }
+}
 /* Fogo do Etna: arde devagar (tremer da chama e brilho por baixo). */
 .cat-fire { transform-box: fill-box; transform-origin: 50% 92%; animation: cat-burn 1.8s ease-in-out infinite; }
 .cat-fire-glow { fill: var(--cat-red); opacity: .28; filter: blur(7px); transform-box: fill-box; transform-origin: center; animation: cat-embers 2.4s ease-in-out infinite; }
@@ -244,6 +257,7 @@
 @media (prefers-reduced-motion: reduce) {
   .tut-hi { animation: none; }
   .cat-fire, .cat-fire-glow, .cat-firepicks polygon { animation: none; }
+  .cat-foam path { animation: none; opacity: .3; }
   .cat-firepicks polygon { stroke-width: 4; }
   .cat-msg.on { animation: cat-fade 1.8s linear forwards; }
 }
