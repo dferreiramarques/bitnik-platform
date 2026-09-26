@@ -34,6 +34,10 @@ const UI = {
     homeLead: 'Jogos de tabuleiro online', writeName: 'Escreve o teu nome',
     homeNote: 'A tua mesa contra bots, as mesas com outras pessoas e as de aprovação estão no lobby de cada jogo.',
     playersRange: '{n} jogadores', or: 'ou', home: 'Início',
+    yourTable: 'A tua mesa', vsBots: 'Contra bots', vsBotsNote: 'Só tua: ninguém mais a vê e não ocupa uma mesa pública.',
+    playWith: 'Jogar com', oneBot: '1 bot', nBots: '{n} bots', continueRound: 'Continuar · ronda {n}', continue: 'Continuar',
+    newGame: 'Nova', startGame: 'Começar', otherTables: 'Mesas com outras pessoas', freeOne: '1 lugar livre',
+    enter: 'Entrar', noOther: 'Ainda não há mesas com outras pessoas.', earlier: 'Partidas anteriores', inviteNote: 'por convite',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -62,6 +66,10 @@ const UI = {
     homeLead: 'Online board games', writeName: 'Type your name',
     homeNote: 'Your table against bots, tables with other people and review tables are in each game\'s lobby.',
     playersRange: '{n} players', or: 'or', home: 'Home',
+    yourTable: 'Your table', vsBots: 'Against bots', vsBotsNote: 'Only yours: nobody else sees it and it does not take a public table.',
+    playWith: 'Play with', oneBot: '1 bot', nBots: '{n} bots', continueRound: 'Continue · round {n}', continue: 'Continue',
+    newGame: 'New', startGame: 'Start', otherTables: 'Tables with other people', freeOne: '1 seat free',
+    enter: 'Enter', noOther: 'No tables with other people yet.', earlier: 'Earlier games', inviteNote: 'by invitation',
   },
 };
 
@@ -143,45 +151,80 @@ window.addEventListener('hashchange', () => {
 // ─── Lobby ───────────────────────────────────────────────────
 // Números de jogadores de uma mesa (players.counts do jogo, ou de min a max; a partir de 2).
 const tableCounts = (p) => (p.counts ?? Array.from({ length: p.max - p.min + 1 }, (_, i) => p.min + i)).filter((n) => n >= 2);
+/** Linha de cima do Início e do lobby: marca (· jogo), nome, avisos, consola, voltar e língua. */
+function renderBrandTop(game = null) {
+  const brand = W()?.brand?.name || $('#brand').textContent;
+  return `<header class="home-top">
+    <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
+    <div class="mesa-actions">
+      ${game ? `<input class="home-name-sm" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}">` : ''}
+      <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
+      ${W()?.studio ? `<a class="mesa-btn" href="/console">${u('console')}</a>` : ''}
+      ${game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : ''}
+      <button class="mesa-btn" data-lang>${u('lang')}</button></div>
+  </header>`;
+}
+
+const seatDots = (r) => `<span class="lob-dots" aria-hidden="true">${r.seats.map((x) => `<i${x.taken ? ' class="on"' : ''}></i>`).join('')}</span>`;
+
+/**
+ * Lobby de um jogo (quadro "Lobby" do template): a tua mesa contra bots
+ * (escolher quantos, continuar ou nova) e as mesas com outras pessoas, em
+ * cartões de vidro sobre o fundo da marca.
+ */
 function renderLobby(only = null) {
-  const games = (W()?.games || []).filter((g) => !only || g.id === only);
-  return `<section class="lobby">${games.map((g) => {
-    const counts = tableCounts(g.players);
-    const pub = app.rooms.public.filter((r) => r.gameId === g.id);
-    const mine = app.rooms.mine.filter((r) => r.gameId === g.id);
-    return `<article class="game-block">
-      <div>
-        <h1 class="game-title">${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="proto-badge">${u('prototype', { v: g.version })}</span>` : ''}</h1>
-        ${t('game.tagline', {}, g.id) !== 'game.tagline' ? `<p class="game-tagline">${esc(t('game.tagline', {}, g.id))}</p>` : ''}
+  const g = (W()?.games || []).find((x) => x.id === only) || (W()?.games || [])[0];
+  if (!g) return `<section class="home">${renderBrandTop()}<p class="home-note">${u('connecting')}</p></section>`;
+  const counts = tableCounts(g.players);
+  app.botSel ??= {};
+  const sel = counts.includes(app.botSel[g.id]) ? app.botSel[g.id] : counts[counts.length - 1];
+  const mine = app.rooms.mine.filter((r) => r.gameId === g.id);
+  const solos = mine.filter((r) => r.kind === 'solo');
+  const current = solos.find((r) => r.status === 'playing' || r.status === 'waiting');
+  const earlier = solos.filter((r) => r !== current).slice(0, 6);
+  const others = [...mine.filter((r) => r.kind === 'invite'), ...app.rooms.public.filter((r) => r.gameId === g.id)];
+  const tagline = t('game.tagline', {}, g.id);
+  const bots = (n) => (n - 1 === 1 ? u('oneBot') : u('nBots', { n: n - 1 }));
+  return `<section class="home lob">
+    ${renderBrandTop(g.id)}
+    <div class="lob-main">
+      <div class="lob-head">
+        <div class="lob-title"><h1>${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</h1>
+          <p>${tagline !== 'game.tagline' ? `${esc(tagline.replace(/\.$/, ''))} · ` : ''}${playersText(g.players)}</p></div>
+        ${g.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(g.id)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${u('howToPlay')}</a>` : ''}
       </div>
-      <div class="solo-start"><span>${u('playBots')}</span>
-        ${counts.map((n) => `<button class="btn btn-primary" data-solo="${g.id}" data-n="${n}">${u('players', { n })}</button>`).join('')}
-        ${g.tutorial ? `<a class="btn btn-outline" href="#/tutorial/${g.id}">${u('tutorial')}</a>` : ''}
-      </div>
-      <div class="lobby-cols">
-        <div><h3>${u('myTables')}</h3>
-          ${mine.length ? `<ul class="rows">${mine.map((r) => `<li>
-            <span class="grow">${r.kind === 'invite' ? esc(r.name || u('inviteTable')) : u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}${g.prototype && r.version && r.version !== g.version ? ` · ${esc(r.version)}` : ''}</small></span>
-            <button class="btn btn-outline" data-open="${r.id}">${u(r.status === 'over' || r.status === 'expired' ? 'view' : 'resume')}</button>
-            ${r.kind === 'solo' ? `<button class="btn btn-ghost" data-remove="${r.id}" aria-label="${u('remove')}">✕</button>` : ''}
-          </li>`).join('')}</ul>` : `<p class="empty">${u('noMine')}</p>`}
-        </div>
-        <div><h3>${u('publicTables')}</h3>
-          <ul class="rows">${pub.map((r) => {
-            const freeSeats = r.seats.filter((s) => !s.taken).length;
-            const seated = r.seats.some((s) => s.isYou);
-            const names = r.seats.filter((s) => s.taken).map((s) => esc(s.name)).join(', ');
-            return `<li>
-              <span class="grow">${u('tableOf', { n: r.numPlayers })}
-                <small>${r.status === 'waiting' ? u('free', { n: freeSeats }) : statusText(r)}${names ? `, ${names}` : ''}</small></span>
-              <button class="btn ${seated ? 'btn-primary' : 'btn-outline'}" data-${seated || r.status !== 'waiting' ? 'open' : 'join'}="${r.id}">
-                ${u(seated ? 'resume' : r.status === 'waiting' ? 'join' : 'view')}</button>
-            </li>`;
-          }).join('')}</ul>
+      <h2 class="lob-lbl">${u('yourTable')}</h2>
+      <div class="lob-grid">
+        <div class="lob-card mine">
+          <h3>${u('vsBots')}</h3>
+          <p>${u('vsBotsNote')}</p>
+          <div class="lob-bots"><span>${u('playWith')}</span>${counts.map((n) => `<button class="lob-btn sm${n === sel ? ' on' : ''}" data-bots="${esc(g.id)}" data-n="${n}" aria-pressed="${n === sel}">${bots(n)}</button>`).join('')}</div>
+          <div class="lob-acts">${current
+            ? `<button class="lob-btn pri" data-open="${current.id}">${current.round ? u('continueRound', { n: current.round }) : u('continue')}</button>
+               <button class="lob-btn" data-solo="${esc(g.id)}" data-n="${sel}">${u('newGame')}</button>`
+            : `<button class="lob-btn pri" data-solo="${esc(g.id)}" data-n="${sel}">${u('startGame')}</button>`}</div>
         </div>
       </div>
-    </article>`;
-  }).join('')}</section>`;
+      <h2 class="lob-lbl">${u('otherTables')}</h2>
+      ${others.length ? `<div class="lob-grid">${others.map((r) => {
+        const free = r.seats.filter((x) => !x.taken).length;
+        const seated = r.seats.some((x) => x.isYou);
+        const invite = r.kind === 'invite';
+        const title = invite ? esc(r.name || u('inviteTable')) : u('tableOf', { n: r.numPlayers });
+        const note = r.status === 'waiting' ? (free === 1 ? u('freeOne') : u('free', { n: free })) : statusText(r);
+        const act = seated ? ['open', u('continue')] : r.status === 'waiting' && !invite ? ['join', u('join')] : ['open', invite ? u('enter') : u('view')];
+        return `<div class="lob-card${seated ? ' mine' : ''}">
+          <div class="lob-row"><h3>${title}</h3>${seatDots(r)}</div>
+          <p>${invite ? `${u('inviteNote')} · ` : ''}${note}</p>
+          <div class="lob-acts"><button class="lob-btn${seated ? ' pri' : ''}" data-${act[0]}="${r.id}">${act[1]}</button></div>
+        </div>`;
+      }).join('')}</div>` : `<p class="lob-empty">${u('noOther')}</p>`}
+      ${earlier.length ? `<h2 class="lob-lbl">${u('earlier')}</h2>
+        <ul class="lob-list">${earlier.map((r) => `<li><span>${u('tableOf', { n: r.numPlayers })}<small>${statusText(r)}${g.prototype && r.version && r.version !== g.version ? ` · ${esc(r.version)}` : ''}</small></span>
+          <button class="lob-btn sm" data-open="${r.id}">${u(r.status === 'over' || r.status === 'expired' ? 'view' : 'resume')}</button>
+          <button class="lob-btn sm" data-remove="${r.id}" aria-label="${u('remove')}">✕</button></li>`).join('')}</ul>` : ''}
+    </div>
+  </section>`;
 }
 
 // ─── Início (marca com vários jogos; ADR-014, quadro "Início" do template) ──
@@ -198,18 +241,13 @@ function renderHome() {
   const brand = W()?.brand?.name || $('#brand').textContent;
   const games = W()?.games || [];
   return `<section class="home">
-    <header class="home-top">
-      <strong class="mesa-brand">${esc(brand)}</strong>
-      <div class="mesa-actions"><span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
-        ${W()?.studio ? `<a class="mesa-btn" href="/console">${u('console')}</a>` : ''}
-        <button class="mesa-btn" data-lang>${u('lang')}</button></div>
-    </header>
+    ${renderBrandTop()}
     <div class="home-main">
       <div class="home-head">
         <h1 class="home-brand">${esc(brand)}</h1>
         <p class="home-lead">${u('homeLead')}</p>
         <label class="home-name"><span>${u('writeName')}</span>
-          <input id="homeName" maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}"></label>
+          <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}"></label>
       </div>
       <div class="home-grid">${games.map((g, i) => {
         const tagline = t('game.tagline', {}, g.id);
@@ -569,7 +607,7 @@ function render() {
   const inRoom = !!routeRoom();
   const gameLobby = routeGame();
   const home = !tut && !inRoom && !gameLobby && manyGames();
-  document.body.classList.toggle('is-home', home);
+  document.body.classList.toggle('is-home', !tut && !inRoom);
   $('#back').hidden = !inRoom && !tut && !gameLobby;
   $('#lang').textContent = u('lang');
   // Só no Studio: atalho para a consola (nos runtimes dos clientes não aparece).
@@ -618,6 +656,8 @@ $('#view').addEventListener('click', (e) => {
   const d = b.dataset;
   if ('lobby' in d) { goGame(app.room?.room.gameId || routeTutorial()); return; }
   if ('lang' in d) { toggleLang(); return; }
+  if ('home' in d) { location.hash = '#/'; return; }
+  if (d.bots) { app.botSel = { ...app.botSel, [d.bots]: Number(d.n) }; render(); return; }
   if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
   if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
   const roomId = app.room?.room.id;
@@ -646,7 +686,7 @@ $('#back').addEventListener('click', () => {
 $('#lang').addEventListener('click', toggleLang);
 $('#name').addEventListener('change', (e) => client.setName(e.target.value));
 $('#view').addEventListener('change', (e) => {
-  if (e.target.id !== 'homeName') return;
+  if (!e.target.matches('[data-name-input]')) return;
   client.setName(e.target.value);
   $('#name').value = e.target.value;
 });
