@@ -105,6 +105,7 @@ export function update(next) {
 
 // ─── Mensagem da mesa ───────────────────────────────────────
 function announce(title, sub = '', variant = '') {
+  if (ctx.messages === false) return; // o tutorial explica tudo na caixa do guia
   ui.msgQ.push({ title, sub, variant });
   if (!ui.msgBusy) nextMessage();
 }

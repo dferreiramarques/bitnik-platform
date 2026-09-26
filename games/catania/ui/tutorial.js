@@ -61,6 +61,7 @@ export function start(el, ctx) {
     gameId: 'catania', lang: ctx.lang, t, seatName, toast: ctx.toast,
     move: (mv) => play(0, mv),
     afterRender: () => highlight(),
+    messages: false, // sem "É a tua vez" e afins por cima do guia
   });
   table.prepend(guide); // dentro da mesa: herda a skin (tokens --cat-*) e assenta no --table-bg
 
