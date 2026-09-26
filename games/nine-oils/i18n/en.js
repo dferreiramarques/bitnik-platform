@@ -17,9 +17,9 @@ export default {
   'moveLabel.DEFENDER': 'Block with {n} Bully(ies)',
   'moveLabel.ESCOLHA_CEGA': 'Take card {n} from the opponent’s hand',
   'moveLabel.CONTINUAR': 'Continue',
-  'moveLabel.COMBO_1': '{a}',
-  'moveLabel.COMBO_2': '{a} + {b}',
-  'moveLabel.COMBO_3': '{a} + {b} + {c}',
+  'moveLabel.COMBO_1': '{m}{a}',
+  'moveLabel.COMBO_2': '{m}{a} + {b}',
+  'moveLabel.COMBO_3': '{m}{a} + {b} + {c}',
   'moveLabel.DESCARTAR': 'Discard {carta}',
 
   'log.CARTAS': 'played {n} card(s)',

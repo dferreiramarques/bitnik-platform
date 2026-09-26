@@ -234,9 +234,23 @@ export function result(s) {
   return { scores, winners: scores.map((x, i) => i).filter((i) => scores[i] === max) };
 }
 
-export function describeMove(move, v) {
+/**
+ * Posição relativa à peça inicial: C (cima), B (baixo), D (direita), E (esquerda)
+ * e quantas casas. Ex.: C1 = logo acima da peça inicial; C1 D2 = uma acima, duas à direita.
+ */
+export function posicaoTexto(r, c) {
+  const v = r < 0 ? { v: '@dir.C', vn: -r } : r > 0 ? { v: '@dir.B', vn: r } : null;
+  const h = c > 0 ? { h: '@dir.D', hn: c } : c < 0 ? { h: '@dir.E', hn: -c } : null;
+  if (v && h) return { key: 'pos.VH', params: { ...v, ...h } };
+  return v ? { key: 'pos.V', params: v } : { key: 'pos.H', params: h };
+}
+
+export function describeMove(move) {
   const p = move.payload || {};
-  if (move.type === 'COLOCAR') return { key: 'moveLabel.COLOCAR', params: { r: p.r, c: p.c } };
+  if (move.type === 'COLOCAR') {
+    const pos = posicaoTexto(p.r, p.c);
+    return { key: `moveLabel.COLOCAR_${pos.key.slice(4)}`, params: pos.params };
+  }
   if (move.type === 'SALVA_VIDAS') return { key: p.dir === 'h' ? 'moveLabel.SALVA_VIDAS_H' : 'moveLabel.SALVA_VIDAS_V', params: {} };
   return null;
 }

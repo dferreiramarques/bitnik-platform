@@ -2,8 +2,9 @@
 // (repositório nineoils-v2, server.js). Regras puras: estado JSON,
 // dados e baralho por ctx.rng.
 
-// O jogo antigo tem 3 Rapazes (9 cartas); o README fala em 2 (8 cartas). Fica o do jogo.
-export const BARALHO = ['TEMPTRESS', 'TEMPTRESS', 'BOY', 'BOY', 'BOY', 'BULLY', 'BULLY', 'BULLY', 'BULLY'];
+// 1.1.0: 2 Rapazes, como nas regras escritas (o jogo antigo tinha 3). Em simulação não muda o
+// equilíbrio (quem começa ganha 53,1% com 2 e 53,7% com 3); só há metade dos roubos.
+export const BARALHO = ['TEMPTRESS', 'TEMPTRESS', 'BOY', 'BOY', 'BULLY', 'BULLY', 'BULLY', 'BULLY'];
 export const LIMITE_MAO = 3;
 // Banca: 0 = casa com cubo vermelho, 1 = casa livre, 2 = garrafa.
 const BANCA = [0, 0, 1, 1, 1, 1];
@@ -41,6 +42,15 @@ export function conjuntos(dados) {
 const VALOR = { PENTA: 100, QUAD: 80, TRIPLE_DOUBLE: 60, SIX_OF_KIND: 50, DOUBLE: 10 };
 export const valorConjunto = (b) => b.reduce((s, c) => s + (VALOR[c] || 0), 0);
 
+/** Um conjunto é pior se outro tem tudo o que ele tem e mais alguma coisa (ex.: Duplo < Duplo + Quad). */
+export function dominado(b, opcoes) {
+  const conta = (x) => x.reduce((m, c) => ({ ...m, [c]: (m[c] || 0) + 1 }), {});
+  const a = conta(b);
+  return opcoes.some((o) => o.length > b.length && Object.entries(a).every(([c, n]) => (conta(o)[c] || 0) >= n));
+}
+/** As melhores opções (as que nenhuma outra contém) primeiro; dentro de cada grupo, por valor. */
+const ordenar = (opcoes) => [...opcoes].sort((x, y) => dominado(x, opcoes) - dominado(y, opcoes) || valorConjunto(y) - valorConjunto(x));
+
 /** O que um lançamento dá: combinações diretas, ou opções para escolher. */
 export function analisar(dados) {
   const max = Math.max(...Object.values(contar(dados)));
@@ -48,7 +58,7 @@ export function analisar(dados) {
   if (max === 8) return { combos: ['DOUBLE_QUAD'], opcoes: null, joker: false };
   if (max === 7) return { combos: null, opcoes: [['DOUBLE'], ['TRIPLE_DOUBLE'], ['QUAD'], ['PENTA'], ['SIX_OF_KIND']], joker: true };
   if (max === 6) return { combos: ['SIX_OF_KIND'], opcoes: null, joker: false };
-  const b = conjuntos(dados).sort((x, y) => valorConjunto(y) - valorConjunto(x));
+  const b = ordenar(conjuntos(dados));
   if (b.length <= 1) return { combos: b[0] ?? [], opcoes: null, joker: false };
   return { combos: null, opcoes: b, joker: false };
 }
@@ -320,7 +330,9 @@ export function describeMove(move, v) {
     case 'ESCOLHA_CEGA': return { key: 'moveLabel.ESCOLHA_CEGA', params: { n: p.carta + 1 } };
     case 'ESCOLHER_COMBO': {
       const b = v.opcoes?.[p.opcao] ?? [];
-      return { key: `moveLabel.COMBO_${Math.min(3, b.length)}`, params: Object.fromEntries(b.map((c, i) => ['abc'[i], `@combo.${c}`])) };
+      // ★ nas melhores opções (as que nenhuma outra contém); no Joker escolhe-se só uma, sem ★.
+      const melhor = !v.joker && !dominado(b, v.opcoes ?? []);
+      return { key: `moveLabel.COMBO_${Math.min(3, b.length)}`, params: { m: melhor ? '★ ' : '', ...Object.fromEntries(b.map((c, i) => ['abc'[i], `@combo.${c}`])) } };
     }
     case 'DESCARTAR': return { key: 'moveLabel.DESCARTAR', params: { carta: `@carta.${mao[p.carta]}` } };
     default: return null;

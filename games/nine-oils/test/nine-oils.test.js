@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createMatch, applyMove, simulate, checkGame, checkPurity } from '@bitnik/engine';
+import { createMatch, applyMove, simulate, checkGame, checkPurity, viewFor, translate } from '@bitnik/engine';
 import oils from '../index.js';
 import { analisar, conjuntos } from '../rules.js';
 
@@ -34,7 +34,7 @@ test('Preparação: banca de 6 casas com 2 cubos, 9 cartas de Personagem, 1 cart
     assert.equal(j.mao.length, 1);
     assert.equal(j.reserva, 6);
   }
-  assert.equal(m.state.baralho.length, 7);
+  assert.equal(m.state.baralho.length, 6, '8 cartas: 2 Sedutoras, 2 Rapazes, 4 Valentões');
   assert.ok([0, 1].includes(m.state.vez));
   assert.throws(() => createMatch(oils, { numPlayers: 3, seed: 1 }));
 });
@@ -50,6 +50,14 @@ test('Combinações: cada face só dá uma combinação; o par do Triplo+Duplo �
   assert.deepEqual(set(conjuntos([4, 4, 4, 1, 1, 2, 3, 5, 6])), ['DOUBLE', 'DOUBLE+DOUBLE', 'TRIPLE_DOUBLE']);
   // um só par: sem escolha
   assert.deepEqual(analisar([1, 1, 2, 3, 4, 5, 6, 2, 3]).opcoes, [['DOUBLE', 'DOUBLE', 'DOUBLE'], ['DOUBLE', 'DOUBLE'], ['DOUBLE']]);
+});
+
+test('As melhores opções aparecem primeiro e com ★; as que outra contém ficam depois', () => {
+  const a = analisar([4, 4, 4, 1, 1, 2, 3, 5, 6]);
+  assert.deepEqual(a.opcoes.map((b) => b.join('+')), ['TRIPLE_DOUBLE', 'DOUBLE+DOUBLE', 'DOUBLE']);
+  const m = tweak(novo(), (s) => { s.fase = 'COMBO'; s.vez = 0; s.opcoes = a.opcoes; });
+  const labels = viewFor(oils, m, 0).legal.map((x) => translate(oils, 'pt', x.label.key, x.label.params));
+  assert.deepEqual(labels, ['★ Triplo + Duplo (garrafa)', '★ Duplo (1 carta) + Duplo (1 carta)', 'Duplo (1 carta)']);
 });
 
 test('Combinações especiais: 6 iguais, Joker (7), 8 iguais e 9 iguais', () => {

@@ -1,6 +1,6 @@
 # Nine Oils — Regras (PT)
 
-Texto do README do jogo online antigo (v1.4), edição portuguesa. Nota: o jogo antigo tem **3 Rapazes** (9 cartas de Personagem), não 2 como diz o texto abaixo; a plataforma segue o jogo (ver CHANGELOG.md).
+Texto do README do jogo online antigo (v1.4), edição portuguesa. Desde a 1.1.0 a plataforma usa 2 Rapazes, como diz o texto (o jogo online antigo tinha 3; ver CHANGELOG.md).
 
 
 ## Contexto

@@ -17,9 +17,9 @@ export default {
   'moveLabel.DEFENDER': 'Bloquear com {n} Valentão(ões)',
   'moveLabel.ESCOLHA_CEGA': 'Tirar a carta {n} da mão do adversário',
   'moveLabel.CONTINUAR': 'Continuar',
-  'moveLabel.COMBO_1': '{a}',
-  'moveLabel.COMBO_2': '{a} + {b}',
-  'moveLabel.COMBO_3': '{a} + {b} + {c}',
+  'moveLabel.COMBO_1': '{m}{a}',
+  'moveLabel.COMBO_2': '{m}{a} + {b}',
+  'moveLabel.COMBO_3': '{m}{a} + {b} + {c}',
   'moveLabel.DESCARTAR': 'Descartar {carta}',
 
   'log.CARTAS': 'jogou {n} carta(s)',

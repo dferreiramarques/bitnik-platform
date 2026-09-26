@@ -8,7 +8,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'praia-das-percebes',
-  version: '1.0.0',
+  version: '1.0.1',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',

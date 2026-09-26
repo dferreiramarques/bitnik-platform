@@ -1,12 +1,16 @@
 # Praia das Percebes — histórico de regras
 
+## 1.0.1 — Posições legíveis (2026-09-26)
+
+Sem mudança de regras. As posições das jogadas leem-se a partir da peça inicial: C (cima), B (baixo), D (direita), E (esquerda) e o número de casas. Ex.: "C1" logo acima da peça inicial, "C1 D2" uma acima e duas à direita.
+
 ## 1.0.0 — Migração para a plataforma (2026-09-26)
 
 Regras migradas do servidor antigo (repositório `praiadaspercebes`, `server.js`), sem mudanças de jogo. `REGRAS.md` escrito a partir das regras do jogo online antigo. Bots iguais aos antigos.
 
-Comportamentos do jogo antigo mantidos, para rever:
+Comportamentos do jogo antigo mantidos (revistos pelo David: ficam assim):
 
-- Uma linha ou coluna com buracos conta só o troço à volta do salva-vidas e **não aplica** as pranchas (numa linha sem buracos, aplica).
+- Uma linha ou coluna com buracos conta só o troço à volta do salva-vidas e não aplica as pranchas (numa linha sem buracos, aplica).
 - As "voltas extra" quando um jogador fica sem fichas existiam no código antigo mas nunca eram usadas: não passaram.
 
 Vitórias por lugar em simulação com bots (300 partidas):

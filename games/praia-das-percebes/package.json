@@ -1,6 +1,6 @@
 {
   "name": "@bitnik/game-praia-das-percebes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Praia das Percebes — pacote de jogo para @bitnik/engine.",
   "type": "module",
   "main": "index.js",

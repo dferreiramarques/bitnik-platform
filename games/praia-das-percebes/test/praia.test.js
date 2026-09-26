@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createMatch, applyMove, simulate, checkGame, checkPurity, createRng } from '@bitnik/engine';
+import { createMatch, applyMove, simulate, checkGame, checkPurity, createRng, translate, viewFor } from '@bitnik/engine';
 import praia from '../index.js';
 import { baralho, banhistasVigiados, objetivoFeito, podeColocar } from '../rules.js';
 
@@ -131,6 +131,16 @@ test('Fim: quando o baralho tem menos peças do que jogadores; fichas por usar v
   assert.ok(m.result);
   assert.deepEqual(m.result.scores, [10, 10, 10], '5 fichas × 2 cada');
   assert.deepEqual(m.result.winners, [0, 1, 2], 'empate partilha a vitória');
+});
+
+test('As posições leem-se a partir da peça inicial: C1 por cima, B1 por baixo, D1 à direita, E1 à esquerda', () => {
+  const lbl = (r, c) => { const l = praia.describeMove({ type: 'COLOCAR', payload: { r, c } }); return translate(praia, 'pt', l.key, l.params); };
+  assert.equal(lbl(-1, 0), 'Colocar em C1');
+  assert.equal(lbl(1, 0), 'Colocar em B1');
+  assert.equal(lbl(0, 1), 'Colocar em D1');
+  assert.equal(lbl(0, -3), 'Colocar em E3');
+  assert.equal(lbl(-1, 2), 'Colocar em C1 D2');
+  assert.ok(viewFor(praia, novo(), 0).legal.every((m) => m.label.key.startsWith('moveLabel.COLOCAR_')));
 });
 
 test('Simulação: partidas com bots acabam a 2, 3 e 4', () => {
