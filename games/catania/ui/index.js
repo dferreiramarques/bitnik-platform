@@ -189,13 +189,13 @@ function renderMe(v) {
 function renderPiles(v) {
   return RES.map((r) => {
     const val = v.piles[r].value;
-    // O que acontece a este recurso se alguém recolher 2: recebe o disco do topo da torre.
-    const next = v.tower ? Math.min(val, v.towerTop) : null;
-    const after = next == null ? '' : ctx.t(next < val ? 'ui.after2' : 'ui.after2Same', { v: next });
+    // Se alguém recolher 2, o disco do topo da torre vai para cima desta pilha e passa a ser o valor (5.0.0).
+    const next = v.tower ? v.towerTop : null;
+    const after = next == null ? '' : ctx.t(next !== val ? 'ui.after2' : 'ui.after2Same', { v: next });
     return `<div class="cat-pile">${img(r, 22)}<span>${esc(ctx.t(`res.${r}`))}</span>
       <small title="discos na pilha">${v.piles[r].discs.length}</small>
       <span class="cat-disc${RED.has(val) ? ' red' : ''}">${val}</span>
-      ${after ? `<small class="cat-after${next < val ? ' drop' : ''}">${esc(after)}</small>` : ''}</div>`;
+      ${after ? `<small class="cat-after${next !== val ? ' drop' : ''}">${esc(after)}</small>` : ''}</div>`;
   }).join('');
 }
 

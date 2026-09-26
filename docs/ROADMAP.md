@@ -26,6 +26,7 @@ Evolução do Catania nesta base (ver `games/catania/CHANGELOG.md`):
 
 - **3.0.0**: regra de "ronda completa" no fim do jogo.
 - **4.0.0**: regra de abertura (no 1.º turno, a 2.ª recolha do 1.º jogador é de 1 carta), que tira a vantagem do 1.º lugar a 2, 3 e 4 jogadores.
+- **5.0.0**: as pilhas de recursos deixam de estar ordenadas; o disco que vem da torre vai para cima e passa a ser o valor, e valorizar tira o de cima (volta o valor anterior).
 
 ## Fase 0b — UI própria do Catania e template ✔
 

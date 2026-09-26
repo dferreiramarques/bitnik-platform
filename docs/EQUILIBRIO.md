@@ -4,16 +4,16 @@ Regras que dão vantagem a um lugar à mesa, por jogo. Números de simulação c
 
 Atualizado a 2026-09-26.
 
-## Catania (4.0.1)
+## Catania (5.0.0)
 
 | Jogadores | Vitórias por lugar |
 |---|---|
-| 2 | 50,5 / 49,5 |
-| 3 | 34,7 / 32,3 / 33,0 |
-| 4 | 25,9 / 25,3 / 23,4 / 25,5 |
+| 2 | 50,3 / 49,7 |
+| 3 | 33,4 / 33,6 / 33,0 |
+| 4 | 24,7 / 24,9 / 24,0 / 26,4 |
 
-- **Quem começa** tinha vantagem. **Resolvido na 4.0.0**: no 1.º turno, a 2.ª recolha do 1.º jogador é de 1 carta. A 3 jogadores sobra +1,4 pontos para o 1.º lugar. *A confirmar.*
-- **Recurso "esquecido" cai a pique** (não é de lugar, mas decide partidas): uma pilha em que ninguém mexeu fica alta e, quando alguém recolhe 2, recebe o disco do topo da torre, que no fim do jogo é baixo (ex.: 11 → 3). Desde a 4.0.1 a UI mostra o próximo disco. *A confirmar se é intencional.*
+- **Quem começa** tinha vantagem. **Resolvido na 4.0.0**: no 1.º turno, a 2.ª recolha do 1.º jogador é de 1 carta. Com as pilhas da 5.0.0 continua a fazer falta (sem ela, 52,3% a 2 jogadores); a 3 jogadores já não sobra vantagem. *A confirmar com jogadores reais.*
+- **Recurso "esquecido" cai a pique** (não é de lugar, mas decide partidas): uma pilha em que ninguém mexeu fica alta e, quando alguém recolhe 2, recebe o disco do topo da torre, que no fim do jogo é baixo (ex.: 11 → 3). Desde a 5.0.0, valorizar esse recurso desfaz a queda (o 3 volta à torre e o valor volta a 11). A UI mostra o próximo disco. *A confirmar se é intencional.*
 
 ## Praia das Percebes (2.0.0)
 

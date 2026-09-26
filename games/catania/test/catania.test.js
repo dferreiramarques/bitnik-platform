@@ -79,13 +79,18 @@ test('Abertura: a partir da 2.ª ronda, o 1.º jogador volta a poder recolher 2 
   assert.ok(catania.enumerate(m.state, 0).some((x) => x.type === 'COLLECT' && x.payload.take2));
 });
 
-test('Recolher 2 cartas nunca sobe o valor da pilha', () => {
-  let m = tweak(newMatch(), (s) => { s.tower = [2, 4, 12]; });
-  const h = hexOf(m, 'vinho');
-  const before = m.state.piles.vinho.discs.at(-1);
-  m = ok(move(m, 0, 'COLLECT', { hex: h.id, take2: true }));
-  assert.equal(m.state.piles.vinho.discs.at(-1), before, 'o 12 vai para baixo');
+test('Recolher 2 cartas (5.0.0): a ficha do topo da torre vai para cima da pilha e passa a ser o valor', () => {
+  // O valor desce: Vinho a 11, o 9 da torre vai para cima.
+  let m = tweak(newMatch(), (s) => { s.tower = [2, 4, 9]; s.piles.vinho.discs = [11]; });
+  m = ok(move(m, 0, 'COLLECT', { hex: hexOf(m, 'vinho').id, take2: true }));
+  assert.deepEqual(m.state.piles.vinho.discs, [11, 9], 'o 9 fica em cima');
+  assert.deepEqual(m.state.tower, [2, 4], 'sai sempre a ficha mais alta da torre');
   assert.equal(m.state.players[0].hand.vinho, 2);
+  // O valor sobe: Vinho a 8 (por baixo, o 11); o 9 vai para cima na mesma e passa a ser o valor.
+  m = tweak(newMatch(), (s) => { s.tower = [2, 4, 9]; s.piles.vinho.discs = [11, 8]; });
+  m = ok(move(m, 0, 'COLLECT', { hex: hexOf(m, 'vinho').id, take2: true }));
+  assert.deepEqual(m.state.piles.vinho.discs, [11, 8, 9]);
+  assert.equal(catania.view(m.state, 0).piles.vinho.value, 9);
 });
 
 test('Torre vazia: não se pode recolher 2', () => {
@@ -125,6 +130,19 @@ test('Fundar: 5+ cartas e 2+ tipos; a aldeia fica com a maioria', () => {
   const m = withHand({ vinho: 3, peixe: 2 });
   assert.equal(move(m, 0, 'FOUND', { keep: 'peixe', raise: 'vinho' }).error.code, 'err.KEEP_MAJORITY');
   assert.equal(move(m, 0, 'FOUND', { keep: 'vinho', raise: 'azeite' }).error.code, 'err.RAISE_MINORITY');
+});
+
+test('Valorizar (5.0.0): a ficha de cima volta à torre e o valor volta ao anterior; a ficha inicial fica', () => {
+  // O Calcário estava a 11 e alguém pôs lá o 9: valorizar tira o 9 e o Calcário volta a valer 11.
+  let m = tweak(withHand({ azeite: 3, calcario: 2 }), (s) => { s.piles.calcario.discs = [11, 9]; s.tower = [1, 2, 7]; });
+  m = ok(move(m, 0, 'FOUND', { keep: 'azeite', raise: 'calcario' }));
+  assert.deepEqual(m.state.piles.calcario.discs, [11]);
+  assert.deepEqual(m.state.tower, [1, 2, 7, 9], 'o 9 volta à torre, por ordem, e é o próximo a sair');
+  // Só com a ficha inicial, nada muda.
+  m = tweak(withHand({ azeite: 3, calcario: 2 }), (s) => { s.piles.calcario.discs = [11]; s.tower = [1, 2, 7]; });
+  m = ok(move(m, 0, 'FOUND', { keep: 'azeite', raise: 'calcario' }));
+  assert.deepEqual(m.state.piles.calcario.discs, [11]);
+  assert.deepEqual(m.state.tower, [1, 2, 7]);
 });
 
 test('Fundar (exemplo das regras): empate 3 Calcário / 3 Azeite + 1 Cereais', () => {

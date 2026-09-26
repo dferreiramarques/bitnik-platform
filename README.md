@@ -39,7 +39,7 @@ Jogos instalados no Studio:
 
 | Jogo | Pacote | Versão | Jogadores | UI |
 |---|---|---|---|---|
-| Catania | `games/catania` | 4.0.1 | 2–4 | Própria (tabuleiro, tutorial, temas) |
+| Catania | `games/catania` | 5.0.0 | 2–4 | Própria (tabuleiro, tutorial, temas) |
 | Praia das Percebes | `games/praia-das-percebes` | 2.0.0 | 2–4 | Genérica |
 | Nine Oils | `games/nine-oils` | 1.1.0 | 2 | Genérica |
 | Bulbous | `games/bulbous` | 1.0.0 | 2 ou 4 | Genérica |
