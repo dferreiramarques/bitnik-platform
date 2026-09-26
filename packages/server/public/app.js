@@ -89,7 +89,8 @@ const app = {
   notices: [],
   noticesSkew: 0,     // relógio do servidor − local
   dismissed: new Set(),
-  proto: (() => { try { return localStorage.getItem('bitnik.proto') === '1'; } catch { return false; } })(),
+  proto: null,        // mesa em "modo protótipo" (UI genérica), só essa e só nesta sessão
+  uiFailed: new Set(), // jogos cuja UI própria não carregou: ficam na UI genérica
   ui: null,           // UI própria montada: { roomId, gameId, el, mod }
   appearance: null,   // afinações do deploy (consola), ao vivo
   status: 'connecting',
@@ -102,6 +103,9 @@ function skinFor(gameId) {
   const meta = gameMeta(gameId);
   return meta ? applyGameSkin(meta, app.appearance?.games?.[gameId]?.theme) : Promise.resolve();
 }
+
+// O modo protótipo era guardado no browser e ficava ligado em todas as mesas; já não é.
+try { localStorage.removeItem('bitnik.proto'); } catch { /* sem storage */ }
 
 const client = new BitnikClient({ lang: app.lang });
 const u = (key, params) => fill((UI[app.lang] || UI.pt)[key] ?? key, params);
@@ -392,10 +396,18 @@ function tree(value, key) {
   return `<details${key == null ? ' open' : ''}><summary>${label}${Array.isArray(value) ? `[${entries.length}]` : '{…}'}</summary>${entries.map(([k, v]) => tree(v, k)).join('')}</details>`;
 }
 
+/**
+ * "Modo protótipo" (ADR-006): no Studio, trocar a UI própria de um protótipo
+ * (0.x, da Forge) pela UI genérica, para ver as jogadas e o estado do motor.
+ * Num jogo publicado não aparece.
+ */
+const protoAllowed = (meta) => !!(app.welcome?.studio && meta?.prototype && meta?.ui);
+
 /** A mesa usa a UI própria do jogo (ADR-006)? Só com o jogo a decorrer ou acabado. */
 function useGameUi(msg) {
   const meta = gameMeta(msg?.room.gameId);
-  return !!meta?.ui && !app.proto && !!msg.view && ['playing', 'over'].includes(msg.room.status);
+  const proto = protoAllowed(meta) && app.proto === msg.room.id;
+  return !!meta?.ui && !proto && !app.uiFailed.has(msg.room.gameId) && !!msg.view && ['playing', 'over'].includes(msg.room.status);
 }
 
 /** Linha de cima da mesa em ecrã inteiro (ADR-014): marca, jogo, avisos, guia, sair e língua. */
@@ -421,7 +433,7 @@ function renderFullTable(msg) {
   const extra = [
     renderTimers(msg),
     meta?.tutorial ? `<a class="mesa-btn" href="#/tutorial/${esc(g)}" aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>` : '',
-    app.welcome?.studio ? `<button class="mesa-btn" data-proto>${u('protoUi')}</button>` : '',
+    protoAllowed(meta) ? `<button class="mesa-btn" data-proto>${u('protoUi')}</button>` : '',
     canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : '',
   ].join('');
   const key = `${msg.room.id}:${msg.seq}`;
@@ -487,8 +499,8 @@ function renderTable() {
   const round = msg.view?.round;
   const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
   const own = useGameUi(msg);
-  const protoBtn = app.welcome?.studio && gameMeta(g)?.ui && msg.view
-    ? `<button class="btn btn-ghost" data-proto>${u(app.proto ? 'gameUi' : 'protoUi')}</button>` : '';
+  const protoBtn = protoAllowed(gameMeta(g)) && msg.view
+    ? `<button class="btn btn-outline" data-proto>${u(app.proto === msg.room.id ? 'gameUi' : 'protoUi')}</button>` : '';
   return `<section class="table">
     <div class="table-head">
       <h1>${esc(t('game.name', {}, g))}</h1>
@@ -531,7 +543,7 @@ async function syncGameUi(msg) {
     try { [mod] = await Promise.all([uiModules.get(url), skinFor(gameId)]); } catch (e) {
       console.error('[ui]', url, e);
       uiModules.delete(url);
-      app.proto = true; // cai na UI genérica
+      app.uiFailed.add(gameId); // cai na UI genérica
       return render();
     } finally { syncGameUi.loading = null; }
     if (app.room?.room.id !== msg.room.id || app.ui) return app.ui ? syncGameUi(app.room) : undefined;
@@ -722,8 +734,7 @@ $('#view').addEventListener('click', (e) => {
     if (client.move(roomId, { type: mv.type, payload: mv.payload })) b.setAttribute('aria-busy', 'true');
     else toast(u('notSent'));
   } else if ('proto' in d) {
-    app.proto = !app.proto;
-    try { localStorage.setItem('bitnik.proto', app.proto ? '1' : '0'); } catch { /* sem storage */ }
+    app.proto = app.proto === roomId ? null : roomId;
     render();
   } else if ('start' in d) client.start(roomId);
   else if ('restart' in d) client.restart(roomId);

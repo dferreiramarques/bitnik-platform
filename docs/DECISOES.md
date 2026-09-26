@@ -157,7 +157,7 @@ Alternativas consideradas: UI num pacote separado (`@bitnik/ui-catania`; duas ve
 
 - A UI vem no pacote, em `ui/`, e é servida pela plataforma. Ocupa só a área da mesa; barra, avisos, lobby, sentar e começar continuam a ser da plataforma.
 - Interface: um módulo com `mount(el, ctx)` e `update(msg)`. Recebe o `view` e as jogadas legais (já rotuladas) e envia jogadas pelo `@bitnik/client`. Não repete regras: um clique corresponde a uma jogada legal.
-- A UI genérica passa a ser a implementação por omissão da mesma interface; no Studio há um "modo protótipo" para trocar.
+- A UI genérica passa a ser a implementação por omissão da mesma interface; no Studio há um "modo protótipo" para trocar. Só aparece nos protótipos (0.x, da Forge) que já têm UI própria, vale só para a mesa onde se liga e não fica guardado; num jogo publicado não aparece. Se a UI própria não carregar, a mesa cai na UI genérica.
 - `checkPurity` continua a valer para as regras; `ui/` pode importar o SDK de cliente, nunca o servidor.
 
 ### Consequências
