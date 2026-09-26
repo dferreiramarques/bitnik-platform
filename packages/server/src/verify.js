@@ -15,6 +15,17 @@ const FILE = /^(?:[\w-]+\/)*[\w.-]+\.(?:js|json|md)$/;
 const MAX_FILES = 60;
 const MAX_BYTES = 1_000_000;
 
+/**
+ * O isolamento usa `--permission`, que só existe sem "experimental" a partir
+ * do Node 22.13 (e do 23.5 na linha 23).
+ */
+export function supportsPermission(version = process.versions.node) {
+  const [major, minor] = String(version).replace(/^v/, '').split('.').map(Number);
+  if (major === 22) return minor >= 13;
+  if (major === 23) return minor >= 5;
+  return major > 23;
+}
+
 /** Junta os testes aprovados num ficheiro node:test, com o cabeçalho comum e as funções auxiliares. */
 export function composeTests(items, auxiliares = '') {
   // As IAs repetem muitas vezes os imports e o tweak do cabeçalho: saem, para não dar "already declared".
@@ -31,10 +42,10 @@ ${auxiliares.trim() ? `\n// Funções auxiliares dos testes\n${auxiliares}\n` : 
 }
 
 /**
- * @param {{ files: Record<string,string>, tests: Array, timeoutMs?: number }} input
+ * @param {{ files: Record<string,string>, tests: Array, timeoutMs?: number, nodeVersion?: string }} input
  * @returns {Promise<{ ok, steps, tests, simulation, ms }>}
  */
-export async function verifyPackage({ files, tests, auxiliares = '', timeoutMs = 60_000 }) {
+export async function verifyPackage({ files, tests, auxiliares = '', timeoutMs = 60_000, nodeVersion = process.versions.node }) {
   const t0 = Date.now();
   const report = { ok: false, steps: [], tests: { pass: 0, fail: 0, failures: [] }, simulation: [], ms: 0 };
   const step = (id, ok, details = []) => { report.steps.push({ id, ok, details }); return ok; };
@@ -55,6 +66,10 @@ export async function verifyPackage({ files, tests, auxiliares = '', timeoutMs =
   // 2. Pureza das regras (a UI e os textos podem mais, mas nunca o servidor).
   const purity = entries.filter(([p]) => p.endsWith('.js') && !p.startsWith('ui/')).flatMap(([p, c]) => checkPurity(String(c), p));
   step('pureza', !purity.length, purity);
+
+  // O processo isolado precisa de --permission: num Node antigo, falha aqui com uma mensagem clara.
+  const nodeOk = supportsPermission(nodeVersion);
+  if (!step('node', nodeOk, nodeOk ? [] : [`a verificação precisa de Node 22.13 ou mais recente (está a correr ${nodeVersion})`])) return finish();
 
   // 3. Pasta de trabalho: pacote, testes aprovados e o motor ligado.
   const approved = (tests || []).filter((t) => t.aprovado && String(t.codigo || '').trim());

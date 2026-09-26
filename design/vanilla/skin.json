@@ -1,6 +1,6 @@
 {
   "name": "Vanilla",
-  "description": "Skin neutra de referência para jogos novos e para o template do Figma (ADR-008). Tokens --game-* do design system.",
+  "description": "Skin neutra de referência para jogos novos e para o template (ADR-008, ADR-014). Tokens --game-* do design system; a mesa ocupa o ecrã inteiro e os painéis são de vidro por cima dela. Desenho em design/figma/TEMPLATE.md.",
   "tokens": {
     "--table-bg": {
       "value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
@@ -9,6 +9,78 @@
       "label": {
         "pt": "Mesa (fundo)",
         "en": "Table (background)"
+      }
+    },
+    "--table-dots": {
+      "value": "rgba(255,250,241,.14)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Pontos da mesa",
+        "en": "Table dots"
+      }
+    },
+    "--game-glass": {
+      "value": "rgba(255,250,241,.3)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Vidro sobre a mesa",
+        "en": "Glass on the table"
+      }
+    },
+    "--game-glass-line": {
+      "value": "rgba(255,250,241,.35)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Contorno do vidro",
+        "en": "Glass outline"
+      }
+    },
+    "--game-glass-blur": {
+      "value": "8px",
+      "type": "size",
+      "group": "table",
+      "label": {
+        "pt": "Desfoque do vidro",
+        "en": "Glass blur"
+      }
+    },
+    "--game-on-table": {
+      "value": "#fffaf1",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Texto sobre a mesa",
+        "en": "Text on the table"
+      }
+    },
+    "--game-on-table-muted": {
+      "value": "rgba(255,250,241,.75)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Texto secundário sobre a mesa",
+        "en": "Secondary text on the table"
+      }
+    },
+    "--game-on-table-accent": {
+      "value": "#ffd9c2",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Destaque sobre a mesa",
+        "en": "Accent on the table"
+      }
+    },
+    "--game-on-table-warn": {
+      "value": "#ffb38f",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Aviso sobre a mesa",
+        "en": "Warning on the table"
       }
     },
     "--game-panel": {
@@ -81,6 +153,42 @@
       "label": {
         "pt": "Perigo",
         "en": "Danger"
+      }
+    },
+    "--game-accent-strong": {
+      "value": "#8f3417",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Destaque forte (texto, hover)",
+        "en": "Strong accent (text, hover)"
+      }
+    },
+    "--game-disabled-bg": {
+      "value": "#f6eedf",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Desativado (fundo)",
+        "en": "Disabled (background)"
+      }
+    },
+    "--game-disabled-line": {
+      "value": "#e6d7bb",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Desativado (contorno)",
+        "en": "Disabled (outline)"
+      }
+    },
+    "--game-disabled-text": {
+      "value": "#8a7a6a",
+      "type": "color",
+      "group": "base",
+      "label": {
+        "pt": "Desativado (texto)",
+        "en": "Disabled (text)"
       }
     },
     "--game-color-1": {
@@ -163,6 +271,26 @@
     [
       "--game-on-accent",
       "--game-accent"
+    ],
+    [
+      "--game-muted",
+      "--game-panel-2"
+    ],
+    [
+      "--game-accent",
+      "--game-panel-2"
+    ],
+    [
+      "--game-accent-strong",
+      "--game-panel"
+    ],
+    [
+      "--game-accent-strong",
+      "--game-panel-2"
+    ],
+    [
+      "--game-color-4",
+      "--game-panel-2"
     ]
   ]
 }

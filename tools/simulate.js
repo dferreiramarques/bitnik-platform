@@ -3,6 +3,7 @@
 //   npm run simulate -- bulbous 500 0.2   (idleRate: 20% das vezes o tempo esgota)
 // Mostra, por número de jogadores: partidas acabadas, falhas,
 // média de jogadas e % de vitórias por lugar (deteta vantagem de lugar).
+// Sai com código 1 se houver falhas ou partidas por acabar (para o CI).
 import { simulate, playerCounts } from '@bitnik/engine';
 
 const [gameId = 'catania', gamesArg = '300', idleArg = '0'] = process.argv.slice(2);
@@ -18,4 +19,5 @@ for (const n of playerCounts(game).filter((x) => x >= 2)) {
     + `${r.avgMoves} jogadas em média, vitórias por lugar ${r.winRateBySeat.map((x) => `${x}%`).join(' / ')} `
     + `${r.timersFired ? `, ${r.timersFired} timers ` : ''}(${Date.now() - t0} ms)`);
   for (const f of r.failures.slice(0, 3)) console.log('   falha:', JSON.stringify(f));
+  if (r.failures.length || r.finished < games) process.exitCode = 1;
 }
