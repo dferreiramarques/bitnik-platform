@@ -9,6 +9,7 @@
     "examples/*"
   ],
   "scripts": {
+    "start": "node apps/studio/server.js",
     "test": "node --test packages/engine/test/*.test.js games/*/test/*.test.js test/*.test.js",
     "studio": "node apps/studio/server.js",
     "runtime": "node examples/clean-runtime/server.js",
