@@ -63,6 +63,20 @@ npm run figma                           # gera os tokens para o Figma
 
 `DATA_DIR` escolhe onde as partidas (e, no Studio, os projetos e protótipos da Forge) são guardados; por omissão `./data/studio` e `./data/runtime`. Em Railway, aponta para um volume.
 
+## Pôr o Studio na internet (Railway)
+
+O repositório já traz o que o Railway precisa: `npm start` arranca o Studio, o `railway.json` define o arranque e o health check (`/health`), e o Node vem do `engines` (22.13+). O WebSocket usa `wss://` sozinho quando a página vem por HTTPS.
+
+1. Em [railway.com](https://railway.com), **New Project → Deploy from GitHub repo** e escolher `bitnik-platform` (ramo `main`).
+2. No serviço, **Variables**:
+   - `ADMIN_TOKEN`: um segredo longo (é a palavra-passe da consola em `/console`);
+   - `DATA_DIR=/data/studio`.
+3. **Volume**: botão direito no serviço → **Attach volume**, com *mount path* `/data`. Sem volume, as partidas e as afinações da consola perdem-se a cada deploy.
+4. **Settings → Networking → Generate Domain** dá um endereço `https://…up.railway.app`. É esse link que se partilha.
+5. Cada push para a `main` faz um deploy novo. Antes de um deploy com jogos a decorrer, anunciar na consola ("Avisos").
+
+Para jogar com amigos: cada um abre o link e escreve o nome; um escolhe o jogo e senta-se numa **mesa com outras pessoas** (ou cria uma **mesa de aprovação** na consola e partilha o link com "Copiar convite"); os outros sentam-se; alguém carrega em **Começar**. Os lugares vazios ficam com bots.
+
 ## Consola
 
 Com `ADMIN_TOKEN` definido, cada deploy tem uma consola em `/console` (entra-se com o token). Sem token, nem a consola nem a API `/admin/*` existem; a API pede sempre `Authorization: Bearer $ADMIN_TOKEN`.

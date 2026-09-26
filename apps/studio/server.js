@@ -37,5 +37,13 @@ export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  makeStudio({ dataDir: process.env.DATA_DIR || './data/studio' }).listen(process.env.PORT || 3000);
+  const studio = makeStudio({ dataDir: process.env.DATA_DIR || './data/studio' });
+  studio.listen(process.env.PORT || 3000);
+  // Railway (e outros) param o processo com SIGTERM a cada deploy: fecha as ligações com calma.
+  for (const sig of ['SIGTERM', 'SIGINT']) {
+    process.once(sig, () => {
+      setTimeout(() => process.exit(0), 5000).unref(); // nunca fica pendurado
+      studio.close().finally(() => process.exit(0));
+    });
+  }
 }
