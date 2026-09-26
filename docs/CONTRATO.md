@@ -61,7 +61,7 @@ Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros própr
 
 **`activePlayers(state)`** diz quem pode jogar agora. Um array permite jogadas simultâneas (apostas às cegas, como nas Capivaras). Um array vazio com timers pendentes significa "à espera do relógio".
 
-**`view(state, seat)`** esconde o que cada lugar não deve ver. `seat = null` é um espectador. É aqui que ficam as mãos ocultas.
+**`view(state, seat)`** esconde o que cada lugar não deve ver. `seat = null` é um espectador. É aqui que ficam as mãos ocultas. Opcional, para a UI genérica de protótipo: `players: [{ score, summary }]` no view mostra, no bloco de cada jogador, a pontuação atual e uma linha curta (de preferência só símbolos, que não precisam de tradução; ex.: `🐦(2) 🟡🔴`).
 
 **`bots`** recebem o `view` do seu lugar (nunca o estado completo), as jogadas legais e um `rng` próprio, derivado de `seed + seq + lugar`. Um bot vê o mesmo que um humano sentado nesse lugar, e as decisões dele não gastam o RNG do match: trocar um humano por um bot não muda os dados nem os baralhos. Sem bot no pacote, o motor escolhe uma jogada legal ao acaso.
 

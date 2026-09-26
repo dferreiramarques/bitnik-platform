@@ -186,6 +186,7 @@ function renderSeats(msg) {
       <div class="seat-name">${esc(s.taken ? s.name : u('emptySeat'))}</div>
       <small>${tags.join(', ') || '&nbsp;'}</small>
       ${typeof p?.score === 'number' ? `<div class="score">${p.score}</div>` : ''}
+      ${typeof p?.summary === 'string' && p.summary ? `<div class="seat-summary">${esc(p.summary)}</div>` : ''}
     </div>`;
   }).join('')}</div>`;
 }
