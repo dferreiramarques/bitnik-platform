@@ -2,7 +2,7 @@
 // os cenários do pacote e o mesmo tabuleiro das mesas (./index.js). Não há
 // cópias de regras: o guia só lê o estado e os bots escolhem entre as
 // jogadas legais, seguindo um guião para mostrar um tipo de jogada cada um.
-import { createMatch, applyMove, viewFor, legalMoves, botMove } from '@bitnik/engine';
+import { createMatch, applyMove, viewFor, legalMoves, botMove, translate } from '@bitnik/engine';
 import game from '../index.js';
 import * as board from './index.js';
 
@@ -19,7 +19,14 @@ const FIRE_PREF = [9, 6, 5, 2, 3, 4, 7, 8, 1, 10, 0];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 export function start(el, ctx) {
-  const t = ctx.t;
+  // Traduz com a plataforma e, se a chave não vier traduzida, com os textos do
+  // próprio pacote. O tutorial pode arrancar com a lista de jogos guardada no
+  // browser (offline, ou antes de chegar a ligação), que pode ser de uma versão
+  // anterior do jogo e não ter as chaves novas.
+  const t = (key, params) => {
+    const s = ctx.t(key, params);
+    return s === key ? translate(game, ctx.lang?.() || game.defaultLang || 'pt', key, params) : s;
+  };
   const seatName = (i) => (i === 0 ? t('tut.you') : BOTS[i - 1]);
   let match = null;
   let step = 0;

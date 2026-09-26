@@ -110,7 +110,7 @@ export default {
   'ui.msgEruptionSub': 'Move the Etna Fire',
 
   // Tutorial (ui/tutorial.js)
-  'tut.you': 'You',
+  'tut.you': 'Player',
   'tut.next': 'Next',
   'tut.skip': 'Skip tutorial',
   'tut.step': 'Step {n} of {total}',

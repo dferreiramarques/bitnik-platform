@@ -43,6 +43,7 @@ let view = null;   // conteúdo redesenhado a cada estado
 let msgEl = null;  // mensagem da mesa (persistente, para a animação não recomeçar)
 let ctx = null;
 let msg = null;
+let resizeObs = null;
 const fresh = () => ({
   mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false, prevMine: false, prevPhase: null,
   zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0,
@@ -73,9 +74,12 @@ export function mount(el, context) {
   root.addEventListener('pointerup', onPointerUp);
   root.addEventListener('pointercancel', onPointerUp);
   root.addEventListener('wheel', onWheel, { passive: false });
+  // A zona livre muda com o ecrã (rodar o telemóvel, abrir painéis): volta a encaixar.
+  if (typeof ResizeObserver !== 'undefined') { resizeObs = new ResizeObserver(() => applyZoom()); resizeObs.observe(root); }
 }
 
 export function unmount() {
+  resizeObs?.disconnect(); resizeObs = null;
   root?.remove();
   root = null; view = null; msgEl = null; msg = null;
   ui = fresh();
@@ -141,10 +145,10 @@ function render() {
   root.classList.toggle('show-log', ui.showLog);
   root.classList.toggle('picking', !!ui.mode || !!legal('MOVE_FIRE').length);
   view.innerHTML = `
+    <div class="cat-view"><div class="cat-zoom">${renderBoard(v)}</div></div>
     ${renderPlayers(v)}
     ${renderChips(v)}
     <div class="cat-board" data-tut="board">
-      <div class="cat-view"><div class="cat-zoom">${renderBoard(v)}</div></div>
       ${renderPiles(v)}
       <div class="cat-zoombar">
         <button class="cat-zb" data-zoom="in" aria-label="${esc(ctx.t('ui.zoomIn'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -312,9 +316,38 @@ function renderActions(v) {
 }
 
 // ─── Zoom e arrastar no tabuleiro ───────────────────────────
-function applyZoom() {
+// O tabuleiro (.cat-view) ocupa o ecrã inteiro, por baixo da UI (ADR-014).
+// Com zoom 1 a ilha encaixa na zona livre (.cat-board, a célula da grelha
+// entre os jogadores e a barra); ao aproximar ou arrastar, passa por baixo
+// dos painéis. As coordenadas do zoom são relativas a essa zona.
+const EDGE = 60; // px da ilha que ficam sempre no ecrã
+
+function boardRect() {
+  const cell = view?.querySelector('.cat-board');
+  return cell ? cell.getBoundingClientRect() : null;
+}
+
+/** `limit`: depois de um gesto, não deixar a ilha sair do ecrã. */
+function applyZoom(limit = false) {
+  const vw = view?.querySelector('.cat-view');
   const z = view?.querySelector('.cat-zoom');
-  if (z) z.style.transform = `translate(${ui.zoom.x}px, ${ui.zoom.y}px) scale(${ui.zoom.s})`;
+  const r = boardRect();
+  if (!vw || !z || !r) return;
+  const o = vw.getBoundingClientRect();
+  const L = r.left - o.left;
+  const T = r.top - o.top;
+  Object.assign(z.style, { left: `${L}px`, top: `${T}px`, width: `${r.width}px`, height: `${r.height}px` });
+  if (limit && o.width && r.width) {
+    const { s } = ui.zoom;
+    const clamp = (v, lo, hi) => Math.min(Math.max(v, Math.min(lo, hi)), Math.max(lo, hi));
+    ui.zoom = {
+      s,
+      x: clamp(ui.zoom.x, EDGE - L - r.width * s, o.width - EDGE - L),
+      y: clamp(ui.zoom.y, EDGE - T - r.height * s, o.height - EDGE - T),
+    };
+  }
+  const { s, x, y } = ui.zoom;
+  z.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
 }
 
 function zoomAt(px, py, f) {
@@ -322,12 +355,12 @@ function zoomAt(px, py, f) {
   const ns = Math.min(ZOOM.max, Math.max(ZOOM.min, s * f));
   const k = ns / s;
   ui.zoom = { s: ns, x: px - (px - x) * k, y: py - (py - y) * k };
-  applyZoom();
+  applyZoom(true);
 }
 
 function viewCenter() {
-  const el = view.querySelector('.cat-view');
-  return el ? [el.clientWidth / 2, el.clientHeight / 2] : [0, 0];
+  const r = boardRect();
+  return r ? [r.width / 2, r.height / 2] : [0, 0];
 }
 
 function onPointerDown(e) {
@@ -340,8 +373,8 @@ function onPointerDown(e) {
 function onPointerMove(e) {
   if (!ui.pts.has(e.pointerId)) return;
   const el = view.querySelector('.cat-view');
-  if (!el) return;
-  const r = el.getBoundingClientRect();
+  const r = boardRect();
+  if (!el || !r) return;
   const prev = [...ui.pts.values()];
   ui.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const now = [...ui.pts.values()];
@@ -352,7 +385,7 @@ function onPointerMove(e) {
     if (ui.moved < 6) return; // um toque não é arrastar
     if (!ui.dragged) { ui.dragged = true; el.setPointerCapture?.(e.pointerId); }
     ui.zoom = { ...ui.zoom, x: ui.zoom.x + dx, y: ui.zoom.y + dy };
-    applyZoom();
+    applyZoom(true);
   } else {
     ui.dragged = true;
     const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -364,7 +397,7 @@ function onPointerMove(e) {
     const ns = Math.min(ZOOM.max, Math.max(ZOOM.min, s * (d0 ? d(now[0], now[1]) / d0 : 1)));
     const k = ns / s;
     ui.zoom = { s: ns, x: m1.x - (m0.x - x) * k, y: m1.y - (m0.y - y) * k };
-    applyZoom();
+    applyZoom(true);
   }
 }
 
@@ -374,7 +407,8 @@ function onWheel(e) {
   const el = e.target.closest('.cat-view');
   if (!el) return;
   e.preventDefault();
-  const r = el.getBoundingClientRect();
+  const r = boardRect();
+  if (!r) return;
   zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.002));
 }
 

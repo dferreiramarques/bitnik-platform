@@ -12,6 +12,10 @@
   --tint: color-mix(in srgb, var(--cat-text) 10%, transparent);
   --tint-line: color-mix(in srgb, var(--cat-text) 28%, transparent);
   position: absolute; inset: 0; overflow: hidden;
+  /* As disposições (telemóvel, horizontal, ecrã largo) seguem o tamanho da
+     mesa, não o do ecrã: a mesma UI serve o ecrã inteiro, o tutorial e a
+     pré-visualização da consola. Também é o bloco de referência dos fixed. */
+  container-type: size;
   color: var(--cat-text);
   font-family: var(--font-body, Inter, system-ui, sans-serif);
   /* o fundo é o --table-bg, aplicado pela plataforma */
@@ -79,11 +83,17 @@
 .cat-disc.red { color: var(--cat-red); border-color: var(--cat-red); }
 .cat-disc.sm { width: 20px; height: 20px; font-size: 10px; }
 
-/* ── Tabuleiro com zoom ── */
-.cat-board { position: relative; min-height: 0; }
-.cat-view { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: grab; }
+/* ── Tabuleiro com zoom, em camadas (ADR-014) ──
+   0: o tabuleiro (.cat-view) ocupa o ecrã inteiro, por cima do fundo da mesa;
+   1: a UI por cima. Os contentores da UI deixam passar o rato e o toque para o
+   tabuleiro; só os painéis e os botões os apanham. A .cat-board é a zona livre
+   onde a ilha encaixa com zoom 1 (o JS mede-a). */
+.cat-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
 .cat-view:active { cursor: grabbing; }
-.cat-zoom { position: absolute; inset: 0; transform-origin: 0 0; }
+.cat-zoom { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
+.cat-layout > :not(.cat-view, .cat-ovl) { z-index: 1; pointer-events: none; }
+.cat-layout :is(.cat-player, .cat-more, .cat-chip, .cat-me, .cat-bar, .cat-zoombar, .cat-log-head) { pointer-events: auto; }
+.cat-board { position: relative; min-height: 0; }
 .cat-zoom svg { display: block; width: 100%; height: 100%; }
 .cat-hex { cursor: default; }
 .cat-hex.can { cursor: pointer; }
@@ -206,13 +216,29 @@
 .tut-hi { outline: 3px solid var(--cat-gold); outline-offset: 3px; border-radius: 10px; animation: cat-pulse 1.6s ease-in-out infinite; }
 @keyframes cat-pulse { 50% { outline-color: transparent; } }
 
+/* Mesa larga: os controlos da vista vão para o canto inferior direito da mesa,
+   ao lado da barra de ações. Abaixo de 1200 px ficariam por cima da barra e
+   continuam no canto do tabuleiro. (fixed é relativo à .cat, que é contentor.) */
+@container (min-width: 1200px) and (min-height: 501px) {
+  .cat-zoombar { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tut-hi { animation: none; }
   .cat-msg.on { animation: cat-fade 1.8s linear forwards; }
 }
 
-/* ── Telemóvel na vertical ── */
+/* O guia do tutorial fica ao lado da .cat (não dentro): segue o ecrã. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .cat-guide { top: calc(env(safe-area-inset-top, 0px) + 40px); left: auto; right: 8px; width: min(300px, 45%); }
+}
 @media (max-width: 760px) {
+  .cat-guide { top: calc(env(safe-area-inset-top, 0px) + 44px); left: 8px; right: 8px; width: auto; transform: none; padding: 10px 12px; }
+  .cat-guide p { font-size: 13px; }
+}
+
+/* ── Telemóvel na vertical ── */
+@container (max-width: 760px) {
   .cat-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 40px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
   .cat-players { flex-wrap: nowrap; }
   .cat-player { width: 148px; flex-shrink: 0; padding: 6px 8px; }
@@ -243,7 +269,7 @@
     padding: 8px 10px; border-radius: 10px; text-shadow: none; color: var(--cat-text);
     background: var(--g); border: 1px solid var(--gl); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
-  .show-log .cat-log { display: block; }
+  .show-log .cat-log { display: block; pointer-events: auto; }
   .cat-me { padding: 6px 8px; gap: 8px; justify-content: center; }
   .cat-me-grp:first-child .cat-lbl { visibility: hidden; }
   .cat-cards { gap: 4px; }
@@ -256,12 +282,10 @@
   .cat-bar .cat-info { flex: 3 1 60%; max-width: none; }
   .cat-bar .cat-info + .cat-btn { flex: 1 1 25%; }
   .cat-step { flex-basis: 100%; max-width: none; padding: 2px 4px 0; }
-  .cat-guide { top: calc(env(safe-area-inset-top, 0px) + 44px); left: 8px; right: 8px; width: auto; transform: none; padding: 10px 12px; }
-  .cat-guide p { font-size: 13px; }
 }
 
 /* ── Telemóvel na horizontal: jogadores à esquerda, tabuleiro ao centro, pilhas à direita ── */
-@media (orientation: landscape) and (max-height: 500px) {
+@container (orientation: landscape) and (max-height: 500px) {
   .cat-layout {
     grid-template-columns: 176px 160px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
@@ -299,7 +323,7 @@
     padding: 8px 10px; border-radius: 10px; text-shadow: none; color: var(--cat-text);
     background: var(--g); border: 1px solid var(--gl); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
-  .show-log .cat-log { display: block; }
+  .show-log .cat-log { display: block; pointer-events: auto; }
   .cat-logbtn { display: inline-flex; margin-left: auto; background: none; border: 0; padding: 0; color: var(--cat-muted); font-weight: 700; min-height: 24px; }
   .cat-me { padding: 6px 8px; gap: 8px; }
   .cat-me-grp:first-child .cat-lbl { visibility: hidden; }
@@ -314,5 +338,4 @@
   .cat-bar .cat-step { display: none; }
   .cat-bar .cat-info { grid-column: span 3; }
   .cat-bar .cat-wait { grid-column: 1 / -1; }
-  .cat-guide { top: calc(env(safe-area-inset-top, 0px) + 40px); left: auto; right: 8px; width: min(300px, 45%); }
 }
