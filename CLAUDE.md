@@ -18,7 +18,7 @@ Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `README.md
 
 ## Convenções
 
-- ESM (`"type": "module"`), Node 18+.
+- ESM (`"type": "module"`), Node 22.13+ (a verificação da Forge usa `--permission`).
 - Código, comentários, commits e docs em **português de Portugal**.
 - Todo o texto visível nos jogos sai de chaves i18n, com **PT e EN** e paridade de chaves (verificada por `checkGame`).
 - Testes com `node:test` e `node:assert/strict`. Nos jogos, um teste por regra do `REGRAS.md` (modelo para o que o Forge vai gerar).

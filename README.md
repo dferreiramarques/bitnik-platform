@@ -49,7 +49,7 @@ As versões de cada jogo estão no `package.json` e as mudanças no `CHANGELOG.m
 
 ## Comandos
 
-Node 18+.
+Node 22.13+ (a verificação isolada da Forge usa `--permission`; ver `.nvmrc`).
 
 ```bash
 npm install

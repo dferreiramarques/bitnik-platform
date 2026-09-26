@@ -83,7 +83,7 @@ function testsKey(tests) {
 const STEP_NAMES = {
   ficheiros: 'Ficheiros', pureza: 'Regras puras', 'testes-aprovados': 'Há testes aprovados', importar: 'O pacote carrega',
   contrato: 'Cumpre o contrato', testes: 'Testes aprovados passam', simulacao: 'Partidas simuladas acabam', identidade: 'Nome e versão',
-  tempo: 'Tempo limite', processo: 'Processo isolado', 'testes-auxiliares': 'Funções dos testes',
+  tempo: 'Tempo limite', processo: 'Processo isolado', node: 'Versão do Node', 'testes-auxiliares': 'Funções dos testes',
 };
 
 /** O relatório em texto, para copiar e colar numa conversa. */

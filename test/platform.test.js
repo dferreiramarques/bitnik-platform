@@ -702,6 +702,22 @@ test('Forge: verificação isolada de um pacote gerado (contrato, pureza, testes
   assert.equal((await verifyPackage({ files, tests: [] })).steps.find((s) => s.id === 'testes-aprovados').ok, false);
 });
 
+test('Forge: a verificação recusa um Node sem --permission, com mensagem clara', async () => {
+  const { verifyPackage, supportsPermission } = await import('../packages/server/src/verify.js');
+  assert.deepEqual(['18.20.0', '20.18.0', '22.12.0', '23.4.0'].map((v) => supportsPermission(v)), [false, false, false, false]);
+  assert.deepEqual(['22.13.0', 'v22.22.2', '23.5.0', '24.0.0'].map((v) => supportsPermission(v)), [true, true, true, true]);
+
+  const base = new URL('./fixtures/forge-pacote/', import.meta.url);
+  const files = Object.fromEntries(await Promise.all(['index.js', 'i18n/pt.js', 'i18n/en.js'].map(async (f) => [f, await readFile(new URL(f, base), 'utf8')])));
+  const passa = { cartao: 'c1', nome: 'Passa', aprovado: true, codigo: "test('Passa', () => { assert.ok(true); });" };
+  const r = await verifyPackage({ files, tests: [passa], nodeVersion: '20.18.0' });
+  assert.equal(r.ok, false);
+  assert.deepEqual(r.steps.find((s) => s.id === 'node'), {
+    id: 'node', ok: false, details: ['a verificação precisa de Node 22.13 ou mais recente (está a correr 20.18.0)'],
+  });
+  assert.equal(r.tests.pass + r.tests.fail, 0, 'não chega a arrancar o processo isolado');
+});
+
 test('Forge: lê o JSON colado mesmo com texto à volta ou colado duas vezes', async () => {
   const { parseNarration } = await import('../packages/server/public/console-forge-play.js');
   const obj = { files: { 'index.js': "const a = '}{';\nexport default { x: \"{\" };" } };

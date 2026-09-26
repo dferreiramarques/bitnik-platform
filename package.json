@@ -16,6 +16,6 @@
     "figma": "node tools/figma.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.13"
   }
 }
