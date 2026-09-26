@@ -31,6 +31,9 @@ const UI = {
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
     notices: 'Avisos', back: 'Voltar ao lobby', howToPlay: 'Como se joga', seeTable: 'Ver a mesa', lobby: 'Lobby',
+    homeLead: 'Jogos de tabuleiro online', writeName: 'Escreve o teu nome',
+    homeNote: 'A tua mesa contra bots, as mesas com outras pessoas e as de aprovação estão no lobby de cada jogo.',
+    playersRange: '{n} jogadores', or: 'ou', home: 'Início',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -56,6 +59,9 @@ const UI = {
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
     notices: 'Notices', back: 'Back to lobby', howToPlay: 'How to play', seeTable: 'See the table', lobby: 'Lobby',
+    homeLead: 'Online board games', writeName: 'Type your name',
+    homeNote: 'Your table against bots, tables with other people and review tables are in each game\'s lobby.',
+    playersRange: '{n} players', or: 'or', home: 'Home',
   },
 };
 
@@ -112,12 +118,20 @@ function toast(text) {
   toast.h = setTimeout(() => { el.hidden = true; }, 3200);
 }
 
-// ─── Rotas: #/ (lobby) e #/r/<id> (mesa) ────────────────────
+// ─── Rotas: #/ (início), #/j/<jogo> (lobby do jogo) e #/r/<id> (mesa) ──
+// Com um só jogo não há início (Marca-produto): #/ é o lobby desse jogo.
 const routeRoom = () => (location.hash.match(/^#\/r\/(.+)$/) || [])[1] || null;
 const routeTutorial = () => (location.hash.match(/^#\/tutorial\/([\w-]+)$/) || [])[1] || null;
+const routeGame = () => (location.hash.match(/^#\/j\/([\w-]+)$/) || [])[1] || null;
+const manyGames = () => (W()?.games.length || 0) > 1;
 
 function go(roomId) {
   location.hash = roomId ? `#/r/${roomId}` : '#/';
+}
+
+/** Lobby de um jogo (ou o início, se não houver jogo ou só houver um). */
+function goGame(gameId) {
+  location.hash = gameId && manyGames() ? `#/j/${gameId}` : '#/';
 }
 
 window.addEventListener('hashchange', () => {
@@ -129,8 +143,8 @@ window.addEventListener('hashchange', () => {
 // ─── Lobby ───────────────────────────────────────────────────
 // Números de jogadores de uma mesa (players.counts do jogo, ou de min a max; a partir de 2).
 const tableCounts = (p) => (p.counts ?? Array.from({ length: p.max - p.min + 1 }, (_, i) => p.min + i)).filter((n) => n >= 2);
-function renderLobby() {
-  const games = W()?.games || [];
+function renderLobby(only = null) {
+  const games = (W()?.games || []).filter((g) => !only || g.id === only);
   return `<section class="lobby">${games.map((g) => {
     const counts = tableCounts(g.players);
     const pub = app.rooms.public.filter((r) => r.gameId === g.id);
@@ -168,6 +182,46 @@ function renderLobby() {
       </div>
     </article>`;
   }).join('')}</section>`;
+}
+
+// ─── Início (marca com vários jogos; ADR-014, quadro "Início" do template) ──
+const COVERS = ['#1a5276', '#7d6608', '#1d6a27', '#6c3483', '#117a65', '#7b241c'];
+
+function playersText(p) {
+  const c = tableCounts(p);
+  const contiguous = c.every((n, i) => !i || n === c[i - 1] + 1);
+  const n = c.length === 1 ? c[0] : contiguous ? `${c[0]}–${c[c.length - 1]}` : `${c.slice(0, -1).join(', ')} ${u('or')} ${c[c.length - 1]}`;
+  return u('playersRange', { n });
+}
+
+function renderHome() {
+  const brand = W()?.brand?.name || $('#brand').textContent;
+  const games = W()?.games || [];
+  return `<section class="home">
+    <header class="home-top">
+      <strong class="mesa-brand">${esc(brand)}</strong>
+      <div class="mesa-actions"><span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
+        ${W()?.studio ? `<a class="mesa-btn" href="/console">${u('console')}</a>` : ''}
+        <button class="mesa-btn" data-lang>${u('lang')}</button></div>
+    </header>
+    <div class="home-main">
+      <div class="home-head">
+        <h1 class="home-brand">${esc(brand)}</h1>
+        <p class="home-lead">${u('homeLead')}</p>
+        <label class="home-name"><span>${u('writeName')}</span>
+          <input id="homeName" maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(app.welcome?.name || '')}"></label>
+      </div>
+      <div class="home-grid">${games.map((g, i) => {
+        const tagline = t('game.tagline', {}, g.id);
+        return `<a class="home-card" href="#/j/${esc(g.id)}" style="--cover:${COVERS[i % COVERS.length]}">
+          <div class="home-cover"><span>${esc(t('game.name', {}, g.id))}</span></div>
+          <div class="home-info"><b class="home-mname">${esc(t('game.name', {}, g.id))}</b>${tagline !== 'game.tagline' ? `<p>${esc(tagline)}</p>` : ''}
+            <small>${playersText(g.players)}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</small></div>
+        </a>`;
+      }).join('')}</div>
+      <p class="home-note">${u('homeNote')}</p>
+    </div>
+  </section>`;
 }
 
 function statusText(r) {
@@ -493,7 +547,7 @@ async function syncTutorial(gameId) {
   const meta = gameMeta(gameId);
   let mod;
   try { [mod] = meta?.tutorial ? await Promise.all([import(meta.tutorial), skinFor(gameId)]) : []; } catch (e) { console.error('[tutorial]', e); } finally { syncTutorial.loading = false; }
-  if (!mod || routeTutorial() !== gameId) { if (!mod) go(null); return; }
+  if (!mod || routeTutorial() !== gameId) { if (!mod) goGame(gameId); return; }
   unmountGameUi();
   const el = document.createElement('div');
   el.className = 'tut-root';
@@ -504,7 +558,7 @@ async function syncTutorial(gameId) {
     lang: () => app.lang,
     t: (key, params) => t(key, params, gameId),
     toast,
-    exit: () => go(null),
+    exit: () => goGame(gameId),
     playReal: (n) => client.createSolo(gameId, n),
   });
 }
@@ -513,7 +567,10 @@ async function syncTutorial(gameId) {
 function render() {
   const tut = routeTutorial();
   const inRoom = !!routeRoom();
-  $('#back').hidden = !inRoom && !tut;
+  const gameLobby = routeGame();
+  const home = !tut && !inRoom && !gameLobby && manyGames();
+  document.body.classList.toggle('is-home', home);
+  $('#back').hidden = !inRoom && !tut && !gameLobby;
   $('#lang').textContent = u('lang');
   // Só no Studio: atalho para a consola (nos runtimes dos clientes não aparece).
   $('#console').hidden = !W()?.studio;
@@ -539,7 +596,7 @@ function render() {
   const seatsX = document.querySelector('.seats')?.scrollLeft ?? 0;
   // A UI própria não é redesenhada: sai do DOM antes e volta para o #gameHost.
   app.ui?.el.remove();
-  $('#view').innerHTML = inRoom ? renderTable() : renderLobby();
+  $('#view').innerHTML = inRoom ? renderTable() : home ? renderHome() : renderLobby(gameLobby);
   keepSeatsStrip(seatsX);
   if (inRoom && app.room) syncGameUi(app.room); else if (app.ui) unmountGameUi();
   document.querySelectorAll('.inspect details').forEach((d) => {
@@ -559,7 +616,7 @@ $('#view').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   const d = b.dataset;
-  if ('lobby' in d) { go(null); return; }
+  if ('lobby' in d) { goGame(app.room?.room.gameId || routeTutorial()); return; }
   if ('lang' in d) { toggleLang(); return; }
   if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
   if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
@@ -578,12 +635,21 @@ $('#view').addEventListener('click', (e) => {
     render();
   } else if ('start' in d) client.start(roomId);
   else if ('restart' in d) client.restart(roomId);
-  else if ('leave' in d) { client.leave(roomId); go(null); }
+  else if ('leave' in d) { client.leave(roomId); goGame(app.room?.room.gameId); }
 });
 
-$('#back').addEventListener('click', () => go(null));
+$('#back').addEventListener('click', () => {
+  // Da mesa ou do tutorial volta ao lobby do jogo; do lobby do jogo, ao início.
+  const g = routeGame() ? null : app.room?.room.gameId || routeTutorial();
+  goGame(g);
+});
 $('#lang').addEventListener('click', toggleLang);
 $('#name').addEventListener('change', (e) => client.setName(e.target.value));
+$('#view').addEventListener('change', (e) => {
+  if (e.target.id !== 'homeName') return;
+  client.setName(e.target.value);
+  $('#name').value = e.target.value;
+});
 
 client.on('status', (s) => {
   const was = app.status;

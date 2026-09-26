@@ -100,6 +100,25 @@
 .cat-hex.can:hover .cat-hex-glow, .cat-hex.can:focus .cat-hex-glow { opacity: .28; }
 .cat-hex.fire .cat-hex-shape { stroke: var(--cat-red); stroke-width: 3; }
 .cat-hex-glow { fill: var(--cat-gold); opacity: .14; pointer-events: none; }
+/* Fogo do Etna: arde devagar (tremer da chama e brilho por baixo). */
+.cat-fire { transform-box: fill-box; transform-origin: 50% 92%; animation: cat-burn 1.8s ease-in-out infinite; }
+.cat-fire-glow { fill: var(--cat-red); opacity: .28; filter: blur(7px); transform-box: fill-box; transform-origin: center; animation: cat-embers 2.4s ease-in-out infinite; }
+@keyframes cat-burn {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); filter: brightness(1); }
+  25% { transform: scale(1.03, .96) rotate(-1.5deg); filter: brightness(1.12); }
+  55% { transform: scale(.98, 1.05) rotate(1.2deg); filter: brightness(1.04); }
+  80% { transform: scale(1.02, .98) rotate(-.6deg); filter: brightness(1.1); }
+}
+@keyframes cat-embers { 50% { opacity: .5; transform: scale(1.15); } }
+/* Escolher para onde vai o fogo: os hexágonos possíveis pulsam (brilho a entrar e a sair). */
+.cat-hex.firepick .cat-hex-shape { stroke: var(--cat-red); stroke-width: 3; }
+.cat-hex.firepick .cat-hex-glow { fill: var(--cat-red); }
+.cat-firepicks { pointer-events: none; }
+.cat-firepicks polygon { fill: none; stroke: var(--cat-red); stroke-width: 3; animation: cat-pick 1.3s ease-in-out infinite; }
+@keyframes cat-pick {
+  0%, 100% { stroke-width: 2; stroke-opacity: .55; filter: drop-shadow(0 0 0 transparent); }
+  50% { stroke-width: 5; stroke-opacity: 1; filter: drop-shadow(0 0 8px var(--cat-red)); }
+}
 .cat-hex:focus { outline: none; }
 .cat-hex:focus-visible .cat-hex-shape { stroke: var(--cat-text); stroke-width: 4; }
 .cat-zoombar { position: absolute; right: 0; bottom: 0; display: flex; gap: 2px; padding: 2px; border-radius: 12px; z-index: 2; }
@@ -224,6 +243,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tut-hi { animation: none; }
+  .cat-fire, .cat-fire-glow, .cat-firepicks polygon { animation: none; }
+  .cat-firepicks polygon { stroke-width: 4; }
   .cat-msg.on { animation: cat-fade 1.8s linear forwards; }
 }
 

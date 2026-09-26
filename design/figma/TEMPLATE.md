@@ -45,6 +45,8 @@ Grupos do vanilla:
 - **Letra** (`type`): `--game-font-display` (Baloo 2, 700/800) e `--game-font-body` (Inter, 400/600).
 - **Forma** (`shape`): `--game-radius` (14 px, cartões grandes). Os painéis de vidro usam 8–12 px e os botões 7–9 px.
 
+Na plataforma, o Início é a página principal (`/`) quando o deploy tem mais de um jogo; cada cartão abre o lobby do jogo (`#/j/<jogo>`) e o "voltar" da mesa leva a esse lobby. O fundo usa a cor da marca (`--brand-primary`/`--brand-secondary`; no Bitnik, o laranja) em vez do verde do quadro. Com um só jogo, `/` é o lobby desse jogo.
+
 As capas dos jogos no Início usam um gradiente de 135° da cor do jogo para uma versão mais escura (ex.: `#1a5276` → `#10324a`). São marcadores de lugar: na versão final entra a arte de cada jogo.
 
 ## 3. A mesa
