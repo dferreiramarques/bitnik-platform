@@ -166,54 +166,54 @@ button { font: inherit; }
 body.is-table { overflow: hidden; }
 body.is-table .bar, body.is-table #notices { display: none !important; }
 body.is-table #view { max-width: none; padding: 0; margin: 0; }
-.tbl {
+.mesa {
   position: fixed; inset: 0; overflow: hidden;
   background: var(--table-bg, #1f3328);
   color: var(--game-on-table, #fffaf1);
 }
-.tbl .game-host { position: absolute; inset: 0; margin: 0; }
-.tbl .game-root, .tbl .tut-root { position: absolute; inset: 0; margin: 0; border-radius: 0; }
-.tbl-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; opacity: .8; }
-.tbl-top {
+.mesa .game-host { position: absolute; inset: 0; margin: 0; }
+.mesa .game-root, .mesa .tut-root { position: absolute; inset: 0; margin: 0; border-radius: 0; }
+.mesa-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; opacity: .8; }
+.mesa-top {
   position: absolute; left: 0; right: 0; top: 0; z-index: 6;
   display: flex; align-items: center; gap: 8px;
   padding: calc(env(safe-area-inset-top, 0px) + 6px) max(12px, env(safe-area-inset-right, 0px)) 6px max(12px, env(safe-area-inset-left, 0px));
   pointer-events: none; font-size: 12px;
   text-shadow: 0 1px 3px rgb(0 0 0 / .45);
 }
-.tbl-top > * { pointer-events: auto; }
-.tbl-id { display: flex; align-items: baseline; gap: 6px; min-width: 0; margin-right: auto; opacity: .85; white-space: nowrap; overflow: hidden; }
-.tbl-brand, .tbl-game { font-family: var(--ui-display); font-size: 14px; }
-.tbl-meta { overflow: hidden; text-overflow: ellipsis; }
-.tbl-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-.tbl-btn {
+.mesa-top > * { pointer-events: auto; }
+.mesa-id { display: flex; align-items: baseline; gap: 6px; min-width: 0; margin-right: auto; opacity: .85; white-space: nowrap; overflow: hidden; }
+.mesa-brand, .mesa-game { font-family: var(--ui-display); font-size: 14px; }
+.mesa-meta { overflow: hidden; text-overflow: ellipsis; }
+.mesa-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.mesa-btn {
   min-width: 44px; min-height: 36px; padding: 0 8px; border: 0; border-radius: 9px;
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent; color: inherit; font: 600 12px var(--ui-body); cursor: pointer; text-decoration: none;
 }
-.tbl-btn:hover { background: rgb(255 255 255 / .1); }
-.tbl-notices { position: relative; display: inline-flex; }
-.tbl-chip {
+.mesa-btn:hover { background: rgb(255 255 255 / .1); }
+.mesa-notices { position: relative; display: inline-flex; }
+.mesa-chip {
   min-height: 32px; padding: 0 12px; border-radius: 999px; cursor: pointer; font: 700 12px var(--ui-body);
   color: var(--game-on-table, #fffaf1);
   background: var(--game-glass, rgb(0 0 0 / .35)); border: 1px solid var(--game-glass-line, rgb(255 255 255 / .3));
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   display: inline-flex; align-items: center; text-shadow: none;
 }
-.tbl-chip.warn { background: var(--color-danger, #b3261e); border-color: transparent; color: #fff; }
-.tbl-panel {
+.mesa-chip.warn { background: var(--color-danger, #b3261e); border-color: transparent; color: #fff; }
+.mesa-panel {
   position: absolute; right: 0; top: calc(100% + 8px); width: min(360px, calc(100vw - 24px)); z-index: 7;
   display: grid; gap: 8px; padding: 10px; border-radius: 12px; text-shadow: none;
   background: var(--ui-card); color: var(--ui-text); box-shadow: 0 12px 32px rgb(0 0 0 / .35);
 }
-.tbl-timers .timers, .tbl-top .timers { margin: 0; }
-.tbl-over {
+.mesa-timers .timers, .mesa-top .timers { margin: 0; }
+.mesa-over {
   position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px;
   background: rgb(0 0 0 / .45);
 }
-.tbl-card { width: min(440px, 100%); display: grid; gap: 10px; text-shadow: none; }
-.tbl-card-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-.tbl-card-btns .btn { background: var(--ui-card); }
+.mesa-card { width: min(440px, 100%); display: grid; gap: 10px; text-shadow: none; }
+.mesa-card-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.mesa-card-btns .btn { background: var(--ui-card); }
 @media (max-width: 760px) {
-  .tbl-meta, .tbl-sep, .tbl-brand { display: none; }
+  .mesa-meta, .mesa-sep, .mesa-brand { display: none; }
 }
