@@ -349,4 +349,4 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 - A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro.
 - Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
 - O contrato ganha dois acrescentos opcionais, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos) e o relatório do fim (pontos por origem e momentos decisivos).
-- Antes de implementar, resolver os pendentes do TEMPLATE (secção 5): contraste do vidro, alvos de toque de 44 px e cor do texto do campo do nome.
+- Antes de implementar, resolver os pendentes do TEMPLATE (secção 5): contraste do vidro e alvos de toque de 44 px.

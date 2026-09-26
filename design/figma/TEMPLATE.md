@@ -91,7 +91,7 @@ No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os do
 | Modal | título, texto, 2 botões | `game-panel`, `game-line`, `game-accent` |
 | Tutorial | alvo com contorno, balão com passo, título e Seguinte | `game-panel`, `game-accent` |
 | Mensagem da mesa | vez, evento com subtítulo, aviso (cor `game-on-table-warn`), fim | `game-on-table`, `game-font-display` |
-| Campo do nome | 48 px, centrado, contorno `game-accent` com halo | `game-panel`, `game-text`, `game-accent` |
+| Campo do nome | 48 px, centrado, fundo claro sobre a mesa (igual no computador e no telemóvel), contorno `game-accent` com halo | `game-panel`, `game-text`, `game-accent` |
 
 **Mensagem da mesa**: aparece no meio do tabuleiro, cresce e desaparece (cerca de 2,5 s), não bloqueia cliques e aparece uma de cada vez (as seguintes esperam). O jogo manda o texto e a variante. Com `prefers-reduced-motion`, aparece e desaparece sem crescer.
 
@@ -103,7 +103,6 @@ Pontos por resolver antes de a UI genérica usar este desenho (medidos no canvas
 
 - **Contraste do vidro.** O vidro claro (`--game-glass`, creme a 30%) clareia o verde e baixa o contraste do texto creme. No centro da mesa: texto 3,1:1, texto secundário 2,4:1, "a pensar…" 2,5:1, registo (a 40%) 2,3:1. Proposta: vidro escuro, `rgba(20,32,26,.35)` com o mesmo desfoque (8,5 / 6,2 / 6,8:1).
 - **Alvos de toque.** Os componentes do jogador têm 18–20 px, os botões de vidro 28–32 px e a barra de ações 32 px (40 no telemóvel). O mínimo é 44 px; nos componentes, a área de toque pode crescer sem mudar o desenho.
-- **Campo do nome.** No Início e no Marca-produto (computador) o fundo passou a `--game-panel`, mas o texto continua `#fffaf1`: o que se escreve não se vê. O texto tem de ser `--game-text`. No telemóvel o campo ainda é de vidro.
 - **Destaque sobre o realce.** `--game-accent` sobre `--game-panel-2` dá 4,26:1; o botão de informação já usa `--game-accent-strong` (7,6:1).
 - **Figma.** O gradiente da mesa, os valores `rgba()`, as letras (pilha CSS) e o raio (`"14px"`) não se ligam diretamente a Variables do Figma. O canvas do Claude Design não tem este problema; se o template for para o Figma, o export (`tools/figma.js`) tem de mandar cor sólida, nome da família e número.
 - **Plataforma.** A mesa em ecrã inteiro, a mensagem da mesa, os componentes como alvo e o relatório ainda não existem na UI genérica nem no contrato (ver ADR-014).
