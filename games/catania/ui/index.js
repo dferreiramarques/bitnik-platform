@@ -1,8 +1,14 @@
-// Catania — UI própria (ADR-006). A plataforma monta este módulo na área da
-// mesa: `mount(el, ctx)` uma vez e `update(msg)` a cada estado (ROOM).
-// Não repete regras: cada clique corresponde a uma jogada legal que já veio
-// do servidor em `msg.legal`. As cores vêm dos tokens --cat-* (skin.json),
-// que a plataforma aplica por camadas (defaults, tema, afinações do deploy).
+// Catania — UI própria (ADR-006, ADR-014). A plataforma monta este módulo na
+// mesa, que ocupa o ecrã inteiro: `mount(el, ctx)` uma vez e `update(msg)` a
+// cada estado (ROOM). Não repete regras: cada clique corresponde a uma jogada
+// legal que já veio do servidor em `msg.legal`. As cores vêm dos tokens --cat-*
+// e --game-* (skin.json), que a plataforma aplica por camadas.
+//
+// Disposição (design/figma/TEMPLATE.md): jogadores em vidro no topo, fichas da
+// ronda e da torre, tabuleiro centrado com zoom (dois dedos, roda, botões),
+// pilhas flutuantes à direita, registo flutuante à esquerda, a minha área e a
+// barra de ações em baixo. No telemóvel na vertical e na horizontal, o CSS
+// reorganiza as mesmas peças.
 import { ICONS } from './icons.js';
 import { sfx } from './sounds.js';
 
@@ -10,6 +16,8 @@ const RES = ['cereais', 'vinho', 'peixe', 'calcario', 'azeite'];
 const RED = new Set([9, 7, 5, 3, 1]);
 const R = 62;
 const W3 = Math.sqrt(3) * R;
+const ZOOM = { min: 0.6, max: 3 };
+const MSG_MS = 2600;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const img = (key, size = 24) => `<img src="${ICONS[key]}" width="${size}" height="${size}" alt="">`;
@@ -18,6 +26,8 @@ const hexPts = (cx, cy, r) => Array.from({ length: 6 }, (_, i) => {
   return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
 }).join(' ');
 const seatColor = (i) => `var(--cat-p${(i % 4) + 1})`;
+const disc = (v, cls = '') => `<span class="cat-disc${RED.has(v) ? ' red' : ''}${cls ? ` ${cls}` : ''}">${v}</span>`;
+const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function ensureCss() {
   const href = new URL('./catania.css', import.meta.url).href;
@@ -28,28 +38,47 @@ function ensureCss() {
   document.head.append(link);
 }
 
-let root = null;
+let root = null;   // .cat (fica montado)
+let view = null;   // conteúdo redesenhado a cada estado
+let msgEl = null;  // mensagem da mesa (persistente, para a animação não recomeçar)
 let ctx = null;
 let msg = null;
-const ui = { mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false };
+const fresh = () => ({
+  mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false, prevMine: false, prevPhase: null,
+  zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0,
+  showAll: false, showPiles: false, showLog: false, logOpen: true, msgQ: [], msgBusy: false,
+});
+let ui = fresh();
 
 export function mount(el, context) {
   ctx = context;
   ensureCss();
   root = document.createElement('div');
   root.className = 'cat';
+  view = document.createElement('div');
+  view.className = 'cat-layout';
+  msgEl = document.createElement('div');
+  msgEl.className = 'cat-msg';
+  msgEl.setAttribute('aria-live', 'polite');
+  root.append(view, msgEl);
   el.append(root);
+  root.addEventListener('click', onClickCapture, true);
   root.addEventListener('click', onClick);
   root.addEventListener('keydown', (e) => {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.cat-hex.can')) { e.preventDefault(); onClick(e); }
-    if (e.key === 'Escape' && ui.modal) { ui.modal = null; render(); }
+    if (e.key === 'Escape' && (ui.modal || ui.mode)) { ui.modal = null; ui.mode = null; render(); }
   });
+  root.addEventListener('pointerdown', onPointerDown);
+  root.addEventListener('pointermove', onPointerMove);
+  root.addEventListener('pointerup', onPointerUp);
+  root.addEventListener('pointercancel', onPointerUp);
+  root.addEventListener('wheel', onWheel, { passive: false });
 }
 
 export function unmount() {
   root?.remove();
-  root = null; msg = null;
-  Object.assign(ui, { mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false });
+  root = null; view = null; msgEl = null; msg = null;
+  ui = fresh();
 }
 
 export function update(next) {
@@ -57,15 +86,38 @@ export function update(next) {
   const v = msg.view;
   // Sons de coisas que acontecem no tabuleiro (também nas jogadas dos outros).
   const piles = Object.fromEntries(RES.map((r) => [r, v.piles[r].value]));
-  if (ui.prevPiles && RES.some((r) => piles[r] > ui.prevPiles[r])) sfx.discUp();
+  if (ui.prevPiles && RES.some((r) => piles[r] !== ui.prevPiles[r])) sfx.discUp();
   ui.prevPiles = piles;
   const firePending = !!(v.me != null && v.players[v.me]?.turn?.firePending);
-  if (firePending && !ui.prevFire) sfx.fire();
+  if (firePending && !ui.prevFire) { sfx.fire(); announce(ctx.t('ui.msgEruption'), ctx.t('ui.msgEruptionSub')); }
   ui.prevFire = firePending;
+  // Mensagem da mesa (ADR-014): a vez, a última ronda e a erupção, uma de cada vez.
+  const mine = v.me != null && v.cur === v.me && !msg.result;
+  if (mine && !ui.prevMine) announce(ctx.t('ui.yourTurn'));
+  ui.prevMine = mine;
+  if (v.phase === 'LAST_ROUND' && ui.prevPhase && ui.prevPhase !== 'LAST_ROUND') announce(ctx.t('ui.lastRound') + '!', '', 'warn');
+  ui.prevPhase = v.phase;
   // Um modo de recolha que já não tem jogadas legais é cancelado.
   if (ui.mode && !legal('COLLECT').some((m) => !!m.payload.take2 === (ui.mode === 'c2'))) ui.mode = null;
   if (ui.modal === 'found' && !legal('FOUND').length) ui.modal = null;
   render();
+}
+
+// ─── Mensagem da mesa ───────────────────────────────────────
+function announce(title, sub = '', variant = '') {
+  ui.msgQ.push({ title, sub, variant });
+  if (!ui.msgBusy) nextMessage();
+}
+
+function nextMessage() {
+  const m = ui.msgQ.shift();
+  if (!m || !msgEl) { ui.msgBusy = false; if (msgEl) msgEl.className = 'cat-msg'; return; }
+  ui.msgBusy = true;
+  msgEl.innerHTML = `<b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}`;
+  msgEl.className = `cat-msg${m.variant ? ` ${m.variant}` : ''}`;
+  void msgEl.offsetWidth; // recomeça a animação
+  msgEl.classList.add('on');
+  setTimeout(nextMessage, reduced() ? 1800 : MSG_MS);
 }
 
 // ─── Jogadas legais ─────────────────────────────────────────
@@ -81,47 +133,65 @@ function hexMove(id) {
 
 // ─── Render ─────────────────────────────────────────────────
 function render() {
-  if (!root || !msg) return;
+  if (!view || !msg) return;
   const v = msg.view;
-  root.innerHTML = `
-    <div class="cat-main">
-      ${renderTop(v)}
-      ${renderPlayers(v)}
-      <div class="cat-board" data-tut="board">${renderBoard(v)}</div>
-      ${v.me != null ? renderMe(v) : ''}
+  root.classList.toggle('show-all', ui.showAll);
+  root.classList.toggle('show-piles', ui.showPiles);
+  root.classList.toggle('show-log', ui.showLog);
+  root.classList.toggle('picking', !!ui.mode || !!legal('MOVE_FIRE').length);
+  view.innerHTML = `
+    ${renderPlayers(v)}
+    ${renderChips(v)}
+    <div class="cat-board" data-tut="board">
+      <div class="cat-view"><div class="cat-zoom">${renderBoard(v)}</div></div>
+      ${renderPiles(v)}
+      <div class="cat-zoombar">
+        <button class="cat-zb" data-zoom="in" aria-label="${esc(ctx.t('ui.zoomIn'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="cat-zb" data-zoom="out" aria-label="${esc(ctx.t('ui.zoomOut'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+        <button class="cat-zb" data-zoom="fit" aria-label="${esc(ctx.t('ui.zoomFit'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg></button>
+      </div>
     </div>
-    <div class="cat-side">
-      <section class="cat-sec cat-acts-sec" data-tut="actions"><h4>${ctx.t('ui.actions')}</h4>${renderActions(v)}</section>
-      <section class="cat-sec" data-tut="piles"><h4>${ctx.t('ui.piles')}</h4>${renderPiles(v)}</section>
-      <section class="cat-sec" data-tut="tower"><h4>${ctx.t('ui.tower')}</h4>${renderTower(v)}</section>
-      <section class="cat-sec" data-tut="log"><h4>${ctx.t('ui.log')}</h4>${renderLog()}</section>
+    <div class="cat-bottom">
+      ${renderLog()}
+      ${v.me != null ? renderMe(v) : '<div></div>'}
+      <div></div>
     </div>
+    ${msg.result ? '' : `<div class="cat-bar" data-tut="actions">${renderActions(v)}</div>`}
     ${ui.modal === 'found' ? renderFoundModal(v) : ''}
     ${ui.modal === 'pass' ? renderPassModal() : ''}`;
+  applyZoom();
   ctx.afterRender?.(root); // ex.: o tutorial volta a destacar as zonas de que fala
 }
 
-function renderTop(v) {
-  const mine = v.me != null && v.cur === v.me && !msg.result;
-  const turn = msg.result ? '' : mine ? ctx.t('ui.yourTurn') : ctx.t('ui.turnOf', { name: ctx.seatName(v.cur) });
-  return `<div class="cat-top">
-    <span class="cat-round">${ctx.t('ui.round', { n: v.round })}</span>
-    ${v.phase === 'LAST_ROUND' ? `<span class="cat-last">${ctx.t('ui.lastRound')}</span>` : ''}
-    ${turn ? `<span class="cat-turn${mine ? ' mine' : ''}">${esc(turn)}</span>` : ''}
+function renderChips(v) {
+  const top = v.tower
+    ? `${esc(ctx.t('ui.towerChip'))} ${disc(v.towerTop, 'sm')} <span class="cat-chip-sub">· ${esc(ctx.t('ui.towerLeft', { n: v.tower }))}</span>`
+    : esc(ctx.t('ui.towerEmpty'));
+  return `<div class="cat-chips">
+    <span class="cat-chip">${esc(ctx.t('ui.round', { n: v.round }))}</span>
+    ${v.phase === 'LAST_ROUND' ? `<span class="cat-chip hot">${esc(ctx.t('ui.lastRound'))}</span>` : ''}
+    <span class="cat-chip" data-tut="tower">${top}</span>
+    <button class="cat-chip cat-piles-btn" data-act="piles" aria-expanded="${ui.showPiles}" data-tut="piles">${esc(ctx.t('ui.pilesShort'))} ${ui.showPiles ? '▴' : '▾'}</button>
   </div>`;
 }
 
 function renderPlayers(v) {
-  return `<div class="cat-players" data-tut="players">${v.players.map((p, i) => `
-    <div class="cat-player${i === v.cur && !msg.result ? ' cur' : ''}">
-      <div class="cat-pname"><i class="cat-dot" style="background:${seatColor(i)}"></i><span>${esc(ctx.seatName(i))}</span>
-        <b class="cat-score">${ctx.t('ui.pts', { n: p.score })}</b></div>
-      ${i === v.me ? '' : `<div class="cat-minis" aria-label="${esc(ctx.t('ui.cards', { n: p.handTotal }))}">${RES.map((r) => `
-        <span class="cat-mini${p.hand[r] ? '' : ' zero'}" title="${esc(`${p.hand[r]} ${ctx.t(`res.${r}`)}`)}">${img(r, 16)}${p.hand[r]}</span>`).join('')}</div>`}
-      <div class="cat-vills">${p.villages.length ? p.villages.map((vl) => `
-        <span class="cat-vill" style="border-left-color:var(--cat-res-${vl.res})" title="${esc(`${vl.cards} ${ctx.t(`res.${vl.res}`)} × ${v.piles[vl.res].value}`)}">
-          ${img(vl.res, 16)}×${vl.cards}</span>`).join('') : ctx.t('ui.noVillages')}</div>
-    </div>`).join('')}</div>`;
+  // No telemóvel só cabem dois: eu e quem está a jogar (os outros atrás de "+N").
+  const first = [...new Set([v.me, v.cur, 0, 1].filter((i) => i != null && i < v.players.length))].slice(0, 2);
+  const extra = v.players.length - first.length;
+  return `<div class="cat-players" data-tut="players">${v.players.map((p, i) => {
+    const cur = i === v.cur && !msg.result;
+    const hand = i === v.me
+      ? `<span class="cat-pnote">${esc(ctx.t('ui.handCount', { n: p.handTotal }))}</span>`
+      : RES.map((r) => `<span class="cat-mini${p.hand[r] ? '' : ' zero'}" title="${esc(`${p.hand[r]} ${ctx.t(`res.${r}`)}`)}">${img(r, 14)}${p.hand[r]}</span>`).join('');
+    const vills = p.villages.map((vl) => `<span class="cat-vill" style="border-left-color:var(--cat-res-${vl.res})" title="${esc(`${vl.cards} ${ctx.t(`res.${vl.res}`)} × ${v.piles[vl.res].value}`)}">${img(vl.res, 14)}×${vl.cards}</span>`).join('');
+    return `<div class="cat-player${cur ? ' cur' : ''}${first.includes(i) ? '' : ' cat-extra'}">
+      <div class="cat-pname"><i class="cat-dot" style="background:${seatColor(i)}"></i><span>${esc(ctx.seatName(i))}</span><b class="cat-score">${p.score}</b></div>
+      <div class="cat-pstate">${esc(ctx.t(cur ? 'ui.statePlaying' : 'ui.stateWaiting'))}</div>
+      <div class="cat-minis" aria-label="${esc(ctx.t('ui.cards', { n: p.handTotal }))}">${hand}</div>
+      <div class="cat-vills">${vills || `<span class="cat-pnote">${esc(ctx.t('ui.noVillages'))}</span>`}</div>
+    </div>`;
+  }).join('')}${extra > 0 ? `<button class="cat-more" data-act="more" aria-expanded="${ui.showAll}">${ui.showAll ? '‹' : `+${extra} ›`}</button>` : ''}</div>`;
 }
 
 function renderBoard(v) {
@@ -166,69 +236,60 @@ function renderBoard(v) {
       ${isFire ? `<image href="${ICONS.fogo}" x="${cx - 26}" y="${cy - 30}" width="52" height="52" style="pointer-events:none"/>` : ''}
     </g>`;
   }).join('');
-  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" role="group" aria-label="Catania">${hexes}</svg>`;
+  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${hexes}</svg>`;
 }
+
 
 function renderMe(v) {
   const p = v.players[v.me];
   const vills = [0, 1, 2].map((k) => {
     const vl = p.villages[k];
     if (!vl) return '<div class="cat-card cat-vcard empty" aria-hidden="true"></div>';
-    const disc = v.piles[vl.res].value;
-    return `<div class="cat-card cat-vcard" title="${esc(`${vl.cards} ${ctx.t(`res.${vl.res}`)} × ${disc} = ${vl.cards * disc}`)}">
-      ${img(vl.res, 26)}<b>×${vl.cards}</b><span class="disc">${disc}</span></div>`;
+    const d = v.piles[vl.res].value;
+    return `<div class="cat-card cat-vcard" style="border-bottom-color:var(--cat-res-${vl.res})" title="${esc(`${vl.cards} ${ctx.t(`res.${vl.res}`)} × ${d} = ${vl.cards * d}`)}">
+      ${img(vl.res, 22)}<b>×${vl.cards}</b><span class="d">${d}</span></div>`;
   }).join('');
   const hand = RES.map((r) => `<div class="cat-card${p.hand[r] ? '' : ' zero'}" title="${esc(ctx.t(`res.${r}`))}">
-    ${img(r, 30)}<b>${p.hand[r]}</b></div>`).join('');
+    ${img(r, 24)}<b>${p.hand[r]}</b></div>`).join('');
   return `<div class="cat-me" data-tut="me">
-    <div class="cat-sec"><h4>${ctx.t('ui.villages')}</h4><div class="cat-cards">${vills}</div></div>
-    <div class="cat-sec"><h4>${ctx.t('ui.hand')} · ${ctx.t('ui.cards', { n: p.handTotal })}</h4><div class="cat-cards">${hand}</div></div>
+    <div class="cat-me-grp"><div class="cat-lbl">${esc(ctx.t('ui.villages'))}</div><div class="cat-cards">${vills}</div></div>
+    <i class="cat-vsep" aria-hidden="true"></i>
+    <div class="cat-me-grp"><div class="cat-lbl">${esc(ctx.t('ui.hand'))} · ${esc(ctx.t('ui.cards', { n: p.handTotal }))}
+      <button class="cat-logbtn" data-act="log" aria-expanded="${ui.showLog}">${esc(ctx.t('ui.log'))} ${ui.showLog ? '▾' : '▴'}</button></div>
+      <div class="cat-cards">${hand}</div></div>
   </div>`;
 }
 
 function renderPiles(v) {
-  return RES.map((r) => {
-    const val = v.piles[r].value;
-    // Se alguém recolher 2, o disco do topo da torre vai para cima desta pilha e passa a ser o valor (5.0.0).
-    const next = v.tower ? v.towerTop : null;
-    const after = next == null ? '' : ctx.t(next !== val ? 'ui.after2' : 'ui.after2Same', { v: next });
-    return `<div class="cat-pile">${img(r, 22)}<span>${esc(ctx.t(`res.${r}`))}</span>
-      <small title="discos na pilha">${v.piles[r].discs.length}</small>
-      <span class="cat-disc${RED.has(val) ? ' red' : ''}">${val}</span>
-      ${after ? `<small class="cat-after${next !== val ? ' drop' : ''}">${esc(after)}</small>` : ''}</div>`;
-  }).join('');
-}
-
-function renderTower(v) {
-  if (!v.tower) return `<p class="cat-wait">${ctx.t('ui.towerEmpty')}</p>`;
-  return `<div class="cat-tower-top">${ctx.t('ui.towerTop', { disc: v.towerTop, n: v.tower })}</div>
-    <div class="cat-tower"><span class="cat-disc${RED.has(v.towerTop) ? ' red' : ''}">${v.towerTop}</span></div>`;
+  const rows = RES.map((r) => `<div class="cat-pile"><span class="cat-pile-name">${esc(ctx.t(`res.${r}`))}</span>${img(r, 18)}${disc(v.piles[r].value)}</div>`).join('');
+  return `<aside class="cat-piles" data-tut="piles" aria-label="${esc(ctx.t('ui.piles'))}">
+    <div class="cat-lbl">${esc(ctx.t('ui.piles'))}</div>${rows}</aside>`;
 }
 
 function renderLog() {
-  const items = [...(msg.log || [])].reverse().slice(0, 14);
-  return `<ol class="cat-log">${items.map((l) => `<li>${l.seat != null ? `<b>${esc(ctx.seatName(l.seat))}</b> ` : ''}${esc(ctx.t(l.key, l.params))}</li>`).join('')}</ol>`;
+  const items = [...(msg.log || [])].reverse().slice(0, ui.logOpen ? 4 : 0);
+  return `<aside class="cat-log" data-tut="log">
+    <button class="cat-lbl cat-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
+    ${items.length ? `<ol>${items.map((l) => `<li>${l.seat != null ? `<b>${esc(ctx.seatName(l.seat))}</b> ` : ''}${esc(ctx.t(l.key, l.params))}</li>`).join('')}</ol>` : ''}
+  </aside>`;
+}
+
+function btn(label, attrs, cls = '', sub = '') {
+  return `<button class="cat-btn ${cls}" ${attrs}><span>${esc(label)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
 }
 
 function renderActions(v) {
-  if (msg.result) return '';
   const mine = v.me != null && v.cur === v.me;
-  if (!mine) return `<p class="cat-wait">${esc(ctx.t('ui.turnOf', { name: ctx.seatName(v.cur) }))}</p>`;
+  if (!mine) return v.me == null ? '' : `<p class="cat-wait">${esc(ctx.t('ui.turnOf', { name: ctx.seatName(v.cur) }))}</p>`;
   const t = v.players[v.me].turn;
-  const btn = (label, attrs, cls = '') => `<button class="cat-btn ${cls}" ${attrs}>${esc(label)}</button>`;
-
   if (t.firePending) {
     const stay = legal('MOVE_FIRE').find((m) => m.payload.stay);
-    return `<div class="cat-acts">
-      <div class="cat-btn info"><b>${ctx.t('ui.eruption')}</b><br>${ctx.t('ui.eruptionBody')}</div>
-      ${stay ? btn(ctx.t('ui.fireStay'), 'data-act="stay"', 'pri') : ''}
-    </div>`;
+    return `<div class="cat-info"><b>${esc(ctx.t('ui.eruption'))}</b><small>${esc(ctx.t('ui.eruptionBody'))}</small></div>
+      ${stay ? btn(ctx.t('ui.fireStay'), 'data-act="stay"', 'pri') : ''}`;
   }
   if (ui.mode) {
-    return `<div class="cat-acts">
-      <div class="cat-btn info">${ctx.t(ui.mode === 'c1' ? 'ui.collect1' : 'ui.collect2')}<br><small>${ctx.t('ui.pickHex')}</small></div>
-      ${btn(ctx.t('ui.cancel'), 'data-act="cancel"')}
-    </div>`;
+    return `<div class="cat-info"><b>${esc(ctx.t(ui.mode === 'c1' ? 'ui.collect1' : 'ui.collect2'))}</b><small>${esc(ctx.t('ui.pickHex'))}</small></div>
+      ${btn(ctx.t('ui.cancel'), 'data-act="cancel"')}`;
   }
   const collects = legal('COLLECT');
   const c1 = collects.some((m) => !m.payload.take2);
@@ -240,16 +301,86 @@ function renderActions(v) {
   const step = t.founded || t.collects >= 2 ? 'ui.collectDone' : t.collects === 0 ? 'ui.collectStep1' : 'ui.collectStep2';
   const done = t.collects > 0 || t.founded;
   const opening = v.round === 1 && v.me === 0 && t.collects === 1 && !t.founded && v.tower > 0;
-  return `<div class="cat-acts">
-    <div class="cat-step">${ctx.t(step)}</div>
+  const next = v.tower ? ctx.t(RED.has(v.towerTop) ? 'ui.nextDiscRed' : 'ui.nextDisc', { disc: v.towerTop }) : ctx.t('ui.towerEmpty');
+  return `<div class="cat-step">${esc(ctx.t(step))}</div>
     ${!t.founded && t.collects < 2 ? `
       ${btn(ctx.t('ui.collect1'), `data-act="c1" ${c1 ? '' : 'disabled'}`, 'pri')}
-      ${btn(v.tower ? ctx.t('ui.collect2Next', { disc: `${v.towerTop}${RED.has(v.towerTop) ? ' 🔴' : ''}` }) : ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`)}
-      ${opening ? `<div class="cat-step">${ctx.t('ui.openingRule')}</div>` : ''}` : ''}
-    <div class="cat-sep"></div>
-    ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : `disabled title="${esc(foundWhy)}"`}`, found ? 'pri' : '')}
-    ${btn(ctx.t(done ? 'ui.endTurn' : 'ui.pass'), `data-act="end" ${legal('END_TURN').length ? '' : 'disabled'}`)}
-  </div>`;
+      ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`, '', opening ? ctx.t('ui.openingRule') : next)}` : ''}
+    ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : 'disabled'}`, found ? 'pri' : '', found ? '' : foundWhy)}
+    ${btn(ctx.t(done ? 'ui.endTurn' : 'ui.pass'), `data-act="end" ${legal('END_TURN').length ? '' : 'disabled'}`)}`;
+}
+
+// ─── Zoom e arrastar no tabuleiro ───────────────────────────
+function applyZoom() {
+  const z = view?.querySelector('.cat-zoom');
+  if (z) z.style.transform = `translate(${ui.zoom.x}px, ${ui.zoom.y}px) scale(${ui.zoom.s})`;
+}
+
+function zoomAt(px, py, f) {
+  const { s, x, y } = ui.zoom;
+  const ns = Math.min(ZOOM.max, Math.max(ZOOM.min, s * f));
+  const k = ns / s;
+  ui.zoom = { s: ns, x: px - (px - x) * k, y: py - (py - y) * k };
+  applyZoom();
+}
+
+function viewCenter() {
+  const el = view.querySelector('.cat-view');
+  return el ? [el.clientWidth / 2, el.clientHeight / 2] : [0, 0];
+}
+
+function onPointerDown(e) {
+  const el = e.target.closest('.cat-view');
+  if (!el || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  ui.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ui.pts.size === 1) { ui.moved = 0; ui.dragged = false; }
+}
+
+function onPointerMove(e) {
+  if (!ui.pts.has(e.pointerId)) return;
+  const el = view.querySelector('.cat-view');
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const prev = [...ui.pts.values()];
+  ui.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const now = [...ui.pts.values()];
+  if (now.length === 1) {
+    const dx = now[0].x - prev[0].x;
+    const dy = now[0].y - prev[0].y;
+    ui.moved += Math.abs(dx) + Math.abs(dy);
+    if (ui.moved < 6) return; // um toque não é arrastar
+    if (!ui.dragged) { ui.dragged = true; el.setPointerCapture?.(e.pointerId); }
+    ui.zoom = { ...ui.zoom, x: ui.zoom.x + dx, y: ui.zoom.y + dy };
+    applyZoom();
+  } else {
+    ui.dragged = true;
+    const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top });
+    const d0 = d(prev[0], prev[1]);
+    const m0 = mid(prev[0], prev[1]);
+    const m1 = mid(now[0], now[1]);
+    const { s, x, y } = ui.zoom;
+    const ns = Math.min(ZOOM.max, Math.max(ZOOM.min, s * (d0 ? d(now[0], now[1]) / d0 : 1)));
+    const k = ns / s;
+    ui.zoom = { s: ns, x: m1.x - (m0.x - x) * k, y: m1.y - (m0.y - y) * k };
+    applyZoom();
+  }
+}
+
+function onPointerUp(e) { ui.pts.delete(e.pointerId); }
+
+function onWheel(e) {
+  const el = e.target.closest('.cat-view');
+  if (!el) return;
+  e.preventDefault();
+  const r = el.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.002));
+}
+
+/** Um arrastar no tabuleiro não conta como clique num território. */
+function onClickCapture(e) {
+  if (ui.dragged && e.target.closest('.cat-view')) { e.stopPropagation(); e.preventDefault(); }
+  ui.dragged = false;
 }
 
 // ─── Modais ─────────────────────────────────────────────────
@@ -327,9 +458,19 @@ function onClick(e) {
     render();
     return;
   }
+  const zb = e.target.closest('[data-zoom]');
+  if (zb) {
+    const [cx, cy] = viewCenter();
+    if (zb.dataset.zoom === 'fit') { ui.zoom = { s: 1, x: 0, y: 0 }; applyZoom(); } else zoomAt(cx, cy, zb.dataset.zoom === 'in' ? 1.25 : 0.8);
+    return;
+  }
   const act = e.target.closest('[data-act]');
   if (!act || act.disabled) return;
   const a = act.dataset.act;
+  if (a === 'more') { ui.showAll = !ui.showAll; render(); return; }
+  if (a === 'piles') { ui.showPiles = !ui.showPiles; render(); return; }
+  if (a === 'log') { ui.showLog = !ui.showLog; ui.logOpen = true; render(); return; }
+  if (a === 'logfold') { ui.logOpen = !ui.logOpen; render(); return; }
   if (a === 'close-bg' && e.target !== act) return;
   if (a === 'c1' || a === 'c2') ui.mode = a;
   else if (a === 'cancel') ui.mode = null;

@@ -11,6 +11,42 @@
         "en": "Table (background)"
       }
     },
+    "--game-on-table": {
+      "value": "#f2e8d0",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Texto sobre a mesa",
+        "en": "Text on the table"
+      }
+    },
+    "--game-on-table-muted": {
+      "value": "rgba(242,232,208,.78)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Texto secundário sobre a mesa",
+        "en": "Secondary text on the table"
+      }
+    },
+    "--game-glass": {
+      "value": "rgba(30,26,16,.62)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Vidro sobre a mesa",
+        "en": "Glass on the table"
+      }
+    },
+    "--game-glass-line": {
+      "value": "rgba(242,232,208,.18)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Contorno do vidro",
+        "en": "Glass outline"
+      }
+    },
     "--cat-panel": {
       "value": "#1e1a10",
       "type": "color",

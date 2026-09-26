@@ -158,3 +158,62 @@ button { font: inherit; }
 .proto-badge { display: inline-block; vertical-align: middle; font-size: .8rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px dashed currentColor; opacity: .75; }
 
 .seat-summary { font-size: .95rem; line-height: 1.3; margin-top: 2px; }
+
+/* ── Mesa em ecrã inteiro (ADR-014) ─────────────────────────
+   Jogos com UI própria: a mesa ocupa o ecrã e a plataforma só põe a linha
+   de cima (marca, jogo, avisos, guia, sair, língua) e o fim do jogo. As cores
+   vêm dos tokens do jogo (--game-*), com recurso aos do template vanilla. */
+body.is-table { overflow: hidden; }
+body.is-table .bar, body.is-table #notices { display: none !important; }
+body.is-table #view { max-width: none; padding: 0; margin: 0; }
+.tbl {
+  position: fixed; inset: 0; overflow: hidden;
+  background: var(--table-bg, #1f3328);
+  color: var(--game-on-table, #fffaf1);
+}
+.tbl .game-host { position: absolute; inset: 0; margin: 0; }
+.tbl .game-root, .tbl .tut-root { position: absolute; inset: 0; margin: 0; border-radius: 0; }
+.tbl-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; opacity: .8; }
+.tbl-top {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 6;
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 6px) max(12px, env(safe-area-inset-right, 0px)) 6px max(12px, env(safe-area-inset-left, 0px));
+  pointer-events: none; font-size: 12px;
+  text-shadow: 0 1px 3px rgb(0 0 0 / .45);
+}
+.tbl-top > * { pointer-events: auto; }
+.tbl-id { display: flex; align-items: baseline; gap: 6px; min-width: 0; margin-right: auto; opacity: .85; white-space: nowrap; overflow: hidden; }
+.tbl-brand, .tbl-game { font-family: var(--ui-display); font-size: 14px; }
+.tbl-meta { overflow: hidden; text-overflow: ellipsis; }
+.tbl-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.tbl-btn {
+  min-width: 44px; min-height: 36px; padding: 0 8px; border: 0; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: inherit; font: 600 12px var(--ui-body); cursor: pointer; text-decoration: none;
+}
+.tbl-btn:hover { background: rgb(255 255 255 / .1); }
+.tbl-notices { position: relative; display: inline-flex; }
+.tbl-chip {
+  min-height: 32px; padding: 0 12px; border-radius: 999px; cursor: pointer; font: 700 12px var(--ui-body);
+  color: var(--game-on-table, #fffaf1);
+  background: var(--game-glass, rgb(0 0 0 / .35)); border: 1px solid var(--game-glass-line, rgb(255 255 255 / .3));
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  display: inline-flex; align-items: center; text-shadow: none;
+}
+.tbl-chip.warn { background: var(--color-danger, #b3261e); border-color: transparent; color: #fff; }
+.tbl-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); width: min(360px, calc(100vw - 24px)); z-index: 7;
+  display: grid; gap: 8px; padding: 10px; border-radius: 12px; text-shadow: none;
+  background: var(--ui-card); color: var(--ui-text); box-shadow: 0 12px 32px rgb(0 0 0 / .35);
+}
+.tbl-timers .timers, .tbl-top .timers { margin: 0; }
+.tbl-over {
+  position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px;
+  background: rgb(0 0 0 / .45);
+}
+.tbl-card { width: min(440px, 100%); display: grid; gap: 10px; text-shadow: none; }
+.tbl-card-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.tbl-card-btns .btn { background: var(--ui-card); }
+@media (max-width: 760px) {
+  .tbl-meta, .tbl-sep, .tbl-brand { display: none; }
+}

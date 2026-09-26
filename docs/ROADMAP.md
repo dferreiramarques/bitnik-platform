@@ -78,6 +78,7 @@ Migração direta do código antigo, um jogo de cada vez.
 Por fazer:
 
 - ✔ Teste de encaixe: o Catania montado no template (computador, telemóvel e horizontal), no canvas; as peças que faltam estão na secção 5 do `design/figma/TEMPLATE.md`.
+- ✔ Catania live no template (ADR-014): a plataforma passa a ter o modo mesa em ecrã inteiro para jogos com UI própria (linha de topo com marca, jogo, ficha de avisos a vermelho em manutenção, voltar e idioma; resultado em sobreposição) e a UI do Catania foi reescrita com painéis de vidro, pilhas e registo flutuantes, zoom (pinça, roda e botões) e variantes telemóvel vertical e horizontal.
 - ☐ UI genérica com o desenho do template (ADR-014): antes, resolver os pendentes da secção 5 do `design/figma/TEMPLATE.md` (contraste do vidro, alvos de toque e as peças que o Catania pediu) e acrescentar ao `CONTRATO.md` as mensagens da mesa e o relatório do fim.
 - ☐ UIs próprias de cada jogo (hoje todos usam a UI genérica de protótipo).
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
