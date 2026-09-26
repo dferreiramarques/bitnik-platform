@@ -341,6 +341,8 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 - A mesa (`--table-bg` com `--table-dots` por cima) ocupa o ecrã inteiro. Marca, nome do jogo, tamanho da mesa, guia, voltar ao lobby e língua ficam numa linha discreta no topo.
 - Jogadores, fichas da ronda, a minha área, barra de ações, registo e controlos da vista são painéis de vidro por cima da mesa, em posições fixas (secção 3 do TEMPLATE). O tabuleiro é uma mesa infinita com mover e zoom.
 - No telemóvel: os dois primeiros jogadores e um "+N ›" para os restantes; o registo dobra-se dentro de "A minha área"; a barra de ações passa a uma grelha 2:1:1.
+- O tabuleiro fica centrado no ecrã; no telemóvel aproxima-se com dois dedos (e botões +, − e ver tudo). Na horizontal, jogadores à esquerda, painel do jogo à direita e tabuleiro ao centro.
+- O registo e o **painel do jogo** (informação partilhada: pilhas, mercado, objetivos) flutuam sobre a mesa, sem fundo, com sombra no texto; o painel fica à direita, centrado com o tabuleiro.
 - Os componentes de cada jogador (cartas, tokens, aldeias…) são botões e servem de alvo quando uma ação escolhe um jogador.
 - A **mensagem da mesa** ("É a tua vez", eventos, avisos, fim) é da plataforma: aparece no meio do tabuleiro, uma de cada vez, sem bloquear cliques. O jogo só manda o texto e a variante.
 
@@ -365,3 +367,4 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 - "Copiar convite" na Entrada é novo: hoje só as mesas de aprovação, criadas na consola, têm convite.
 - O contrato ganha dois acrescentos opcionais, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos) e pontos por origem no fim, com momentos decisivos para o relatório.
 - Antes de implementar, resolver os pendentes da secção 5 do TEMPLATE: contraste do vidro e alvos de toque de 44 px. Se o vidro passar a escuro, mudam os valores de `--game-glass` e `--game-glass-line`, não os nomes.
+- O teste de encaixe com o Catania (quadros no canvas) mostrou que o desenho serve um jogo real, mas faltam ao vanilla componentes com ícone, o alvo no tabuleiro, a barra de ações com passo e motivo, o modal de escolha e um grupo de tokens de recursos (secção 5 do TEMPLATE).

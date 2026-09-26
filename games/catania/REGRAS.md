@@ -8,7 +8,7 @@ Estamos no século VIII a.C., no ano da fundação de Catânia. Cada jogador é 
 
 - **Ilha:** o Vulcão Etna ao centro e territórios de 5 recursos — 🌾 Cereais, 🍇 Vinho, 🐟 Peixe, 🧱 Calcário e 🌿 Azeite. Com 4 jogadores há 10 territórios (2 de cada recurso); com 3 jogadores, 9; com 2 jogadores, 8. Há sempre pelo menos um território de cada recurso.
 - **Torre de discos:** 18 discos numerados. Pretos: 12, 11, 11, 10, 10, 8, 8, 6, 6, 4, 4, 2, 2. Vermelhos 🔴: 9, 7, 5, 3, 1.
-- **Pilhas de recursos:** uma pilha de discos por recurso. O disco de cima é o **valor atual** desse recurso.
+- **Pilhas de recursos:** uma pilha de discos por recurso. O disco de cima é o **valor atual** desse recurso: cada disco novo vai para cima.
 - **Por jogador:** 2 trabalhadores (marcam onde recolheu) e 3 aldeias.
 - **Fogo do Etna:** uma peça que bloqueia o território onde está.
 - **Cartas de recurso** de cada tipo.
@@ -33,7 +33,7 @@ No início do teu turno, os teus trabalhadores voltam para ti (saem da ilha). O 
 Podes recolher em **até 2 territórios diferentes**. Em cada um colocas um trabalhador e escolhes:
 
 - **1 carta** — recebes 1 carta desse recurso. O valor não muda.
-- **2 cartas** — recebes 2 cartas e tiras o disco do topo da torre para a pilha desse recurso: o recurso **deprecia**. Não podes escolher esta opção se a torre estiver vazia.
+- **2 cartas** — recebes 2 cartas, tiras o disco do topo da torre (o mais alto que lá houver) e pões-no **em cima** da pilha desse recurso: esse disco passa a ser o **novo valor**. Não podes escolher esta opção se a torre estiver vazia.
 
 **Abertura:** no primeiro turno do jogo, a 2.ª recolha do primeiro jogador só pode ser de **1 carta** (a 1.ª pode ser de 1 ou 2). É o que compensa a vantagem de abrir o jogo.
 
@@ -59,25 +59,24 @@ Precisas de **pelo menos 5 cartas** na mão, de **pelo menos 2 tipos**. Usas a m
 
 - **Maioria** — as cartas do tipo de que tens mais ficam na aldeia e contam para a pontuação final. Se houver empate na maioria, escolhes qual fica.
 - **Minorias** — todos os outros tipos são descartados.
-- **Valorizar** — escolhes **uma** das minorias descartadas: o disco de cima dessa pilha volta à torre e o valor desse recurso sobe. Se a pilha só tiver o disco-base, nada muda.
+- **Valorizar** — escolhes **uma** das minorias descartadas: o disco de cima dessa pilha (o último que lá foi posto) volta à torre e o valor desse recurso **volta ao disco de baixo**. Se a pilha só tiver o disco inicial, nada muda.
 
 > **Exemplo:** tens 3 Calcário, 3 Azeite e 1 Cereais. Há empate na maioria, por isso escolhes: o Azeite fica na aldeia (Azeite × 3). O Calcário e os Cereais são descartados, e escolhes valorizar os Cereais.
 
 Depois, terminas o turno.
 
-## Pilhas e torre em sequência
+## Torre e pilhas
 
-As pilhas e a torre estão **sempre em sequência numérica**:
-
-- **Torre:** o disco mais baixo em baixo, o mais alto em cima. Quando um disco volta à torre, reordena-se a torre.
-- **Pilhas de recursos:** o disco mais alto em baixo, o mais baixo em cima. Quando um disco é colocado numa pilha, reordena-se a pilha.
+- **Torre:** está sempre por ordem, o disco mais baixo em baixo e o mais alto em cima. Quem recolhe 2 cartas tira sempre o disco de cima, ou seja, o mais alto que houver. Quando um disco volta à torre (ao valorizar), entra no seu lugar na ordem.
+- **Pilhas de recursos:** não se reordenam. Cada disco novo vai para cima e passa a ser o valor; ao valorizar, sai o disco de cima e volta o de baixo. O disco inicial de cada pilha nunca sai.
 
 Consequências:
 
-- Recolher 2 cartas **nunca sobe** o valor: se o disco novo for mais baixo, passa a ser o valor; se for mais alto, fica por baixo e o valor mantém-se.
-- Valorizar uma minoria **nunca desce** o valor: volta à torre o disco mais baixo da pilha.
+- Como a torre dá sempre o disco mais alto que tem, os valores vão baixando ao longo do jogo.
+- Recolher 2 cartas pode fazer o valor **subir**: se um recurso está a 8 e alguém devolveu um 9 à torre, quem recolher 2 desse recurso põe o 9 em cima e o recurso passa a valer 9.
+- Valorizar desfaz a última recolha de 2 desse recurso.
 
-> **Exemplo:** a pilha dos Cereais é 10, 8 (valor 8) e o topo da torre é um 9 🔴. Quem recolhe 2 Cereais põe o 9 na pilha, que fica 10, 9, 8: o valor mantém-se em 8, mas o disco é vermelho, por isso há erupção. Se mais tarde alguém valorizar os Cereais, o 8 volta à torre e os Cereais passam a valer 9.
+> **Exemplo:** no início, o Calcário recebeu o 11. Mais tarde, a torre está no 9 🔴 e alguém recolhe 2 Calcário: o 9 vai para cima da pilha, o Calcário passa a valer 9 e, como o disco é vermelho, há erupção. Depois, outro jogador funda uma aldeia e escolhe valorizar o Calcário: o 9 sai da pilha e volta à torre (é outra vez o próximo a sair) e o Calcário volta a valer 11.
 
 ## Fim do jogo
 

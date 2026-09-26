@@ -30,6 +30,7 @@ const UI = {
     inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
+    notices: 'Avisos', back: 'Voltar ao lobby', howToPlay: 'Como se joga', seeTable: 'Ver a mesa', lobby: 'Lobby',
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
@@ -54,6 +55,7 @@ const UI = {
     inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
+    notices: 'Notices', back: 'Back to lobby', howToPlay: 'How to play', seeTable: 'See the table', lobby: 'Lobby',
   },
 };
 
@@ -72,6 +74,9 @@ const app = {
   proto: (() => { try { return localStorage.getItem('bitnik.proto') === '1'; } catch { return false; } })(),
   ui: null,           // UI própria montada: { roomId, gameId, el, mod }
   appearance: null,   // afinações do deploy (consola), ao vivo
+  status: 'connecting',
+  noticesOpen: false, // painel dos avisos aberto (mesa em ecrã inteiro)
+  resultClosed: null, // `${sala}:${seq}` do fim de jogo que o jogador fechou para ver a mesa
 };
 
 /** Skin do jogo (defaults + tema do deploy), antes de montar a mesa ou o tutorial. */
@@ -279,9 +284,47 @@ function useGameUi(msg) {
   return !!meta?.ui && !app.proto && !!msg.view && ['playing', 'over'].includes(msg.room.status);
 }
 
+/** Linha de cima da mesa em ecrã inteiro (ADR-014): marca, jogo, avisos, guia, sair e língua. */
+function renderTableTop(gameId, meta, extra = '') {
+  const brand = W()?.brand?.name || $('#brand').textContent;
+  const offline = app.status === 'closed' ? `<span class="tbl-chip warn" role="status">${esc(u('closed'))}</span>` : '';
+  return `<header class="tbl-top">
+    <div class="tbl-id"><strong class="tbl-brand">${esc(brand)}</strong><span class="tbl-sep">·</span>
+      <strong class="tbl-game">${esc(t('game.name', {}, gameId))}</strong><span class="tbl-meta">${meta}</span></div>
+    <div class="tbl-actions">${offline}<span id="tblNotices" class="tbl-notices">${renderNoticeChip()}</span>${extra}
+      <button class="tbl-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+      <button class="tbl-btn" data-lang>${u('lang')}</button></div>
+  </header>`;
+}
+
+/** A mesa de um jogo com UI própria ocupa o ecrã; a plataforma só põe a linha de cima e o fim do jogo. */
+function renderFullTable(msg) {
+  const g = msg.room.gameId;
+  const meta = gameMeta(g);
+  const round = msg.view?.round;
+  const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
+  const info = `${msg.room.kind === 'invite' ? `${esc(msg.room.name || u('inviteTable'))} · ` : ''}${u('tableOf', { n: msg.room.numPlayers })}${meta?.prototype ? ` · ${u('prototype', { v: meta.version })}` : ''}`;
+  const extra = [
+    renderTimers(msg),
+    meta?.tutorial ? `<a class="tbl-btn" href="#/tutorial/${esc(g)}" aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>` : '',
+    app.welcome?.studio ? `<button class="tbl-btn" data-proto>${u('protoUi')}</button>` : '',
+    canLeave ? `<button class="tbl-btn" data-leave>${u('leave')}</button>` : '',
+  ].join('');
+  const key = `${msg.room.id}:${msg.seq}`;
+  const result = msg.result && app.resultClosed !== key
+    ? `<div class="tbl-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="tbl-card">${renderPalette(msg)}
+        <div class="tbl-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
+  return `<section class="tbl" data-game="${esc(g)}">
+    <div id="gameHost" class="game-host"><p class="tbl-loading">${u('loadingUi')}</p></div>
+    ${renderTableTop(g, info + (round ? ` · ${u('round', { n: round })}` : ''), extra)}
+    ${result}
+  </section>`;
+}
+
 function renderTable() {
   const msg = app.room;
   if (!msg) return `<p class="empty">${u('connecting')}</p>`;
+  if (useGameUi(msg)) return renderFullTable(msg);
   const g = msg.room.gameId;
   const round = msg.view?.round;
   const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
@@ -357,19 +400,40 @@ async function syncGameUi(msg) {
   return undefined;
 }
 
-// ─── Avisos do publisher (faixa no topo) ─────────────────────
-function renderNotices() {
-  const el = $('#notices');
+// ─── Avisos do publisher (faixa no topo; na mesa, uma ficha) ──
+const activeNotices = () => {
   const t0 = Date.now() + app.noticesSkew;
-  const list = app.notices.filter((n) => n.until > t0 && !app.dismissed.has(n.id));
-  el.hidden = !list.length;
-  el.innerHTML = list.map((n) => {
+  return app.notices.filter((n) => n.until > t0 && !app.dismissed.has(n.id));
+};
+
+/** Na mesa em ecrã inteiro (ADR-014) os avisos são uma ficha na linha de cima; a vermelho com manutenção. */
+function renderNoticeChip() {
+  const list = activeNotices();
+  if (!list.length) return '';
+  const t0 = Date.now() + app.noticesSkew;
+  const maint = list.some((n) => n.maintenance && n.maintenance.from <= t0) || list.some((n) => n.level === 'warn');
+  return `<button class="tbl-chip${maint ? ' warn' : ''}" data-notices aria-expanded="${app.noticesOpen}">${u('notices')} · ${list.length}</button>
+    ${app.noticesOpen ? `<div class="tbl-panel" role="region" aria-label="${esc(u('notices'))}">${noticeItems(list)}</div>` : ''}`;
+}
+
+function noticeItems(list) {
+  const t0 = Date.now() + app.noticesSkew;
+  return list.map((n) => {
     const time = n.at ? new Date(n.at - app.noticesSkew).toLocaleTimeString(app.lang, { hour: '2-digit', minute: '2-digit' }) : '';
     const main = n.text ? (n.text[app.lang] || Object.values(n.text)[0]) : t(n.key, { time, ...n.params });
     const drain = n.maintenance && n.maintenance.from <= t0 ? ` ${t('notice.MAINTENANCE')}` : '';
     return `<div class="notice notice-${esc(n.level)}" role="status"><span>${esc(main + drain)}</span>
       <button class="btn btn-ghost" data-dismiss="${esc(n.id)}" aria-label="${u('dismiss')}">✕</button></div>`;
   }).join('');
+}
+
+function renderNotices() {
+  const el = $('#notices');
+  const list = activeNotices();
+  el.hidden = !list.length;
+  el.innerHTML = noticeItems(list);
+  const chip = document.getElementById('tblNotices');
+  if (chip) chip.innerHTML = renderNoticeChip();
 }
 
 function setNotices(list, serverNow) {
@@ -379,18 +443,21 @@ function setNotices(list, serverNow) {
 }
 setInterval(renderNotices, 30_000); // a janela de manutenção pode começar entretanto
 
-$('#notices').addEventListener('click', (e) => {
+function onDismiss(e) {
   const b = e.target.closest('[data-dismiss]');
-  if (!b) return;
+  if (!b) return false;
   app.dismissed.add(b.dataset.dismiss);
+  if (!activeNotices().length) app.noticesOpen = false;
   renderNotices();
-});
+  return true;
+}
+$('#notices').addEventListener('click', onDismiss);
 
 // ─── Tutorial (módulo do pacote; corre o motor no browser) ───
 function renderTutorial(gameId) {
-  return `<section class="table">
-    <div class="table-head"><h1>${esc(t('game.name', {}, gameId))}</h1><span class="meta">${u('tutorialOf')}</span></div>
-    <div id="tutHost" class="game-host"><p class="empty">${u('loadingUi')}</p></div>
+  return `<section class="tbl" data-game="${esc(gameId)}">
+    <div id="tutHost" class="game-host"><p class="tbl-loading">${u('loadingUi')}</p></div>
+    ${renderTableTop(gameId, u('tutorialOf'))}
   </section>`;
 }
 
@@ -435,6 +502,9 @@ function render() {
   $('#nameLabel').textContent = u('yourName');
   $('#name').placeholder = u('yourName');
   document.documentElement.lang = app.lang;
+  const full = !!tut || (inRoom && !!app.room && useGameUi(app.room));
+  document.body.classList.toggle('is-table', full);
+  if (!full) app.noticesOpen = false;
   renderNotices();
   if (tut) {
     if (!W()) return;
@@ -456,10 +526,21 @@ function render() {
   tickTimers();
 }
 
+function toggleLang() {
+  app.lang = app.lang === 'pt' ? 'en' : 'pt';
+  localStorage.setItem('bitnik.lang', app.lang);
+  render();
+}
+
 $('#view').addEventListener('click', (e) => {
+  if (onDismiss(e)) return;
   const b = e.target.closest('button');
   if (!b) return;
   const d = b.dataset;
+  if ('lobby' in d) { go(null); return; }
+  if ('lang' in d) { toggleLang(); return; }
+  if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
+  if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
   const roomId = app.room?.room.id;
   if (d.solo) { if (!client.createSolo(d.solo, Number(d.n))) toast(u('notSent')); }
   else if (d.open) go(d.open);
@@ -479,14 +560,15 @@ $('#view').addEventListener('click', (e) => {
 });
 
 $('#back').addEventListener('click', () => go(null));
-$('#lang').addEventListener('click', () => {
-  app.lang = app.lang === 'pt' ? 'en' : 'pt';
-  localStorage.setItem('bitnik.lang', app.lang);
-  render();
-});
+$('#lang').addEventListener('click', toggleLang);
 $('#name').addEventListener('change', (e) => client.setName(e.target.value));
 
-client.on('status', (s) => { $('#status').textContent = u(s); });
+client.on('status', (s) => {
+  const was = app.status;
+  app.status = s;
+  $('#status').textContent = u(s);
+  if (document.body.classList.contains('is-table') && (was === 'closed') !== (s === 'closed')) render();
+});
 client.on('welcome', (w) => {
   app.welcome = w;
   try {

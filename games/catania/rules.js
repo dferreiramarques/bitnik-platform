@@ -80,10 +80,10 @@ export const moves = {
       ctx.log('log.COLLECT_1', { res: `@res.${r}` });
       return;
     }
+    // A ficha do topo da torre vai para cima da pilha e passa a ser o valor (5.0.0),
+    // mesmo que seja mais alta do que a anterior.
     const disc = s.tower.pop();
     s.piles[r].discs.push(disc);
-    // A pilha fica em sequência: o mais alto em baixo, o mais baixo em cima.
-    s.piles[r].discs.sort((a, b) => b - a);
     ctx.log(RED.has(disc) ? 'log.COLLECT_2_RED' : 'log.COLLECT_2', { res: `@res.${r}`, disc });
     if (RED.has(disc)) t.firePending = true;
   },
@@ -121,6 +121,8 @@ export const moves = {
     const cards = p.hand[keep];
     for (const r of RESOURCES) p.hand[r] = 0; // usa a mão toda
     const pile = s.piles[raise];
+    // Valorizar: a ficha de cima (a última que lá foi posta) volta à torre, que fica
+    // ordenada, e o valor volta a ser o da ficha de baixo. A ficha inicial nunca sai.
     if (pile.discs.length > 1) {
       s.tower.push(pile.discs.pop());
       s.tower.sort((a, b) => a - b);

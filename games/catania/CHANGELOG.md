@@ -2,6 +2,24 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.0 — Pilhas como pilhas
+
+**A pilha de cada recurso deixa de estar ordenada.** Quem recolhe 2 cartas tira o disco mais alto da torre e põe-no **em cima** da pilha desse recurso: esse disco passa a ser o valor, mesmo que seja mais alto do que o anterior. Ao valorizar, sai o disco de cima (o último que lá foi posto), volta à torre e o valor volta ao do disco de baixo. A torre continua ordenada.
+
+Até à 4.0.1, a pilha era reordenada a cada disco (o mais baixo em cima): recolher 2 nunca subia o valor e valorizar tirava sempre o disco mais baixo. Não era a regra do jogo, e o painel das pilhas mostrava efeitos diferentes para o mesmo disco ("passa a 9" num recurso, "mantém 8" noutro).
+
+| Jogadores | 4.0.1 | 5.0.0 | 5.0.0 sem a abertura | Justo |
+|---|---|---|---|---|
+| 2 | 50,5 / 49,5 | 50,3 / 49,7 | 52,3 / 47,7 | 50 |
+| 3 | 34,7 / 32,3 / 33,0 | 33,4 / 33,6 / 33,0 | 34,6 / 32,4 / 33,0 | 33,3 |
+| 4 | 25,9 / 25,3 / 23,4 / 25,5 | 24,7 / 24,9 / 24,0 / 26,4 | 25,7 / 24,5 / 24,1 / 25,7 | 25 |
+
+A regra de abertura da 4.0.0 continua a fazer falta (sem ela, o 1.º lugar volta a ganhar 52% a 2 jogadores). A 3 jogadores, a vantagem que sobrava ao 1.º lugar desaparece.
+
+As partidas guardadas da 4.x ficam marcadas como versão antiga (ADR-004).
+
+A UI diz agora, em todas as pilhas, o mesmo efeito de recolher 2 ("passa a 9"), porque o disco que entra é sempre o do topo da torre.
+
 ## 4.0.1 — Próximo disco à vista
 
 Sem mudança de regras. A UI mostra, em cada pilha, com que valor o recurso fica se alguém recolher 2 cartas (o disco do topo da torre, se for mais baixo), e o botão "Recolher 2" diz qual é o próximo disco. Um recurso em que ninguém mexeu pode cair de uma vez (ex.: de 11 para 3) quando a torre já só tem discos baixos: agora vê-se antes de jogar.

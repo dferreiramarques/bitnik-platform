@@ -11,7 +11,8 @@ Os tokens têm **os mesmos nomes** dos da plataforma (`design/vanilla/skin.json`
 | Tokens | Tokens (skin vanilla) | 1280 × 800 | Mesa, base, destaque, jogadores, letra e forma |
 | | Componentes base | 1280 × 800 | Ver secção 4 |
 | Mesa | Mesa — computador | 1280 × 800 | Ver secção 3 |
-| | Mesa — telemóvel | 390 × 844 | Ver secção 3 |
+| | Mesa — telemóvel | 390 × 844 | Ver secção 3 (zoom com dois dedos no modo Play) |
+| | Mesa — telemóvel na horizontal | 844 × 390 | Ver secção 3 |
 | Fora da mesa | Lobby do jogo | 1280 × 800 | A tua mesa contra bots, mesas com outras pessoas, mesa de aprovação |
 | | Entrada na mesa | 1280 × 800 | Lugares (tu, outros, livres), Começar, Como se joga, Copiar convite |
 | | Fim do jogo e resultados | 1280 × 800 | Classificação com a origem dos pontos, empate partilhado, Jogar outra vez, Relatório |
@@ -19,6 +20,7 @@ Os tokens têm **os mesmos nomes** dos da plataforma (`design/vanilla/skin.json`
 | Entrada da marca | Início (marca com vários jogos) | 1280 × 800 | Marca, nome do jogador e uma grelha de jogos que leva ao lobby de cada um |
 | | Marca-produto (um só jogo) | 1280 × 800 | "[MARCA] apresenta [jogo]", nome do jogador, a tua mesa e as mesas com outras pessoas no mesmo ecrã |
 | Telemóvel | Início, Lobby, Entrada, Fim, Relatório, Marca-produto | 390 × 844 | Os mesmos ecrãs numa coluna |
+| Teste de encaixe | Catania no template: computador, telemóvel, telemóvel na horizontal e "o que falta" | vários | O Catania montado com esta estrutura, com as suas cores e o mar; ver secção 5 |
 
 Os textos entre parênteses retos (`[MARCA]`, `[Nome do jogo]`, `[uma frase curta]`) são para substituir; tudo o resto é texto final.
 
@@ -50,34 +52,38 @@ As capas dos jogos no Início usam um gradiente de 135° da cor do jogo para uma
 A mesa ocupa o ecrã inteiro (`--table-bg` com `--table-dots` por cima). Não há barra, título nem moldura da plataforma: tudo o resto flutua em painéis de vidro.
 
 ```
-┌─ [MARCA] · [Nome do jogo] · Mesa de 4 ─────────────── (?) (←) EN ─┐
-│        ┌ ANA 24 ┐ ┌ RUI 19 ┐ ┌ BOT 2 12 ┐ ┌ BOT 3 15 ┐                 │
-│        │a pensar│ │jogou 3 │ │ à espera │ │  passou  │   jogadores     │
-│        │[Cartas]│ │[Cartas]│ │ [Cartas] │ │ [Cartas] │                 │
-│              (Ronda 3) (Última ronda) (+1 carta)          fichas       │
-│        ┌ - - - - - - - - - - - - - - - - - - - - - - ┐                 │
-│        │     Tabuleiro (mesa infinita, zoom)          │                 │
-│        │           «É a tua vez»                      │                 │
-│        └ - - - - - - - - - - - - - - - - - - - - - - ┘                 │
-│ REGISTO              ┌ A MINHA ÁREA ┐                         [✥]     │
-│ Ana recolheu…        │ ▭ ▭ ▭ ⬚       │                         [+]     │
-│                      └──────────────┘                         [−]     │
-│              [Ação principal] [Outra ação] [Passar]           [▢]     │
-└──────────────────────────────────────────────────────────────────────┘
+┌─ [MARCA] · [Nome do jogo] · Mesa de 4 ─────────────────────── (?) (←) EN ─┐
+│          ┌ ANA 24 ┐ ┌ RUI 19 ┐ ┌ BOT 2 12 ┐ ┌ BOT 3 15 ┐          jogadores   │
+│                  (Ronda 3) (Última ronda) (+1 carta)              fichas     │
+│         ┌ - - - - - - - - - - - - - - - - - - - - - - ┐                     │
+│         │                                             │     PAINEL DO JOGO  │
+│         │   Tabuleiro, centrado no ecrã               │        [Mercado] (3)│
+│         │   «É a tua vez»                             │      [Objetivos] (2)│
+│         │                                             │        [Baralho](24)│
+│         └ - - - - - - - - - - - - - - - - - - - - - - ┘                     │
+│ REGISTO ▾            ┌ A MINHA ÁREA ┐                               [✥]    │
+│ Ana recolheu…        │ ▭ ▭ ▭ ⬚       │                               [+]    │
+│                      └──────────────┘                               [−]    │
+│               [Ação principal] [Outra ação] [Passar]                [▢]    │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
-
 - **Topo à esquerda**: marca, nome do jogo e tamanho da mesa, em `--game-on-table` a 78%.
 - **Topo à direita**: Guia (tutorial), Voltar ao lobby e a língua.
 - **Jogadores**: um cartão de vidro por jogador, com o ponto da cor, o nome em maiúsculas, os pontos, o estado e os **componentes** (Cartas 5, Tokens 2…). Os componentes são botões: servem de alvo quando uma ação escolhe um jogador (roubar uma carta, tirar um token). O jogador da vez tem contorno `--game-accent` e o estado em `--game-on-table-accent`.
 - **Fichas da ronda**: ronda, "Última ronda" (fundo `--game-accent`) e avisos curtos do jogo.
-- **Tabuleiro**: mesa infinita; arrasta para mover, roda (ou dois dedos) para aproximar.
+- **Tabuleiro**: mesa infinita; arrasta para mover, roda (ou dois dedos) para aproximar. Fica **centrado no ecrã**, na horizontal e na vertical (no vanilla, 868 × 400 em (206, 200)); as fichas da ronda ficam a meio do espaço entre os jogadores e o tabuleiro.
 - **Mensagem da mesa**: ver secção 4.
 - **A minha área**: mão e peças do jogador, em baixo ao centro.
 - **Barra de ações**: em baixo ao centro; ação principal em `--game-accent`, as outras em vidro.
-- **Registo**: em baixo à esquerda, discreto. No telemóvel dobra-se dentro de "A minha área" (REGISTO ▴).
+- **Registo**: em baixo à esquerda, **flutuante**: sem fundo nem contorno, só texto com sombra (`0 1px 3px rgba(0,0,0,.7), 0 0 12px rgba(0,0,0,.4)`) para se ler em cima da mesa. No telemóvel dobra-se dentro de "A minha área" (REGISTO ▴).
+- **Painel do jogo**: informação partilhada do jogo (pilhas, mercado, objetivos, baralho), à direita, flutuante como o registo, alinhado à direita, a 48 px da margem do ecrã e centrado na vertical com o tabuleiro. No telemóvel é uma ficha "Painel ▾" que abre; na horizontal é uma coluna compacta à direita.
 - **Controlos da vista**: em baixo à direita (mover, aproximar, afastar, ver tudo).
 
-No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os dois primeiros jogadores e um "+2 ›"; fichas; tabuleiro; a minha área; barra de ações em grelha 2:1:1.
+No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os dois primeiros jogadores e um "+2 ›"; fichas a meio entre os jogadores e o tabuleiro; tabuleiro centrado na vertical; a minha área; barra de ações em grelha 2:1:1.
+
+No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um; há também botões +, − e "ver tudo" (44 px) no canto do tabuleiro, e a roda do rato aproxima no computador. O zoom vai de 50% a 300% e fica centrado entre os dedos.
+
+No telemóvel **na horizontal** (844 × 390): linha de cima com voltar, nome do jogo, fichas, guia e língua; jogadores numa coluna à esquerda (176 px); painel do jogo numa coluna compacta à direita, com os botões de zoom por baixo; tabuleiro ao centro (500 × 262); a minha área em baixo à esquerda e a barra de ações em baixo à direita.
 
 ## 4. Componentes base
 
@@ -88,6 +94,8 @@ No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os do
 | Jogador | da vez, à espera, bot; componentes como botões | `game-color-n`, `game-accent`, `game-panel`, `game-line` |
 | Disco / marcador | normal, alerta | `game-panel-2`, `game-color-n`, `game-danger` |
 | Painel | registo | `game-panel`, `game-line`, `game-muted` |
+| Registo e painel do jogo (flutuantes) | sem fundo; texto com sombra, alinhado à esquerda (registo) ou à direita (painel) | `game-on-table`, `game-on-table-muted` |
+| Controlos da vista | aproximar, afastar, ver tudo (44 px) | `game-glass`, `game-on-table` |
 | Modal | título, texto, 2 botões | `game-panel`, `game-line`, `game-accent` |
 | Tutorial | alvo com contorno, balão com passo, título e Seguinte | `game-panel`, `game-accent` |
 | Mensagem da mesa | vez, evento com subtítulo, aviso (cor `game-on-table-warn`), fim | `game-on-table`, `game-font-display` |
@@ -101,11 +109,19 @@ Letras: `game-font-display` para títulos, pontos e mensagens; `game-font-body` 
 
 Pontos por resolver antes de a UI genérica usar este desenho (medidos no canvas a 2026-09-26):
 
-- **Contraste do vidro.** O vidro claro (`--game-glass`, creme a 30%) clareia o verde e baixa o contraste do texto creme. No centro da mesa: texto 3,1:1, texto secundário 2,4:1, "a pensar…" 2,5:1, registo (a 40%) 2,3:1. Proposta: vidro escuro, `rgba(20,32,26,.35)` com o mesmo desfoque (8,5 / 6,2 / 6,8:1).
-- **Alvos de toque.** Os componentes do jogador têm 18–20 px, os botões de vidro 28–32 px e a barra de ações 32 px (40 no telemóvel). O mínimo é 44 px; nos componentes, a área de toque pode crescer sem mudar o desenho.
+- **Contraste do vidro.** O vidro claro (`--game-glass`, creme a 30%) clareia o verde e baixa o contraste do texto creme. No centro da mesa: texto 3,1:1, texto secundário 2,4:1, "a pensar…" 2,5:1. Proposta: vidro escuro, `rgba(20,32,26,.35)` com o mesmo desfoque (8,5 / 6,2 / 6,8:1). O teste do Catania confirmou a ideia: com o painel do Catania a 62% passa (texto 10,9:1, secundário 4,9:1, dourado 5,8:1).
+- **Alvos de toque.** Os componentes do jogador têm 18–20 px, os botões de vidro 28–32 px e a barra de ações 32 px (40 no telemóvel). O mínimo é 44 px; nos componentes, a área de toque pode crescer sem mudar o desenho. Os quadros do Catania já usam 44 px na barra de ações e nos controlos da vista.
 - **Destaque sobre o realce.** `--game-accent` sobre `--game-panel-2` dá 4,26:1; o botão de informação já usa `--game-accent-strong` (7,6:1).
 - **Figma.** O gradiente da mesa, os valores `rgba()`, as letras (pilha CSS) e o raio (`"14px"`) não se ligam diretamente a Variables do Figma. O canvas do Claude Design não tem este problema; se o template for para o Figma, o export (`tools/figma.js`) tem de mandar cor sólida, nome da família e número.
 - **Plataforma.** A mesa em ecrã inteiro, a mensagem da mesa, os componentes como alvo, a entrada da marca (Início ou Marca-produto), o "Copiar convite" de qualquer mesa e os pontos por origem no fim e no relatório ainda não existem na UI genérica nem no contrato (ver ADR-014).
+
+O teste de encaixe do Catania mostrou mais quatro peças que faltam ao vanilla:
+
+- **Componentes com ícone e cor**: o Catania mostra 5 recursos com ícone e as aldeias com a cor do recurso; o template só tem chips de texto ("Cartas 5").
+- **Alvo no tabuleiro**: o estado "pode escolher" (contorno e brilho do destaque) e o modo de escolha na barra de ações ("toca num território…" e Cancelar).
+- **Barra de ações com passo e motivo**: o passo da vez ("1.ª recolha") e porque uma ação está desativada ("precisas de 5 cartas").
+- **Modal de escolha**: escolher entre várias opções com estado (manter, valorizar) e um resumo antes de confirmar; o modal do template só tem texto e dois botões.
+- **Grupo de tokens "recursos"**: o vanilla não tem; o Catania define 6 cores `--cat-res-*`.
 
 ## 6. Da mesa desenhada ao jogo
 

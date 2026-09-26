@@ -1,8 +1,11 @@
 /* Tema "Dia" do Catania: design à medida por cima dos tokens (ADR-008).
-   Todas as regras começam por [data-game="catania"]: o tema só mexe na área da mesa. */
+   Todas as regras começam por [data-game="catania"]: o tema só mexe na mesa.
+   Mar claro: o texto flutuante é escuro, com sombra clara em vez de escura. */
 
+[data-game="catania"] .cat { --float-shadow: 0 1px 2px rgb(255 255 255 / .8), 0 0 10px rgb(255 255 255 / .55); }
 [data-game="catania"] .cat-hex-shape { stroke: rgb(43 29 14 / .55); stroke-width: 1.6; }
 [data-game="catania"] .cat-board text { fill: #fffaf0; paint-order: stroke; stroke: rgb(43 29 14 / .5); stroke-width: 2px; }
-[data-game="catania"] .cat-sec,
-[data-game="catania"] .cat-player { box-shadow: 0 6px 18px -10px rgb(43 29 14 / .45); }
-[data-game="catania"] .cat-top { text-shadow: none; }
+[data-game="catania"] .cat-player,
+[data-game="catania"] .cat-me,
+[data-game="catania"] .cat-bar { box-shadow: 0 6px 18px -10px rgb(43 29 14 / .45); }
+[data-game="catania"] .cat-msg b { text-shadow: 0 2px 16px rgb(255 255 255 / .7); }

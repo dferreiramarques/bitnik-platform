@@ -17,7 +17,11 @@
     "--cat-gold": "#8b5e0f",
     "--cat-gold-dark": "#6b4a10",
     "--cat-on-gold": "#fffaf0",
-    "--cat-red": "#b3261e"
+    "--cat-red": "#b3261e",
+    "--game-on-table": "#15232c",
+    "--game-on-table-muted": "rgba(21,35,44,.78)",
+    "--game-glass": "rgba(246,238,219,.8)",
+    "--game-glass-line": "rgba(43,29,14,.22)"
   },
   "css": "theme.css"
 }
