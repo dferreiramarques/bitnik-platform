@@ -95,6 +95,7 @@ No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um; há 
 - Os contentores da UI deixam passar o rato e o toque para o tabuleiro; só os painéis e os botões os apanham. O que está por baixo de um painel não se toca através dele: move-se o tabuleiro para o destapar.
 - Ao mover, fica sempre um pedaço do tabuleiro no ecrã (60 px), para não se perder.
 - No computador largo (≥ 1200 px), os controlos da vista ficam no canto inferior direito do ecrã, ao lado da barra de ações.
+- As disposições (telemóvel ≤ 760 px, horizontal com altura ≤ 500 px, largo ≥ 1200 px) seguem o **tamanho da mesa**, não o do ecrã (container queries): a mesma UI serve o ecrã inteiro, o tutorial e a pré-visualização da consola.
 
 No telemóvel **na horizontal** (844 × 390): linha de cima com voltar, nome do jogo, fichas, guia e língua; jogadores numa coluna à esquerda (176 px); painel do jogo numa coluna compacta à direita, com os botões de zoom por baixo; tabuleiro ao centro (500 × 262); a minha área em baixo à esquerda e a barra de ações em baixo à direita.
 

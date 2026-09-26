@@ -15,6 +15,23 @@ const BRAND_CONTRAST = [['--text', '--bg'], ['--text-muted', '--bg'], ['--text',
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const isHex = (v) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(v).trim());
+/** rgb()/rgba() → { hex, a }; o seletor de cor só mostra hex, a transparência guarda-se à parte. */
+const parseRgb = (v) => {
+  const m = String(v).trim().match(/^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/i);
+  if (!m) return null;
+  const hex = `#${[m[1], m[2], m[3]].map((n) => Math.min(255, +n).toString(16).padStart(2, '0')).join('')}`;
+  const a = m[4] == null ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : +m[4];
+  return { hex, a };
+};
+/** Valor do seletor de cor para um token (hex, ou a parte rgb de um rgba); null se não for cor simples. */
+const swatchOf = (v) => (isHex(v) ? String(v).trim() : parseRgb(v)?.hex ?? null);
+/** Cor escolhida no seletor, mantendo a transparência do valor atual (rgba). */
+const fromSwatch = (hex, current) => {
+  const rgb = parseRgb(current);
+  if (!rgb || rgb.a >= 1) return hex;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r},${g},${b},${+rgb.a.toFixed(3)})`;
+};
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const empty = () => ({ brand: { tokens: {} }, games: {} });
 
@@ -104,7 +121,7 @@ function row(k, type, lbl, value, def) {
   const input = ['background', 'image'].includes(type)
     ? `<textarea id="${id}" data-tok="${esc(k)}" data-type="${type}" rows="2" placeholder="${esc(String(def).slice(0, 120))}">${esc(value)}</textarea>
        <label class="btn btn-ghost ap-file">${u('apUpload')}<input type="file" accept="image/*" data-upload="${esc(k)}" data-type="${type}" hidden></label>`
-    : `${type === 'color' ? `<input type="color" class="ap-swatch" data-swatch="${esc(k)}" value="${isHex(shown) ? esc(shown) : '#000000'}" ${isHex(shown) ? '' : 'disabled'} aria-label="${esc(lbl)}">` : ''}
+    : `${type === 'color' ? `<input type="color" class="ap-swatch" data-swatch="${esc(k)}" value="${esc(swatchOf(shown) || '#000000')}" ${swatchOf(shown) ? '' : 'disabled'} aria-label="${esc(lbl)}">` : ''}
        <input id="${id}" data-tok="${esc(k)}" data-type="${type}" value="${esc(value)}" placeholder="${esc(def)}">`;
   return `<div class="ap-row${value ? ' set' : ''}">
     <label for="${id}">${esc(lbl)}<small>${esc(k)}${def && !['background', 'image'].includes(type) ? ` · ${esc(u('apDefault', { v: def }))}` : ''}</small></label>
@@ -183,6 +200,7 @@ async function mountPreview(host) {
     t: (key, params) => translate(pkg, lang(), key, params),
     seatName: (i) => names[i] ?? `#${i + 1}`,
     toast: ctx.toast,
+    messages: false, // sem "É a tua vez" por cima da pré-visualização
     move: (mv) => { const r = engine.applyMove(pkg, match, 0, mv); if (r.ok) { match = r.match; push(); } return r.ok; },
   });
   st.preview = { gameId: g.id, el, mod };
@@ -232,12 +250,12 @@ export function after(root) {
     const sw = e.target.dataset.swatch;
     if (!tok && !sw) return;
     const k = tok || sw;
-    const v = e.target.value.trim();
-    setToken(k, v);
     const text = root.querySelector(`[data-tok="${CSS.escape(k)}"]`);
+    const v = sw ? fromSwatch(e.target.value.trim(), text?.value || text?.placeholder) : e.target.value.trim();
+    setToken(k, v);
     if (sw && text) text.value = v;
     const swatch = root.querySelector(`[data-swatch="${CSS.escape(k)}"]`);
-    if (tok && swatch) { swatch.disabled = !isHex(v || text?.placeholder); if (isHex(v)) swatch.value = v; }
+    if (tok && swatch) { const c = swatchOf(v || text?.placeholder); swatch.disabled = !c; if (c) swatch.value = c; }
     const reset = root.querySelector(`[data-reset="${CSS.escape(k)}"]`);
     if (reset) reset.hidden = !v;
     e.target.closest('.ap-row')?.classList.toggle('set', !!v);
