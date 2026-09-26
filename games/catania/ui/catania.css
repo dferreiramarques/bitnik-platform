@@ -206,6 +206,13 @@
 .tut-hi { outline: 3px solid var(--cat-gold); outline-offset: 3px; border-radius: 10px; animation: cat-pulse 1.6s ease-in-out infinite; }
 @keyframes cat-pulse { 50% { outline-color: transparent; } }
 
+/* Ecrã largo: os controlos da vista vão para o canto inferior direito do ecrã,
+   ao lado da barra de ações. Abaixo de 1200 px ficariam por cima da barra e
+   continuam no canto do tabuleiro. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  .cat-zoombar { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tut-hi { animation: none; }
   .cat-msg.on { animation: cat-fade 1.8s linear forwards; }
