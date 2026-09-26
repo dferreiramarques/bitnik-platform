@@ -32,7 +32,7 @@ O jogo acaba quando o baralho tem menos peças do que jogadores (ou quando já n
 
 ## Pontuação (só no fim)
 
-- **Salva-vidas** — soma os banhistas do seu troço da linha ou coluna (as rochas cortam), com os multiplicadores das pranchas.
+- **Salva-vidas** — soma os banhistas do seu troço da linha ou coluna (um buraco ou uma rocha acabam o troço), com os multiplicadores das pranchas desse troço.
 - **Fichas por usar** — +2 pontos cada.
 - **Objetivos** — soma dos pontos das cartas conquistadas.
 
@@ -45,8 +45,8 @@ Ganha quem tiver mais pontos; um empate partilha a vitória.
 | Quadrado 3×3 (9 peças) | 2 |
 | Quadrado 5×5 (25 peças) | 2 |
 | Linha de 5 peças | 4 |
-| Coluna de 5 peças | 4 |
+| Coluna de 4 peças | 4 |
 | 2 pranchas adjacentes | 4 |
 | Linha de 7 peças | 6 |
-| Coluna de 7 peças | 6 |
+| Coluna de 6 peças | 6 |
 | Excursão (2×2 peças com 3 banhistas cada) | 6 |

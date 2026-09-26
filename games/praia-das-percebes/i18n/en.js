@@ -4,7 +4,7 @@ export default {
 
   'peca.normal': 'bathers', 'peca.prancha': 'surfboard', 'peca.rocha': 'rock', 'peca.areia': 'sand',
   'obj.quadrado3': '3×3 square', 'obj.quadrado5': '5×5 square', 'obj.linha5': 'Row of 5', 'obj.linha7': 'Row of 7',
-  'obj.coluna5': 'Column of 5', 'obj.coluna7': 'Column of 7', 'obj.pranchas': '2 adjacent surfboards', 'obj.excursao': 'Excursion (2×2 with 3 bathers)',
+  'obj.coluna4': 'Column of 4', 'obj.coluna6': 'Column of 6', 'obj.pranchas': '2 adjacent surfboards', 'obj.excursao': 'Excursion (2×2 with 3 bathers)',
 
   'move.COLOCAR': 'Place the tile',
   'move.SALVA_VIDAS': 'Place a lifeguard',

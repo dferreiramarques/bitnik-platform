@@ -4,7 +4,7 @@ export default {
 
   'peca.normal': 'banhistas', 'peca.prancha': 'prancha de surf', 'peca.rocha': 'rocha', 'peca.areia': 'areia',
   'obj.quadrado3': 'Quadrado 3×3', 'obj.quadrado5': 'Quadrado 5×5', 'obj.linha5': 'Linha de 5', 'obj.linha7': 'Linha de 7',
-  'obj.coluna5': 'Coluna de 5', 'obj.coluna7': 'Coluna de 7', 'obj.pranchas': '2 pranchas adjacentes', 'obj.excursao': 'Excursão (2×2 com 3 banhistas)',
+  'obj.coluna4': 'Coluna de 4', 'obj.coluna6': 'Coluna de 6', 'obj.pranchas': '2 pranchas adjacentes', 'obj.excursao': 'Excursão (2×2 com 3 banhistas)',
 
   'move.COLOCAR': 'Colocar a peça',
   'move.SALVA_VIDAS': 'Pôr salva-vidas',

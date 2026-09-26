@@ -22,7 +22,7 @@ export function baralho(rng, n) {
 
 export const OBJETIVOS = [
   { id: 'quadrado3', pts: 2 }, { id: 'linha5', pts: 4 }, { id: 'linha7', pts: 6 }, { id: 'quadrado5', pts: 2 },
-  { id: 'coluna5', pts: 4 }, { id: 'coluna7', pts: 6 }, { id: 'pranchas', pts: 4 }, { id: 'excursao', pts: 6 },
+  { id: 'coluna4', pts: 4 }, { id: 'coluna6', pts: 6 }, { id: 'pranchas', pts: 4 }, { id: 'excursao', pts: 6 },
 ];
 
 // ─── Tabuleiro ("r,c" → peça) ───────────────────────────────
@@ -49,35 +49,18 @@ export function posicoes(t) {
     .sort((a, b) => a.r - b.r || a.c - b.c);
 }
 
-const linhaDe = (t, r, c, dir) => (dir === 'h'
-  ? celulas(t).filter((p) => p.r === r).sort((a, b) => a.c - b.c)
-  : celulas(t).filter((p) => p.c === c).sort((a, b) => a.r - b.r));
-
-/** Banhistas vigiados por um salva-vidas: o seu troço da linha (as rochas cortam), com as pranchas a multiplicar ×2. */
+/**
+ * Banhistas vigiados por um salva-vidas: o seu troço da linha ou coluna, que acaba
+ * num buraco ou numa rocha, com cada prancha do troço a multiplicar ×2.
+ */
 export function banhistasVigiados(t, r, c, dir) {
-  const linha = linhaDe(t, r, c, dir);
-  const k = dir === 'h' ? 'c' : 'r';
   const at = (pos) => (dir === 'h' ? get(t, r, pos) : get(t, pos, c));
-  const continua = linha.every((p, i) => i === 0 || p[k] - linha[i - 1][k] === 1);
   const pos = dir === 'h' ? c : r;
-  if (!continua) {
-    // Linha com buracos: só o troço à volta do salva-vidas, sem multiplicar (como no jogo antigo).
-    let total = 0;
-    for (let i = pos - 1; at(i) && at(i).tipo !== 'rocha'; i--) total += at(i).banhistas;
-    if (at(pos) && at(pos).tipo !== 'rocha') total += at(pos).banhistas;
-    for (let i = pos + 1; at(i) && at(i).tipo !== 'rocha'; i++) total += at(i).banhistas;
-    return total;
-  }
-  let ini = 0;
-  let fim = linha.length - 1;
-  for (let i = 0; i < linha.length; i++) {
-    const p = at(linha[i][k]);
-    if (p?.tipo === 'rocha' && linha[i][k] < pos) ini = i + 1;
-    if (p?.tipo === 'rocha' && linha[i][k] > pos) { fim = i - 1; break; }
-  }
-  const troco = linha.slice(ini, fim + 1).map((x) => at(x[k]));
+  const troco = [];
+  for (let i = pos; at(i) && at(i).tipo !== 'rocha'; i--) troco.push(at(i));
+  for (let i = pos + 1; at(i) && at(i).tipo !== 'rocha'; i++) troco.push(at(i));
   const mult = troco.reduce((m, p) => (p.tipo === 'prancha' ? m * 2 : m), 1);
-  return troco.reduce((s, p) => s + p.banhistas, 0) * mult;
+  return troco.reduce((soma, p) => soma + p.banhistas, 0) * mult;
 }
 
 // ─── Objetivos ───────────────────────────────────────────────
@@ -107,8 +90,10 @@ export function objetivoFeito(id, t, r, c) {
     case 'quadrado5': return temQuadrado(t, 5);
     case 'linha5': return temLinha(t, r, 5, 'h');
     case 'linha7': return temLinha(t, r, 7, 'h');
-    case 'coluna5': return temLinha(t, c, 5, 'v');
-    case 'coluna7': return temLinha(t, c, 7, 'v');
+    // 2.0.0: colunas de 4 e 6 (as linhas ficam 5 e 7). Com comprimentos ímpares e pares,
+    // os objetivos deixam de calhar sempre ao mesmo jogador (ver CHANGELOG).
+    case 'coluna4': return temLinha(t, c, 4, 'v');
+    case 'coluna6': return temLinha(t, c, 6, 'v');
     case 'pranchas': return temPranchas(t);
     case 'excursao': return temExcursao(t);
     default: return false;

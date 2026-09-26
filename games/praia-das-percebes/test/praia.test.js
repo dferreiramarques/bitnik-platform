@@ -96,12 +96,15 @@ test('Pontuação do salva-vidas: troço da linha, as rochas cortam, as pranchas
   assert.equal(banhistasVigiados(t, 0, 3, 'h'), (3 + 1 + 2) * 2, 'depois da rocha, com 1 prancha: ×2');
   assert.equal(banhistasVigiados(praiaDe(['S1S']), 0, 1, 'h'), (1 + 1 + 1) * 4, 'duas pranchas: ×4');
   assert.equal(banhistasVigiados(praiaDe(['1A2']), 0, 0, 'h'), 3, 'a areia vale 0');
+  assert.equal(banhistasVigiados(praiaDe(['2S.33']), 0, 0, 'h'), (2 + 1) * 2, 'um buraco acaba o troço, e a prancha multiplica');
 });
 
-test('Objetivos: linha/coluna de 5 e 7, quadrados 3×3 e 5×5, 2 pranchas, excursão', () => {
+test('Objetivos: linha de 5 e 7, coluna de 4 e 6, quadrados 3×3 e 5×5, 2 pranchas, excursão', () => {
   assert.ok(objetivoFeito('linha5', praiaDe(['11111']), 0, 4));
   assert.ok(!objetivoFeito('linha5', praiaDe(['1111.1']), 0, 5));
-  assert.ok(objetivoFeito('coluna5', praiaDe(['1', '1', '1', '1', '1']), 4, 0));
+  assert.ok(objetivoFeito('coluna4', praiaDe(['1', '1', '1', '1']), 3, 0));
+  assert.ok(!objetivoFeito('coluna4', praiaDe(['1', '1', '1']), 2, 0));
+  assert.ok(objetivoFeito('coluna6', praiaDe(['1', '1', '1', '1', '1', '1']), 5, 0));
   assert.ok(objetivoFeito('quadrado3', praiaDe(['111', '111', '111']), 2, 2));
   assert.ok(objetivoFeito('pranchas', praiaDe(['SS']), 0, 1));
   assert.ok(objetivoFeito('excursao', praiaDe(['33', '33']), 1, 1));
