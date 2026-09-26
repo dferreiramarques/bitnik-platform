@@ -57,6 +57,15 @@ button { font: inherit; }
   background: var(--ui-card); color: var(--ui-text); font: inherit;
 }
 .bar-lang { min-width: 52px; }
+/* Telemóvel: o nome encolhe para caber tudo numa linha; os botões mantêm os 44 px de toque. */
+@media (max-width: 760px) {
+  .bar { gap: 6px; padding-left: 12px; padding-right: 12px; }
+  .bar .btn { flex-shrink: 0; min-width: 44px; padding: 8px 10px; }
+  .bar-brand, .bar-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-brand { font-size: 1.1rem; }
+  .bar-name { flex: 1 1 0; min-width: 4rem; }
+  .bar-name input { width: 100%; min-height: 44px; }
+}
 
 /* ── Lobby ─────────────────────────────────────────────── */
 .lobby { display: grid; gap: 32px; padding-top: 28px; }
