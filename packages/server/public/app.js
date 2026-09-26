@@ -9,7 +9,7 @@ import { applyGameSkin, applyOverrides } from '/appearance.js';
 const UI = {
   pt: {
     connecting: 'A ligar…', open: '', closed: 'Sem ligação, a tentar de novo…',
-    yourName: 'O teu nome', lang: 'EN', prototype: 'protótipo {v}',
+    yourName: 'O teu nome', lang: 'EN', console: 'Consola', prototype: 'protótipo {v}',
     playBots: 'Jogar contra bots:', players: '{n} jogadores',
     publicTables: 'Mesas públicas', myTables: 'As minhas mesas',
     noMine: 'Ainda não tens mesas. Começa um jogo contra bots.',
@@ -33,7 +33,7 @@ const UI = {
   },
   en: {
     connecting: 'Connecting…', open: '', closed: 'Offline, retrying…',
-    yourName: 'Your name', lang: 'PT', prototype: 'prototype {v}',
+    yourName: 'Your name', lang: 'PT', console: 'Console', prototype: 'prototype {v}',
     playBots: 'Play against bots:', players: '{n} players',
     publicTables: 'Public tables', myTables: 'My tables',
     noMine: 'No tables yet. Start a game against bots.',
@@ -428,6 +428,9 @@ function render() {
   const inRoom = !!routeRoom();
   $('#back').hidden = !inRoom && !tut;
   $('#lang').textContent = u('lang');
+  // Só no Studio: atalho para a consola (nos runtimes dos clientes não aparece).
+  $('#console').hidden = !W()?.studio;
+  $('#console').textContent = u('console');
   $('#nameLabel').textContent = u('yourName');
   $('#name').placeholder = u('yourName');
   document.documentElement.lang = app.lang;
