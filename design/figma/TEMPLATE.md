@@ -105,7 +105,7 @@ Pontos por resolver antes de a UI genérica usar este desenho (medidos no canvas
 - **Alvos de toque.** Os componentes do jogador têm 18–20 px, os botões de vidro 28–32 px e a barra de ações 32 px (40 no telemóvel). O mínimo é 44 px; nos componentes, a área de toque pode crescer sem mudar o desenho.
 - **Destaque sobre o realce.** `--game-accent` sobre `--game-panel-2` dá 4,26:1; o botão de informação já usa `--game-accent-strong` (7,6:1).
 - **Figma.** O gradiente da mesa, os valores `rgba()`, as letras (pilha CSS) e o raio (`"14px"`) não se ligam diretamente a Variables do Figma. O canvas do Claude Design não tem este problema; se o template for para o Figma, o export (`tools/figma.js`) tem de mandar cor sólida, nome da família e número.
-- **Plataforma.** A mesa em ecrã inteiro, a mensagem da mesa, os componentes como alvo e o relatório ainda não existem na UI genérica nem no contrato (ver ADR-014).
+- **Plataforma.** A mesa em ecrã inteiro, a mensagem da mesa, os componentes como alvo, a entrada da marca (Início ou Marca-produto), o "Copiar convite" de qualquer mesa e os pontos por origem no fim e no relatório ainda não existem na UI genérica nem no contrato (ver ADR-014).
 
 ## 6. Da mesa desenhada ao jogo
 

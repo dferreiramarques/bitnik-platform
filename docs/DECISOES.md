@@ -332,21 +332,36 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 ### Contexto
 
-O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template vanilla", ver `design/figma/TEMPLATE.md`). O desenho afasta-se da ADR-006 num ponto: a plataforma deixa de desenhar uma moldura (barra, faixa de avisos, título e botões) à volta da área da mesa. Nos jogos de tabuleiro online a mesa é o ecrã, sobretudo no telemóvel, e a moldura gastava cerca de um quarto da altura.
+O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template vanilla"; guião em `design/figma/TEMPLATE.md`). O desenho afasta-se da ADR-006 num ponto: a plataforma deixa de desenhar uma moldura (barra, faixa de avisos, título e botões) à volta da área da mesa. Nos jogos de tabuleiro online a mesa é o ecrã, sobretudo no telemóvel, e a moldura gastava cerca de um quarto da altura. O mesmo fundo passa para os ecrãs fora da mesa, que também foram redesenhados.
 
 ### Decisão
 
-- A mesa (`--table-bg`) ocupa o ecrã inteiro. Marca, nome do jogo, guia, voltar ao lobby e língua ficam numa linha discreta por cima da mesa.
+**Na mesa**
+
+- A mesa (`--table-bg` com `--table-dots` por cima) ocupa o ecrã inteiro. Marca, nome do jogo, tamanho da mesa, guia, voltar ao lobby e língua ficam numa linha discreta no topo.
 - Jogadores, fichas da ronda, a minha área, barra de ações, registo e controlos da vista são painéis de vidro por cima da mesa, em posições fixas (secção 3 do TEMPLATE). O tabuleiro é uma mesa infinita com mover e zoom.
+- No telemóvel: os dois primeiros jogadores e um "+N ›" para os restantes; o registo dobra-se dentro de "A minha área"; a barra de ações passa a uma grelha 2:1:1.
 - Os componentes de cada jogador (cartas, tokens, aldeias…) são botões e servem de alvo quando uma ação escolhe um jogador.
-- A **mensagem da mesa** ("É a tua vez", eventos, avisos, fim) é da plataforma: o jogo só manda o texto e a variante.
-- Fora da mesa, os ecrãs (Início com vários jogos, Marca-produto com um só jogo, Lobby, Entrada, Fim e Relatório) seguem o mesmo fundo e o mesmo vidro.
-- Os tokens novos (vidro, texto sobre a mesa, destaque forte, desativado) estão no `design/vanilla/skin.json`.
+- A **mensagem da mesa** ("É a tua vez", eventos, avisos, fim) é da plataforma: aparece no meio do tabuleiro, uma de cada vez, sem bloquear cliques. O jogo só manda o texto e a variante.
+
+**Fora da mesa**
+
+- Os ecrãs usam o mesmo fundo e o mesmo vidro: Lobby do jogo (a tua mesa contra bots, mesas com outras pessoas, mesas de aprovação), Entrada na mesa (lugares, Começar, Copiar convite), Fim do jogo (classificação com a origem dos pontos; empate partilha a vitória) e Relatório.
+- A entrada da marca tem duas formas, conforme o deploy:
+  - **Início**, para uma marca com vários jogos: nome do jogador e uma grelha de jogos, cada um leva ao seu lobby.
+  - **Marca-produto**, para um deploy de um só jogo: "[MARCA] apresenta [jogo]", nome do jogador, a tua mesa e as mesas com outras pessoas no mesmo ecrã, sem passar por um lobby.
+- O nome do jogador pede-se logo na entrada, num campo sólido e claro (`--game-panel`, texto `--game-text`, contorno `--game-accent` com halo), igual no computador e no telemóvel. É a única entrada de texto sobre a mesa e não usa vidro, para se destacar e ser legível.
+
+**Tokens e fronteiras**
+
+- Os tokens novos (pontos da mesa, vidro, texto sobre a mesa, destaque forte, desativado) estão no `design/vanilla/skin.json`.
 - Mantém-se da ADR-006: a UI de um jogo vive no pacote, com `mount(el, ctx)` e `update(msg)`; lobby, sentar, começar, identidade e avisos são da plataforma.
 
 ### Consequências
 
 - A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro.
+- A marca de um deploy passa a dizer se é de vários jogos (Início) ou de um só (Marca-produto).
 - Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
-- O contrato ganha dois acrescentos opcionais, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos) e o relatório do fim (pontos por origem e momentos decisivos).
-- Antes de implementar, resolver os pendentes do TEMPLATE (secção 5): contraste do vidro e alvos de toque de 44 px.
+- "Copiar convite" na Entrada é novo: hoje só as mesas de aprovação, criadas na consola, têm convite.
+- O contrato ganha dois acrescentos opcionais, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos) e pontos por origem no fim, com momentos decisivos para o relatório.
+- Antes de implementar, resolver os pendentes da secção 5 do TEMPLATE: contraste do vidro e alvos de toque de 44 px. Se o vidro passar a escuro, mudam os valores de `--game-glass` e `--game-glass-line`, não os nomes.
