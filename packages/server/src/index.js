@@ -753,6 +753,14 @@ export function createPlatform({
   // ─── Protótipos da Forge (etapa 5) ──────────────────────────
   // Cada instalação fica numa pasta própria (versão + marca de tempo): o import
   // de ESM fica em cache por caminho, por isso uma pasta nova carrega sempre o código novo.
+  // A pasta dos protótipos é um "projeto" ESM com o motor ligado (junction), como na
+  // verificação. Refaz-se sempre antes de carregar: a ligação pode ter desaparecido.
+  async function prepararPrototipos() {
+    await mkdir(join(prototypeDir, 'node_modules', '@bitnik'), { recursive: true });
+    await writeFile(join(prototypeDir, 'package.json'), JSON.stringify({ name: 'bitnik-prototipos', private: true, type: 'module' }));
+    await symlink(ENGINE_ROOT, join(prototypeDir, 'node_modules', '@bitnik', 'engine'), 'junction').catch((e) => { if (e.code !== 'EEXIST') throw e; });
+  }
+
   async function loadPrototype(slug, proto, { latest = true } = {}) {
     const file = join(prototypeDir, slug, proto.folder, 'index.js');
     const game = (await import(pathToFileURL(file).href)).default;
@@ -775,10 +783,7 @@ export function createPlatform({
     const b = p.build;
     if (!b?.report?.ok) throw new Error('o pacote ainda não passou a verificação');
     if (b.versaoRegras !== p.version) throw new Error(`o pacote verificado é das regras ${b.versaoRegras}; verifica outra vez com as regras ${p.version}`);
-    // A pasta dos protótipos é um "projeto" ESM com o motor ligado (junction), como na verificação.
-    await mkdir(join(prototypeDir, 'node_modules', '@bitnik'), { recursive: true });
-    await writeFile(join(prototypeDir, 'package.json'), JSON.stringify({ name: 'bitnik-prototipos', private: true, type: 'module' }));
-    await symlink(ENGINE_ROOT, join(prototypeDir, 'node_modules', '@bitnik', 'engine'), 'junction').catch((e) => { if (e.code !== 'EEXIST') throw e; });
+    await prepararPrototipos();
     const folder = `${p.version}-${now().toString(36)}`;
     const dir = join(prototypeDir, slug, folder);
     for (const [rel, content] of Object.entries(b.files)) {
@@ -1047,6 +1052,9 @@ export function createPlatform({
       forge.set(slug, { ...normalizeProject(p), createdAt: p.createdAt ?? now(), updatedAt: p.updatedAt ?? now() });
     }
     // Protótipos instalados antes do restart voltam a entrar (antes das mesas, que precisam do jogo).
+    if (prototypeDir && [...forge.values()].some((p) => p.prototypes.length)) {
+      await prepararPrototipos().catch((e) => logger.warn(`[load] pasta dos protótipos: ${e.message}`));
+    }
     for (const [slug, p] of forge) {
       for (const [i, x] of p.prototypes.entries()) {
         try { await loadPrototype(slug, x, { latest: i === p.prototypes.length - 1 }); } catch (e) { logger.warn(`[load] protótipo ${slug} ${x.version}: ${e.message}`); }
