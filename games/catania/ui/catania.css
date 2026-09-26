@@ -79,11 +79,17 @@
 .cat-disc.red { color: var(--cat-red); border-color: var(--cat-red); }
 .cat-disc.sm { width: 20px; height: 20px; font-size: 10px; }
 
-/* ── Tabuleiro com zoom ── */
-.cat-board { position: relative; min-height: 0; }
-.cat-view { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: grab; }
+/* ── Tabuleiro com zoom, em camadas (ADR-014) ──
+   0: o tabuleiro (.cat-view) ocupa o ecrã inteiro, por cima do fundo da mesa;
+   1: a UI por cima. Os contentores da UI deixam passar o rato e o toque para o
+   tabuleiro; só os painéis e os botões os apanham. A .cat-board é a zona livre
+   onde a ilha encaixa com zoom 1 (o JS mede-a). */
+.cat-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
 .cat-view:active { cursor: grabbing; }
-.cat-zoom { position: absolute; inset: 0; transform-origin: 0 0; }
+.cat-zoom { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
+.cat-layout > :not(.cat-view, .cat-ovl) { z-index: 1; pointer-events: none; }
+.cat-layout :is(.cat-player, .cat-more, .cat-chip, .cat-me, .cat-bar, .cat-zoombar, .cat-log-head) { pointer-events: auto; }
+.cat-board { position: relative; min-height: 0; }
 .cat-zoom svg { display: block; width: 100%; height: 100%; }
 .cat-hex { cursor: default; }
 .cat-hex.can { cursor: pointer; }
@@ -250,7 +256,7 @@
     padding: 8px 10px; border-radius: 10px; text-shadow: none; color: var(--cat-text);
     background: var(--g); border: 1px solid var(--gl); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
-  .show-log .cat-log { display: block; }
+  .show-log .cat-log { display: block; pointer-events: auto; }
   .cat-me { padding: 6px 8px; gap: 8px; justify-content: center; }
   .cat-me-grp:first-child .cat-lbl { visibility: hidden; }
   .cat-cards { gap: 4px; }
@@ -306,7 +312,7 @@
     padding: 8px 10px; border-radius: 10px; text-shadow: none; color: var(--cat-text);
     background: var(--g); border: 1px solid var(--gl); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
-  .show-log .cat-log { display: block; }
+  .show-log .cat-log { display: block; pointer-events: auto; }
   .cat-logbtn { display: inline-flex; margin-left: auto; background: none; border: 0; padding: 0; color: var(--cat-muted); font-weight: 700; min-height: 24px; }
   .cat-me { padding: 6px 8px; gap: 8px; }
   .cat-me-grp:first-child .cat-lbl { visibility: hidden; }

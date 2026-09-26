@@ -328,7 +328,7 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 ## ADR-014: A mesa ocupa o ecrã inteiro; painéis de vidro por cima
 
-**Estado:** aceite no desenho (2026-09-26); por implementar na UI genérica
+**Estado:** aceite no desenho (2026-09-26); implementada no Catania; por implementar na UI genérica
 
 ### Contexto
 
@@ -339,7 +339,7 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 **Na mesa**
 
 - A mesa (`--table-bg` com `--table-dots` por cima) ocupa o ecrã inteiro. Marca, nome do jogo, tamanho da mesa, guia, voltar ao lobby e língua ficam numa linha discreta no topo.
-- Jogadores, fichas da ronda, a minha área, barra de ações, registo e controlos da vista são painéis de vidro por cima da mesa, em posições fixas (secção 3 do TEMPLATE). O tabuleiro é uma mesa infinita com mover e zoom.
+- Jogadores, fichas da ronda, a minha área, barra de ações, registo e controlos da vista são painéis de vidro por cima da mesa, em posições fixas (secção 3 do TEMPLATE). O tabuleiro é uma mesa infinita com mover e zoom: é uma camada em ecrã inteiro entre o fundo e a UI; com "ver tudo" encaixa na zona livre entre os painéis e, ao aproximar ou mover, passa por baixo deles. Os contentores da UI deixam passar o rato e o toque para o tabuleiro; só os painéis os apanham.
 - No telemóvel: os dois primeiros jogadores e um "+N ›" para os restantes; o registo dobra-se dentro de "A minha área"; a barra de ações passa a uma grelha 2:1:1.
 - O tabuleiro fica centrado no ecrã; no telemóvel aproxima-se com dois dedos (e botões +, − e ver tudo). Na horizontal, jogadores à esquerda, painel do jogo à direita e tabuleiro ao centro.
 - O registo e o **painel do jogo** (informação partilhada: pilhas, mercado, objetivos) flutuam sobre a mesa, sem fundo, com sombra no texto; o painel fica à direita, centrado com o tabuleiro.
