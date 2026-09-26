@@ -145,7 +145,7 @@ Alternativas consideradas: só convenção, sem função (não resolve frases qu
 
 ## ADR-006: A UI de um jogo vive no pacote e ocupa a área da mesa
 
-**Estado:** aceite (2026-09-24), a implementar na Fase 0b
+**Estado:** aceite (2026-09-24), a implementar na Fase 0b. A moldura à volta da mesa foi substituída pela ADR-014.
 
 ### Contexto
 
@@ -324,3 +324,29 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 - O código gerado corre dentro do servidor do Studio. Antes de entrar é verificado num processo isolado (sem rede, com limite de tempo) e só o designer instala. Um erro nas regras é recusado como `RULE_ERROR`; um ciclo infinito ainda pode parar o Studio até reiniciar (risco aceite num estúdio interno). Os runtimes dos clientes só recebem pacotes publicados.
 
+---
+
+## ADR-014: A mesa ocupa o ecrã inteiro; painéis de vidro por cima
+
+**Estado:** aceite no desenho (2026-09-26); por implementar na UI genérica
+
+### Contexto
+
+O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template vanilla", ver `design/figma/TEMPLATE.md`). O desenho afasta-se da ADR-006 num ponto: a plataforma deixa de desenhar uma moldura (barra, faixa de avisos, título e botões) à volta da área da mesa. Nos jogos de tabuleiro online a mesa é o ecrã, sobretudo no telemóvel, e a moldura gastava cerca de um quarto da altura.
+
+### Decisão
+
+- A mesa (`--table-bg`) ocupa o ecrã inteiro. Marca, nome do jogo, guia, voltar ao lobby e língua ficam numa linha discreta por cima da mesa.
+- Jogadores, fichas da ronda, a minha área, barra de ações, registo e controlos da vista são painéis de vidro por cima da mesa, em posições fixas (secção 3 do TEMPLATE). O tabuleiro é uma mesa infinita com mover e zoom.
+- Os componentes de cada jogador (cartas, tokens, aldeias…) são botões e servem de alvo quando uma ação escolhe um jogador.
+- A **mensagem da mesa** ("É a tua vez", eventos, avisos, fim) é da plataforma: o jogo só manda o texto e a variante.
+- Fora da mesa, os ecrãs (Início com vários jogos, Marca-produto com um só jogo, Lobby, Entrada, Fim e Relatório) seguem o mesmo fundo e o mesmo vidro.
+- Os tokens novos (vidro, texto sobre a mesa, destaque forte, desativado) estão no `design/vanilla/skin.json`.
+- Mantém-se da ADR-006: a UI de um jogo vive no pacote, com `mount(el, ctx)` e `update(msg)`; lobby, sentar, começar, identidade e avisos são da plataforma.
+
+### Consequências
+
+- A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro.
+- Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
+- O contrato ganha dois acrescentos opcionais, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos) e o relatório do fim (pontos por origem e momentos decisivos).
+- Antes de implementar, resolver os pendentes do TEMPLATE (secção 5): contraste do vidro, alvos de toque de 44 px e cor do texto do campo do nome.

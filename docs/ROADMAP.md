@@ -11,10 +11,10 @@ Atualizado a 2026-09-26.
 | Fase | Estado | Em poucas palavras |
 |---|---|---|
 | 0 | ✔ | Motor, servidor, SDK de cliente, Catania, Studio e runtime limpo |
-| 0b | ◐ | UI própria do Catania (falta montar o template no Figma) |
+| 0b | ✔ | UI própria do Catania e template vanilla |
 | 0c | ✔ | Consola em `/console` |
 | 1 | ◐ | Forge na consola do Studio (falta a geração pela API, opcional) |
-| 2 | ◐ | Migração dos jogos antigos (4 migrados, UIs próprias por fazer) |
+| 2 | ◐ | Migração dos jogos antigos (4 migrados; UI genérica com o novo template e UIs próprias por fazer) |
 
 ## Fase 0 — Base ✔
 
@@ -27,7 +27,7 @@ Evolução do Catania nesta base (ver `games/catania/CHANGELOG.md`):
 - **3.0.0**: regra de "ronda completa" no fim do jogo.
 - **4.0.0**: regra de abertura (no 1.º turno, a 2.ª recolha do 1.º jogador é de 1 carta), que tira a vantagem do 1.º lugar a 2, 3 e 4 jogadores.
 
-## Fase 0b — UI própria do Catania ◐
+## Fase 0b — UI própria do Catania e template ✔
 
 Por etapas:
 
@@ -35,7 +35,7 @@ Por etapas:
 2. ✔ Tabuleiro do Catania.
 3. ✔ Tutorial com o motor verdadeiro e cenários no pacote.
 4. ✔ "Aparência" na consola (tokens, temas, pré-visualização).
-5. ◐ Template vanilla no Figma: preparação feita ✔ (`design/vanilla/skin.json`, `npm run figma`, `design/figma/TEMPLATE.md`); ☐ falta montar o ficheiro no Figma.
+5. ✔ Template vanilla: preparação (`design/vanilla/skin.json`, `npm run figma`) e desenho montado no Claude Design, no canvas "Bitnik — Template vanilla" (<https://claude.ai/artifact/9yZPAYkg1bMhpgzWKrLgpX>): tokens, componentes, mesa no computador e no telemóvel, Início, Marca-produto, Lobby, Entrada, Fim e Relatório. Guião em `design/figma/TEMPLATE.md`; a mesa em ecrã inteiro ficou na ADR-014.
 6. ✔ Service worker (PWA).
 
 ## Fase 0c — Consola ✔
@@ -76,6 +76,7 @@ Migração direta do código antigo, um jogo de cada vez.
 
 Por fazer:
 
+- ☐ UI genérica com o desenho do template (ADR-014): antes, resolver os pendentes da secção 5 do `design/figma/TEMPLATE.md` (contraste do vidro, alvos de toque, campo do nome) e acrescentar ao `CONTRATO.md` as mensagens da mesa e o relatório do fim.
 - ☐ UIs próprias de cada jogo (hoje todos usam a UI genérica de protótipo).
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.

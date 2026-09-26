@@ -13,6 +13,110 @@
             "mode": "default"
           }
         }
+      },
+      "table-dots": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.14)",
+        "$description": "Pontos da mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--table-dots",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.3)",
+        "$description": "Vidro sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass-line": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.35)",
+        "$description": "Contorno do vidro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass-line",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass-blur": {
+        "$type": "dimension",
+        "$value": "8px",
+        "$description": "Desfoque do vidro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass-blur",
+            "type": "size",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Texto sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-muted": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.75)",
+        "$description": "Texto secundário sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-muted",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-accent": {
+        "$type": "color",
+        "$value": "#ffd9c2",
+        "$description": "Destaque sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-accent",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-warn": {
+        "$type": "color",
+        "$value": "#ffb38f",
+        "$description": "Aviso sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-warn",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
       }
     },
     "base": {
@@ -114,6 +218,58 @@
         "$extensions": {
           "bitnik": {
             "token": "--game-danger",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-accent-strong": {
+        "$type": "color",
+        "$value": "#8f3417",
+        "$description": "Destaque forte (texto, hover)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-accent-strong",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-disabled-bg": {
+        "$type": "color",
+        "$value": "#f6eedf",
+        "$description": "Desativado (fundo)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-disabled-bg",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-disabled-line": {
+        "$type": "color",
+        "$value": "#e6d7bb",
+        "$description": "Desativado (contorno)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-disabled-line",
+            "type": "color",
+            "collection": "vanilla",
+            "mode": "default"
+          }
+        }
+      },
+      "game-disabled-text": {
+        "$type": "color",
+        "$value": "#8a7a6a",
+        "$description": "Desativado (texto)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-disabled-text",
             "type": "color",
             "collection": "vanilla",
             "mode": "default"

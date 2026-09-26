@@ -32,7 +32,7 @@ tools/
   figma.js    tokens para as Variables do Figma
 design/
   vanilla/    skin neutra de referência para jogos novos
-  figma/      tokens do Figma e o guião do template
+  figma/      tokens do Figma e o guião do template (TEMPLATE.md)
 ```
 
 Jogos instalados no Studio:
