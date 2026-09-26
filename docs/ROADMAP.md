@@ -76,7 +76,8 @@ Migração direta do código antigo, um jogo de cada vez.
 
 Por fazer:
 
-- ☐ UI genérica com o desenho do template (ADR-014): antes, resolver os pendentes da secção 5 do `design/figma/TEMPLATE.md` (contraste do vidro, alvos de toque) e acrescentar ao `CONTRATO.md` as mensagens da mesa e o relatório do fim.
+- ✔ Teste de encaixe: o Catania montado no template (computador, telemóvel e horizontal), no canvas; as peças que faltam estão na secção 5 do `design/figma/TEMPLATE.md`.
+- ☐ UI genérica com o desenho do template (ADR-014): antes, resolver os pendentes da secção 5 do `design/figma/TEMPLATE.md` (contraste do vidro, alvos de toque e as peças que o Catania pediu) e acrescentar ao `CONTRATO.md` as mensagens da mesa e o relatório do fim.
 - ☐ UIs próprias de cada jogo (hoje todos usam a UI genérica de protótipo).
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.
