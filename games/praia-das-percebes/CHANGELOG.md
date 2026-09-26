@@ -15,7 +15,7 @@ Variantes testadas (2000 partidas, bots atentos aos objetivos; vitórias por lug
 | Tudo par (4 e 6) | 63 / 37 | 20 / 44 / 35 | 33 / 27 / 23 / 17 |
 | **Linhas 5 e 7, colunas 4 e 6** | **52 / 48** | **31 / 36 / 34** | **25 / 31 / 27 / 18** |
 
-Com os bots de sempre (2000 partidas): 2 jogadores 46,4 / 53,6; 3 jogadores 29,7 / 39,1 / 31,2; 4 jogadores 28,6 / 28,4 / 20,2 / 22,8. A 4 jogadores o 3.º e o 4.º lugares ainda ficam abaixo: a rever.
+Com os bots de sempre (2000 partidas): 2 jogadores 46,4 / 53,6; 3 jogadores 29,7 / 39,1 / 31,2; 4 jogadores 28,6 / 28,4 / 20,2 / 22,8. A 4 jogadores o 3.º e o 4.º lugares ainda ficam abaixo (os primeiros vigiam primeiro as linhas que crescem). Compensações simples testadas não resolvem: decidido confirmar em mesas de aprovação com jogadores reais antes de mexer (ver `docs/EQUILIBRIO.md`).
 
 **Salva-vidas:** o troço acaba num buraco ou numa rocha e as pranchas do troço multiplicam sempre (antes, numa linha com buracos não multiplicavam). Sai o código do caso especial do jogo antigo.
 
