@@ -1,0 +1,41 @@
+# Testes e simulação curta de cada jogo, em cada push e pull request.
+name: Testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    name: Testes e simulações
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Instalar o Node (versão do .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Correr os testes
+        run: npm test
+
+      - name: Simular o Catania
+        run: npm run simulate -- catania 100
+
+      - name: Simular o Bulbous
+        run: npm run simulate -- bulbous 100
+
+      - name: Simular a Praia das Percebes
+        run: npm run simulate -- praia-das-percebes 100
+
+      - name: Simular o Nine Oils
+        run: npm run simulate -- nine-oils 100
+
+      - name: Simular as Capivaras
+        run: npm run simulate -- capivaras 100
