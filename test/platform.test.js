@@ -342,11 +342,11 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   assert.equal(st.engineVersion, ENGINE_VERSION);
   assert.equal(st.studio, true);
   assert.equal(st.online, 1);
-  assert.equal(st.rooms.total, 3 + 2 + 3, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4');
+  assert.equal(st.rooms.total, 3 + 2 + 3 + 1, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4; Nine Oils a 2');
   const { games } = await (await fetch(`${base}/admin/games`, { headers: auth })).json();
   assert.equal(games[0].id, 'catania');
   assert.equal(games[0].name, 'Catania');
-  assert.deepEqual(games.map((g) => g.problems), [[], [], []]);
+  assert.deepEqual(games.map((g) => g.problems), [[], [], [], []]);
   assert.deepEqual(games.find((g) => g.id === 'bulbous').players.counts, [2, 4]);
   await s.stop();
 });
