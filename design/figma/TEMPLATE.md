@@ -85,7 +85,7 @@ No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os jo
 
 No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um. Os botões +, − e "ver tudo" (44 px) aparecem só nas mesas maiores; no telemóvel, na vertical e na horizontal, ficam no layout mas escondidos, para não taparem o tabuleiro. A roda do rato aproxima no computador. O zoom vai de 50% a 300% e fica centrado entre os dedos.
 
-No telemóvel, ao entrar numa mesa ou no tutorial, a página passa a **ecrã inteiro** e esconde a barra de endereço. O browser só o permite num toque: no botão que entra na mesa ou, se se chegou por um link, no primeiro toque na mesa. Ao voltar ao lobby, sai do ecrã inteiro. No iPhone o Safari não tem ecrã inteiro para páginas: aí usa-se "Adicionar ao ecrã principal", que abre sem barra de endereço. O cabeçalho da mesa fica encostado ao topo.
+No telemóvel, ao entrar numa mesa ou no tutorial, a página passa a **ecrã inteiro** e esconde a barra de endereço. O browser só o permite num toque: no botão que entra na mesa ou, se se chegou por um link, no primeiro toque na mesa. Ao voltar ao lobby, sai do ecrã inteiro. No iPhone o Safari não tem ecrã inteiro para páginas: aí usa-se "Adicionar ao ecrã principal", que abre sem barra de endereço. O cabeçalho da mesa fica encostado ao topo. As páginas não usam `viewport-fit=cover`: o browser mantém-nas fora da barra de estado e da câmara. Com ele, alguns Android (ex.: OPPO A60) davam uma margem grande no topo de todas as páginas.
 
 **Camadas.** O tabuleiro não fica preso a uma janela: ocupa o ecrã inteiro, entre o fundo e a UI.
 

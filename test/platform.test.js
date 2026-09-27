@@ -901,3 +901,14 @@ test('a mesa em ecrã inteiro (app.css) não apanha classes da consola, que tamb
     }
   }
 });
+
+test('as páginas não se desenham por baixo da barra de estado (sem viewport-fit=cover)', async () => {
+  // Com viewport-fit=cover, alguns Android (ex.: OPPO A60) dão um safe-area-inset-top
+  // grande e o cabeçalho descia muito. Sem ele, o browser mantém a página na zona segura.
+  const pub = new URL('../packages/server/public/', import.meta.url);
+  for (const f of ['app.html', 'console.html']) {
+    const html = await readFile(new URL(f, pub), 'utf8');
+    assert.match(html, /name="viewport"/, f);
+    assert.doesNotMatch(html, /viewport-fit\s*=\s*cover/, f);
+  }
+});
