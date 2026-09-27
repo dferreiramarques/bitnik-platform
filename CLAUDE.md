@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `README.md`, `docs/CONTRATO.md` e `docs/ROADMAP.md`.
+Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `docs/CONTEXTO.md` (estado e onde está cada coisa), `README.md`, `docs/CONTRATO.md` e `docs/ROADMAP.md`.
 
 ## Contexto
 
