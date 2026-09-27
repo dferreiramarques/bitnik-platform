@@ -93,7 +93,7 @@ No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um; há 
 | Tabuleiro | tabuleiro e peças, com mover e zoom em qualquer ponto livre do ecrã |
 | UI | jogadores, fichas, painel do jogo, registo, a minha área, barra de ações e controlos da vista |
 
-- Com "ver tudo" (e no início) o tabuleiro encaixa na **zona livre**, entre os jogadores e a minha área, como nos quadros. Ao aproximar ou mover, passa por baixo dos painéis de vidro.
+- Com "ver tudo" (e no início) o tabuleiro encaixa na **zona livre**, entre os jogadores e a minha área, como nos quadros. Ao aproximar ou mover, passa por baixo dos painéis de vidro. A zona livre é medida uma vez e fica fixa: os painéis que crescem e encolhem (ações, a minha área, o registo) não mexem o tabuleiro. Só volta a medir quando o ecrã muda de tamanho (rodar o telemóvel, redimensionar a janela) ou no botão de encaixar.
 - Os contentores da UI deixam passar o rato e o toque para o tabuleiro; só os painéis e os botões os apanham. O que está por baixo de um painel não se toca através dele: move-se o tabuleiro para o destapar.
 - Ao mover, fica sempre um pedaço do tabuleiro no ecrã (60 px), para não se perder.
 - No computador largo (≥ 1200 px), os controlos da vista ficam no canto inferior direito do ecrã, ao lado da barra de ações.
