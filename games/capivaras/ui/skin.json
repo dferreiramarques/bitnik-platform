@@ -1,0 +1,40 @@
+{
+  "name": "Pantanal",
+  "description": "Água verde-azulada do Pantanal, vidro claro por cima e o amarelo do pássaro como destaque.",
+  "tokens": {
+    "--table-bg": {
+      "value": "radial-gradient(rgba(255,250,241,.12) 1px, transparent 1.4px) 0 0 / 22px 22px, radial-gradient(ellipse at 50% 38%, #3f8f7f 0%, #256558 55%, #163f37 100%)",
+      "type": "background", "group": "table",
+      "label": { "pt": "Mesa", "en": "Table" }
+    },
+    "--game-on-table": { "value": "#fffaf1", "type": "color", "group": "table", "label": { "pt": "Texto sobre a mesa", "en": "Text on the table" } },
+    "--game-on-table-muted": { "value": "rgba(255,250,241,.78)", "type": "color", "group": "table", "label": { "pt": "Texto secundário sobre a mesa", "en": "Secondary text on the table" } },
+    "--game-glass": { "value": "rgba(16,48,42,.45)", "type": "color", "group": "table", "label": { "pt": "Vidro dos painéis", "en": "Panel glass" } },
+    "--game-glass-line": { "value": "rgba(255,250,241,.28)", "type": "color", "group": "table", "label": { "pt": "Contorno do vidro", "en": "Glass outline" } },
+    "--capi-panel": { "value": "#123a33", "type": "color", "group": "base", "label": { "pt": "Painel", "en": "Panel" } },
+    "--capi-text": { "value": "#fffaf1", "type": "color", "group": "base", "label": { "pt": "Texto", "en": "Text" } },
+    "--capi-muted": { "value": "#b9d3cb", "type": "color", "group": "base", "label": { "pt": "Texto secundário", "en": "Secondary text" } },
+    "--capi-gold": { "value": "#f2c14e", "type": "color", "group": "base", "label": { "pt": "Destaque (pássaro)", "en": "Highlight (bird)" } },
+    "--capi-on-gold": { "value": "#2b1b12", "type": "color", "group": "base", "label": { "pt": "Texto sobre o destaque", "en": "Text on the highlight" } },
+    "--capi-card": { "value": "#fffaf1", "type": "color", "group": "cards", "label": { "pt": "Moldura das cartas", "en": "Card frame" } },
+    "--capi-card-text": { "value": "#3b2a1a", "type": "color", "group": "cards", "label": { "pt": "Texto das cartas", "en": "Card text" } },
+    "--capi-lily-y": { "value": "#f2c14e", "type": "color", "group": "lilies", "label": { "pt": "Nenúfar amarelo", "en": "Yellow lily" } },
+    "--capi-lily-r": { "value": "#e0533d", "type": "color", "group": "lilies", "label": { "pt": "Nenúfar vermelho", "en": "Red lily" } },
+    "--capi-lily-w": { "value": "#f4f1ea", "type": "color", "group": "lilies", "label": { "pt": "Nenúfar branco", "en": "White lily" } },
+    "--capi-lily-b": { "value": "#3a8fd6", "type": "color", "group": "lilies", "label": { "pt": "Nenúfar azul", "en": "Blue lily" } },
+    "--capi-p1": { "value": "#c0392b", "type": "color", "group": "players", "label": { "pt": "Jogador 1", "en": "Player 1" } },
+    "--capi-p2": { "value": "#2e86c1", "type": "color", "group": "players", "label": { "pt": "Jogador 2", "en": "Player 2" } },
+    "--capi-p3": { "value": "#f39c12", "type": "color", "group": "players", "label": { "pt": "Jogador 3", "en": "Player 3" } },
+    "--capi-p4": { "value": "#8e44ad", "type": "color", "group": "players", "label": { "pt": "Jogador 4", "en": "Player 4" } },
+    "--capi-p5": { "value": "#e84393", "type": "color", "group": "players", "label": { "pt": "Jogador 5", "en": "Player 5" } },
+    "--capi-p6": { "value": "#7f8c8d", "type": "color", "group": "players", "label": { "pt": "Jogador 6", "en": "Player 6" } },
+    "--capi-font-display": { "value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)", "type": "font", "group": "type", "label": { "pt": "Letra dos títulos", "en": "Display font" } },
+    "--capi-radius": { "value": "12px", "type": "size", "group": "shape", "label": { "pt": "Cantos", "en": "Corners" } }
+  },
+  "contrast": [
+    ["--capi-text", "--capi-panel"],
+    ["--capi-muted", "--capi-panel"],
+    ["--capi-on-gold", "--capi-gold"],
+    ["--capi-card-text", "--capi-card"]
+  ]
+}

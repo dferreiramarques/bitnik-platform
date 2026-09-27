@@ -1,0 +1,225 @@
+/* Capivaras — UI própria (ADR-006, ADR-014). A mesa ocupa o ecrã inteiro e tudo
+   fica dentro de .capi. As cores e formas vêm só de tokens: --capi-* (conteúdo)
+   e --game-* (vidro e texto sobre a mesa, como no template vanilla).
+   Disposição: design/figma/TEMPLATE.md, secção 3 (a mesma do Catania). */
+
+.capi {
+  --g: var(--game-glass, rgb(16 48 42 / .45));
+  --gl: var(--game-glass-line, rgb(255 250 241 / .28));
+  --ot: var(--game-on-table, var(--capi-text));
+  --otm: var(--game-on-table-muted, var(--capi-muted));
+  --float-shadow: 0 1px 3px rgb(0 0 0 / .7), 0 0 12px rgb(0 0 0 / .4);
+  --tint: color-mix(in srgb, var(--capi-text) 12%, transparent);
+  --tint-line: color-mix(in srgb, var(--capi-text) 30%, transparent);
+  position: absolute; inset: 0; overflow: hidden;
+  /* As disposições seguem o tamanho da mesa, não o do ecrã (container queries). */
+  container-type: size;
+  color: var(--capi-text);
+  font-family: var(--font-body, Inter, system-ui, sans-serif);
+  -webkit-user-select: none; user-select: none;
+  /* o fundo é o --table-bg, aplicado pela plataforma */
+}
+.capi button { font-family: inherit; line-height: 1.25; }
+.capi :focus-visible { outline: 3px solid var(--capi-gold); outline-offset: 2px; }
+
+/* Vidro: jogadores, fichas, a minha área, barra de estado */
+.capi-player, .capi-chip, .capi-me, .capi-bar {
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+
+.capi-layout {
+  position: absolute; inset: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto; row-gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+}
+.capi-lbl {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--capi-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.capi-note { font-size: 11px; color: var(--capi-muted); }
+.capi-note.ok { color: var(--capi-gold); font-weight: 700; }
+
+/* ── Jogadores ── */
+.capi-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.capi-player { width: 200px; box-sizing: border-box; border-radius: 8px; padding: 8px; display: grid; gap: 4px; align-content: start; }
+.capi-player.me { border-color: var(--capi-text); }
+.capi-player.won { border-color: var(--capi-gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--capi-gold) 40%, transparent); }
+.capi-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
+.capi-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.capi-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--capi-text) 50%, transparent); }
+.capi-score { font-family: var(--capi-font-display); font-weight: 800; font-size: 15px; line-height: 1; color: var(--capi-gold); }
+.capi-pstate { font-size: 11px; font-weight: 600; color: var(--capi-muted); min-height: 14px; }
+.capi-player.thinking .capi-pstate { color: var(--capi-gold); }
+.capi-pinfo { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.capi-birds { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-size: 12px; padding: 1px 6px 1px 3px; border-radius: 11px; background: var(--tint); }
+.capi-birds.token { background: var(--capi-gold); color: var(--capi-on-gold); }
+.capi-birds b { font-size: 10px; }
+.capi-birds.big { font-size: 15px; padding: 3px 10px 3px 5px; border-radius: 16px; justify-self: start; }
+.capi-lilies { display: inline-flex; gap: 3px; }
+.capi-lily {
+  width: 10px; height: 10px; border-radius: 50%; flex: none; box-sizing: border-box; display: inline-block;
+  background: var(--c); box-shadow: 0 0 0 1px rgb(0 0 0 / .25);
+}
+.capi-lily.off { background: transparent; box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--c) 80%, var(--capi-text)); opacity: .7; }
+
+/* ── Fichas da ronda, do baralho e do pássaro ── */
+.capi-chips { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+.capi-chip {
+  min-height: 28px; padding: 0 10px; border-radius: 14px; box-sizing: border-box;
+  display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; color: var(--capi-text);
+}
+.capi-chip.hot { border-color: var(--capi-gold); }
+.capi-chip.gold { background: var(--capi-gold); color: var(--capi-on-gold); border-color: transparent; }
+.capi-chip-sub { font-weight: 500; color: var(--capi-muted); }
+.capi-chip.gold .capi-chip-sub { color: inherit; }
+
+/* ── As cartas da mesa, ao centro, o maior possível (o JS mede o espaço) ── */
+.capi-center { position: relative; min-height: 0; display: grid; place-items: center; }
+.capi-table {
+  display: grid; grid-template-columns: repeat(var(--cols, 3), var(--cw, 160px)); gap: var(--gap, 14px);
+  justify-content: center; align-content: center;
+}
+.capi-card {
+  position: relative; width: var(--cw, 160px); aspect-ratio: 600 / 842; box-sizing: border-box; padding: 0;
+  border-radius: var(--capi-radius); overflow: hidden; border: 3px solid var(--capi-card); background: var(--capi-card);
+  box-shadow: 0 10px 26px rgb(0 0 0 / .32); color: var(--capi-card-text); text-align: left;
+  transition: transform .18s ease, box-shadow .18s ease, opacity .25s ease, filter .25s ease;
+}
+.capi-art { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+button.capi-card { cursor: pointer; }
+button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-4px); box-shadow: 0 16px 32px rgb(0 0 0 / .4), 0 0 0 3px var(--capi-gold); }
+.capi-card.mine { box-shadow: 0 0 0 4px var(--capi-gold), 0 14px 30px rgb(0 0 0 / .4); transform: translateY(-4px); }
+.capi-card[aria-busy="true"] { opacity: .8; }
+.capi-card.won { box-shadow: 0 0 0 4px var(--capi-gold), 0 14px 30px rgb(0 0 0 / .4); }
+.capi-card.fled, .capi-card.none { filter: saturate(.35) brightness(.85); opacity: .75; }
+.capi-letter {
+  position: absolute; left: 6px; top: 6px; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 12px;
+  display: grid; place-items: center; font-family: var(--capi-font-display); font-weight: 800; font-size: 13px;
+  background: var(--capi-card); color: var(--capi-card-text); box-shadow: 0 1px 4px rgb(0 0 0 / .25);
+}
+.capi-cap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 8px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 4px; min-height: 26px;
+  background: color-mix(in srgb, var(--capi-card) 88%, transparent);
+}
+.capi-cap b { font-family: var(--capi-font-display); font-weight: 800; font-size: 16px; line-height: 1; margin-right: 2px; }
+.capi-who {
+  position: absolute; right: 6px; top: 6px; max-width: calc(100% - 48px); height: 22px; padding: 0 8px; box-sizing: border-box; border-radius: 11px;
+  display: flex; align-items: center; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: var(--capi-card); color: var(--capi-card-text); box-shadow: 0 1px 4px rgb(0 0 0 / .25);
+}
+.capi-who.win { background: var(--capi-gold); color: var(--capi-on-gold); }
+.capi-who.win::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 5px; flex: none; }
+.capi-who.mine { background: var(--capi-gold); color: var(--capi-on-gold); }
+.capi-bettors { position: absolute; right: 8px; top: 32px; display: flex; gap: 3px; }
+.capi-bettors i { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 2px var(--capi-card); }
+
+/* ── Registo (flutuante) e a minha área ── */
+.capi-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
+.capi-log { justify-self: start; max-width: 300px; color: var(--ot); text-shadow: var(--float-shadow); font-size: 12px; line-height: 1.55; }
+.capi-log ol { list-style: none; margin: 0; padding: 0; }
+.capi-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); text-shadow: inherit; cursor: pointer; }
+.capi-me { border-radius: 10px; padding: 8px 12px; display: flex; gap: 14px; max-width: 100%; box-sizing: border-box; }
+.capi-me-grp { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.capi-vsep { width: 1px; background: var(--gl); }
+.capi-minis { display: flex; gap: 4px; min-height: 50px; align-items: center; overflow-x: auto; scrollbar-width: thin; max-width: 420px; }
+.capi-mini { width: 36px; height: 50px; object-fit: cover; border-radius: 5px; border: 2px solid var(--capi-card); flex: none; }
+.capi-lilyset { display: grid; grid-template-columns: repeat(2, auto); gap: 4px 10px; font-size: 11px; font-weight: 600; }
+.capi-lilyname { display: inline-flex; align-items: center; gap: 5px; }
+.capi-lilyname.off { color: var(--capi-muted); font-weight: 500; }
+
+/* ── Barra de estado ── */
+.capi-bar {
+  position: relative; justify-self: center; max-width: 100%; box-sizing: border-box; overflow: hidden;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
+}
+.capi-bar:empty { display: none; }
+.capi-info { min-height: 40px; box-sizing: border-box; padding: 2px 6px; display: grid; align-content: center; font-size: 13px; max-width: 460px; }
+.capi-info small { color: var(--capi-muted); font-size: 11px; }
+.capi-info.pick b { color: var(--capi-gold); }
+.capi-count { font-family: var(--capi-font-display); font-weight: 800; font-size: 15px; color: var(--capi-muted); padding: 0 4px; }
+.capi-wait { margin: 0; padding: 0 10px; min-height: 40px; display: flex; align-items: center; color: var(--capi-muted); font-style: italic; }
+/* o tempo da revelação, como uma linha que se esvazia */
+.capi-timer { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--capi-gold); transform-origin: left; animation: capi-drain 5s linear forwards; }
+@keyframes capi-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ── Mensagem da mesa: aparece no meio, cresce e desaparece; não bloqueia cliques ── */
+.capi-msg {
+  position: absolute; left: 0; right: 0; top: 50%; z-index: 4; pointer-events: none;
+  display: grid; justify-items: center; gap: 4px; text-align: center; padding: 0 16px;
+  color: var(--ot); opacity: 0; transform: translateY(-50%);
+}
+.capi-msg b { font-family: var(--capi-font-display); font-weight: 800; font-size: clamp(30px, 6vw, 54px); line-height: 1.05; text-shadow: 0 4px 24px rgb(0 0 0 / .5); }
+.capi-msg small { font-weight: 600; font-size: 13px; text-shadow: var(--float-shadow); }
+.capi-msg.gold b { color: var(--capi-gold); }
+.capi-msg.on { animation: capi-msg 2.6s ease-out forwards; }
+@keyframes capi-msg {
+  0% { opacity: 0; transform: translateY(-50%) scale(.7); }
+  18% { opacity: 1; transform: translateY(-50%) scale(1); }
+  65% { opacity: 1; transform: translateY(-50%) scale(1.02); }
+  100% { opacity: 0; transform: translateY(-50%) scale(1.18); }
+}
+@keyframes capi-fade { 0%, 100% { opacity: 0; } 15%, 80% { opacity: 1; } }
+
+/* ── Telemóvel na vertical ── */
+@container (max-width: 760px) {
+  .capi-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  /* Jogadores numa faixa com scroll horizontal (swipe para os restantes). */
+  .capi-players {
+    flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding: 0 8px; scrollbar-width: none;
+    margin: 0 -8px; padding: 0 8px;
+  }
+  .capi-players::-webkit-scrollbar { display: none; }
+  .capi-player { width: 140px; flex-shrink: 0; padding: 6px 8px; scroll-snap-align: start; }
+  .capi-chips { gap: 4px; }
+  .capi-chip { min-height: 26px; font-size: 11px; }
+  .capi-chip-sub { display: none; }
+  .capi-bottom { grid-template-columns: minmax(0, 1fr); }
+  .capi-bottom > div:empty, .capi-log { display: none; }
+  .capi-me { padding: 6px 8px; gap: 10px; }
+  .capi-minis { max-width: 150px; min-height: 42px; }
+  .capi-mini { width: 30px; height: 42px; }
+  .capi-lilyset { grid-template-columns: repeat(2, auto); gap: 2px 8px; font-size: 10px; }
+  .capi-cap { min-height: 22px; padding: 2px 6px; }
+  .capi-cap b { font-size: 14px; }
+  .capi-who { right: 4px; top: 5px; height: 20px; padding: 0 6px; font-size: 10px; max-width: calc(100% - 38px); }
+  .capi-letter { left: 4px; top: 4px; }
+  .capi-info { font-size: 12px; }
+}
+@container (max-width: 400px) {
+  .capi-lilyname { font-size: 0; gap: 0; }
+  .capi-lilyset { grid-template-columns: repeat(4, auto); }
+}
+
+/* ── Telemóvel na horizontal: jogadores à esquerda, cartas ao centro ── */
+@container (orientation: landscape) and (max-height: 500px) {
+  .capi-layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "players chips" "players center" "bottom bar";
+    column-gap: 10px; row-gap: 6px;
+    padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
+  }
+  .capi-players { grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; overflow-y: auto; scrollbar-width: none; margin: 0; padding: 0; }
+  .capi-player { width: auto; padding: 5px 7px; gap: 2px; }
+  .capi-pstate { display: none; }
+  .capi-chips { grid-area: chips; }
+  .capi-center { grid-area: center; }
+  .capi-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
+  .capi-bottom > div:empty, .capi-log { display: none; }
+  .capi-me { padding: 4px 8px; }
+  .capi-me .capi-vsep, .capi-me .capi-me-grp:not(.capi-me-cards) { display: none; }
+  .capi-minis { min-height: 36px; max-width: 200px; }
+  .capi-mini { width: 26px; height: 36px; }
+  .capi-bar { grid-area: bar; justify-self: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capi-card { transition: none; }
+  .capi-msg.on { animation: capi-fade 1.8s linear forwards; }
+  .capi-timer { animation: none; }
+}

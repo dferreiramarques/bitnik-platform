@@ -1,0 +1,330 @@
+{
+  "capivaras": {
+    "table": {
+      "table-bg": {
+        "$type": "string",
+        "$value": "radial-gradient(rgba(255,250,241,.12) 1px, transparent 1.4px) 0 0 / 22px 22px, radial-gradient(ellipse at 50% 38%, #3f8f7f 0%, #256558 55%, #163f37 100%)",
+        "$description": "Mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--table-bg",
+            "type": "background",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Texto sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-muted": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.78)",
+        "$description": "Texto secundário sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-muted",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass": {
+        "$type": "color",
+        "$value": "rgba(16,48,42,.45)",
+        "$description": "Vidro dos painéis",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass-line": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.28)",
+        "$description": "Contorno do vidro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass-line",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "base": {
+      "capi-panel": {
+        "$type": "color",
+        "$value": "#123a33",
+        "$description": "Painel",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-panel",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-text": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Texto",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-text",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-muted": {
+        "$type": "color",
+        "$value": "#b9d3cb",
+        "$description": "Texto secundário",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-muted",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-gold": {
+        "$type": "color",
+        "$value": "#f2c14e",
+        "$description": "Destaque (pássaro)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-gold",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-on-gold": {
+        "$type": "color",
+        "$value": "#2b1b12",
+        "$description": "Texto sobre o destaque",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-on-gold",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "cards": {
+      "capi-card": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Moldura das cartas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-card",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-card-text": {
+        "$type": "color",
+        "$value": "#3b2a1a",
+        "$description": "Texto das cartas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-card-text",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "lilies": {
+      "capi-lily-y": {
+        "$type": "color",
+        "$value": "#f2c14e",
+        "$description": "Nenúfar amarelo",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-lily-y",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-lily-r": {
+        "$type": "color",
+        "$value": "#e0533d",
+        "$description": "Nenúfar vermelho",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-lily-r",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-lily-w": {
+        "$type": "color",
+        "$value": "#f4f1ea",
+        "$description": "Nenúfar branco",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-lily-w",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-lily-b": {
+        "$type": "color",
+        "$value": "#3a8fd6",
+        "$description": "Nenúfar azul",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-lily-b",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "players": {
+      "capi-p1": {
+        "$type": "color",
+        "$value": "#c0392b",
+        "$description": "Jogador 1",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-p1",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-p2": {
+        "$type": "color",
+        "$value": "#2e86c1",
+        "$description": "Jogador 2",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-p2",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-p3": {
+        "$type": "color",
+        "$value": "#f39c12",
+        "$description": "Jogador 3",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-p3",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-p4": {
+        "$type": "color",
+        "$value": "#8e44ad",
+        "$description": "Jogador 4",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-p4",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-p5": {
+        "$type": "color",
+        "$value": "#e84393",
+        "$description": "Jogador 5",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-p5",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      },
+      "capi-p6": {
+        "$type": "color",
+        "$value": "#7f8c8d",
+        "$description": "Jogador 6",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-p6",
+            "type": "color",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "type": {
+      "capi-font-display": {
+        "$type": "fontFamily",
+        "$value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)",
+        "$description": "Letra dos títulos",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-font-display",
+            "type": "font",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "shape": {
+      "capi-radius": {
+        "$type": "dimension",
+        "$value": "12px",
+        "$description": "Cantos",
+        "$extensions": {
+          "bitnik": {
+            "token": "--capi-radius",
+            "type": "size",
+            "collection": "capivaras",
+            "mode": "default"
+          }
+        }
+      }
+    }
+  }
+}

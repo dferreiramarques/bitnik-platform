@@ -1,6 +1,6 @@
 {
   "name": "@bitnik/game-capivaras",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Capivaras — pacote de jogo para @bitnik/engine.",
   "type": "module",
   "main": "index.js",
@@ -11,6 +11,7 @@
     "index.js",
     "rules.js",
     "i18n/",
+    "ui/",
     "REGRAS.md",
     "CHANGELOG.md"
   ],
