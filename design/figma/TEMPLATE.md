@@ -101,7 +101,7 @@ No telemóvel, ao entrar numa mesa ou no tutorial, a página passa a **ecrã int
 - No computador largo (≥ 1200 px), os controlos da vista ficam no canto inferior direito do ecrã, ao lado da barra de ações.
 - As disposições (telemóvel ≤ 760 px, horizontal com altura ≤ 500 px, largo ≥ 1200 px) seguem o **tamanho da mesa**, não o do ecrã (container queries): a mesma UI serve o ecrã inteiro, o tutorial e a pré-visualização da consola.
 
-No telemóvel **na horizontal** (844 × 390): linha de cima com voltar, nome do jogo, fichas, guia e língua; jogadores numa coluna à esquerda (176 px); painel do jogo numa coluna compacta à direita, com os botões de zoom por baixo; tabuleiro ao centro (500 × 262); a minha área em baixo à esquerda e a barra de ações em baixo à direita.
+No telemóvel **na horizontal** (844 × 390): linha de cima com voltar, nome do jogo, fichas, guia e língua; jogadores numa coluna à esquerda (176 px); painel do jogo numa coluna compacta à direita (os botões de zoom ficam por baixo dele no layout, mas escondidos); tabuleiro ao centro (500 × 262); a minha área em baixo à esquerda e a barra de ações em baixo à direita.
 
 ## 4. Componentes base
 
@@ -113,7 +113,7 @@ No telemóvel **na horizontal** (844 × 390): linha de cima com voltar, nome do 
 | Disco / marcador | normal, alerta | `game-panel-2`, `game-color-n`, `game-danger` |
 | Painel | registo | `game-panel`, `game-line`, `game-muted` |
 | Registo e painel do jogo (flutuantes) | sem fundo; texto com sombra, alinhado à esquerda (registo) ou à direita (painel) | `game-on-table`, `game-on-table-muted` |
-| Controlos da vista | aproximar, afastar, ver tudo (44 px) | `game-glass`, `game-on-table` |
+| Controlos da vista | aproximar, afastar, ver tudo (44 px); escondidos no telemóvel | `game-glass`, `game-on-table` |
 | Modal | título, texto, 2 botões | `game-panel`, `game-line`, `game-accent` |
 | Tutorial | alvo com contorno, balão com passo, título e Seguinte | `game-panel`, `game-accent` |
 | Mensagem da mesa | vez, evento com subtítulo, aviso (cor `game-on-table-warn`), fim | `game-on-table`, `game-font-display` |

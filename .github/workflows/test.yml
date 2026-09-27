@@ -9,6 +9,8 @@ jobs:
   testes:
     name: Testes e simulações
     runs-on: ubuntu-latest
+    # Um teste pendurado (servidor que ficou aberto) não deve prender o runner meia hora.
+    timeout-minutes: 10
     steps:
       - name: Obter o código
         uses: actions/checkout@v4
@@ -24,6 +26,7 @@ jobs:
 
       - name: Correr os testes
         run: npm test
+        timeout-minutes: 5
 
       - name: Simular o Catania
         run: npm run simulate -- catania 100
