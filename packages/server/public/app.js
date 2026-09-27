@@ -89,6 +89,7 @@ const app = {
   notices: [],
   noticesSkew: 0,     // relógio do servidor − local
   dismissed: new Set(),
+  fsPending: false,   // telemóvel: pedir ecrã inteiro no próximo toque na mesa
   proto: null,        // mesa em "modo protótipo" (UI genérica), só essa e só nesta sessão
   nameDraft: null,    // nome a meio de ser escrito (sobrevive aos redesenhos)
   uiFailed: new Set(), // jogos cuja UI própria não carregou: ficam na UI genérica
@@ -689,6 +690,8 @@ function render() {
   $('#name').placeholder = u('yourName');
   document.documentElement.lang = app.lang;
   const full = !!tut || (inRoom && !!app.room && useGameUi(app.room));
+  if (full && !document.body.classList.contains('is-table')) app.fsPending = true;
+  if (!inRoom && !tut) { app.fsPending = false; leaveFullscreen(); }
   document.body.classList.toggle('is-table', full);
   if (!full) app.noticesOpen = false;
   renderNotices();
@@ -726,6 +729,28 @@ function toggleLang() {
   localStorage.setItem('bitnik.lang', app.lang);
   render();
 }
+
+// ─── Ecrã inteiro no telemóvel ──────────────────────────────
+// Ao entrar numa mesa (ou no tutorial), o telemóvel passa a ecrã inteiro e
+// esconde a barra de endereço. O browser só o deixa fazer num toque do
+// jogador: no clique que entra na mesa ou, se se chegou por um link, no
+// primeiro toque na mesa. Ao sair para o lobby ou o início, volta ao normal.
+// (No iPhone o Safari não tem ecrã inteiro para páginas: aí é "Adicionar ao
+// ecrã principal", que abre sem barra de endereço.)
+const touchScreen = () => matchMedia('(pointer: coarse)').matches;
+function enterFullscreen() {
+  const de = document.documentElement;
+  app.fsPending = false;
+  if (!touchScreen() || document.fullscreenElement || !de.requestFullscreen) return;
+  de.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+}
+function leaveFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+}
+document.addEventListener('click', (e) => {
+  const entering = e.target.closest('[data-solo], [data-open], [data-join], [data-start], [data-restart], a[href^="#/tutorial/"]');
+  if (entering || (app.fsPending && document.body.classList.contains('is-table'))) enterFullscreen();
+}, true);
 
 $('#view').addEventListener('click', (e) => {
   if (onDismiss(e)) return;

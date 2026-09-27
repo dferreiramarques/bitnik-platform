@@ -235,6 +235,9 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
 .mesa-card-btns .btn { background: var(--ui-card); }
 @media (max-width: 760px) {
   .mesa-meta, .mesa-sep, .mesa-brand { display: none; }
+  /* Telemóvel: o cabeçalho encostado ao topo, para sobrar ecrã para a mesa. */
+  .mesa-top { padding-top: max(env(safe-area-inset-top, 0px), 2px); padding-bottom: 2px; }
+  .mesa-btn { min-height: 32px; }
 }
 
 /* ── Início: marca com vários jogos (ADR-014, quadro "Início" do template) ──

@@ -270,7 +270,7 @@
 
 /* ── Telemóvel na vertical ── */
 @container (max-width: 760px) {
-  .cat-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 40px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  .cat-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
   /* Jogadores numa faixa com scroll horizontal: a mesma altura, os restantes com swipe
      (o 3.º espreita à direita para se perceber que há mais). */
   .cat-layout > .cat-players {
@@ -295,7 +295,9 @@
   .cat-piles .cat-lbl { color: var(--cat-muted); }
   .cat-pile { min-height: 34px; }
   .show-piles .cat-piles { display: grid; }
-  .cat-zoombar { flex-direction: column; right: 4px; bottom: 4px; }
+  /* No telemóvel o zoom faz-se com os dedos (pinça, arrastar): os botões ficam
+     no layout mas escondidos, para não taparem o tabuleiro. */
+  .cat-zoombar { flex-direction: column; right: 4px; bottom: 4px; display: none; }
   .cat-bottom { grid-template-columns: minmax(0, 1fr); }
   .cat-bottom > div:empty { display: none; }
   .cat-log {
@@ -347,7 +349,7 @@
   .cat-piles .cat-lbl { color: var(--otm); }
   .cat-pile { min-height: 32px; font-size: 11px; }
   .cat-pile .cat-disc { width: 26px; height: 26px; font-size: 12px; }
-  .cat-zoombar { flex-direction: row; right: auto; left: 0; bottom: 0; }
+  .cat-zoombar { flex-direction: row; right: auto; left: 0; bottom: 0; display: none; }
   .cat-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
   .cat-bottom > div:empty { display: none; }
   .cat-log {
