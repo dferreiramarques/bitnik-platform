@@ -22,10 +22,16 @@ function terminar(state, ctx) {
 
 export default defineGame({
   id: 'capivaras',
-  version: '1.0.0',
+  version: '2.0.0',
   players: { min: 2, max: 6 },
+  author: 'David Marques',
   defaultLang: 'pt',
   i18n: { pt, en },
+  // UI própria (ADR-006, ADR-014): servida pela plataforma a partir desta pasta.
+  root: new URL('./', import.meta.url).href,
+  ui: './ui/index.js',
+  skin: './ui/skin.json',
+  preview: { players: 4 }, // pré-visualização na consola (Aparência)
 
   setup(ctx) {
     const n = ctx.numPlayers;

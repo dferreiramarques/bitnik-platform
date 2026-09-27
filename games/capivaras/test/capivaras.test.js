@@ -28,3 +28,31 @@ test('Empate na pontuação máxima: partilham a vitória (não ganha o lugar ma
   assert.deepEqual(r.match.result.winners, [0, 1]);
   assert.equal(r.match.log.at(-1).key, 'log.FIM_EMPATE');
 });
+
+test('Baralho: as 36 cartas do jogo, com pássaros e nenúfares como na arte', async () => {
+  const { criarBaralho } = await import('../rules.js');
+  const cartas = criarBaralho();
+  assert.equal(cartas.length, 36);
+  const tipo = (c) => `${c.capivaras}${[...c.nenufares].sort().join('')}${c.passaro ? '+' : ''}`;
+  const conta = {};
+  for (const c of cartas) conta[tipo(c)] = (conta[tipo(c)] || 0) + 1;
+  assert.deepEqual(conta, {
+    1: 2, '1R': 2, '1BW': 1, '1W+': 1,
+    2: 6, '2Y': 2, '2B': 1, '2Y+': 1, '2R+': 1, '2+': 2,
+    3: 6, '3Y': 1, '3B': 2, '3+': 2,
+    4: 2, '4+': 2,
+    5: 1, '5+': 1,
+  });
+  assert.equal(cartas.filter((c) => c.passaro).length, 10);
+  const nen = (cor) => cartas.filter((c) => c.nenufares.includes(cor)).length;
+  assert.deepEqual([nen('Y'), nen('R'), nen('B'), nen('W')], [4, 3, 4, 2]);
+});
+
+test('UI: cada carta do baralho tem a sua imagem', async () => {
+  const { existsSync } = await import('node:fs');
+  const { criarBaralho } = await import('../rules.js');
+  for (const c of criarBaralho()) {
+    const nome = `cap${c.capivaras}${c.nenufares.length ? '_' + [...c.nenufares].sort().join('') : ''}${c.passaro ? '_bird' : ''}`;
+    assert.ok(existsSync(new URL(`../ui/cartas/${nome}.webp`, import.meta.url)), nome);
+  }
+});

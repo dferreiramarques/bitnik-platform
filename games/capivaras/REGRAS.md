@@ -27,6 +27,16 @@ O baralho tem **36 cartas**, com capivaras representando de 1 a 5 pontos cada:
 
 Algumas cartas têm um pássaro amarelo e algumas têm nenúfares de quatro cores: Amarelo, Vermelho, Branco e Azul.
 
+| Capivaras | Cartas |
+| --- | --- |
+| 1 | 2 sem nada · 2 com nenúfar Vermelho · 1 com nenúfares Azul e Branco · 1 com nenúfar Branco e pássaro |
+| 2 | 6 sem nada · 2 com nenúfar Amarelo · 1 com nenúfar Azul · 1 com nenúfar Amarelo e pássaro · 1 com nenúfar Vermelho e pássaro · 2 com pássaro |
+| 3 | 6 sem nada · 1 com nenúfar Amarelo · 2 com nenúfar Azul · 2 com pássaro |
+| 4 | 2 sem nada · 2 com pássaro |
+| 5 | 1 sem nada · 1 com pássaro |
+
+Ao todo há 10 cartas com pássaro. Há nenúfares Amarelos em 4 cartas, Vermelhos em 3, Azuis em 4 e Brancos em 2.
+
 ## Pôr n cartas na mesa
 
 A cada ronda são colocadas na mesa **tantas cartas quantos os jogadores**, viradas para cima e identificadas por letra (A, B, C, …).

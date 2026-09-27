@@ -13,6 +13,58 @@
             "mode": "default"
           }
         }
+      },
+      "game-on-table": {
+        "$type": "color",
+        "$value": "#f2e8d0",
+        "$description": "Texto sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-muted": {
+        "$type": "color",
+        "$value": "rgba(242,232,208,.78)",
+        "$description": "Texto secundário sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-muted",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass": {
+        "$type": "color",
+        "$value": "rgba(30,26,16,.62)",
+        "$description": "Vidro sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass-line": {
+        "$type": "color",
+        "$value": "rgba(242,232,208,.18)",
+        "$description": "Contorno do vidro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass-line",
+            "type": "color",
+            "collection": "catania",
+            "mode": "default"
+          }
+        }
       }
     },
     "base": {

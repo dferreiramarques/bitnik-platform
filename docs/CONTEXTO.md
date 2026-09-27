@@ -10,7 +10,8 @@ Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar
 - Cada jogo é um pacote em `games/*` que só importa `@bitnik/engine` e ficheiros próprios. Há um teste que o verifica.
 - Jogos:
   - Catania, com UI própria no template;
-  - Bulbous, Capivaras, Praia das Percebes e Nine Oils, com a UI genérica.
+  - Capivaras, com UI própria no template desde a 2.0.0 (com o baralho e a arte do jogo original, do repositório `dferreiramarques/capivaras`);
+  - Bulbous, Praia das Percebes e Nine Oils, com a UI genérica.
 
 ## Onde está
 
@@ -102,7 +103,7 @@ Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar
    - peças que o Catania pediu.
 
    Acrescentar também ao `docs/CONTRATO.md` as mensagens da mesa e o relatório do fim.
-2. **UIs próprias para os outros jogos.** Hoje usam a UI genérica.
+2. **UIs próprias para os outros jogos** (Bulbous, Praia das Percebes, Nine Oils). O Capivaras serve de modelo para um jogo sem tabuleiro: `games/capivaras/ui/`.
 3. **Geração pela API na Forge.** É opcional.
 4. **Secção "Clientes" na consola**, quando houver runtimes em produção.
 5. **Pacote instalável para publishers** (modelo A da proposta): Dockerfile e guia para cPanel com Node ou VPS. Só quando fechar o primeiro cliente.

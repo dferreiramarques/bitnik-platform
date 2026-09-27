@@ -1,5 +1,31 @@
 # Capivaras — histórico de regras
 
+## 2.0.0 — Baralho do jogo e UI própria (2026-09-27)
+
+**Baralho igual ao do jogo.** O baralho da 1.0.0 foi gerado na Forge: tinha a mesma distribuição de capivaras (6, 13, 11, 4 e 2), mas os pássaros e os nenúfares eram inventados.
+- Passa a ter as 36 cartas do jogo original, as mesmas da arte. A lista está em REGRAS.md.
+- Há 10 cartas com pássaro.
+- Há nenúfares Amarelos em 4 cartas, Vermelhos em 3, Azuis em 4 e Brancos em 2.
+- Muda o conteúdo das partidas, por isso a versão é major: as partidas solo da 1.x ficam expiradas.
+
+**UI própria no template (ADR-014):**
+- mesa em ecrã inteiro com as cartas ilustradas no centro;
+- jogadores em vidro, com pássaros e nenúfares;
+- a minha coleção com as cores que faltam para o bónus;
+- a revelação mostra quem apostou em cada carta.
+
+Vitórias por lugar em simulação com bots (1000 partidas), com o baralho novo:
+
+| Jogadores | Vitórias por lugar (%) |
+|---|---|
+| 2 | 53,8 / 46,3 |
+| 3 | 34,3 / 32,3 / 33,5 |
+| 4 | 25,8 / 25,5 / 25,0 / 23,8 |
+| 5 | 18,2 / 19,8 / 20,3 / 19,3 / 22,4 |
+| 6 | 18,4 / 18,1 / 15,4 / 17,0 / 16,4 / 14,7 |
+
+Não há vantagem de lugar. A 2 jogadores, os 53,8 / 46,3 eram ruído: em 3 × 3000 partidas deu 48,4 / 51,6, 50,0 / 50,0 e 51,4 / 48,7.
+
 ## 1.0.0 — Publicado (2026-09-26)
 
 Publicado a partir da Forge (regras 0.1.0, 20 testes aprovados).

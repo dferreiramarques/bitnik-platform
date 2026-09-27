@@ -71,7 +71,7 @@ Migração direta do código antigo, um jogo de cada vez.
 | Jogo | Versão | Pasta | Notas |
 |---|---|---|---|
 | Bulbous | 1.0.0 ✔ | `games/bulbous` | Motor 0.2.1 com `players.counts`, porque se joga a 2 ou 4 |
-| Capivaras | 1.0.0 ✔ | `games/capivaras` | Feitas pela Forge e publicadas; empate partilha a vitória |
+| Capivaras | 2.0.0 ✔ | `games/capivaras` | Feitas pela Forge e publicadas; empate partilha a vitória. A 2.0.0 traz o baralho do jogo (o da arte) e UI própria no template |
 | Praia das Percebes | 2.0.0 ✔ | `games/praia-das-percebes` | Colunas de 4 e 6 para tirar a vantagem do 2.º lugar (ver CHANGELOG) |
 | Nine Oils | 1.1.0 ✔ | `games/nine-oils` | Só a 2; 2 Rapazes |
 
@@ -85,6 +85,9 @@ Por fazer:
   - os botões de zoom estão escondidos no telemóvel;
   - as páginas deixaram de usar `viewport-fit=cover`.
 - ☐ UI genérica com o desenho do template (ADR-014): antes, resolver os pendentes da secção 5 do `design/figma/TEMPLATE.md` (contraste do vidro, alvos de toque e as peças que o Catania pediu) e acrescentar ao `CONTRATO.md` as mensagens da mesa e o relatório do fim.
-- ☐ UIs próprias de cada jogo (hoje todos usam a UI genérica de protótipo).
+- ◐ UIs próprias de cada jogo, no template:
+  - ✔ Catania;
+  - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;
+  - ☐ Bulbous, Praia das Percebes e Nine Oils usam a UI genérica.
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.
