@@ -1106,6 +1106,8 @@ export function createPlatform({
       for (const m of gameTimers.values()) for (const t of m.values()) clearTimeout(t);
       for (const ws of wss.clients) ws.terminate();
       await new Promise((resolve) => wss.close(() => { http.close(resolve); http.closeAllConnections?.(); }));
+      // O que ficou por gravar (salas, projetos da Forge) chega ao disco antes de sair.
+      await storage.flush?.();
     },
   };
 }

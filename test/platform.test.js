@@ -777,10 +777,14 @@ test('Forge: instalar o pacote verificado como protótipo, sem reiniciar, e volt
   // Depois de reiniciar, o protótipo volta a estar instalado (mesmo que a ligação ao motor tenha desaparecido).
   const { rm: apagar } = await import('node:fs/promises');
   await apagar(join(dir, 'prototipos', 'node_modules'), { recursive: true, force: true });
-  s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir, gamesDir });
-  const games = (await (await fetch(`http://localhost:${s.port}/admin/games`, { headers: auth })).json()).games;
-  assert.ok(games.find((x) => x.id === slug)?.prototype);
-  await s.stop();
+  const avisos = [];
+  s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir, gamesDir, logger: { ...quiet, warn: (m) => avisos.push(m) } });
+  try {
+    const games = (await (await fetch(`http://localhost:${s.port}/admin/games`, { headers: auth })).json()).games;
+    assert.ok(games.find((x) => x.id === slug)?.prototype, `o protótipo não voltou a carregar: ${JSON.stringify(avisos)}`);
+  } finally {
+    await s.stop();
+  }
 });
 
 test('Forge: cada mesa fica presa à versão do protótipo com que começou; as versões sem mesas saem', async () => {
@@ -911,4 +915,15 @@ test('as páginas não se desenham por baixo da barra de estado (sem viewport-fi
     assert.match(html, /name="viewport"/, f);
     assert.doesNotMatch(html, /viewport-fit\s*=\s*cover/, f);
   }
+});
+
+test('fileStorage: flush() espera pelas escritas em curso (o servidor chama-o ao fechar)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const st = fileStorage(dir);
+  await st.load();
+  st.saveUsers({ t1: { userId: 'u1', name: 'Ana' } }); // sem await, como no servidor
+  st.saveForgeProject('jogo', { gameName: 'Jogo' });
+  await st.flush();
+  assert.equal(JSON.parse(await readFile(join(dir, 'users.json'), 'utf8')).t1.name, 'Ana');
+  assert.equal(JSON.parse(await readFile(join(dir, 'forge', 'jogo.json'), 'utf8')).gameName, 'Jogo');
 });

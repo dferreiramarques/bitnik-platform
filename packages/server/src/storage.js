@@ -3,6 +3,7 @@
 //   saveRoom(room)    / deleteRoom(id) / saveUsers(users)
 //   saveNotices(list) / saveAppearance(obj) (opcionais; load() devolve também { notices, appearance })
 //   saveForgeProject(slug, p) / deleteForgeProject(slug) (opcionais, só no Studio; load() devolve { forge })
+//   flush()           (opcional) → espera pelas escritas pendentes; o servidor chama-o ao fechar
 // O match é JSON puro, por isso guardar uma sala é só serializá-la.
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -85,6 +86,8 @@ export function fileStorage(dir) {
       await (queues.get(file) || Promise.resolve());
       await rm(file, { force: true });
     },
+    /** Espera pelas escritas em curso (ao fechar o servidor, ex.: SIGTERM no Railway). */
+    async flush() { await Promise.all([...queues.values()]); },
     saveUsers: (users) => write(join(dir, 'users.json'), users),
     saveNotices: (notices) => write(join(dir, 'notices.json'), notices),
     saveAppearance: (appearance) => write(join(dir, 'appearance.json'), appearance),
