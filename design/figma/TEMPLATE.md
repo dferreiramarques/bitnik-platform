@@ -83,7 +83,9 @@ A mesa ocupa o ecrã inteiro (`--table-bg` com `--table-dots` por cima). Não h�
 
 No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os jogadores numa faixa com a altura de um cartão (148 px de largura cada, o 3.º a espreitar à direita), com scroll horizontal: os restantes veem-se com swipe, sem botão "+N" nem ecrã por cima; quando a vez muda, a faixa mostra quem joga; fichas a meio entre os jogadores e o tabuleiro; tabuleiro centrado na vertical; a minha área; barra de ações em grelha 2:1:1.
 
-No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um; há também botões +, − e "ver tudo" (44 px) no canto do tabuleiro, e a roda do rato aproxima no computador. O zoom vai de 50% a 300% e fica centrado entre os dedos.
+No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um. Os botões +, − e "ver tudo" (44 px) aparecem só nas mesas maiores; no telemóvel, na vertical e na horizontal, ficam no layout mas escondidos, para não taparem o tabuleiro. A roda do rato aproxima no computador. O zoom vai de 50% a 300% e fica centrado entre os dedos.
+
+No telemóvel, ao entrar numa mesa ou no tutorial, a página passa a **ecrã inteiro** e esconde a barra de endereço. O browser só o permite num toque: no botão que entra na mesa ou, se se chegou por um link, no primeiro toque na mesa. Ao voltar ao lobby, sai do ecrã inteiro. No iPhone o Safari não tem ecrã inteiro para páginas: aí usa-se "Adicionar ao ecrã principal", que abre sem barra de endereço. O cabeçalho da mesa fica encostado ao topo.
 
 **Camadas.** O tabuleiro não fica preso a uma janela: ocupa o ecrã inteiro, entre o fundo e a UI.
 
@@ -93,7 +95,7 @@ No telemóvel, o tabuleiro aproxima-se com **dois dedos** e move-se com um; há 
 | Tabuleiro | tabuleiro e peças, com mover e zoom em qualquer ponto livre do ecrã |
 | UI | jogadores, fichas, painel do jogo, registo, a minha área, barra de ações e controlos da vista |
 
-- Com "ver tudo" (e no início) o tabuleiro encaixa na **zona livre**, entre os jogadores e a minha área, como nos quadros. Ao aproximar ou mover, passa por baixo dos painéis de vidro.
+- Com "ver tudo" (e no início) o tabuleiro encaixa na **zona livre**, entre os jogadores e a minha área, como nos quadros. Ao aproximar ou mover, passa por baixo dos painéis de vidro. A zona livre é medida uma vez e fica fixa: os painéis que crescem e encolhem (ações, a minha área, o registo) não mexem o tabuleiro. Só volta a medir quando o ecrã muda de tamanho (rodar o telemóvel, redimensionar a janela) ou no botão de encaixar.
 - Os contentores da UI deixam passar o rato e o toque para o tabuleiro; só os painéis e os botões os apanham. O que está por baixo de um painel não se toca através dele: move-se o tabuleiro para o destapar.
 - Ao mover, fica sempre um pedaço do tabuleiro no ecrã (60 px), para não se perder.
 - No computador largo (≥ 1200 px), os controlos da vista ficam no canto inferior direito do ecrã, ao lado da barra de ações.

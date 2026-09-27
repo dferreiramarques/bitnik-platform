@@ -86,6 +86,7 @@ export function mount(el, context) {
 
 export function unmount() {
   resizeObs?.disconnect(); resizeObs = null;
+  frame = null;
   root?.remove();
   root = null; view = null; msgEl = null; msg = null;
   ui = fresh();
@@ -390,18 +391,35 @@ function keepStrip(x, cur) {
 // Com zoom 1 a ilha encaixa na zona livre (.cat-board, a célula da grelha
 // entre os jogadores e a barra); ao aproximar ou arrastar, passa por baixo
 // dos painéis. As coordenadas do zoom são relativas a essa zona.
+// A zona é medida uma vez e fica fixa enquanto o ecrã não mudar de tamanho:
+// os painéis que crescem e encolhem (ações, a minha área, o registo) mudam a
+// célula, mas o tabuleiro não se mexe com eles. Volta a medir ao rodar o
+// ecrã, ao mudar o tamanho da janela ou no botão de encaixar.
 const EDGE = 60; // px da ilha que ficam sempre no ecrã
+let frame = null; // { L, T, w, h, ow, oh }: zona livre relativa a .cat-view
 
-function boardRect() {
+function measureFrame(o) {
   const cell = view?.querySelector('.cat-board');
-  return cell ? cell.getBoundingClientRect() : null;
+  if (!cell) return null;
+  const r = cell.getBoundingClientRect();
+  return { L: r.left - o.left, T: r.top - o.top, w: r.width, h: r.height, ow: o.width, oh: o.height };
+}
+
+/** A zona livre (fixa) em coordenadas do ecrã. */
+function boardRect(refit = false) {
+  const vw = view?.querySelector('.cat-view');
+  if (!vw) return null;
+  const o = vw.getBoundingClientRect();
+  if (refit || !frame || !frame.w || frame.ow !== o.width || frame.oh !== o.height) frame = measureFrame(o);
+  if (!frame) return null;
+  return { left: o.left + frame.L, top: o.top + frame.T, width: frame.w, height: frame.h };
 }
 
 /** `limit`: depois de um gesto, não deixar a ilha sair do ecrã. */
-function applyZoom(limit = false) {
+function applyZoom(limit = false, refit = false) {
   const vw = view?.querySelector('.cat-view');
   const z = view?.querySelector('.cat-zoom');
-  const r = boardRect();
+  const r = boardRect(refit);
   if (!vw || !z || !r) return;
   const o = vw.getBoundingClientRect();
   const L = r.left - o.left;
@@ -566,7 +584,7 @@ function onClick(e) {
   const zb = e.target.closest('[data-zoom]');
   if (zb) {
     const [cx, cy] = viewCenter();
-    if (zb.dataset.zoom === 'fit') { ui.zoom = { s: 1, x: 0, y: 0 }; applyZoom(); } else zoomAt(cx, cy, zb.dataset.zoom === 'in' ? 1.25 : 0.8);
+    if (zb.dataset.zoom === 'fit') { ui.zoom = { s: 1, x: 0, y: 0 }; applyZoom(false, true); } else zoomAt(cx, cy, zb.dataset.zoom === 'in' ? 1.25 : 0.8);
     return;
   }
   const act = e.target.closest('[data-act]');
