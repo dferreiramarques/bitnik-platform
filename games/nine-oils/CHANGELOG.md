@@ -1,5 +1,11 @@
 # Nine Oils — histórico de regras
 
+## 1.1.7 — X de descarte no canto da carta (2026-09-28)
+
+Sem mudanças de jogo: no descarte, a carta em si continua a abrir os
+detalhes ao clicar, mas ganha um X vermelho no canto superior — é esse X,
+não a barra de jogadas, que descarta a carta.
+
 ## 1.1.6 — A mão mostra a arte, em dobro, sem o botão "?" (2026-09-28)
 
 Sem mudanças de jogo:

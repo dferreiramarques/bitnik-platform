@@ -55,6 +55,7 @@ export default {
   'ui.reserve': 'Reserve: {n}',
   'ui.opponentHand': 'Hand: {n}',
   'ui.hintBlind': 'Pick a face-down card from the opponent’s hand.',
+  'ui.hintDiscard': 'Click a card’s X to discard it.',
   'ui.waitingTurn': 'Opponent’s turn…',
   'ui.spectating': 'Watching the game.',
   'ui.slot.blocked': 'Blocked slot',

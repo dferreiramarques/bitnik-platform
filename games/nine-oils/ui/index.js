@@ -87,6 +87,13 @@ function autoContinue() {
 const mySeat = () => (msg && Number.isInteger(msg.seat) ? msg.seat : null);
 
 function onClick(e) {
+  const discard = e.target.closest('[data-discard]');
+  if (discard) {
+    const carta = discard.dataset.discard;
+    const mv = (msg.legal || []).find((m) => m.type === 'DESCARTAR' && (msg.view.minhaMao || [])[m.payload.carta] === carta);
+    if (mv) ctx.move({ type: mv.type, payload: mv.payload });
+    return;
+  }
   const info = e.target.closest('[data-info]');
   if (info) { ui.cardInfo = info.dataset.info; render(); return; }
   if (e.target.closest('[data-close-info]')) { ui.cardInfo = null; render(); return; }
@@ -187,10 +194,14 @@ function renderCenter(v, me) {
 function renderHand(v, me) {
   if (me == null) return '<div></div>';
   const mao = v.minhaMao || [];
-  // A carta só mostra os detalhes (a jogada em si sai da barra de jogadas).
-  const cards = mao.map((c) => `<button class="nof-card face big" type="button" data-info="${esc(c)}" aria-label="${esc(ctx.t('ui.cardDetails'))} — ${esc(ctx.t(`carta.${c}`))}">
-    <img src="${esc(CARD_ART[c])}" data-fallback="${esc(c)}" alt="">
-  </button>`).join('');
+  const canDiscard = v.fase === 'DESCARTE' && !!(msg.legal || []).length;
+  // A carta abre sempre os detalhes; no descarte, o X no canto é que descarta.
+  const cards = mao.map((c) => `<span class="nof-card-wrap">
+    <button class="nof-card face big" type="button" data-info="${esc(c)}" aria-label="${esc(ctx.t('ui.cardDetails'))} — ${esc(ctx.t(`carta.${c}`))}">
+      <img src="${esc(CARD_ART[c])}" data-fallback="${esc(c)}" alt="">
+    </button>
+    ${canDiscard ? `<button class="nof-x-btn" type="button" data-discard="${esc(c)}" title="${esc(ctx.t('move.DESCARTAR'))}" aria-label="${esc(ctx.t('moveLabel.DESCARTAR', { carta: ctx.t(`carta.${c}`) }))}">✕</button>` : ''}
+  </span>`).join('');
   return `<div class="nof-hand">
     <div class="nof-lbl">${esc(ctx.t('ui.myHand'))}</div>
     <div class="nof-hand-cards">${cards || `<span class="nof-note">${esc(ctx.t('ui.handEmpty'))}</span>`}</div>
@@ -209,6 +220,7 @@ function renderBar(v, me) {
   const legal = msg.legal || [];
   if (v.fase === 'PAUSA') return '';
   if (v.fase === 'ESCOLHA_CEGA') return `<p class="nof-hint">${esc(ctx.t('ui.hintBlind'))}</p>`;
+  if (v.fase === 'DESCARTE' && legal.length) return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
   if (!legal.length) return `<p class="nof-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.waitingTurn'))}</p>`;
   return legal.map((mv, i) => `<button class="nof-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
 }
