@@ -40,7 +40,7 @@ const UI = {
     apPresetSaved: 'Skin "{name}" guardada.', apPresetApplied: 'Skin "{name}" aplicada. Falta guardar.',
     apPresetDeleteConfirm: 'Apagar a skin "{name}"? Não dá para desfazer.', apPresetDeleted: 'Skin apagada.',
     grp_table: 'Mesa', grp_base: 'Base', grp_resources: 'Recursos', grp_players: 'Jogadores', grp_type: 'Letra', grp_shape: 'Forma', grp_art: 'Arte', grp_brand: 'Marca',
-    grp_cards: 'Cartas', grp_lilies: 'Nenúfares',
+    grp_cards: 'Cartas', grp_lilies: 'Nenúfares', grp_dice: 'Dados', grp_tokens: 'Marcadores',
   },
   en: {
     console: 'Console', lobby: 'Open the lobby', lang: 'PT', logout: 'Sign out',
@@ -79,7 +79,7 @@ const UI = {
     apPresetSaved: 'Skin "{name}" saved.', apPresetApplied: 'Skin "{name}" applied. Remember to save.',
     apPresetDeleteConfirm: 'Delete skin "{name}"? This cannot be undone.', apPresetDeleted: 'Skin deleted.',
     grp_table: 'Table', grp_base: 'Base', grp_resources: 'Resources', grp_players: 'Players', grp_type: 'Type', grp_shape: 'Shape', grp_art: 'Art', grp_brand: 'Brand',
-    grp_cards: 'Cards', grp_lilies: 'Lilies',
+    grp_cards: 'Cards', grp_lilies: 'Lilies', grp_dice: 'Dice', grp_tokens: 'Tokens',
   },
 };
 

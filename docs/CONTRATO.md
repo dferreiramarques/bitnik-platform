@@ -119,6 +119,12 @@ Um pacote pode também trazer um tutorial (`tutorial: './ui/tutorial.js'`), com 
 - A plataforma aplica três camadas em folhas de estilo próprias: defaults do pacote, tema escolhido no deploy e afinações da consola. A UI do jogo não carrega a skin; só usa os tokens.
 - Na consola, "Aparência" edita os tokens da marca e de cada jogo (com carregamento de imagens, aviso de contraste AA e exportar/importar JSON), escolhe o tema e pré-visualiza com o cenário `preview` a correr no browser. `PUT /admin/appearance` valida tudo (só tokens declarados, só temas existentes, `url()` só em fundos e imagens e só `data:image`, `https:` ou caminhos locais) e envia `APPEARANCE` a todos os ligados.
 
+**Componentes reutilizáveis** (dado, carta, marcador): não são um tipo novo de token — são só um nome combinado, sempre `type: "image"`, para a consola os agrupar sozinha (`group: "dice" | "cards" | "tokens"`) e um publisher poder trocar a arte sem tocar em código:
+  - `--die-face-1` a `--die-face-6`: uma face de um dado de 6. Sem valor, a UI própria desenha a face com pintas.
+  - `--card-back` (o verso, comum a todas) e `--card-<TIPO>`, um por tipo de carta do jogo (ex. `--card-TEMPTRESS`).
+  - `--token-<nome>`, um por marcador genérico que o jogo usa (meeple, pino, cubo, ficha com número) — o nome é livre, escolhido pelo jogo.
+  O resto do tabuleiro (o que não é dado, carta ou marcador) não entra nesta convenção; fica específico do jogo, como sempre.
+
 No Studio, o botão "Modo protótipo" troca para a UI genérica. Se o módulo não carregar, a plataforma usa a genérica.
 
 ## O match
