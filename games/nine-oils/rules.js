@@ -317,7 +317,7 @@ export function result(s) {
 }
 
 // ─── Rótulos das jogadas (UI genérica) ───────────────────────
-const EMOJI = { TEMPTRESS: '💃', BOY: '🤏', BULLY: '👊' };
+const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
 export function describeMove(move, v) {
   const p = move.payload || {};
   const mao = v?.minhaMao || [];

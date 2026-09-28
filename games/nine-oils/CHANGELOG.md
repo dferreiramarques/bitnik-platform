@@ -1,5 +1,22 @@
 # Nine Oils — histórico de regras
 
+## 1.1.5 — Emoji, dados animados e sem pausa manual (2026-09-28)
+
+Sem mudanças de jogo:
+
+- Emoji trocados a pedido do David: Sedutora ❤️‍🔥 (era 💃), Rapaz 👦🏽 (era
+  🤏), Valentão 💪🏼 (era 👊), garrafa da banca 🧪 (era 🍾). `describeMove` no
+  `rules.js` também mudou, por isso a UI genérica de qualquer prototípo
+  futuro herda os novos emoji automaticamente.
+- Dados como pintas num dado a sério (grelha 3×3), com uma leve animação de
+  entrada e cores alternadas, em vez de números a preto e branco.
+- A pausa "ver os dados" (fase PAUSA, jogada Continuar) deixa de pedir um
+  clique: a UI própria manda a jogada sozinha meio segundo depois de
+  mostrar os dados. A jogada Continuar continua a existir no contrato
+  (para o replay e para a UI genérica), só deixou de aparecer como botão.
+- O modal de detalhes da carta (1.1.3) mostra a arte a ocupar toda a
+  altura do modal, não só uma faixa estreita.
+
 ## 1.1.4 — Arte das cartas no modal de detalhes (2026-09-28)
 
 Sem mudanças de jogo: o modal de detalhes (1.1.3) passa a mostrar a arte

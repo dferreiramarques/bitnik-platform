@@ -8,9 +8,12 @@
 // a minha mão em baixo, e a barra de jogadas.
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-const EMOJI = { TEMPTRESS: '💃', BOY: '🤏', BULLY: '👊' };
+const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
+/** Padrão de pintas de um dado a 6 faces, numa grelha 3×3 (índices 0-8). */
+const DOTS = { 1: [4], 2: [2, 6], 3: [2, 4, 6], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const dieFace = (d) => `<i class="nof-die"><span class="nof-die-grid">${Array.from({ length: 9 }, (_, i) => `<i${(DOTS[d] || []).includes(i) ? ' class="on"' : ''}></i>`).join('')}</span></i>`;
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;
@@ -25,7 +28,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: true, lastLogSeq: 0, cardInfo: null });
+const fresh = () => ({ logOpen: true, lastLogSeq: 0, cardInfo: null, pauseTimer: null });
 let ui = fresh();
 
 function onKeydown(e) {
@@ -47,6 +50,7 @@ export function mount(el, context) {
 
 export function unmount() {
   document.removeEventListener('keydown', onKeydown);
+  clearTimeout(ui.pauseTimer);
   root?.remove();
   root = null; view = null; msg = null;
   ui = fresh();
@@ -54,13 +58,22 @@ export function unmount() {
 
 export function update(next) {
   msg = next;
-  const g = ctx.gameId;
   for (const l of msg.log || []) {
     if (l.announce == null || (l.seq ?? 0) <= ui.lastLogSeq) continue;
     ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
   }
   ui.lastLogSeq = Math.max(ui.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
   render();
+  autoContinue();
+}
+
+/** A pausa depois de lançar é só para os dois verem os dados; a plataforma
+ * continua sozinha (sem clique) passado um instante, em vez de um botão. */
+function autoContinue() {
+  const mv = (msg.legal || []).find((m) => m.type === 'CONTINUAR');
+  if (msg.view.fase !== 'PAUSA' || !mv) { clearTimeout(ui.pauseTimer); ui.pauseTimer = null; return; }
+  if (ui.pauseTimer) return;
+  ui.pauseTimer = setTimeout(() => { ui.pauseTimer = null; ctx.move({ type: mv.type, payload: mv.payload }); }, 1100);
 }
 
 const mySeat = () => (msg && Number.isInteger(msg.seat) ? msg.seat : null);
@@ -134,7 +147,7 @@ function activeSeat(v) {
 function slotClass(x) {
   return x === 0 ? 'blocked' : x === 2 ? 'filled' : 'free';
 }
-const SLOT_ICON = { blocked: '✕', filled: '🍾', free: '' };
+const SLOT_ICON = { blocked: '✕', filled: '🧪', free: '' };
 
 function renderBanca(j) {
   return `<div class="nof-banca">${j.banca.map((x) => {
@@ -163,7 +176,7 @@ function renderCenter(v, me) {
   const heading = PHASE_MOVE[v.fase] ? `<div class="nof-phase">${esc(ctx.t(PHASE_MOVE[v.fase]))}</div>` : '';
   const showDice = (v.fase === 'PAUSA' || v.fase === 'COMBO') && v.dados?.some(Boolean);
   const dice = showDice
-    ? `<div class="nof-dice">${[...v.dados].sort((a, b) => a - b).map((d) => `<i class="nof-die">${d}</i>`).join('')}</div>`
+    ? `<div class="nof-dice">${[...v.dados].sort((a, b) => a - b).map(dieFace).join('')}</div>`
     : '';
   if (v.fase === 'ESCOLHA_CEGA') {
     const opp = me != null ? v.jogadores[1 - me] : null;
@@ -199,6 +212,7 @@ function renderLog() {
 
 function renderBar(v, me) {
   const legal = msg.legal || [];
+  if (v.fase === 'PAUSA') return '';
   if (v.fase === 'ESCOLHA_CEGA') return `<p class="nof-hint">${esc(ctx.t('ui.hintBlind'))}</p>`;
   if (v.fase === 'DESCARTE' && legal.length) return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
   if (!legal.length) return `<p class="nof-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.waitingTurn'))}</p>`;

@@ -94,7 +94,7 @@ Por fazer:
 - ◐ UIs próprias de cada jogo, no template:
   - ✔ Catania;
   - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;
-  - ✔ Nine Oils (1.1.2): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas, mão com os emoji já existentes (💃🤏👊), dados do lançamento, escolha às cegas como cartas viradas para baixo;
+  - ✔ Nine Oils (1.1.4): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas (🧪 garrafa), mão com emoji (❤️‍🔥👦🏽💪🏼) e o botão "?" com a arte e as regras de cada carta, dados animados, escolha às cegas como cartas viradas para baixo, sem pausa manual a "ver os dados";
   - ☐ Bulbous e Praia das Percebes usam a UI genérica.
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.

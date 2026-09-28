@@ -57,9 +57,25 @@
 .nof-phase { font-family: var(--game-font-display); font-weight: 800; font-size: clamp(1.1rem, 3vw, 1.6rem); text-align: center; text-shadow: 0 1px 3px rgb(0 0 0 / .6); }
 .nof-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: min(90%, 420px); }
 .nof-die {
-  width: 34px; height: 34px; border-radius: 8px; box-sizing: border-box;
-  display: grid; place-items: center; font-family: var(--game-font-display); font-weight: 800; font-size: 15px;
+  --dc: var(--game-panel, #fffaf1);
+  width: 34px; height: 34px; border-radius: 9px; box-sizing: border-box; padding: 4px;
+  background: var(--dc); box-shadow: 0 3px 8px rgb(0 0 0 / .35), inset 0 0 0 1px rgb(0 0 0 / .08);
+  animation: nof-die-in .38s cubic-bezier(.2, 1.6, .4, 1) backwards;
 }
+.nof-die:nth-child(4n+1) { --dc: color-mix(in srgb, var(--game-accent, #b8461f) 22%, var(--game-panel, #fffaf1)); }
+.nof-die:nth-child(4n+2) { --dc: color-mix(in srgb, var(--game-color-2, #1a5276) 20%, var(--game-panel, #fffaf1)); }
+.nof-die:nth-child(4n+3) { --dc: var(--game-panel-2, #f3e4cb); }
+.nof-die:nth-child(4n+4) { --dc: color-mix(in srgb, #1d6a27 22%, var(--game-panel, #fffaf1)); }
+.nof-die:nth-child(9n+1) { animation-delay: .02s; } .nof-die:nth-child(9n+2) { animation-delay: .05s; }
+.nof-die:nth-child(9n+3) { animation-delay: .08s; } .nof-die:nth-child(9n+4) { animation-delay: .11s; }
+.nof-die:nth-child(9n+5) { animation-delay: .14s; } .nof-die:nth-child(9n+6) { animation-delay: .17s; }
+.nof-die:nth-child(9n+7) { animation-delay: .2s; } .nof-die:nth-child(9n+8) { animation-delay: .23s; }
+.nof-die:nth-child(9n+9) { animation-delay: .26s; }
+.nof-die-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 100%; height: 100%; }
+.nof-die-grid i { border-radius: 50%; width: 60%; height: 60%; margin: auto; background: transparent; }
+.nof-die-grid i.on { background: var(--game-text, #2b1b12); }
+@keyframes nof-die-in { from { transform: scale(.3) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .nof-die { animation: none; } }
 .nof-blind { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
 
 /* ── Cartas (mão e cartas viradas para baixo) ── */
@@ -98,10 +114,10 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; min-height: 0; padding: 0;
   border-radius: 50%; border: 0; background: var(--game-disabled-bg, #f6eedf); color: var(--game-text, #2b1b12); cursor: pointer;
 }
-.nof-modal-body { display: flex; gap: 14px; }
-.nof-modal-art { flex: none; width: 110px; }
-.nof-modal-art img { width: 100%; border-radius: 8px; display: block; border: 1.5px solid var(--game-line, #d9c49a); }
-.nof-modal-emoji { display: grid; place-items: center; width: 110px; height: 150px; font-size: 56px; border-radius: 8px; background: var(--game-panel-2, #f3e4cb); }
+.nof-modal-body { display: flex; align-items: stretch; gap: 14px; }
+.nof-modal-art { flex: none; width: 130px; align-self: stretch; }
+.nof-modal-art img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; border: 1.5px solid var(--game-line, #d9c49a); }
+.nof-modal-emoji { display: grid; place-items: center; width: 100%; height: 100%; min-height: 160px; font-size: 56px; border-radius: 8px; background: var(--game-panel-2, #f3e4cb); }
 .nof-modal-text { min-width: 0; }
 .nof-modal-name { font-family: var(--game-font-display); font-weight: 800; font-size: 20px; color: var(--game-accent-strong, #8f3417); margin-bottom: 6px; }
 .nof-modal-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--game-muted, #5b4636); margin-top: 8px; }

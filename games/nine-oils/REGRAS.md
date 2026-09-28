@@ -87,11 +87,11 @@ Cada turno tem até 4 passos:
 
 As cartas jogam-se no **início do teu turno**, antes de lançar os dados. Podes jogar qualquer número de cartas. As cartas são descartadas após uso, salvo indicação contrária.
 
-### 💃 A Sedutora *(×2)*
+### ❤️‍🔥 A Sedutora *(×2)*
 
 Joga antes de lançar. Quando lançares um Triple+Double, ganha **1 garrafa adicional** (2 no total). Jogar ambas as cartas de Sedutora concede 2 garrafas extra (3 no total).
 
-### 🤏 O Rapaz *(×2)*
+### 👦🏽 O Rapaz *(×2)*
 
 Joga no teu turno para **roubar 1 garrafa** da banca do adversário. Cada carta de Rapaz é uma tentativa de roubo.
 
@@ -104,7 +104,7 @@ Joga no teu turno para **roubar 1 garrafa** da banca do adversário. Cada carta 
 
 O defensor escolhe quantos Valentões jogar (até ao número de Rapazes em ataque). Jogar 2 Rapazes em simultâneo (antes da resposta do defensor) é inbloqueável por um único Valentão.
 
-### 👊 O Valentão *(×4)*
+### 💪🏼 O Valentão *(×4)*
 
 **Uso defensivo:** joga no turno do *adversário* para cancelar um ataque de Rapaz. Ambas as cartas (Rapaz + Valentão) são descartadas.
 
