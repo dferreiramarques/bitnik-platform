@@ -47,4 +47,18 @@ export default {
   'err.VALENTOES': 'You can block with 0 to {max} Bullies.',
   'err.CARTA': 'That card does not exist.',
   'err.OPCAO': 'That combo is not one of the options.',
+
+  // Own UI (ADR-006), on the vanilla template.
+  'ui.log': 'Log',
+  'ui.myHand': 'My hand',
+  'ui.handEmpty': '(no cards)',
+  'ui.reserve': 'Reserve: {n}',
+  'ui.opponentHand': 'Hand: {n}',
+  'ui.hintBlind': 'Pick a face-down card from the opponent’s hand.',
+  'ui.hintDiscard': 'Pick a card from your hand to discard.',
+  'ui.waitingTurn': 'Opponent’s turn…',
+  'ui.spectating': 'Watching the game.',
+  'ui.slot.blocked': 'Blocked slot',
+  'ui.slot.free': 'Free slot',
+  'ui.slot.filled': 'Bottle',
 };

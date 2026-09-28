@@ -469,7 +469,7 @@ test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência cert
   const { exportAll, defaultsFor } = await import('../tools/figma.js');
   const { designTokensToAppearance, readDesignTokens, isDesignTokens } = await import('../packages/server/public/design-tokens.js');
   const files = await exportAll();
-  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'capivaras.default.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'vanilla.tokens.json']);
+  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'capivaras.default.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'nine-oils.default.tokens.json', 'vanilla.tokens.json']);
   const vanilla = readDesignTokens(files['vanilla.tokens.json']);
   assert.ok(vanilla.some((t) => t.name === '--table-bg'), 'a vanilla também define a mesa');
   const defaults = await defaultsFor();

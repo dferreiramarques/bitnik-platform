@@ -1,5 +1,14 @@
 # Nine Oils — histórico de regras
 
+## 1.1.2 — UI própria, no template vanilla (2026-09-28)
+
+Sem mudanças de jogo: primeira UI própria do Nine Oils (ADR-006), sem tokens
+próprios (`ui/skin.json` é uma cópia de `design/vanilla/skin.json`), para
+mostrar a clientes o aspeto de base da plataforma. Banca de 6 casas por
+jogador, mão com os mesmos emoji do registo (💃🤏👊), dados do lançamento e
+escolha às cegas como cartas viradas para baixo. Deixa de usar a UI genérica
+de protótipo.
+
 ## 1.1.1 — Mensagem da mesa no Penta (2026-09-28)
 
 Sem mudanças de jogo: o Penta (5 dados iguais, ~5% dos lançamentos; o adversário descarta a mão toda) passa a aparecer também como mensagem da mesa ("Penta!"), não só uma linha no registo, que mantém a frase completa (`ctx.log('log.PENTA', {}, { announce: { variant: 'warn', key: 'msg.PENTA' } })`, ADR-014). O Nove (vitória instantânea) não ganhou mensagem: coincide sempre com o resultado, que já mostra o vencedor.

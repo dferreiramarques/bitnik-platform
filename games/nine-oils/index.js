@@ -8,12 +8,15 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'nine-oils',
-  version: '1.1.1',
+  version: '1.1.2',
   players: { min: 2, max: 2 },
   author: 'David Marques',
   license: 'UNLICENSED',
   defaultLang: 'pt',
   i18n: { pt, en },
+  root: new URL('./', import.meta.url).href,
+  ui: './ui/index.js',
+  skin: './ui/skin.json',
 
   setup: rules.setup,
   moves: rules.moves,

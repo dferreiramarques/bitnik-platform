@@ -47,4 +47,18 @@ export default {
   'err.VALENTOES': 'Podes bloquear com 0 a {max} Valentões.',
   'err.CARTA': 'Essa carta não existe.',
   'err.OPCAO': 'Essa combinação não é uma das opções.',
+
+  // UI própria (ADR-006), no template vanilla.
+  'ui.log': 'Registo',
+  'ui.myHand': 'A minha mão',
+  'ui.handEmpty': '(sem cartas)',
+  'ui.reserve': 'Reserva: {n}',
+  'ui.opponentHand': 'Mão: {n}',
+  'ui.hintBlind': 'Escolhe uma carta virada para baixo da mão do adversário.',
+  'ui.hintDiscard': 'Escolhe uma carta da tua mão para descartar.',
+  'ui.waitingTurn': 'Vez do adversário…',
+  'ui.spectating': 'A ver a partida.',
+  'ui.slot.blocked': 'Casa bloqueada',
+  'ui.slot.free': 'Casa livre',
+  'ui.slot.filled': 'Garrafa',
 };
