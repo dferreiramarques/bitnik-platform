@@ -469,6 +469,57 @@ function renderFullTable(msg) {
 // Cores dos lugares na entrada (como --cat-p1…p4 do template).
 const SEAT_COLORS = ['#b03a2e', '#1a5276', '#1d6a27', '#7d6608', '#6c3483', '#117a65'];
 
+// ─── Mensagem da mesa (ADR-014): ao centro, uma de cada vez, sem bloquear cliques ──
+const MSG_MS = 2600;
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Fila de mensagens sobre um elemento persistente, para a animação não recomeçar a cada redesenho. */
+function mountTableMessages(el) {
+  const q = [];
+  let busy = false;
+  function next() {
+    const m = q.shift();
+    if (!m) { busy = false; el.className = 'mesa-msg'; return; }
+    busy = true;
+    el.innerHTML = `<b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}`;
+    el.className = `mesa-msg${m.variant ? ` ${m.variant}` : ''}`;
+    void el.offsetWidth; // recomeça a animação
+    el.classList.add('on');
+    setTimeout(next, reducedMotion() ? 1800 : MSG_MS);
+  }
+  return {
+    announce(title, sub = '', variant = '') {
+      q.push({ title, sub, variant });
+      if (!busy) next();
+    },
+  };
+}
+
+let mesaMsg = null; // { roomId, el, api, mine } — mensagem da mesa genérica (persistente, fora do redesenho)
+
+function unmountMesaMessage() {
+  mesaMsg?.el.remove();
+  mesaMsg = null;
+}
+
+/** Monta (uma vez por mesa) e liga o aviso "É a tua vez" da mesa genérica. */
+function syncMesaMessage(msg) {
+  const host = document.getElementById('mesaMsgHost');
+  if (!host) { if (mesaMsg) unmountMesaMessage(); return; }
+  if (mesaMsg && mesaMsg.roomId !== msg.room.id) unmountMesaMessage();
+  if (!mesaMsg) {
+    const el = document.createElement('div');
+    el.className = 'mesa-msg';
+    el.setAttribute('aria-live', 'polite');
+    mesaMsg = { roomId: msg.room.id, el, api: mountTableMessages(el), mine: false };
+  }
+  const live = document.getElementById('mesaMsgHost');
+  if (live && live !== mesaMsg.el) live.replaceWith(mesaMsg.el);
+  const mine = msg.seat != null && !!msg.active?.includes(msg.seat) && !msg.result;
+  if (mine && !mesaMsg.mine) mesaMsg.api.announce(u('yourTurn'));
+  mesaMsg.mine = mine;
+}
+
 /** Jogadores da UI genérica em ecrã inteiro: um painel de vidro por lugar (ADR-014). */
 function renderMesaPlayers(msg) {
   return `<div class="mesa-players">${msg.room.seats.map((s, i) => {
@@ -519,6 +570,7 @@ function renderGenericMesa(msg) {
     ? `<div class="mesa-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="mesa-card">${renderPalette(msg)}
         <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
   return `<section class="mesa mesa-generic" data-game="${esc(g)}">
+    <div id="mesaMsgHost"></div>
     ${renderMesaPlayers(msg)}
     ${msg.result ? '' : renderMesaAction(msg)}
     ${renderMesaLog(msg)}
@@ -774,6 +826,7 @@ function render() {
   const seatsX = document.querySelector('.seats')?.scrollLeft ?? 0;
   // A UI própria não é redesenhada: sai do DOM antes e volta para o #gameHost.
   app.ui?.el.remove();
+  mesaMsg?.el.remove();
   const typing = document.activeElement?.matches?.('[data-name-input]') ? document.activeElement : null;
   const caret = typing ? [typing.selectionStart, typing.selectionEnd] : null;
   $('#view').innerHTML = inRoom ? renderTable() : home ? renderHome() : renderLobby(gameLobby);
@@ -783,6 +836,8 @@ function render() {
   }
   keepSeatsStrip(seatsX);
   if (inRoom && app.room) syncGameUi(app.room); else if (app.ui) unmountGameUi();
+  if (inRoom && app.room && usesFullMesa(app.room) && !useGameUi(app.room)) syncMesaMessage(app.room);
+  else if (mesaMsg) unmountMesaMessage();
   document.querySelectorAll('.inspect details').forEach((d) => {
     if (openPaths.includes(d.querySelector('summary')?.textContent)) d.open = true;
   });
