@@ -159,7 +159,7 @@ function escolher(s, { baelf }, ctx) {
     if (!reserva.length) {
       p.fimAtivado = true;
       s.fimDisparado = true;
-      ctx.log('log.ULTIMA');
+      ctx.log('log.ULTIMA', {}, { announce: 'warn' });
     }
   }
   if (!s.porEscolher.length) comecarRonda(s);

@@ -1,5 +1,9 @@
 # Bulbous — histórico de regras
 
+## 1.0.1 — Mensagem da mesa na última ronda (2026-09-28)
+
+Sem mudanças de jogo: quem traz a última Baelfungious à mesa (fim ativado) passa a aparecer também como mensagem da mesa, em vez de só uma linha no registo (`ctx.log('log.ULTIMA', {}, { announce: 'warn' })`, ADR-014).
+
 ## 1.0.0 — Migração para a plataforma (2026-09-25)
 
 Regras migradas do servidor antigo (repositório `bulbous`, `game.js`), sem mudanças de jogo:
