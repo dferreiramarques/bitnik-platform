@@ -1,5 +1,9 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.1 — Mensagem da mesa ao cumprir um objetivo (2026-09-28)
+
+Sem mudanças de jogo: conquistar um objetivo revelado (só 8 no baralho) passa a aparecer também como mensagem da mesa ("Objetivo cumprido!"), não só uma linha no registo — que mantém a frase com o nome do objetivo e os pontos (`ctx.log('log.OBJETIVO', ..., { announce: { key: 'msg.OBJETIVO' } })`, ADR-014). O fim do jogo (`log.FIM`) não ganhou mensagem: coincide sempre com o resultado, que já mostra o vencedor.
+
 ## 2.0.0 — Colunas de 4 e 6; troços contados sempre da mesma maneira (2026-09-26)
 
 **Os objetivos "Coluna de 5" e "Coluna de 7" passam a "Coluna de 4" e "Coluna de 6"** (mesmos pontos: 4 e 6). As linhas ficam 5 e 7.

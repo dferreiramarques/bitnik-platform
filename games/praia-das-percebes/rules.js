@@ -166,7 +166,7 @@ export const moves = {
       s.objetivos = s.objetivos.filter((x) => x.id !== o.id);
       s.conquistados.push({ ...o, jogador: ctx.seat });
       s.jogadores[ctx.seat].objPts += o.pts;
-      ctx.log('log.OBJETIVO', { objetivo: `@obj.${o.id}`, pts: o.pts });
+      ctx.log('log.OBJETIVO', { objetivo: `@obj.${o.id}`, pts: o.pts }, { announce: { key: 'msg.OBJETIVO' } });
       if (s.porRevelar.length) s.objetivos.push(s.porRevelar.shift());
     }
     // Salva-vidas: só se não for rocha, houver ficha e uma linha ou coluna livre.

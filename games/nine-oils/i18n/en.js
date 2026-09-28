@@ -39,6 +39,7 @@ export default {
   'log.QUAD_NADA': 'Quad: no cubes left to remove',
   'log.GARRAFAS': 'Triple + Double: {n} bottle(s) stocked',
   'log.PENTA': 'Penta: the opponent discards their whole hand',
+  'msg.PENTA': 'Penta!',
   'log.NADA': 'no combos this roll',
 
   'err.FASE': 'You cannot do that now.',

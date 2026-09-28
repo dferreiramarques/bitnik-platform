@@ -19,6 +19,7 @@ export default {
 
   'log.COLOCOU': 'placed a tile ({peca}, {banhistas})',
   'log.OBJETIVO': 'claimed the objective {objetivo} (+{pts})',
+  'msg.OBJETIVO': 'Objective claimed!',
   'log.SALVA_VIDAS_H': 'placed a lifeguard watching the row',
   'log.SALVA_VIDAS_V': 'placed a lifeguard watching the column',
   'log.FIM': 'game over',

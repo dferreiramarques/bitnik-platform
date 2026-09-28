@@ -39,6 +39,7 @@ export default {
   'log.QUAD_NADA': 'Quad: já não há cubos para tirar',
   'log.GARRAFAS': 'Triplo + Duplo: {n} garrafa(s) na banca',
   'log.PENTA': 'Penta: o adversário descarta a mão toda',
+  'msg.PENTA': 'Penta!',
   'log.NADA': 'sem combinações neste lançamento',
 
   'err.FASE': 'Isso não se faz agora.',

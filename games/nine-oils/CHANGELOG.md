@@ -1,5 +1,9 @@
 # Nine Oils — histórico de regras
 
+## 1.1.1 — Mensagem da mesa no Penta (2026-09-28)
+
+Sem mudanças de jogo: o Penta (5 dados iguais, ~5% dos lançamentos; o adversário descarta a mão toda) passa a aparecer também como mensagem da mesa ("Penta!"), não só uma linha no registo, que mantém a frase completa (`ctx.log('log.PENTA', {}, { announce: { variant: 'warn', key: 'msg.PENTA' } })`, ADR-014). O Nove (vitória instantânea) não ganhou mensagem: coincide sempre com o resultado, que já mostra o vencedor.
+
 ## 1.1.0 — 2 Rapazes (2026-09-26)
 
 - **2 Rapazes** (8 cartas de Personagem), como nas regras escritas. Simulação com 20 000 partidas por versão: quem começa ganha 53,1% com 2 Rapazes e 53,7% com 3; há metade dos roubos (0,36 contra 0,76 por partida). Não desequilibra.

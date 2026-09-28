@@ -151,7 +151,7 @@ function aplicar(s, combos, ctx) {
   if (combos.includes('PENTA')) {
     s.descarte.push(...opp.mao);
     opp.mao = [];
-    ctx.log('log.PENTA');
+    ctx.log('log.PENTA', {}, { announce: { variant: 'warn', key: 'msg.PENTA' } });
   }
   if (!combos.length) ctx.log('log.NADA');
   if (p.banca.every((x) => x === 2)) return fim(s, s.vez);

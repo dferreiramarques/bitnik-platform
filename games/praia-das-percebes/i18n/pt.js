@@ -19,6 +19,7 @@ export default {
 
   'log.COLOCOU': 'colocou uma peça ({peca}, {banhistas})',
   'log.OBJETIVO': 'conquistou o objetivo {objetivo} (+{pts})',
+  'msg.OBJETIVO': 'Objetivo cumprido!',
   'log.SALVA_VIDAS_H': 'pôs um salva-vidas a vigiar a linha',
   'log.SALVA_VIDAS_V': 'pôs um salva-vidas a vigiar a coluna',
   'log.FIM': 'fim do jogo',
