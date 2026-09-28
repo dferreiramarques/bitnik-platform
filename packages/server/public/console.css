@@ -80,6 +80,13 @@
 }
 .ap-input textarea { font-family: ui-monospace, Consolas, monospace; font-size: .78rem; }
 .ap-swatch { width: 44px; height: 40px; padding: 2px; border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); cursor: pointer; }
+.ap-presets { background: var(--ui-alt); border-radius: var(--ui-r-sm); padding: 10px 12px; }
+.ap-preset-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+.ap-preset-row:first-of-type { margin-top: 0; }
+.ap-preset-row select, .ap-preset-row input {
+  flex: 1; min-width: 140px; font: inherit; padding: 6px 10px; min-height: 40px;
+  border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); color: var(--ui-text);
+}
 .ap-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .ap-file { cursor: pointer; display: inline-flex; align-items: center; }
 .ap-contrast { margin-top: 14px; padding: 10px 12px; border-radius: var(--ui-r-sm); background: var(--ui-alt); }

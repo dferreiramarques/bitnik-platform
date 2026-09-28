@@ -96,6 +96,7 @@ export function view() {
           <label>${u('apTarget')}<select id="apTarget">${opts}</select></label>
           ${themeSel}
         </form>
+        ${presetsHtml()}
         ${g ? gameGroups(g) : brandGroups()}
         <div class="ap-contrast" id="apContrast">${contrastHtml()}</div>
         <p class="ap-dirty" id="apDirty" ${dirty() ? '' : 'hidden'}>${u('apUnsaved')}</p>
@@ -142,6 +143,26 @@ function gameGroups(g) {
   // A mesa primeiro (ADR-008).
   const order = ['table', ...[...groups.keys()].filter((x) => x !== 'table')];
   return order.filter((x) => groups.has(x)).map((grp) => `<fieldset class="ap-group"><legend>${esc(ctx.u(`grp_${grp}`))}</legend>${groups.get(grp).join('')}</fieldset>`).join('');
+}
+
+function presetsHtml() {
+  const { u } = ctx;
+  const target = st.target;
+  const list = (st.catalog.presets || []).filter((p) => p.target === target);
+  const opts = [`<option value="">${u('apPresetNone')}</option>`,
+    ...list.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`)].join('');
+  return `<fieldset class="ap-group ap-presets">
+    <legend>${u('apPresets')}</legend>
+    <div class="ap-preset-row">
+      <select id="apPresetSelect">${opts}</select>
+      <button class="btn btn-outline" type="button" data-ap="preset-apply" ${list.length ? '' : 'disabled'}>${u('apPresetApply')}</button>
+      <button class="btn btn-ghost" type="button" data-ap="preset-delete" ${list.length ? '' : 'disabled'}>${u('apPresetDelete')}</button>
+    </div>
+    <div class="ap-preset-row">
+      <input id="apPresetName" placeholder="${esc(u('apPresetNamePh'))}">
+      <button class="btn btn-primary" type="button" data-ap="preset-save">${u('apPresetSaveAs')}</button>
+    </div>
+  </fieldset>`;
 }
 
 function brandGroups() {
@@ -320,6 +341,29 @@ export function after(root) {
       } else if (act === 'export') {
         download(`aparencia-${new Date().toISOString().slice(0, 10)}.json`, st.draft);
         return;
+      } else if (act === 'preset-apply') {
+        const sel = root.querySelector('#apPresetSelect');
+        const p = (st.catalog.presets || []).find((x) => x.id === sel?.value);
+        if (!p) return;
+        if (p.target === 'brand') st.draft.brand.tokens = { ...p.tokens };
+        else Object.assign(gameCfg(p.target), { tokens: { ...p.tokens }, theme: p.theme ?? null });
+        if (g) await applyGameSkin(g.meta, st.draft.games[g.id]?.theme);
+        ctx.toast(u('apPresetApplied', { name: p.name }));
+      } else if (act === 'preset-delete') {
+        const sel = root.querySelector('#apPresetSelect');
+        const p = (st.catalog.presets || []).find((x) => x.id === sel?.value);
+        if (!p || !confirm(u('apPresetDeleteConfirm', { name: p.name }))) return;
+        await ctx.api(`appearance/presets/${p.id}`, { method: 'DELETE' });
+        st.catalog.presets = (st.catalog.presets || []).filter((x) => x.id !== p.id);
+        ctx.toast(u('apPresetDeleted'));
+      } else if (act === 'preset-save') {
+        const name = root.querySelector('#apPresetName')?.value.trim();
+        if (!name) { ctx.toast(u('apPresetNameNeeded')); return; }
+        const body = g ? { target: g.id, name, theme: st.draft.games[g.id]?.theme ?? null, tokens: st.draft.games[g.id]?.tokens || {} }
+          : { target: 'brand', name, tokens: st.draft.brand.tokens };
+        const { preset } = await ctx.api('appearance/presets', { method: 'POST', body });
+        st.catalog.presets = [...(st.catalog.presets || []).filter((x) => !(x.target === preset.target && x.name === preset.name)), preset];
+        ctx.toast(u('apPresetSaved', { name: preset.name }));
       }
     } catch (err) {
       ctx.toast(err.message);

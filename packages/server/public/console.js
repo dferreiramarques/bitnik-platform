@@ -35,7 +35,12 @@ const UI = {
     apContrast: 'Contraste', apContrastOk: 'Contraste suficiente em todos os pares (AA).', apContrastLow: '{a} sobre {b}: {r}:1 (mínimo 4.5:1)',
     apUnsaved: 'Há alterações por guardar.', apSaved: 'Aparência guardada: já chegou aos jogadores ligados.', apImported: 'JSON importado. Revê e guarda.',
     apBadJson: 'JSON inválido.',
+    apPresets: 'Skins guardadas', apPresetNone: 'Escolher…', apPresetApply: 'Aplicar', apPresetDelete: 'Apagar',
+    apPresetNamePh: 'Nome da skin', apPresetSaveAs: 'Guardar como…', apPresetNameNeeded: 'Escreve um nome para a skin.',
+    apPresetSaved: 'Skin "{name}" guardada.', apPresetApplied: 'Skin "{name}" aplicada. Falta guardar.',
+    apPresetDeleteConfirm: 'Apagar a skin "{name}"? Não dá para desfazer.', apPresetDeleted: 'Skin apagada.',
     grp_table: 'Mesa', grp_base: 'Base', grp_resources: 'Recursos', grp_players: 'Jogadores', grp_type: 'Letra', grp_shape: 'Forma', grp_art: 'Arte', grp_brand: 'Marca',
+    grp_cards: 'Cartas', grp_lilies: 'Nenúfares',
   },
   en: {
     console: 'Console', lobby: 'Open the lobby', lang: 'PT', logout: 'Sign out',
@@ -69,7 +74,12 @@ const UI = {
     apContrast: 'Contrast', apContrastOk: 'Enough contrast on every pair (AA).', apContrastLow: '{a} on {b}: {r}:1 (minimum 4.5:1)',
     apUnsaved: 'There are unsaved changes.', apSaved: 'Appearance saved: connected players already have it.', apImported: 'JSON imported. Review and save.',
     apBadJson: 'Invalid JSON.',
+    apPresets: 'Saved skins', apPresetNone: 'Choose…', apPresetApply: 'Apply', apPresetDelete: 'Delete',
+    apPresetNamePh: 'Skin name', apPresetSaveAs: 'Save as…', apPresetNameNeeded: 'Write a name for the skin.',
+    apPresetSaved: 'Skin "{name}" saved.', apPresetApplied: 'Skin "{name}" applied. Remember to save.',
+    apPresetDeleteConfirm: 'Delete skin "{name}"? This cannot be undone.', apPresetDeleted: 'Skin deleted.',
     grp_table: 'Table', grp_base: 'Base', grp_resources: 'Resources', grp_players: 'Players', grp_type: 'Type', grp_shape: 'Shape', grp_art: 'Art', grp_brand: 'Brand',
+    grp_cards: 'Cards', grp_lilies: 'Lilies',
   },
 };
 

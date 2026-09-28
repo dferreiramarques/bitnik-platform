@@ -51,6 +51,9 @@ export const BRAND_TOKENS = {
   '--font-display': 'font', '--font-body': 'font', '--radius-md': 'size',
 };
 const TOKEN_LIMITS = { color: 64, font: 200, size: 32, background: 400_000, image: 400_000 };
+// Corpo de /admin/appearance: pode ter fundos/imagens até 400 000 carateres cada, em vários jogos.
+// (o omitido em readJson() é só 10 000; sem isto, um fundo em imagem destruía a ligação sem resposta.)
+const APPEARANCE_MAX = 3_000_000;
 
 /** Valida um valor de token; devolve o valor limpo ou lança um erro com o motivo. */
 function cleanToken(name, type, value) {
@@ -146,6 +149,7 @@ export function createPlatform({
   const graceTimers = new Map();   // userId → timeout
   let notices = [];                // avisos do publisher para todos os ligados
   let appearance = { brand: { tokens: {} }, games: {} }; // afinações da consola (ADR-008)
+  let appearancePresets = []; // skins nomeadas, guardadas à parte da aparência ativa: { id, target, name, theme, tokens, createdAt }
   const forge = new Map();         // slug → projeto da Forge (só no Studio, ADR-009)
   let now = () => Date.now();
   let closing = false;
@@ -401,38 +405,74 @@ export function createPlatform({
         },
       });
     }
-    return { appearance, brandTokens: BRAND_TOKENS, games };
+    return { appearance, brandTokens: BRAND_TOKENS, games, presets: appearancePresets };
+  }
+
+  /** Só os tokens da marca que existem em BRAND_TOKENS, limpos. */
+  function cleanBrandTokens(tokens = {}) {
+    const out = {};
+    for (const [k, v] of Object.entries(tokens)) {
+      if (!BRAND_TOKENS[k]) throw new Error(`${k}: token da marca desconhecido`);
+      const c = cleanToken(k, BRAND_TOKENS[k], v);
+      if (c) out[k] = c;
+    }
+    return out;
+  }
+
+  /** Tema e tokens de um jogo, validados contra o skin.json do pacote. */
+  async function cleanGameConfig(gameId, cfg = {}) {
+    const g = G.get(gameId);
+    if (!g) throw new Error(`${gameId}: jogo não instalado`);
+    const skin = await readPkgJson(g, g.skin);
+    const out = { theme: null, tokens: {} };
+    if (cfg?.theme) {
+      if (!g.themes?.[cfg.theme]) throw new Error(`${gameId}: tema ${cfg.theme} não existe`);
+      out.theme = cfg.theme;
+    }
+    for (const [k, v] of Object.entries(cfg?.tokens || {})) {
+      const def = skin?.tokens?.[k];
+      if (!def) throw new Error(`${gameId}: token ${k} não está no skin.json`);
+      const c = cleanToken(k, def.type, v);
+      if (c) out.tokens[k] = c;
+    }
+    return out;
   }
 
   /** Valida e guarda as afinações; só tokens declarados, só temas que existem. */
   async function setAppearance(input = {}) {
-    const next = { brand: { tokens: {} }, games: {} };
-    for (const [k, v] of Object.entries(input.brand?.tokens || {})) {
-      if (!BRAND_TOKENS[k]) throw new Error(`${k}: token da marca desconhecido`);
-      const c = cleanToken(k, BRAND_TOKENS[k], v);
-      if (c) next.brand.tokens[k] = c;
-    }
-    for (const [id, cfg] of Object.entries(input.games || {})) {
-      const g = G.get(id);
-      if (!g) throw new Error(`${id}: jogo não instalado`);
-      const skin = await readPkgJson(g, g.skin);
-      const out = { theme: null, tokens: {} };
-      if (cfg?.theme) {
-        if (!g.themes?.[cfg.theme]) throw new Error(`${id}: tema ${cfg.theme} não existe`);
-        out.theme = cfg.theme;
-      }
-      for (const [k, v] of Object.entries(cfg?.tokens || {})) {
-        const def = skin?.tokens?.[k];
-        if (!def) throw new Error(`${id}: token ${k} não está no skin.json`);
-        const c = cleanToken(k, def.type, v);
-        if (c) out.tokens[k] = c;
-      }
-      if (out.theme || Object.keys(out.tokens).length) next.games[id] = out;
+    const next = { brand: { tokens: cleanBrandTokens(input.brand?.tokens) }, games: {} };
+    for (const [gameId, cfg] of Object.entries(input.games || {})) {
+      const out = await cleanGameConfig(gameId, cfg);
+      if (out.theme || Object.keys(out.tokens).length) next.games[gameId] = out;
     }
     appearance = next;
     storage.saveAppearance?.(appearance);
     for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance });
     return appearance;
+  }
+
+  /** Guarda a aparência atual de um alvo (marca ou jogo) como skin nomeada, para reaplicar depois. */
+  async function saveAppearancePreset(input = {}) {
+    const target = String(input.target || '');
+    const name = String(input.name ?? '').replace(/[<>]/g, '').trim().slice(0, 40);
+    if (!name) throw new Error('falta o nome da skin');
+    let tokens; let theme = null;
+    if (target === 'brand') {
+      tokens = cleanBrandTokens(input.tokens);
+    } else {
+      ({ tokens, theme } = await cleanGameConfig(target, input));
+    }
+    const preset = { id: randomBytes(9).toString('base64url'), target, name, theme, tokens, createdAt: now() };
+    appearancePresets = [...appearancePresets.filter((p) => !(p.target === target && p.name === name)), preset];
+    storage.saveAppearancePresets?.(appearancePresets);
+    return preset;
+  }
+
+  function deleteAppearancePreset(presetId) {
+    const before = appearancePresets.length;
+    appearancePresets = appearancePresets.filter((p) => p.id !== presetId);
+    storage.saveAppearancePresets?.(appearancePresets);
+    return appearancePresets.length < before;
   }
 
   /** Há uma janela de manutenção ativa para este jogo? */
@@ -954,7 +994,14 @@ export function createPlatform({
         return json(res, 200, { gameId: game.id, version: game.version, results });
       }
       if (url === '/admin/appearance' && req.method === 'GET') return json(res, 200, await appearanceCatalog());
-      if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req)) });
+      if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req, APPEARANCE_MAX)) });
+      if (url === '/admin/appearance/presets' && req.method === 'POST') {
+        return json(res, 201, { preset: await saveAppearancePreset(await readJson(req, APPEARANCE_MAX)) });
+      }
+      const presetMatch = url.match(/^\/admin\/appearance\/presets\/([\w-]+)$/);
+      if (presetMatch && req.method === 'DELETE') {
+        return json(res, deleteAppearancePreset(presetMatch[1]) ? 204 : 404);
+      }
       // ─── Forge (ADR-009): projetos de jogo, só no Studio ─────
       if (url === '/admin/forge' || url.startsWith('/admin/forge/')) {
         if (!studio) return json(res, 404, { error: 'a Forge só existe no Studio' });
@@ -1047,6 +1094,7 @@ export function createPlatform({
     users = saved.users || {};
     notices = (saved.notices || []).filter((n) => n.until > now());
     if (saved.appearance) appearance = { brand: { tokens: {} }, games: {}, ...saved.appearance };
+    appearancePresets = Array.isArray(saved.appearancePresets) ? saved.appearancePresets : [];
     // Normaliza ao carregar: projetos guardados por versões anteriores ganham os campos novos.
     for (const [slug, p] of Object.entries(saved.forge || {})) {
       forge.set(slug, { ...normalizeProject(p), createdAt: p.createdAt ?? now(), updatedAt: p.updatedAt ?? now() });

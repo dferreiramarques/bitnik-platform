@@ -14,7 +14,7 @@
   position: absolute; inset: 0; overflow: hidden;
   /* As disposições seguem o tamanho da mesa, não o do ecrã (container queries). */
   container-type: size;
-  color: var(--capi-text);
+  color: var(--ot);
   font-family: var(--font-body, Inter, system-ui, sans-serif);
   -webkit-user-select: none; user-select: none;
   /* o fundo é o --table-bg, aplicado pela plataforma */
