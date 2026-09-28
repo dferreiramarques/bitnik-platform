@@ -328,7 +328,7 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 ## ADR-014: A mesa ocupa o ecrã inteiro; painéis de vidro por cima
 
-**Estado:** aceite no desenho (2026-09-26); implementada no Catania e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, para Bulbous, Praia das Percebes e Nine Oils); faltam mensagens da mesa, componentes como alvo, "Copiar convite" e pontos por origem (ver "O que falta" no `docs/CONTEXTO.md`)
+**Estado:** aceite no desenho (2026-09-26); implementada no Catania e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, para Bulbous, Praia das Percebes e Nine Oils); faltam mensagens da mesa, componentes como alvo e "Copiar convite" (ver "O que falta" no `docs/CONTEXTO.md`); pontos por origem no fim/relatório ficam de fora, só por jogo se algum precisar
 
 ### Contexto
 
@@ -365,6 +365,7 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 - A marca de um deploy passa a dizer se é de vários jogos (Início) ou de um só (Marca-produto).
 - Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
 - "Copiar convite" na Entrada é novo: hoje só as mesas de aprovação, criadas na consola, têm convite.
-- O contrato ganha dois acrescentos opcionais, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos) e pontos por origem no fim, com momentos decisivos para o relatório.
+- O contrato ganha um acrescento opcional, a definir no `CONTRATO.md` antes de implementar: mensagens da mesa (texto e variante, a partir dos eventos).
+- Pontos por origem no fim e momentos decisivos para o relatório: adiado (2026-09-28). Não passa a ser uma peça do contrato para todos os jogos; só se um jogo concreto precisar (ex.: Bulbous) faz-se à parte, nesse jogo.
 - Antes de implementar, resolver os pendentes da secção 5 do TEMPLATE: contraste do vidro e alvos de toque de 44 px. Se o vidro passar a escuro, mudam os valores de `--game-glass` e `--game-glass-line`, não os nomes.
 - O teste de encaixe com o Catania (quadros no canvas) mostrou que o desenho serve um jogo real, mas faltam ao vanilla componentes com ícone, o alvo no tabuleiro, a barra de ações com passo e motivo, o modal de escolha e um grupo de tokens de recursos (secção 5 do TEMPLATE).

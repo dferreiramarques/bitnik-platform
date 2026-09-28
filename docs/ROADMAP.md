@@ -87,7 +87,8 @@ Por fazer:
 - ◐ UI genérica com o desenho do template (ADR-014):
   - ✔ Pendentes da secção 5 do `design/figma/TEMPLATE.md` resolvidos (contraste do vidro, alvos de toque, botão de informação; as peças que o Catania pediu ficaram num quadro novo, "Vanilla: peças que faltam").
   - ✔ Mesa em ecrã inteiro para jogos sem UI própria (Bulbous, Praia, Nine Oils): sem tabuleiro, mas com os mesmos painéis de vidro (jogadores, jogadas, registo colapsável).
-  - ☐ Mensagens da mesa, componentes como alvo, "Copiar convite" em qualquer mesa e pontos por origem no fim/relatório — por acrescentar ao `CONTRATO.md` antes de implementar.
+  - ☐ Mensagens da mesa, componentes como alvo e "Copiar convite" em qualquer mesa — por acrescentar ao `CONTRATO.md` antes de implementar.
+  - Pontos por origem no fim/relatório: adiado. Não é uma peça do contrato para todos os jogos; só se um jogo concreto precisar (ex.: Bulbous) implementa-se à parte, nesse jogo.
 - ◐ UIs próprias de cada jogo, no template:
   - ✔ Catania;
   - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;
