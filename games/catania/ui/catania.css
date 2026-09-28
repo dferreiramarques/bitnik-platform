@@ -193,23 +193,7 @@
 .cat-info small { color: var(--cat-muted); font-size: 10px; }
 .cat-wait { margin: 0; padding: 0 10px; min-height: 44px; display: flex; align-items: center; color: var(--cat-muted); font-style: italic; }
 
-/* ── Mensagem da mesa: aparece no meio, cresce e desaparece; não bloqueia cliques ── */
-.cat-msg {
-  position: absolute; left: 0; right: 0; top: 50%; z-index: 4; pointer-events: none;
-  display: grid; justify-items: center; gap: 4px; text-align: center;
-  color: var(--ot); opacity: 0; transform: translateY(-50%);
-}
-.cat-msg b { font-family: var(--cat-font-display); font-weight: 800; font-size: clamp(34px, 6vw, 56px); line-height: 1; text-shadow: 0 4px 24px rgb(0 0 0 / .45); }
-.cat-msg small { font-weight: 600; font-size: 13px; text-shadow: var(--float-shadow); }
-.cat-msg.warn b { color: var(--cat-gold); }
-.cat-msg.on { animation: cat-msg 2.6s ease-out forwards; }
-@keyframes cat-msg {
-  0% { opacity: 0; transform: translateY(-50%) scale(.7); }
-  18% { opacity: 1; transform: translateY(-50%) scale(1); }
-  65% { opacity: 1; transform: translateY(-50%) scale(1.02); }
-  100% { opacity: 0; transform: translateY(-50%) scale(1.18); }
-}
-@keyframes cat-fade { 0%, 100% { opacity: 0; } 15%, 80% { opacity: 1; } }
+/* Mensagem da mesa: da plataforma (.mesa-msg em app.css), não daqui. */
 
 /* ── Modais (por cima da mesa) ── */
 .cat-ovl { position: absolute; inset: 0; background: rgb(0 0 0 / .55); display: grid; place-items: center; padding: 16px; z-index: 20; }
@@ -256,7 +240,6 @@
   .cat-fire, .cat-fire-glow, .cat-firepicks polygon { animation: none; }
   .cat-wave { animation: none; opacity: .35; }
   .cat-firepicks polygon { stroke-width: 4; }
-  .cat-msg.on { animation: cat-fade 1.8s linear forwards; }
 }
 
 /* O guia do tutorial fica ao lado da .cat (não dentro): segue o ecrã. */

@@ -461,6 +461,7 @@ function renderFullTable(msg) {
         <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
   return `<section class="mesa" data-game="${esc(g)}">
     <div id="gameHost" class="game-host"><p class="mesa-loading">${u('loadingUi')}</p></div>
+    <div id="mesaMsgHost"></div>
     ${renderTableTop(g, info + (round ? ` · ${u('round', { n: round })}` : ''), extra)}
     ${result}
   </section>`;
@@ -502,10 +503,15 @@ function unmountMesaMessage() {
   mesaMsg = null;
 }
 
-/** Monta (uma vez por mesa) e liga o aviso "É a tua vez" da mesa genérica. */
-function syncMesaMessage(msg) {
+/**
+ * Monta (uma vez por mesa) o elemento persistente da mensagem da mesa e liga-o
+ * ao #mesaMsgHost do redesenho atual. Devolve a fila (mesaMsg), para a UI
+ * própria do jogo lhe mandar mensagens pelo ctx.announce, ou null se a mesa
+ * não tiver mensagem da mesa (fora de uma mesa em ecrã inteiro).
+ */
+function syncMesaMessageEl(msg) {
   const host = document.getElementById('mesaMsgHost');
-  if (!host) { if (mesaMsg) unmountMesaMessage(); return; }
+  if (!host) { if (mesaMsg) unmountMesaMessage(); return null; }
   if (mesaMsg && mesaMsg.roomId !== msg.room.id) unmountMesaMessage();
   if (!mesaMsg) {
     const el = document.createElement('div');
@@ -515,9 +521,16 @@ function syncMesaMessage(msg) {
   }
   const live = document.getElementById('mesaMsgHost');
   if (live && live !== mesaMsg.el) live.replaceWith(mesaMsg.el);
+  return mesaMsg;
+}
+
+/** UI genérica (sem gatilhos próprios): a plataforma manda "É a tua vez". */
+function syncMesaMessage(msg) {
+  const m = syncMesaMessageEl(msg);
+  if (!m) return;
   const mine = msg.seat != null && !!msg.active?.includes(msg.seat) && !msg.result;
-  if (mine && !mesaMsg.mine) mesaMsg.api.announce(u('yourTurn'));
-  mesaMsg.mine = mine;
+  if (mine && !m.mine) m.api.announce(u('yourTurn'));
+  m.mine = mine;
 }
 
 /** Jogadores da UI genérica em ecrã inteiro: um painel de vidro por lugar (ADR-014). */
@@ -662,6 +675,7 @@ function unmountGameUi() {
 async function syncGameUi(msg) {
   const host = document.getElementById('gameHost');
   if (!host) { if (app.ui) unmountGameUi(); return; }
+  syncMesaMessageEl(msg); // liga o elemento da mensagem da mesa; o jogo manda-lhe mensagens pelo ctx.announce
   const gameId = msg.room.gameId;
   if (app.ui && (app.ui.roomId !== msg.room.id || app.ui.gameId !== gameId)) unmountGameUi();
   if (!app.ui) {
@@ -692,6 +706,7 @@ async function syncGameUi(msg) {
       },
       seatName,
       toast,
+      announce: (title, sub, variant) => mesaMsg?.api.announce(title, sub, variant),
     });
   }
   const live = document.getElementById('gameHost');
@@ -836,8 +851,9 @@ function render() {
   }
   keepSeatsStrip(seatsX);
   if (inRoom && app.room) syncGameUi(app.room); else if (app.ui) unmountGameUi();
-  if (inRoom && app.room && usesFullMesa(app.room) && !useGameUi(app.room)) syncMesaMessage(app.room);
-  else if (mesaMsg) unmountMesaMessage();
+  if (inRoom && app.room && usesFullMesa(app.room)) {
+    if (!useGameUi(app.room)) syncMesaMessage(app.room); // UI própria: já ligado por syncGameUi, o jogo manda pelo ctx.announce
+  } else if (mesaMsg) unmountMesaMessage();
   document.querySelectorAll('.inspect details').forEach((d) => {
     if (openPaths.includes(d.querySelector('summary')?.textContent)) d.open = true;
   });

@@ -146,23 +146,8 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
 .capi-timer { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--capi-gold); transform-origin: left; animation: capi-drain 5s linear forwards; }
 @keyframes capi-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 
-/* ── Mensagem da mesa: aparece no meio, cresce e desaparece; não bloqueia cliques ── */
-.capi-msg {
-  position: absolute; left: 0; right: 0; top: 50%; z-index: 4; pointer-events: none;
-  display: grid; justify-items: center; gap: 4px; text-align: center; padding: 0 16px;
-  color: var(--ot); opacity: 0; transform: translateY(-50%);
-}
-.capi-msg b { font-family: var(--capi-font-display); font-weight: 800; font-size: clamp(30px, 6vw, 54px); line-height: 1.05; text-shadow: 0 4px 24px rgb(0 0 0 / .5); }
-.capi-msg small { font-weight: 600; font-size: 13px; text-shadow: var(--float-shadow); }
-.capi-msg.gold b { color: var(--capi-gold); }
-.capi-msg.on { animation: capi-msg 2.6s ease-out forwards; }
-@keyframes capi-msg {
-  0% { opacity: 0; transform: translateY(-50%) scale(.7); }
-  18% { opacity: 1; transform: translateY(-50%) scale(1); }
-  65% { opacity: 1; transform: translateY(-50%) scale(1.02); }
-  100% { opacity: 0; transform: translateY(-50%) scale(1.18); }
-}
-@keyframes capi-fade { 0%, 100% { opacity: 0; } 15%, 80% { opacity: 1; } }
+/* Mensagem da mesa: da plataforma (.mesa-msg em app.css). O "gold" (pássaro) é só do Capivaras. */
+[data-game="capivaras"] .mesa-msg.gold b { color: var(--capi-gold); }
 
 /* ── Telemóvel na vertical ── */
 @container (max-width: 760px) {
@@ -220,6 +205,5 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
 
 @media (prefers-reduced-motion: reduce) {
   .capi-card { transition: none; }
-  .capi-msg.on { animation: capi-fade 1.8s linear forwards; }
   .capi-timer { animation: none; }
 }

@@ -65,6 +65,19 @@
             "mode": "dia"
           }
         }
+      },
+      "game-on-table-warn": {
+        "$type": "color",
+        "$value": "var(--cat-gold)",
+        "$description": "Aviso sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-warn",
+            "type": "color",
+            "collection": "catania",
+            "mode": "dia"
+          }
+        }
       }
     },
     "base": {

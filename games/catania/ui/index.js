@@ -17,7 +17,6 @@ const RED = new Set([9, 7, 5, 3, 1]);
 const R = 62;
 const W3 = Math.sqrt(3) * R;
 const ZOOM = { min: 0.6, max: 3 };
-const MSG_MS = 2600;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const img = (key, size = 24) => `<img src="${ICONS[key]}" width="${size}" height="${size}" alt="">`;
@@ -33,7 +32,6 @@ const hexPts = (cx, cy, r) => Array.from({ length: 6 }, (_, i) => {
 const loopDelay = (dur, offset = 0) => `-${(((performance.now() / 1000) + offset) % dur).toFixed(2)}s`;
 const seatColor = (i) => `var(--cat-p${(i % 4) + 1})`;
 const disc = (v, cls = '') => `<span class="cat-disc${RED.has(v) ? ' red' : ''}${cls ? ` ${cls}` : ''}">${v}</span>`;
-const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function ensureCss() {
   const href = new URL('./catania.css', import.meta.url).href;
@@ -46,14 +44,13 @@ function ensureCss() {
 
 let root = null;   // .cat (fica montado)
 let view = null;   // conteúdo redesenhado a cada estado
-let msgEl = null;  // mensagem da mesa (persistente, para a animação não recomeçar)
 let ctx = null;
 let msg = null;
 let resizeObs = null;
 const fresh = () => ({
   mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false, prevMine: false, prevPhase: null,
   zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0,
-  stripCur: null, showPiles: false, showLog: false, logOpen: true, msgQ: [], msgBusy: false,
+  stripCur: null, showPiles: false, showLog: false, logOpen: true,
 });
 let ui = fresh();
 
@@ -64,10 +61,7 @@ export function mount(el, context) {
   root.className = 'cat';
   view = document.createElement('div');
   view.className = 'cat-layout';
-  msgEl = document.createElement('div');
-  msgEl.className = 'cat-msg';
-  msgEl.setAttribute('aria-live', 'polite');
-  root.append(view, msgEl);
+  root.append(view);
   el.append(root);
   root.addEventListener('click', onClickCapture, true);
   root.addEventListener('click', onClick);
@@ -88,7 +82,7 @@ export function unmount() {
   resizeObs?.disconnect(); resizeObs = null;
   frame = null;
   root?.remove();
-  root = null; view = null; msgEl = null; msg = null;
+  root = null; view = null; msg = null;
   ui = fresh();
 }
 
@@ -114,22 +108,10 @@ export function update(next) {
   render();
 }
 
-// ─── Mensagem da mesa ───────────────────────────────────────
+// ─── Mensagem da mesa (ADR-014): fila e animação são da plataforma ───
 function announce(title, sub = '', variant = '') {
   if (ctx.messages === false) return; // o tutorial explica tudo na caixa do guia
-  ui.msgQ.push({ title, sub, variant });
-  if (!ui.msgBusy) nextMessage();
-}
-
-function nextMessage() {
-  const m = ui.msgQ.shift();
-  if (!m || !msgEl) { ui.msgBusy = false; if (msgEl) msgEl.className = 'cat-msg'; return; }
-  ui.msgBusy = true;
-  msgEl.innerHTML = `<b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}`;
-  msgEl.className = `cat-msg${m.variant ? ` ${m.variant}` : ''}`;
-  void msgEl.offsetWidth; // recomeça a animação
-  msgEl.classList.add('on');
-  setTimeout(nextMessage, reduced() ? 1800 : MSG_MS);
+  ctx.announce(title, sub, variant);
 }
 
 // ─── Jogadas legais ─────────────────────────────────────────

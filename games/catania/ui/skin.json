@@ -47,6 +47,15 @@
         "en": "Glass outline"
       }
     },
+    "--game-on-table-warn": {
+      "value": "var(--cat-gold)",
+      "type": "color",
+      "group": "table",
+      "label": {
+        "pt": "Aviso sobre a mesa",
+        "en": "Warning on the table"
+      }
+    },
     "--cat-panel": {
       "value": "#1e1a10",
       "type": "color",

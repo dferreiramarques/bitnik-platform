@@ -88,7 +88,7 @@ Por fazer:
   - ✔ Pendentes da secção 5 do `design/figma/TEMPLATE.md` resolvidos (contraste do vidro, alvos de toque, botão de informação; as peças que o Catania pediu ficaram num quadro novo, "Vanilla: peças que faltam").
   - ✔ Mesa em ecrã inteiro para jogos sem UI própria (Bulbous, Praia, Nine Oils): sem tabuleiro, mas com os mesmos painéis de vidro (jogadores, jogadas, registo colapsável).
   - ✔ "Copiar convite" em qualquer mesa (não só nas de aprovação): já estava feito na Entrada, para qualquer mesa que não seja solo.
-  - ◐ Mensagens da mesa: mecanismo da plataforma feito (fila, animação, "É a tua vez") e ligado à UI genérica; falta ligar às UIs próprias (Catania e Capivaras têm a mesma coisa duplicada, por trocar por isto) e um acrescento ao `CONTRATO.md` para os jogos mandarem mensagens próprias (eventos, avisos).
+  - ◐ Mensagens da mesa: mecanismo da plataforma feito (fila, animação, "É a tua vez") e ligado à UI genérica; Catania e Capivaras já usam o mesmo mecanismo pelo `ctx.announce` (sem cópia própria). Falta um acrescento ao `CONTRATO.md` para os jogos mandarem mensagens próprias (eventos, avisos), não só a vez.
   - Componentes como alvo: decidido não fazer como peça genérica do contrato (2026-09-28). Só o Nine Oils precisa (escolher às cegas uma carta da mão do adversário) e já funciona como lista de jogadas; fica assim.
   - Pontos por origem no fim/relatório: adiado. Não é uma peça do contrato para todos os jogos; só se um jogo concreto precisar (ex.: Bulbous) implementa-se à parte, nesse jogo.
 - ◐ UIs próprias de cada jogo, no template:

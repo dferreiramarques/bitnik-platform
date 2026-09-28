@@ -9,13 +9,11 @@
 // minha coleção e a barra de estado em baixo.
 
 const CORES = ['Y', 'R', 'W', 'B'];
-const MSG_MS = 2600;
 const RATIO = 842 / 600; // altura / largura da arte das cartas
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const seatColor = (i) => `var(--capi-p${(i % 6) + 1})`;
-const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 /** A imagem de cada carta: uma por combinação de capivaras, nenúfares e pássaro. */
 const cardImg = (c) => asset(`./cartas/cap${c.capivaras}${c.nenufares.length ? `_${[...c.nenufares].sort().join('')}` : ''}${c.passaro ? '_bird' : ''}.webp`);
 const BIRD = asset('./passaro.webp');
@@ -31,11 +29,10 @@ function ensureCss() {
 
 let root = null;   // .capi (fica montado)
 let view = null;   // conteúdo redesenhado a cada estado
-let msgEl = null;  // mensagem da mesa (persistente, para a animação não recomeçar)
 let ctx = null;
 let msg = null;
 let resizeObs = null;
-const fresh = () => ({ prev: null, logOpen: true, msgQ: [], msgBusy: false });
+const fresh = () => ({ prev: null, logOpen: true });
 let ui = fresh();
 
 export function mount(el, context) {
@@ -45,10 +42,7 @@ export function mount(el, context) {
   root.className = 'capi';
   view = document.createElement('div');
   view.className = 'capi-layout';
-  msgEl = document.createElement('div');
-  msgEl.className = 'capi-msg';
-  msgEl.setAttribute('aria-live', 'polite');
-  root.append(view, msgEl);
+  root.append(view);
   el.append(root);
   root.addEventListener('click', onClick);
   // O tamanho das cartas segue o espaço livre ao centro (rodar o telemóvel, painéis que mudam).
@@ -58,7 +52,7 @@ export function mount(el, context) {
 export function unmount() {
   resizeObs?.disconnect(); resizeObs = null;
   root?.remove();
-  root = null; view = null; msgEl = null; msg = null;
+  root = null; view = null; msg = null;
   ui = fresh();
 }
 
@@ -83,22 +77,10 @@ export function update(next) {
   render();
 }
 
-// ─── Mensagem da mesa ───────────────────────────────────────
+// ─── Mensagem da mesa (ADR-014): fila e animação são da plataforma ───
 function announce(title, sub = '', variant = '') {
   if (ctx.messages === false) return;
-  ui.msgQ.push({ title, sub, variant });
-  if (!ui.msgBusy) nextMessage();
-}
-
-function nextMessage() {
-  const m = ui.msgQ.shift();
-  if (!m || !msgEl) { ui.msgBusy = false; if (msgEl) msgEl.className = 'capi-msg'; return; }
-  ui.msgBusy = true;
-  msgEl.innerHTML = `<b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}`;
-  msgEl.className = `capi-msg${m.variant ? ` ${m.variant}` : ''}`;
-  void msgEl.offsetWidth; // recomeça a animação
-  msgEl.classList.add('on');
-  setTimeout(nextMessage, reduced() ? 1800 : MSG_MS);
+  ctx.announce(title, sub, variant);
 }
 
 // ─── Jogadas legais ─────────────────────────────────────────
