@@ -328,7 +328,7 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 ## ADR-014: A mesa ocupa o ecrã inteiro; painéis de vidro por cima
 
-**Estado:** aceite no desenho (2026-09-26); implementada no Catania, no Capivaras e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, "Copiar convite" e mensagem "É a tua vez", para Bulbous, Praia das Percebes e Nine Oils); a mensagem da mesa é agora só da plataforma (`mountTableMessages`, `ctx.announce`), sem cópia por jogo, e o `CONTRATO.md` já tem o acrescento (`ctx.log(..., { announce })`) para um jogo sem UI própria mandar mensagens suas — por agora nenhum jogo o usa. Componentes como alvo e pontos por origem no fim/relatório ficam de fora — só por jogo, se algum precisar (ver "O que falta" no `docs/CONTEXTO.md`)
+**Estado:** aceite no desenho (2026-09-26); implementada no Catania, no Capivaras e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, "Copiar convite" e mensagem "É a tua vez", para Bulbous, Praia das Percebes e Nine Oils); a mensagem da mesa é agora só da plataforma (`mountTableMessages`, `ctx.announce`), sem cópia por jogo, e o `CONTRATO.md` já tem o acrescento (`ctx.log(..., { announce })`) para um jogo sem UI própria mandar mensagens suas (usado pelo Bulbous, Praia e Nine Oils num momento raro de cada um). Componentes como alvo não passa a ser peça do contrato — o único caso (Nine Oils, às cegas) resolveu-se só com CSS. Pontos por origem no fim/relatório ficam de fora — só por jogo, se algum precisar (ver "O que falta" no `docs/CONTEXTO.md`)
 
 ### Contexto
 
@@ -361,7 +361,7 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 
 ### Consequências
 
-- ✔ A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro. Feito para a mesa (sem tabuleiro: jogadores, jogadas e registo em painéis de vidro). Componentes como alvo: decidido não fazer como peça genérica do contrato (2026-09-28) — só o Nine Oils precisaria (escolher às cegas uma carta da mão do adversário) e já funciona como lista de jogadas.
+- ✔ A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro. Feito para a mesa (sem tabuleiro: jogadores, jogadas e registo em painéis de vidro). Componentes como alvo: decidido não fazer como peça genérica do contrato (2026-09-28) — só o Nine Oils precisaria (escolher às cegas uma carta da mão do adversário) e é às cegas: não há nada visível para um componente-alvo mostrar que a lista de jogadas já não diga. Resolvido só com CSS, sem mudar o contrato: `.mesa-action .move-group[data-type="ESCOLHA_CEGA"] .move` fica com aspeto de carta virada para baixo e o número (`counter()`), o texto todo mantém-se para quem usa leitor de ecrã.
 - A marca de um deploy passa a dizer se é de vários jogos (Início) ou de um só (Marca-produto).
 - Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
 - ✔ "Copiar convite" na Entrada: já existia para qualquer mesa que não seja solo (públicas e de aprovação).
