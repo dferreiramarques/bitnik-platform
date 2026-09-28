@@ -95,8 +95,8 @@ function makeCtx({ game, match, seat, rng, logs, timerOps }) {
     rng,
     numPlayers: match.numPlayers,
     options: match.options,
-    /** Regista uma entrada de log traduzível. */
-    log: (key, params = {}) => logs.push({ key, params, seat }),
+    /** Regista uma entrada de log traduzível; { announce: true|'variante' } mostra-a também como mensagem da mesa (ADR-014). */
+    log: (key, params = {}, opts = {}) => logs.push({ key, params, seat, ...(opts.announce != null ? { announce: opts.announce === true ? '' : opts.announce } : {}) }),
     /** Agenda um evento do jogo. Uma key repetida substitui o timer anterior. */
     schedule: (key, delayMs, event, payload = {}) => timerOps.push({ op: 'set', key, delayMs, event, payload }),
     cancel: (key) => timerOps.push({ op: 'cancel', key }),

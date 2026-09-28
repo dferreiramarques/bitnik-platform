@@ -517,20 +517,31 @@ function syncMesaMessageEl(msg) {
     const el = document.createElement('div');
     el.className = 'mesa-msg';
     el.setAttribute('aria-live', 'polite');
-    mesaMsg = { roomId: msg.room.id, el, api: mountTableMessages(el), mine: false };
+    // O histórico já existente ao montar não é anunciado; só as entradas seguintes.
+    const lastLogSeq = Math.max(0, ...(msg.log || []).map((l) => l.seq ?? 0));
+    mesaMsg = { roomId: msg.room.id, el, api: mountTableMessages(el), mine: false, lastLogSeq };
   }
   const live = document.getElementById('mesaMsgHost');
   if (live && live !== mesaMsg.el) live.replaceWith(mesaMsg.el);
   return mesaMsg;
 }
 
-/** UI genérica (sem gatilhos próprios): a plataforma manda "É a tua vez". */
+/**
+ * UI genérica (sem código próprio): a plataforma manda "É a tua vez" sozinha
+ * e passa as entradas do registo marcadas com ctx.log(..., { announce }).
+ */
 function syncMesaMessage(msg) {
   const m = syncMesaMessageEl(msg);
   if (!m) return;
   const mine = msg.seat != null && !!msg.active?.includes(msg.seat) && !msg.result;
   if (mine && !m.mine) m.api.announce(u('yourTurn'));
   m.mine = mine;
+  const g = msg.room.gameId;
+  for (const l of msg.log || []) {
+    if (l.announce == null || (l.seq ?? 0) <= m.lastLogSeq) continue;
+    m.api.announce(t(l.key, l.params, g), '', l.announce);
+  }
+  m.lastLogSeq = Math.max(m.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
 }
 
 /** Jogadores da UI genérica em ecrã inteiro: um painel de vidro por lugar (ADR-014). */

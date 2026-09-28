@@ -59,6 +59,14 @@ test('timers são declarativos e ficam no registo', () => {
   assert.equal(m.timers.length, 1, 'o evento reagendou o timer');
 });
 
+test('ctx.log(key, params, { announce }) marca a entrada como mensagem da mesa (ADR-014)', () => {
+  const m = createMatch(race, { numPlayers: 2, seed: 1 });
+  const r1 = applyMove(race, m, 0, { type: 'ROLL' });
+  assert.equal(r1.match.log.at(-1).announce, undefined, 'sem opts, a entrada fica só no registo');
+  const r2 = applyMove(race, r1.match, r1.match.state.cur, { type: 'ANNOUNCE' });
+  assert.equal(r2.match.log.at(-1).announce, 'warn');
+});
+
 test('replay reproduz o estado, incluindo timers', () => {
   let m = createMatch(race, { numPlayers: 3, seed: 'replay' });
   m = applyMove(race, m, 0, { type: 'ROLL' }).match;

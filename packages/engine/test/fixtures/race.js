@@ -28,6 +28,10 @@ export default defineGame({
       s.pos[s.cur] = 99;
       throw new Error('bug de teste');
     },
+    /** Só para testar ctx.log(..., { announce }): não muda nada no estado. */
+    ANNOUNCE(s, p, ctx) {
+      ctx.log('log.ROLL', { n: 9 }, { announce: 'warn' });
+    },
   },
   events: {
     TIMEOUT(s, p, ctx) {

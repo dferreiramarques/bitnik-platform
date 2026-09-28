@@ -54,10 +54,12 @@ Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros própr
 |---|---|
 | `ctx.seat` | quem joga (`null` em eventos) |
 | `ctx.rng` | `next()`, `int(n)`, `chance(p)`, `pick(arr)`, `shuffle(arr)` |
-| `ctx.log(key, params)` | entrada de registo traduzível; parâmetros com `@` são chaves (`'@res.vinho'`) |
+| `ctx.log(key, params, opts?)` | entrada de registo traduzível; parâmetros com `@` são chaves (`'@res.vinho'`); `opts.announce` mostra-a também como mensagem da mesa |
 | `ctx.schedule(key, ms, event, payload)` | agenda um evento; a mesma `key` substitui o anterior |
 | `ctx.cancel(key)` | cancela um timer |
 | `ctx.invalid(code, params)` | recusa a jogada |
+
+**Mensagem da mesa** (ADR-014, opcional): `ctx.log(key, params, { announce: true })` marca a entrada de registo também como mensagem da mesa — a plataforma mostra-a ao centro, ampliada, uma de cada vez, sem bloquear cliques (o mesmo mecanismo com que a UI própria já mostra "É a tua vez"). `{ announce: 'warn' }` usa a variante de aviso (`--game-on-table-warn`); sem `announce`, a entrada fica só no registo, como sempre. É o único caminho para um jogo **sem** UI própria mandar mensagens suas (eventos, avisos) além do "É a tua vez" que a plataforma já mostra sozinha; um jogo com UI própria continua a preferir `ctx.announce(title, sub, variant)` diretamente (permite um subtítulo, que o registo não tem).
 
 **`activePlayers(state)`** diz quem pode jogar agora. Um array permite jogadas simultâneas (apostas às cegas, como nas Capivaras). Um array vazio com timers pendentes significa "à espera do relógio".
 
