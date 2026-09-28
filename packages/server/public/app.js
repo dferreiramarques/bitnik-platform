@@ -98,6 +98,7 @@ const app = {
   status: 'connecting',
   noticesOpen: false, // painel dos avisos aberto (mesa em ecrã inteiro)
   resultClosed: null, // `${sala}:${seq}` do fim de jogo que o jogador fechou para ver a mesa
+  regOpen: false,     // registo da mesa em ecrã inteiro (UI genérica): aberto ou fechado
 };
 
 /** Skin do jogo (defaults + tema do deploy), antes de montar a mesa ou o tutorial. */
@@ -423,6 +424,11 @@ function useGameUi(msg) {
   return !!meta?.ui && !proto && !app.uiFailed.has(msg.room.gameId) && !!msg.view && ['playing', 'over'].includes(msg.room.status);
 }
 
+/** A mesa ocupa o ecrã inteiro (ADR-014): com UI própria ou com a genérica, a decorrer ou acabada. */
+function usesFullMesa(msg) {
+  return useGameUi(msg) || ['playing', 'over'].includes(msg.room.status);
+}
+
 /** Linha de cima da mesa em ecrã inteiro (ADR-014): marca, jogo, avisos, guia, sair e língua. */
 function renderTableTop(gameId, meta, extra = '') {
   const brand = W()?.brand?.name || $('#brand').textContent;
@@ -462,6 +468,64 @@ function renderFullTable(msg) {
 
 // Cores dos lugares na entrada (como --cat-p1…p4 do template).
 const SEAT_COLORS = ['#b03a2e', '#1a5276', '#1d6a27', '#7d6608', '#6c3483', '#117a65'];
+
+/** Jogadores da UI genérica em ecrã inteiro: um painel de vidro por lugar (ADR-014). */
+function renderMesaPlayers(msg) {
+  return `<div class="mesa-players">${msg.room.seats.map((s, i) => {
+    const p = msg.view?.players?.[i];
+    const active = msg.active?.includes(i);
+    const state = p?.summary || [s.bot && u('bot'), s.away && u('away')].filter(Boolean).join(', ');
+    return `<div class="mesa-player${active ? ' is-active' : ''}" data-seat="${i}">
+      <div class="mesa-player-name"><i style="background:${SEAT_COLORS[i % SEAT_COLORS.length]}"></i><b>${esc(s.taken ? s.name : u('emptySeat'))}</b>${typeof p?.score === 'number' ? `<span class="mesa-player-score">${p.score}</span>` : ''}</div>
+      ${state ? `<div class="mesa-player-state">${esc(state)}</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/** Jogadas legais (ou a espera/expirada) num painel de vidro flutuante, em vez de um tabuleiro. */
+function renderMesaAction(msg) {
+  return `<div class="mesa-action">${renderPalette(msg)}</div>`;
+}
+
+/** Registo flutuante da mesa em ecrã inteiro: começa colapsado, cresce para cima ao abrir. */
+function renderMesaLog(msg) {
+  const g = msg.room.gameId;
+  const items = [...(msg.log || [])].reverse();
+  const body = items.length ? `<ol>${items.map((l) => `<li>${l.seat != null ? `<b>${esc(seatName(l.seat))}</b> ` : ''}${esc(t(l.key, l.params, g))}</li>`).join('')}</ol>` : `<p>${u('noLog')}</p>`;
+  return `<div class="mesa-log">
+    <button class="mesa-log-toggle" data-reg aria-expanded="${app.regOpen}">${u('log')} ${app.regOpen ? '▴' : '▾'}</button>
+    <div class="mesa-log-body${app.regOpen ? ' is-open' : ''}">${body}</div>
+  </div>`;
+}
+
+/**
+ * Mesa em ecrã inteiro para jogos sem UI própria (Bulbous, Praia, Nine Oils):
+ * sem tabuleiro, mas com o mesmo desenho da ADR-014 — jogadores, jogadas e
+ * registo em painéis de vidro sobre o fundo da mesa.
+ */
+function renderGenericMesa(msg) {
+  const g = msg.room.gameId;
+  const meta = gameMeta(g);
+  const round = msg.view?.round;
+  const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
+  const info = `${msg.room.kind === 'invite' ? `${esc(msg.room.name || u('inviteTable'))} · ` : ''}${u('tableOf', { n: msg.room.numPlayers })}${meta?.prototype ? ` · ${u('prototype', { v: meta.version })}` : ''}`;
+  const extra = [
+    renderTimers(msg),
+    meta?.tutorial ? `<a class="mesa-btn" href="#/tutorial/${esc(g)}" aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>` : '',
+    canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : '',
+  ].join('');
+  const key = `${msg.room.id}:${msg.seq}`;
+  const result = msg.result && app.resultClosed !== key
+    ? `<div class="mesa-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="mesa-card">${renderPalette(msg)}
+        <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
+  return `<section class="mesa mesa-generic" data-game="${esc(g)}">
+    ${renderMesaPlayers(msg)}
+    ${msg.result ? '' : renderMesaAction(msg)}
+    ${renderMesaLog(msg)}
+    ${renderTableTop(g, info + (round ? ` · ${u('round', { n: round })}` : ''), extra)}
+    ${result}
+  </section>`;
+}
 
 /**
  * Entrada na mesa (quadro "Entrada" do template): à espera de jogadores, no
@@ -508,6 +572,7 @@ function renderTable() {
   if (!msg) return `<p class="empty">${u('connecting')}</p>`;
   if (msg.room.status === 'waiting') return renderEntrada(msg);
   if (useGameUi(msg)) return renderFullTable(msg);
+  if (usesFullMesa(msg)) return renderGenericMesa(msg);
   const g = msg.room.gameId;
   const round = msg.view?.round;
   const canLeave = msg.room.kind !== 'solo' && msg.seat != null;
@@ -689,7 +754,7 @@ function render() {
   $('#nameLabel').textContent = u('yourName');
   $('#name').placeholder = u('yourName');
   document.documentElement.lang = app.lang;
-  const full = !!tut || (inRoom && !!app.room && useGameUi(app.room));
+  const full = !!tut || (inRoom && !!app.room && usesFullMesa(app.room));
   if (full && !document.body.classList.contains('is-table')) app.fsPending = true;
   if (!inRoom && !tut) { app.fsPending = false; leaveFullscreen(); }
   document.body.classList.toggle('is-table', full);
@@ -766,6 +831,7 @@ $('#view').addEventListener('click', (e) => {
   }
   if (d.bots) { app.botSel = { ...app.botSel, [d.bots]: Number(d.n) }; render(); return; }
   if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
+  if ('reg' in d) { app.regOpen = !app.regOpen; render(); return; }
   if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
   const roomId = app.room?.room.id;
   if (d.solo) { if (!client.createSolo(d.solo, Number(d.n))) toast(u('notSent')); }

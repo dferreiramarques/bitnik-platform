@@ -4,7 +4,7 @@ Estado das fases da plataforma e os passos de cada uma. É o único sítio onde 
 
 Legenda: ✔ feito · ◐ em curso · ☐ por fazer.
 
-Atualizado a 2026-09-26.
+Atualizado a 2026-09-28.
 
 ## Resumo
 
@@ -84,7 +84,10 @@ Por fazer:
   - o cabeçalho ficou encostado ao topo;
   - os botões de zoom estão escondidos no telemóvel;
   - as páginas deixaram de usar `viewport-fit=cover`.
-- ☐ UI genérica com o desenho do template (ADR-014): antes, resolver os pendentes da secção 5 do `design/figma/TEMPLATE.md` (contraste do vidro, alvos de toque e as peças que o Catania pediu) e acrescentar ao `CONTRATO.md` as mensagens da mesa e o relatório do fim.
+- ◐ UI genérica com o desenho do template (ADR-014):
+  - ✔ Pendentes da secção 5 do `design/figma/TEMPLATE.md` resolvidos (contraste do vidro, alvos de toque, botão de informação; as peças que o Catania pediu ficaram num quadro novo, "Vanilla: peças que faltam").
+  - ✔ Mesa em ecrã inteiro para jogos sem UI própria (Bulbous, Praia, Nine Oils): sem tabuleiro, mas com os mesmos painéis de vidro (jogadores, jogadas, registo colapsável).
+  - ☐ Mensagens da mesa, componentes como alvo, "Copiar convite" em qualquer mesa e pontos por origem no fim/relatório — por acrescentar ao `CONTRATO.md` antes de implementar.
 - ◐ UIs próprias de cada jogo, no template:
   - ✔ Catania;
   - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;

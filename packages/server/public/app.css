@@ -187,7 +187,7 @@ body.is-table .bar, body.is-table #notices { display: none !important; }
 body.is-table #view { max-width: none; padding: 0; margin: 0; }
 .mesa {
   position: fixed; inset: 0; overflow: hidden;
-  background: var(--table-bg, #1f3328);
+  background: var(--table-bg, radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%));
   color: var(--game-on-table, #fffaf1);
 }
 .mesa .game-host { position: absolute; inset: 0; margin: 0; }
@@ -215,7 +215,7 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
 .mesa-chip {
   min-height: 32px; padding: 0 12px; border-radius: 999px; cursor: pointer; font: 700 12px var(--ui-body);
   color: var(--game-on-table, #fffaf1);
-  background: var(--game-glass, rgb(0 0 0 / .35)); border: 1px solid var(--game-glass-line, rgb(255 255 255 / .3));
+  background: var(--game-glass, rgba(20,32,26,.35)); border: 1px solid var(--game-glass-line, rgba(255,250,241,.35));
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   display: inline-flex; align-items: center; text-shadow: none;
 }
@@ -233,11 +233,77 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
 .mesa-card { width: min(440px, 100%); display: grid; gap: 10px; text-shadow: none; }
 .mesa-card-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .mesa-card-btns .btn { background: var(--ui-card); }
+
+/* Mesa em ecrã inteiro sem tabuleiro próprio (Bulbous, Praia, Nine Oils): jogadores,
+   jogadas e registo em painéis de vidro, sem a camada de tabuleiro (ADR-014). */
+.mesa-generic::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(var(--table-dots, rgba(255,250,241,.14)) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+.mesa-players {
+  position: absolute; left: 12px; right: 12px; top: 44px; z-index: 2;
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+}
+.mesa-player {
+  width: 200px; box-sizing: border-box; padding: 8px; border-radius: 8px;
+  background: var(--game-glass, rgba(20,32,26,.35)); border: 1px solid var(--game-glass-line, rgba(255,250,241,.35));
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  color: var(--game-on-table, #fffaf1);
+}
+.mesa-player.is-active { border-color: var(--game-accent, #b8461f); box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-accent, #b8461f) 35%, transparent); }
+.mesa-player-name { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; }
+.mesa-player-name i { width: 8px; height: 8px; border-radius: 4px; flex: none; }
+.mesa-player-name b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mesa-player-score { font-family: var(--ui-display); font-weight: 800; font-size: 15px; line-height: 1; }
+.mesa-player-state { font-size: 11px; margin-top: 2px; color: var(--game-on-table-muted, rgba(255,250,241,.75)); }
+
+.mesa-action {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 2;
+  max-width: min(720px, calc(100vw - 24px)); max-height: min(60vh, calc(100vh - 220px)); overflow-y: auto;
+  box-sizing: border-box; padding: 10px; border-radius: 14px;
+  background: var(--game-glass, rgba(20,32,26,.35)); border: 1px solid var(--game-glass-line, rgba(255,250,241,.35));
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.mesa-action .palette-turn { color: var(--game-on-table, #fffaf1); font-size: 1.05rem; }
+.mesa-action .palette-wait { color: var(--game-on-table-muted, rgba(255,250,241,.75)); margin: 0; }
+.mesa-action .move-group h3 { color: var(--game-on-table-muted, rgba(255,250,241,.75)); }
+.mesa-action .move {
+  min-height: 44px; border-radius: 9px; border: 1px solid var(--game-glass-line, rgba(255,250,241,.4));
+  background: rgba(255,250,241,.16); color: var(--game-on-table, #fffaf1);
+}
+.mesa-action .move:hover { background: rgba(255,250,241,.28); }
+.mesa-action .move-group[data-type="END_TURN"] .move { border-color: var(--game-glass-line, rgba(255,250,241,.3)); }
+.mesa-action .btn-primary { background: var(--game-accent, #b8461f); }
+
+.mesa-log {
+  position: absolute; left: 12px; bottom: 12px; z-index: 2; width: min(320px, 40vw);
+  box-sizing: border-box; display: flex; flex-direction: column-reverse; gap: 4px;
+  color: var(--game-on-table, #fffaf1); text-shadow: 0 1px 3px rgb(0 0 0 / .7), 0 0 12px rgb(0 0 0 / .4);
+}
+.mesa-log-toggle {
+  align-self: flex-start; border: 0; background: transparent; padding: 0; margin: 0; cursor: pointer;
+  font: 700 10px var(--ui-body); letter-spacing: .06em; text-transform: uppercase; color: inherit; text-shadow: inherit;
+}
+.mesa-log-body {
+  max-height: 0; overflow: hidden; scrollbar-width: none; transition: max-height .2s ease;
+  border-radius: 10px; font-size: 12px; line-height: 1.6;
+}
+.mesa-log-body::-webkit-scrollbar { display: none; }
+.mesa-log-body.is-open { max-height: 50vh; overflow-y: auto; padding-top: 4px; }
+.mesa-log-body ol { list-style: none; margin: 0; padding: 0; }
+.mesa-log-body li { padding: 1px 0; }
+.mesa-log-body p { margin: 0; opacity: .8; }
+
 @media (max-width: 760px) {
   .mesa-meta, .mesa-sep, .mesa-brand { display: none; }
   /* Telemóvel: o cabeçalho encostado ao topo, para sobrar ecrã para a mesa. */
   .mesa-top { padding-top: max(env(safe-area-inset-top, 0px), 2px); padding-bottom: 2px; }
   .mesa-btn { min-height: 32px; }
+  .mesa-players { top: 34px; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; padding-bottom: 2px; }
+  .mesa-players::-webkit-scrollbar { display: none; }
+  .mesa-player { width: 148px; flex: 0 0 148px; }
+  .mesa-log { width: min(220px, 50vw); }
 }
 
 /* ── Início: marca com vários jogos (ADR-014, quadro "Início" do template) ──

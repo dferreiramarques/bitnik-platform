@@ -328,7 +328,7 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 ## ADR-014: A mesa ocupa o ecrã inteiro; painéis de vidro por cima
 
-**Estado:** aceite no desenho (2026-09-26); implementada no Catania; por implementar na UI genérica
+**Estado:** aceite no desenho (2026-09-26); implementada no Catania e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, para Bulbous, Praia das Percebes e Nine Oils); faltam mensagens da mesa, componentes como alvo, "Copiar convite" e pontos por origem (ver "O que falta" no `docs/CONTEXTO.md`)
 
 ### Contexto
 
@@ -361,7 +361,7 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 
 ### Consequências
 
-- A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro.
+- ✔ A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro. Feito para a mesa (sem tabuleiro: jogadores, jogadas e registo em painéis de vidro); os jogos sem UI própria ainda não têm tabuleiro nem componentes como alvo.
 - A marca de um deploy passa a dizer se é de vários jogos (Início) ou de um só (Marca-produto).
 - Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
 - "Copiar convite" na Entrada é novo: hoje só as mesas de aprovação, criadas na consola, têm convite.
