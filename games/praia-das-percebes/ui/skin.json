@@ -1,0 +1,262 @@
+{
+  "name": "Vanilla",
+  "description": "Tokens do template vanilla (design/vanilla/skin.json, ADR-014); as cartas e o marcador ficam sem imagem por agora (recuo automático para emoji) até haver arte própria.",
+  "tokens": {
+    "--table-bg": {
+      "value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
+      "type": "background",
+      "group": "table",
+      "label": { "pt": "Mesa (fundo)", "en": "Table (background)" }
+    },
+    "--table-dots": {
+      "value": "rgba(255,250,241,.14)",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Pontos da mesa", "en": "Table dots" }
+    },
+    "--game-glass": {
+      "value": "rgba(20,32,26,.35)",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Vidro sobre a mesa", "en": "Glass on the table" }
+    },
+    "--game-glass-line": {
+      "value": "rgba(255,250,241,.35)",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Contorno do vidro", "en": "Glass outline" }
+    },
+    "--game-glass-blur": {
+      "value": "8px",
+      "type": "size",
+      "group": "table",
+      "label": { "pt": "Desfoque do vidro", "en": "Glass blur" }
+    },
+    "--game-on-table": {
+      "value": "#fffaf1",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Texto sobre a mesa", "en": "Text on the table" }
+    },
+    "--game-on-table-muted": {
+      "value": "rgba(255,250,241,.75)",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Texto secundário sobre a mesa", "en": "Secondary text on the table" }
+    },
+    "--game-on-table-accent": {
+      "value": "#ffd9c2",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Destaque sobre a mesa", "en": "Accent on the table" }
+    },
+    "--game-on-table-warn": {
+      "value": "#ffb38f",
+      "type": "color",
+      "group": "table",
+      "label": { "pt": "Aviso sobre a mesa", "en": "Warning on the table" }
+    },
+    "--game-panel": {
+      "value": "#fffaf1",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Painéis", "en": "Panels" }
+    },
+    "--game-panel-2": {
+      "value": "#f3e4cb",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Painéis (realce)", "en": "Panels (raised)" }
+    },
+    "--game-line": {
+      "value": "#d9c49a",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Linhas", "en": "Lines" }
+    },
+    "--game-text": {
+      "value": "#2b1b12",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Texto", "en": "Text" }
+    },
+    "--game-muted": {
+      "value": "#5b4636",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Texto secundário", "en": "Secondary text" }
+    },
+    "--game-accent": {
+      "value": "#b8461f",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Destaque", "en": "Accent" }
+    },
+    "--game-on-accent": {
+      "value": "#fffaf1",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Texto sobre destaque", "en": "Text on accent" }
+    },
+    "--game-danger": {
+      "value": "#b3261e",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Perigo", "en": "Danger" }
+    },
+    "--game-accent-strong": {
+      "value": "#8f3417",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Destaque forte (texto, hover)", "en": "Strong accent (text, hover)" }
+    },
+    "--game-disabled-bg": {
+      "value": "#f6eedf",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Desativado (fundo)", "en": "Disabled (background)" }
+    },
+    "--game-disabled-line": {
+      "value": "#e6d7bb",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Desativado (contorno)", "en": "Disabled (outline)" }
+    },
+    "--game-disabled-text": {
+      "value": "#8a7a6a",
+      "type": "color",
+      "group": "base",
+      "label": { "pt": "Desativado (texto)", "en": "Disabled (text)" }
+    },
+    "--game-color-1": {
+      "value": "#b03a2e",
+      "type": "color",
+      "group": "players",
+      "label": { "pt": "Jogador 1", "en": "Player 1" }
+    },
+    "--game-color-2": {
+      "value": "#1a5276",
+      "type": "color",
+      "group": "players",
+      "label": { "pt": "Jogador 2", "en": "Player 2" }
+    },
+    "--game-color-3": {
+      "value": "#1d6a27",
+      "type": "color",
+      "group": "players",
+      "label": { "pt": "Jogador 3", "en": "Player 3" }
+    },
+    "--game-color-4": {
+      "value": "#7d6608",
+      "type": "color",
+      "group": "players",
+      "label": { "pt": "Jogador 4", "en": "Player 4" }
+    },
+    "--card-normal": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Peça: banhistas", "en": "Tile: bathers" }
+    },
+    "--card-prancha": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Peça: prancha de surf", "en": "Tile: surfboard" }
+    },
+    "--card-rocha": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Peça: rocha", "en": "Tile: rock" }
+    },
+    "--card-areia": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Peça: areia", "en": "Tile: sand" }
+    },
+    "--card-quadrado3": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Quadrado 3×3", "en": "Objective: 3×3 Square" }
+    },
+    "--card-quadrado5": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Quadrado 5×5", "en": "Objective: 5×5 Square" }
+    },
+    "--card-linha5": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Linha de 5", "en": "Objective: Line of 5" }
+    },
+    "--card-linha7": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Linha de 7", "en": "Objective: Line of 7" }
+    },
+    "--card-coluna4": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Coluna de 4", "en": "Objective: Column of 4" }
+    },
+    "--card-coluna6": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Coluna de 6", "en": "Objective: Column of 6" }
+    },
+    "--card-pranchas": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: 2 pranchas adjacentes", "en": "Objective: 2 adjacent surfboards" }
+    },
+    "--card-excursao": {
+      "value": "",
+      "type": "image",
+      "group": "cards",
+      "label": { "pt": "Objetivo: Excursão", "en": "Objective: Excursion" }
+    },
+    "--token-salvavidas": {
+      "value": "",
+      "type": "image",
+      "group": "tokens",
+      "label": { "pt": "Marcador: salva-vidas", "en": "Token: lifeguard" }
+    },
+    "--game-font-display": {
+      "value": "'Baloo 2', system-ui, sans-serif",
+      "type": "font",
+      "group": "type",
+      "label": { "pt": "Letra de títulos", "en": "Display font" }
+    },
+    "--game-font-body": {
+      "value": "Inter, system-ui, sans-serif",
+      "type": "font",
+      "group": "type",
+      "label": { "pt": "Letra de texto", "en": "Body font" }
+    },
+    "--game-radius": {
+      "value": "14px",
+      "type": "size",
+      "group": "shape",
+      "label": { "pt": "Arredondamento", "en": "Corner radius" }
+    }
+  },
+  "contrast": [
+    ["--game-text", "--game-panel"],
+    ["--game-text", "--game-panel-2"],
+    ["--game-muted", "--game-panel"],
+    ["--game-on-accent", "--game-accent"],
+    ["--game-muted", "--game-panel-2"],
+    ["--game-accent", "--game-panel-2"],
+    ["--game-accent-strong", "--game-panel"],
+    ["--game-accent-strong", "--game-panel-2"]
+  ]
+}

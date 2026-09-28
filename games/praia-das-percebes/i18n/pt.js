@@ -29,4 +29,15 @@ export default {
   'err.DIRECAO': 'Escolhe linha ou coluna.',
   'err.LINHA_VIGIADA': 'Já há um salva-vidas nessa linha.',
   'err.COLUNA_VIGIADA': 'Já há um salva-vidas nessa coluna.',
+
+  // UI própria (ADR-006), no template vanilla.
+  'ui.log': 'Registo',
+  'ui.myPiece': 'A tua peça',
+  'ui.objectives': 'Objetivos',
+  'ui.objPts': 'Objetivos: {n}',
+  'ui.toReveal': '+{n} por revelar',
+  'ui.placeHint': 'Toca numa casa livre para colocar a peça.',
+  'ui.placeHere': 'Colocar aqui',
+  'ui.turnOf': 'Vez de {nome}…',
+  'ui.spectating': 'A ver a partida.',
 };

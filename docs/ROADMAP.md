@@ -72,7 +72,7 @@ Migração direta do código antigo, um jogo de cada vez.
 |---|---|---|---|
 | Bulbous | 1.0.0 ✔ | `games/bulbous` | Motor 0.2.1 com `players.counts`, porque se joga a 2 ou 4 |
 | Capivaras | 2.0.0 ✔ | `games/capivaras` | Feitas pela Forge e publicadas; empate partilha a vitória. A 2.0.0 traz o baralho do jogo (o da arte) e UI própria no template |
-| Praia das Percebes | 2.0.0 ✔ | `games/praia-das-percebes` | Colunas de 4 e 6 para tirar a vantagem do 2.º lugar (ver CHANGELOG) |
+| Praia das Percebes | 2.0.2 ✔ | `games/praia-das-percebes` | Colunas de 4 e 6 para tirar a vantagem do 2.º lugar (ver CHANGELOG); UI própria no template vanilla |
 | Nine Oils | 1.1.2 ✔ | `games/nine-oils` | Só a 2; 2 Rapazes; UI própria no template vanilla |
 
 Por fazer:
@@ -94,7 +94,8 @@ Por fazer:
 - ◐ UIs próprias de cada jogo, no template:
   - ✔ Catania;
   - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;
-  - ✔ Nine Oils (1.1.4): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas (🧪 garrafa), mão com emoji (❤️‍🔥👦🏽💪🏼) e o botão "?" com a arte e as regras de cada carta, dados animados, escolha às cegas como cartas viradas para baixo, sem pausa manual a "ver os dados";
-  - ☐ Bulbous e Praia das Percebes usam a UI genérica.
+  - ✔ Nine Oils (1.1.7): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas (🧪 garrafa), mão com a arte da carta em dobro (❤️‍🔥👦🏽💪🏼), dados animados, escolha às cegas como cartas viradas para baixo, sem pausa manual a "ver os dados";
+  - ✔ Praia das Percebes (2.0.2): tabuleiro a sério (clicar numa casa livre), objetivos sempre visíveis, salva-vidas marcados na peça; peças/objetivos/marcador pela convenção de componentes reutilizáveis (`--card-*`/`--token-*`), sem arte publicada ainda (emoji);
+  - ☐ Bulbous usa a UI genérica.
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.

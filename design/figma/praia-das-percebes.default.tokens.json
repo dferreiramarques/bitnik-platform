@@ -1,0 +1,551 @@
+{
+  "praia-das-percebes": {
+    "table": {
+      "table-bg": {
+        "$type": "string",
+        "$value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
+        "$description": "Mesa (fundo)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--table-bg",
+            "type": "background",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "table-dots": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.14)",
+        "$description": "Pontos da mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--table-dots",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass": {
+        "$type": "color",
+        "$value": "rgba(20,32,26,.35)",
+        "$description": "Vidro sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass-line": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.35)",
+        "$description": "Contorno do vidro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass-line",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-glass-blur": {
+        "$type": "dimension",
+        "$value": "8px",
+        "$description": "Desfoque do vidro",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-glass-blur",
+            "type": "size",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Texto sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-muted": {
+        "$type": "color",
+        "$value": "rgba(255,250,241,.75)",
+        "$description": "Texto secundário sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-muted",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-accent": {
+        "$type": "color",
+        "$value": "#ffd9c2",
+        "$description": "Destaque sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-accent",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-table-warn": {
+        "$type": "color",
+        "$value": "#ffb38f",
+        "$description": "Aviso sobre a mesa",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-table-warn",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "base": {
+      "game-panel": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Painéis",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-panel",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-panel-2": {
+        "$type": "color",
+        "$value": "#f3e4cb",
+        "$description": "Painéis (realce)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-panel-2",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-line": {
+        "$type": "color",
+        "$value": "#d9c49a",
+        "$description": "Linhas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-line",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-text": {
+        "$type": "color",
+        "$value": "#2b1b12",
+        "$description": "Texto",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-text",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-muted": {
+        "$type": "color",
+        "$value": "#5b4636",
+        "$description": "Texto secundário",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-muted",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-accent": {
+        "$type": "color",
+        "$value": "#b8461f",
+        "$description": "Destaque",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-accent",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-on-accent": {
+        "$type": "color",
+        "$value": "#fffaf1",
+        "$description": "Texto sobre destaque",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-on-accent",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-danger": {
+        "$type": "color",
+        "$value": "#b3261e",
+        "$description": "Perigo",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-danger",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-accent-strong": {
+        "$type": "color",
+        "$value": "#8f3417",
+        "$description": "Destaque forte (texto, hover)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-accent-strong",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-disabled-bg": {
+        "$type": "color",
+        "$value": "#f6eedf",
+        "$description": "Desativado (fundo)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-disabled-bg",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-disabled-line": {
+        "$type": "color",
+        "$value": "#e6d7bb",
+        "$description": "Desativado (contorno)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-disabled-line",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-disabled-text": {
+        "$type": "color",
+        "$value": "#8a7a6a",
+        "$description": "Desativado (texto)",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-disabled-text",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "players": {
+      "game-color-1": {
+        "$type": "color",
+        "$value": "#b03a2e",
+        "$description": "Jogador 1",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-1",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-color-2": {
+        "$type": "color",
+        "$value": "#1a5276",
+        "$description": "Jogador 2",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-2",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-color-3": {
+        "$type": "color",
+        "$value": "#1d6a27",
+        "$description": "Jogador 3",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-3",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-color-4": {
+        "$type": "color",
+        "$value": "#7d6608",
+        "$description": "Jogador 4",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-color-4",
+            "type": "color",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "cards": {
+      "card-normal": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Peça: banhistas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-normal",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-prancha": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Peça: prancha de surf",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-prancha",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-rocha": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Peça: rocha",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-rocha",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-areia": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Peça: areia",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-areia",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-quadrado3": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Quadrado 3×3",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-quadrado3",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-quadrado5": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Quadrado 5×5",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-quadrado5",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-linha5": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Linha de 5",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-linha5",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-linha7": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Linha de 7",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-linha7",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-coluna4": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Coluna de 4",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-coluna4",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-coluna6": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Coluna de 6",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-coluna6",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-pranchas": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: 2 pranchas adjacentes",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-pranchas",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "card-excursao": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Objetivo: Excursão",
+        "$extensions": {
+          "bitnik": {
+            "token": "--card-excursao",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "tokens": {
+      "token-salvavidas": {
+        "$type": "string",
+        "$value": "",
+        "$description": "Marcador: salva-vidas",
+        "$extensions": {
+          "bitnik": {
+            "token": "--token-salvavidas",
+            "type": "image",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "type": {
+      "game-font-display": {
+        "$type": "fontFamily",
+        "$value": "'Baloo 2', system-ui, sans-serif",
+        "$description": "Letra de títulos",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-font-display",
+            "type": "font",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      },
+      "game-font-body": {
+        "$type": "fontFamily",
+        "$value": "Inter, system-ui, sans-serif",
+        "$description": "Letra de texto",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-font-body",
+            "type": "font",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    },
+    "shape": {
+      "game-radius": {
+        "$type": "dimension",
+        "$value": "14px",
+        "$description": "Arredondamento",
+        "$extensions": {
+          "bitnik": {
+            "token": "--game-radius",
+            "type": "size",
+            "collection": "praia-das-percebes",
+            "mode": "default"
+          }
+        }
+      }
+    }
+  }
+}

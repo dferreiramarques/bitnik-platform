@@ -1,5 +1,17 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.2 — UI própria, no template vanilla (2026-09-28)
+
+Sem mudanças de jogo: primeira UI própria da Praia (ADR-006). Tabuleiro a
+sério (clicar numa casa livre coloca a peça, em vez de uma lista de
+jogadas), objetivos revelados sempre visíveis, salva-vidas marcados na
+peça (↔ ou ↕). As peças, as cartas de objetivo e o marcador do
+salva-vidas seguem a convenção de componentes reutilizáveis do
+`CONTRATO.md` (`--card-<tipo>`, `--token-salvavidas`); sem arte publicada
+ainda, mostram um emoji — a consola Aparência já deixa fazer upload de
+cada um assim que houver imagem, sem precisar de código novo. Deixa de
+usar a UI genérica de protótipo.
+
 ## 2.0.1 — Mensagem da mesa ao cumprir um objetivo (2026-09-28)
 
 Sem mudanças de jogo: conquistar um objetivo revelado (só 8 no baralho) passa a aparecer também como mensagem da mesa ("Objetivo cumprido!"), não só uma linha no registo — que mantém a frase com o nome do objetivo e os pontos (`ctx.log('log.OBJETIVO', ..., { announce: { key: 'msg.OBJETIVO' } })`, ADR-014). O fim do jogo (`log.FIM`) não ganhou mensagem: coincide sempre com o resultado, que já mostra o vencedor.

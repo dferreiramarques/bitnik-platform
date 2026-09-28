@@ -29,4 +29,15 @@ export default {
   'err.DIRECAO': 'Choose row or column.',
   'err.LINHA_VIGIADA': 'That row already has a lifeguard.',
   'err.COLUNA_VIGIADA': 'That column already has a lifeguard.',
+
+  // Own UI (ADR-006), on the vanilla template.
+  'ui.log': 'Log',
+  'ui.myPiece': 'Your tile',
+  'ui.objectives': 'Objectives',
+  'ui.objPts': 'Objectives: {n}',
+  'ui.toReveal': '+{n} to reveal',
+  'ui.placeHint': 'Tap a free spot to place the tile.',
+  'ui.placeHere': 'Place here',
+  'ui.turnOf': '{nome}’s turn…',
+  'ui.spectating': 'Watching the game.',
 };
