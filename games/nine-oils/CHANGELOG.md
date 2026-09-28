@@ -1,5 +1,17 @@
 # Nine Oils — histórico de regras
 
+## 1.1.6 — A mão mostra a arte, em dobro, sem o botão "?" (2026-09-28)
+
+Sem mudanças de jogo:
+
+- As cartas da mão mostram a arte original (não o emoji), no dobro do
+  tamanho de antes (a jogar continua a sair da barra de jogadas).
+- O botão "?" desaparece: clicar na própria carta abre sempre os detalhes
+  (a jogada de a descartar, antes só ao clicar na carta, passa a estar na
+  barra de jogadas como as outras, para não conflituar com o clique).
+- O modal de detalhes já não corta a imagem: painel mais largo e a arte
+  em `object-fit: contain`.
+
 ## 1.1.5 — Emoji, dados animados e sem pausa manual (2026-09-28)
 
 Sem mudanças de jogo:

@@ -35,6 +35,13 @@ function onKeydown(e) {
   if (e.key === 'Escape' && ui.cardInfo) { ui.cardInfo = null; render(); }
 }
 
+/** Uma <img data-fallback="TIPO"> que falhe a carregar vira o emoji da carta. */
+function onImgError(e) {
+  const img = e.target;
+  if (img.tagName !== 'IMG' || !img.dataset.fallback) return;
+  img.replaceWith(Object.assign(document.createElement('span'), { className: 'nof-emoji-fallback', textContent: EMOJI[img.dataset.fallback] ?? '' }));
+}
+
 export function mount(el, context) {
   ctx = context;
   ensureCss();
@@ -45,6 +52,7 @@ export function mount(el, context) {
   root.append(view);
   el.append(root);
   root.addEventListener('click', onClick);
+  root.addEventListener('error', onImgError, true);
   document.addEventListener('keydown', onKeydown);
 }
 
@@ -84,13 +92,6 @@ function onClick(e) {
   if (e.target.closest('[data-close-info]')) { ui.cardInfo = null; render(); return; }
   const bar = e.target.closest('[data-idx]');
   if (bar) { const mv = msg.legal?.[Number(bar.dataset.idx)]; if (mv) ctx.move({ type: mv.type, payload: mv.payload }); return; }
-  const discard = e.target.closest('[data-discard]');
-  if (discard) {
-    const carta = discard.dataset.discard;
-    const mv = (msg.legal || []).find((m) => m.type === 'DESCARTAR' && (msg.view.minhaMao || [])[m.payload.carta] === carta);
-    if (mv) ctx.move({ type: mv.type, payload: mv.payload });
-    return;
-  }
   if (e.target.closest('[data-act="logfold"]')) { ui.logOpen = !ui.logOpen; render(); }
 }
 
@@ -120,7 +121,7 @@ function syncCardInfo() {
     <div class="nof-modal" role="dialog" aria-label="${esc(ctx.t('ui.cardDetails'))}">
       <button class="nof-modal-close" type="button" data-close-info aria-label="${esc(ctx.t('ui.close'))}">✕</button>
       <div class="nof-modal-body">
-        <div class="nof-modal-art"><img alt=""></div>
+        <div class="nof-modal-art"><img src="${esc(CARD_ART[type])}" data-fallback="${esc(type)}" alt=""></div>
         <div class="nof-modal-text">
           <div class="nof-modal-name">${esc(ctx.t(`carta.${type}`))}</div>
           <div class="nof-modal-label">${esc(ctx.t('ui.whenToPlay'))}</div>
@@ -132,9 +133,6 @@ function syncCardInfo() {
       </div>
     </div>
   </div>`;
-  const img = host.querySelector('img');
-  img.onerror = () => { img.replaceWith(Object.assign(document.createElement('span'), { className: 'nof-modal-emoji', textContent: EMOJI[type] ?? '' })); };
-  img.src = CARD_ART[type];
 }
 
 const PHASE_MOVE = { CARTAS: 'move.LANCAR', COMBO: 'move.ESCOLHER_COMBO', DEFESA: 'move.DEFENDER', ESCOLHA_CEGA: 'move.ESCOLHA_CEGA', DESCARTE: 'move.DESCARTAR' };
@@ -189,13 +187,10 @@ function renderCenter(v, me) {
 function renderHand(v, me) {
   if (me == null) return '<div></div>';
   const mao = v.minhaMao || [];
-  const interactiveDiscard = v.fase === 'DESCARTE' && !!(msg.legal || []).length;
-  const cards = mao.map((c) => {
-    const cardEl = interactiveDiscard
-      ? `<button class="nof-card face" type="button" data-discard="${esc(c)}" title="${esc(ctx.t(`carta.${c}`))}">${EMOJI[c] ?? '?'}</button>`
-      : `<span class="nof-card face static" title="${esc(ctx.t(`carta.${c}`))}">${EMOJI[c] ?? '?'}</span>`;
-    return `<span class="nof-card-wrap">${cardEl}<button class="nof-info-btn" type="button" data-info="${esc(c)}" title="${esc(ctx.t('ui.cardDetails'))}">?</button></span>`;
-  }).join('');
+  // A carta só mostra os detalhes (a jogada em si sai da barra de jogadas).
+  const cards = mao.map((c) => `<button class="nof-card face big" type="button" data-info="${esc(c)}" aria-label="${esc(ctx.t('ui.cardDetails'))} — ${esc(ctx.t(`carta.${c}`))}">
+    <img src="${esc(CARD_ART[c])}" data-fallback="${esc(c)}" alt="">
+  </button>`).join('');
   return `<div class="nof-hand">
     <div class="nof-lbl">${esc(ctx.t('ui.myHand'))}</div>
     <div class="nof-hand-cards">${cards || `<span class="nof-note">${esc(ctx.t('ui.handEmpty'))}</span>`}</div>
@@ -214,7 +209,6 @@ function renderBar(v, me) {
   const legal = msg.legal || [];
   if (v.fase === 'PAUSA') return '';
   if (v.fase === 'ESCOLHA_CEGA') return `<p class="nof-hint">${esc(ctx.t('ui.hintBlind'))}</p>`;
-  if (v.fase === 'DESCARTE' && legal.length) return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
   if (!legal.length) return `<p class="nof-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.waitingTurn'))}</p>`;
   return legal.map((mv, i) => `<button class="nof-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
 }

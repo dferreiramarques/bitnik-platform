@@ -55,7 +55,6 @@ export default {
   'ui.reserve': 'Reserva: {n}',
   'ui.opponentHand': 'Mão: {n}',
   'ui.hintBlind': 'Escolhe uma carta virada para baixo da mão do adversário.',
-  'ui.hintDiscard': 'Escolhe uma carta da tua mão para descartar.',
   'ui.waitingTurn': 'Vez do adversário…',
   'ui.spectating': 'A ver a partida.',
   'ui.slot.blocked': 'Casa bloqueada',
