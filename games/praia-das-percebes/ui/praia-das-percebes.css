@@ -1,6 +1,7 @@
 /* Praia das Percebes — UI própria (ADR-006, ADR-014), no template vanilla:
-   só usa tokens --game-* (skin.json é uma cópia do vanilla) mais os
-   componentes reutilizáveis --card-*/--token-* (CONTRATO.md). */
+   só usa tokens --game-* (skin.json é a mesa própria do jogo) mais os
+   componentes reutilizáveis --card-*/--token-* (CONTRATO.md). Tabuleiro
+   com zoom e arrastar tal como o Catania (games/catania/ui/catania.css). */
 
 .pdp {
   --g: var(--game-glass, rgb(20 32 26 / .35));
@@ -13,13 +14,29 @@
   font-family: var(--game-font-body, Inter, system-ui, sans-serif);
   -webkit-user-select: none; user-select: none;
 }
-.pdp button { font-family: inherit; line-height: 1.25; }
+.pdp button { font-family: inherit; line-height: 1.25; cursor: pointer; }
 .pdp :focus-visible { outline: 3px solid var(--game-on-table-accent, #ffd9c2); outline-offset: 2px; }
 
-.pdp-player, .pdp-bar, .pdp-obj, .pdp-log {
+.pdp-player, .pdp-bar, .pdp-obj, .pdp-log, .pdp-zoombar {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
 }
+
+/* Vento na praia: faixas de areia a passar atrás de tudo, criadas uma vez
+   ao montar (não são regeneradas a cada estado, por isso nunca reiniciam). */
+.pdp-wind { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.pdp-gust {
+  position: absolute; left: -140px; height: 2px; width: 130px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--game-on-table, #fffaf1) 75%, transparent), transparent);
+  opacity: 0; animation-name: pdp-blow; animation-timing-function: linear; animation-iteration-count: infinite;
+}
+@keyframes pdp-blow {
+  0% { opacity: 0; transform: translateX(0); }
+  12% { opacity: .65; }
+  85% { opacity: .35; }
+  100% { opacity: 0; transform: translateX(calc(100vw + 140px)); }
+}
+@media (prefers-reduced-motion: reduce) { .pdp-gust { animation: none; opacity: 0; } }
 
 .pdp-layout {
   position: absolute; inset: 0;
@@ -33,34 +50,43 @@
 }
 .pdp-note { font-size: 11px; color: var(--otm); align-self: center; }
 
-/* ── Jogadores ── */
+/* ── Jogadores (como no Catania: cartões de vidro de largura fixa) ── */
 .pdp-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.pdp-player { padding: 6px 10px; border-radius: var(--game-radius, 14px); display: grid; gap: 4px; }
+.pdp-player { width: 190px; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; display: grid; gap: 4px; align-content: start; }
 .pdp-player.me { border-color: var(--ot); }
 .pdp-player.active { box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 65%, transparent); }
-.pdp-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; }
+.pdp-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
+.pdp-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdp-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
 .pdp-pmeta { display: flex; gap: 10px; font-size: 11px; color: var(--otm); }
 .pdp-pmeta img, .pdp-pmeta .pdp-emoji-fallback { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
 
-/* ── Objetivos ── */
+/* ── Objetivos: cartões com o nome, não só o ícone ── */
 .pdp-objectives { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .pdp-obj-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .pdp-obj {
-  position: relative; width: 40px; height: 40px; border-radius: 8px; box-sizing: border-box;
-  display: grid; place-items: center; font-size: 18px; overflow: hidden;
+  width: 128px; box-sizing: border-box; border-radius: 8px; padding: 5px 8px;
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 7px;
 }
-.pdp-obj img { width: 100%; height: 100%; object-fit: cover; }
-.pdp-obj-pts {
-  position: absolute; bottom: -2px; right: -2px; font-size: 9px; font-weight: 800; line-height: 1;
-  background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); border-radius: 8px; padding: 2px 3px;
-}
+.pdp-obj-art { width: 26px; height: 26px; border-radius: 6px; overflow: hidden; font-size: 16px; display: grid; place-items: center; flex: none; }
+.pdp-obj-art img { width: 100%; height: 100%; object-fit: cover; }
+.pdp-obj-text { min-width: 0; display: grid; gap: 1px; }
+.pdp-obj-text b { font-size: 11px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdp-obj-text span { font-size: 10px; font-weight: 800; color: var(--game-on-table-accent, #ffd9c2); }
 
-/* ── Tabuleiro ── */
-.pdp-center { min-height: 0; display: grid; place-items: center; }
+/* ── Tabuleiro com zoom, em camadas (ADR-014, como o Catania) ──
+   0: o tabuleiro (.pdp-view) ocupa o ecrã inteiro, por cima do fundo da mesa;
+   1: a UI por cima. A .pdp-center é a zona livre onde a grelha encaixa com
+   zoom 1 (o JS mede-a); só guarda os botões de zoom. */
+.pdp-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+.pdp-view:active { cursor: grabbing; }
+.pdp-zoom { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.pdp-layout > :not(.pdp-view) { z-index: 1; pointer-events: none; }
+.pdp-layout :is(.pdp-player, .pdp-bar, .pdp-log-head, .pdp-zb) { pointer-events: auto; }
+.pdp-center { position: relative; min-height: 0; }
 .pdp-grid {
-  display: grid; grid-template-rows: repeat(var(--rows, 1), var(--cell, 44px)); grid-template-columns: repeat(var(--cols, 1), var(--cell, 44px));
-  gap: var(--gap, 4px);
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: grid; grid-template-rows: repeat(var(--rows, 1), 1fr); grid-template-columns: repeat(var(--cols, 1), 1fr); gap: 4px;
 }
 .pdp-cell {
   position: relative; box-sizing: border-box; border-radius: 6px; overflow: hidden;
@@ -87,6 +113,11 @@
 .pdp-lg img, .pdp-lg .pdp-emoji-fallback { width: calc(var(--cell, 44px) * .22); height: calc(var(--cell, 44px) * .22); font-size: calc(var(--cell, 44px) * .2); }
 .pdp-lg b { font-size: calc(var(--cell, 44px) * .22); color: #fff; line-height: 1; }
 
+/* ── Botões de zoom (canto da zona livre; escondidos no telemóvel, onde o zoom é por gesto) ── */
+.pdp-zoombar { position: absolute; right: 0; bottom: 0; display: flex; gap: 2px; padding: 2px; border-radius: 12px; z-index: 2; }
+.pdp-zb { width: 40px; height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--ot); font-size: 17px; font-weight: 700; display: grid; place-items: center; }
+.pdp-zb:hover { background: color-mix(in srgb, var(--ot) 12%, transparent); }
+
 /* ── Emoji de recuo, quando falta uma imagem (peça, carta, marcador) ── */
 .pdp-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
 
@@ -111,8 +142,15 @@
 .pdp-move:hover, .pdp-move:focus-visible { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); }
 .pdp-hint, .pdp-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; color: var(--otm); font-style: italic; }
 
+@container (min-width: 900px) {
+  .pdp-zoombar { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+}
+
 @container (max-width: 760px) {
   .pdp-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  .pdp-player { width: 148px; padding: 6px 8px; }
+  .pdp-obj { width: 108px; }
+  .pdp-zoombar { display: none; }
   .pdp-bottom { grid-template-columns: minmax(0, 1fr); }
   .pdp-bottom > .pdp-log { display: none; }
   .pdp-piece { grid-column: 1; }

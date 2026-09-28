@@ -40,4 +40,7 @@ export default {
   'ui.placeHere': 'Colocar aqui',
   'ui.turnOf': 'Vez de {nome}…',
   'ui.spectating': 'A ver a partida.',
+  'ui.zoomIn': 'Aproximar',
+  'ui.zoomOut': 'Afastar',
+  'ui.zoomFit': 'Ver tudo',
 };

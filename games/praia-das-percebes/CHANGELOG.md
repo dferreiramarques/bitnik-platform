@@ -1,5 +1,19 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.4 — Zoom, vento e cartões de objetivo (2026-09-28)
+
+Sem mudanças de jogo, tudo ao estilo do Catania:
+
+- Jogadores em cartões de vidro de largura fixa, como no Catania.
+- Tabuleiro com zoom e arrastar (dois dedos, roda do rato, botões +/−/ver
+  tudo) — a mesma técnica do Catania (`.pdp-view`/`.pdp-zoom`, zona livre
+  medida e um gesto nunca conta como clique numa casa).
+- Vento na praia: faixas a passar, decorativas, atrás de tudo (equivalente
+  às ondas do Catania, mas sem precisar do relógio contínuo — a camada não
+  é regenerada a cada estado, por isso nunca reinicia).
+- Objetivos revelados passam a cartões com o nome (ex. "Coluna de 4"), não
+  só o ícone e os pontos.
+
 ## 2.0.3 — Mesa em degradê de céu/areal (2026-09-28)
 
 Sem mudanças de jogo: o skin.json da Praia deixa de ser uma cópia exata do

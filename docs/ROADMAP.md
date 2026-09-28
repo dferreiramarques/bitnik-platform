@@ -95,7 +95,7 @@ Por fazer:
   - ✔ Catania;
   - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;
   - ✔ Nine Oils (1.1.7): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas (🧪 garrafa), mão com a arte da carta em dobro (❤️‍🔥👦🏽💪🏼), dados animados, escolha às cegas como cartas viradas para baixo, sem pausa manual a "ver os dados";
-  - ✔ Praia das Percebes (2.0.3): tabuleiro a sério (clicar numa casa livre), objetivos sempre visíveis, salva-vidas marcados na peça; peças/objetivos/marcador pela convenção de componentes reutilizáveis (`--card-*`/`--token-*`), sem arte publicada ainda (emoji); mesa em degradê de céu/areal, inspirada no jogo online antigo — só o `skin.json` do jogo mudou, não o vanilla;
+  - ✔ Praia das Percebes (2.0.4): tabuleiro a sério com zoom e arrastar (como o Catania), objetivos em cartões com o nome, salva-vidas marcados na peça, vento decorativo na praia; peças/objetivos/marcador pela convenção de componentes reutilizáveis (`--card-*`/`--token-*`), sem arte publicada ainda (emoji); mesa em degradê de céu/areal, inspirada no jogo online antigo — só o `skin.json` do jogo mudou, não o vanilla;
   - ☐ Bulbous usa a UI genérica.
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.

@@ -5,11 +5,18 @@
 // marcador do salva-vidas) seguem a convenção do CONTRATO.md: tokens
 // --card-<tipo>/--token-<nome> no skin.json, tipo "image"; sem imagem
 // ainda (por publicar), a UI recua para um emoji.
+//
+// Tabuleiro com zoom e arrastar (dois dedos, roda, botões) tal como o
+// Catania: `.pdp-view` ocupa o ecrã inteiro por baixo da UI, `.pdp-center`
+// é só a zona livre medida para encaixar a grelha com zoom 1.
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const TILE_EMOJI = { normal: '🧍', prancha: '🏄', rocha: '🪨', areia: '▫️' };
 const OBJ_EMOJI = { quadrado3: '🔲', quadrado5: '⬛', linha5: '↔️', linha7: '➡️', coluna4: '↕️', coluna6: '⬆️', pranchas: '🏄', excursao: '🧳' };
 const LIFEGUARD_EMOJI = '🛟';
+const ZOOM = { min: 0.6, max: 3 };
+const EDGE = 40; // px do tabuleiro que ficam sempre no ecrã
+const GAP = 4;
 
 function ensureCss() {
   const href = new URL('./praia-das-percebes.css', import.meta.url).href;
@@ -39,8 +46,10 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: true });
+const fresh = () => ({ logOpen: true, zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0 });
 let ui = fresh();
+let boardDims = { rows: 1, cols: 1 };
+let resizeObs = null;
 
 /** Uma <img data-fallback="chave"> que falhe a carregar vira o emoji da peça/carta/marcador. */
 function onImgError(e) {
@@ -56,15 +65,25 @@ export function mount(el, context) {
   ensureCss();
   root = document.createElement('div');
   root.className = 'pdp';
+  root.append(renderWind());
   view = document.createElement('div');
   view.className = 'pdp-layout';
   root.append(view);
   el.append(root);
+  root.addEventListener('click', onClickCapture, true);
   root.addEventListener('click', onClick);
   root.addEventListener('error', onImgError, true);
+  root.addEventListener('pointerdown', onPointerDown);
+  root.addEventListener('pointermove', onPointerMove);
+  root.addEventListener('pointerup', onPointerUp);
+  root.addEventListener('pointercancel', onPointerUp);
+  root.addEventListener('wheel', onWheel, { passive: false });
+  if (typeof ResizeObserver !== 'undefined') { resizeObs = new ResizeObserver(() => applyZoom()); resizeObs.observe(root); }
 }
 
 export function unmount() {
+  resizeObs?.disconnect(); resizeObs = null;
+  frame = null;
   root?.remove();
   root = null; view = null; msg = null;
   ui = fresh();
@@ -73,10 +92,15 @@ export function unmount() {
 export function update(next) {
   msg = next;
   render();
-  fitBoard();
 }
 
 const mySeat = () => (msg && Number.isInteger(msg.seat) ? msg.seat : null);
+
+/** Um arrastar no tabuleiro não conta como clique numa casa. */
+function onClickCapture(e) {
+  if (ui.dragged && e.target.closest('.pdp-view')) { e.stopPropagation(); e.preventDefault(); }
+  ui.dragged = false;
+}
 
 function onClick(e) {
   const place = e.target.closest('[data-place]');
@@ -84,6 +108,12 @@ function onClick(e) {
     const [r, c] = place.dataset.place.split(',').map(Number);
     const mv = (msg.legal || []).find((m) => m.type === 'COLOCAR' && m.payload.r === r && m.payload.c === c);
     if (mv) ctx.move({ type: mv.type, payload: mv.payload });
+    return;
+  }
+  const zb = e.target.closest('[data-zoom]');
+  if (zb) {
+    const [cx, cy] = viewCenter();
+    if (zb.dataset.zoom === 'fit') { ui.zoom = { s: 1, x: 0, y: 0 }; applyZoom(false, true); } else zoomAt(cx, cy, zb.dataset.zoom === 'in' ? 1.25 : 0.8);
     return;
   }
   const bar = e.target.closest('[data-idx]');
@@ -96,14 +126,22 @@ function render() {
   const v = msg.view;
   const me = mySeat();
   view.innerHTML = `
+    <div class="pdp-view"><div class="pdp-zoom">${renderBoard(v)}</div></div>
     ${renderPlayers(v, me)}
     ${renderObjectives(v)}
-    <div class="pdp-center">${renderBoard(v)}</div>
+    <div class="pdp-center" data-tut="board">
+      <div class="pdp-zoombar">
+        <button class="pdp-zb" data-zoom="in" type="button" aria-label="${esc(ctx.t('ui.zoomIn'))}">+</button>
+        <button class="pdp-zb" data-zoom="out" type="button" aria-label="${esc(ctx.t('ui.zoomOut'))}">−</button>
+        <button class="pdp-zb" data-zoom="fit" type="button" aria-label="${esc(ctx.t('ui.zoomFit'))}">⤢</button>
+      </div>
+    </div>
     <div class="pdp-bottom">
       ${renderLog()}
       ${renderPiece(v, me)}
     </div>
     ${msg.result ? '' : `<div class="pdp-bar">${renderBar(v, me)}</div>`}`;
+  applyZoom();
 }
 
 function renderPlayers(v, me) {
@@ -121,9 +159,9 @@ function renderObjectives(v) {
   return `<div class="pdp-objectives">
     <div class="pdp-lbl">${esc(ctx.t('ui.objectives'))}</div>
     <div class="pdp-obj-row">
-      ${v.objetivos.map((o) => `<div class="pdp-obj" title="${esc(ctx.t(`obj.${o.id}`))} (+${o.pts})">
-        ${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}
-        <b class="pdp-obj-pts">+${o.pts}</b>
+      ${v.objetivos.map((o) => `<div class="pdp-obj">
+        <div class="pdp-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
+        <div class="pdp-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
       </div>`).join('')}
       ${extra}
     </div>
@@ -143,8 +181,7 @@ function renderBoard(v) {
   const maxR = Math.max(...all.map((x) => x.r));
   const minC = Math.min(...all.map((x) => x.c));
   const maxC = Math.max(...all.map((x) => x.c));
-  const rows = maxR - minR + 1;
-  const cols = maxC - minC + 1;
+  boardDims = { rows: maxR - minR + 1, cols: maxC - minC + 1 };
   const g = (r, c) => `grid-row:${r - minR + 1};grid-column:${c - minC + 1}`;
   const tiles = cells.map(({ r, c, p }) => {
     const lg = v.salvaVidas.find((s) => s.r === r && s.c === c);
@@ -155,7 +192,7 @@ function renderBoard(v) {
     </div>`;
   }).join('');
   const ghostCells = ghosts.map(({ r, c }) => `<button class="pdp-cell ghost" type="button" data-place="${r},${c}" style="${g(r, c)}" aria-label="${esc(ctx.t('ui.placeHere'))}"></button>`).join('');
-  return `<div class="pdp-grid" style="--rows:${rows};--cols:${cols}">${tiles}${ghostCells}</div>`;
+  return `<div class="pdp-grid" style="--rows:${boardDims.rows};--cols:${boardDims.cols}">${tiles}${ghostCells}</div>`;
 }
 
 function renderPiece(v, me) {
@@ -184,17 +221,130 @@ function renderBar(v, me) {
   return legal.map((mv, i) => `<button class="pdp-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
 }
 
-/** As casas do tabuleiro ocupam o espaço livre ao centro, sem passar de um tamanho confortável. */
-function fitBoard() {
-  const grid = view?.querySelector('.pdp-grid');
-  const box = view?.querySelector('.pdp-center');
-  if (!grid || !box) return;
-  const rows = Number(grid.style.getPropertyValue('--rows')) || 1;
-  const cols = Number(grid.style.getPropertyValue('--cols')) || 1;
-  const { width: w, height: h } = box.getBoundingClientRect();
-  if (!w || !h) return;
-  const gap = 4;
-  const cell = Math.max(28, Math.min((w - gap * (cols - 1)) / cols, (h - gap * (rows - 1)) / rows, 64));
-  grid.style.setProperty('--cell', `${Math.floor(cell)}px`);
-  grid.style.setProperty('--gap', `${gap}px`);
+/** Vento na praia: faixas de areia a passar, decorativas, atrás de tudo — criado
+ * uma vez (não é regenerado a cada estado, por isso a animação nunca reinicia). */
+function renderWind() {
+  const wind = document.createElement('div');
+  wind.className = 'pdp-wind';
+  wind.setAttribute('aria-hidden', 'true');
+  wind.innerHTML = Array.from({ length: 6 }, (_, i) => {
+    const top = 8 + ((i * 37) % 90);
+    const dur = 7 + (i % 4) * 2.3;
+    const delay = -(i * 2.7);
+    return `<i class="pdp-gust" style="top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s"></i>`;
+  }).join('');
+  return wind;
+}
+
+// ─── Zoom e arrastar no tabuleiro (tal como o Catania) ───────
+// `.pdp-view` ocupa o ecrã inteiro, por baixo da UI. Com zoom 1 o tabuleiro
+// encaixa na zona livre (.pdp-center, a célula da grelha entre os
+// objetivos e o registo); ao aproximar ou arrastar, passa por baixo dos
+// painéis. A zona é medida uma vez e fica fixa enquanto o ecrã não mudar.
+let frame = null; // { L, T, w, h, ow, oh }: zona livre relativa a .pdp-view
+
+function measureFrame(o) {
+  const cell = view?.querySelector('.pdp-center');
+  if (!cell) return null;
+  const r = cell.getBoundingClientRect();
+  return { L: r.left - o.left, T: r.top - o.top, w: r.width, h: r.height, ow: o.width, oh: o.height };
+}
+
+function boardRect(refit = false) {
+  const vw = view?.querySelector('.pdp-view');
+  if (!vw) return null;
+  const o = vw.getBoundingClientRect();
+  if (refit || !frame || !frame.w || frame.ow !== o.width || frame.oh !== o.height) frame = measureFrame(o);
+  if (!frame) return null;
+  return { left: o.left + frame.L, top: o.top + frame.T, width: frame.w, height: frame.h };
+}
+
+/** `limit`: depois de um gesto, não deixar o tabuleiro sair do ecrã. */
+function applyZoom(limit = false, refit = false) {
+  const vw = view?.querySelector('.pdp-view');
+  const z = view?.querySelector('.pdp-zoom');
+  const r = boardRect(refit);
+  if (!vw || !z || !r) return;
+  const o = vw.getBoundingClientRect();
+  const { rows, cols } = boardDims;
+  const cell = Math.max(28, Math.min((r.width - GAP * (cols - 1)) / cols, (r.height - GAP * (rows - 1)) / rows, 64));
+  const gridW = cell * cols + GAP * (cols - 1);
+  const gridH = cell * rows + GAP * (rows - 1);
+  const L = (r.left - o.left) + (r.width - gridW) / 2;
+  const T = (r.top - o.top) + (r.height - gridH) / 2;
+  Object.assign(z.style, { left: `${L}px`, top: `${T}px`, width: `${gridW}px`, height: `${gridH}px` });
+  z.style.setProperty('--cell', `${Math.floor(cell)}px`);
+  if (limit && o.width && gridW) {
+    const { s } = ui.zoom;
+    const clamp = (v, lo, hi) => Math.min(Math.max(v, Math.min(lo, hi)), Math.max(lo, hi));
+    ui.zoom = {
+      s,
+      x: clamp(ui.zoom.x, EDGE - L - gridW * s, o.width - EDGE - L),
+      y: clamp(ui.zoom.y, EDGE - T - gridH * s, o.height - EDGE - T),
+    };
+  }
+  const { s, x, y } = ui.zoom;
+  z.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+}
+
+function zoomAt(px, py, f) {
+  const { s, x, y } = ui.zoom;
+  const ns = Math.min(ZOOM.max, Math.max(ZOOM.min, s * f));
+  const k = ns / s;
+  ui.zoom = { s: ns, x: px - (px - x) * k, y: py - (py - y) * k };
+  applyZoom(true);
+}
+
+function viewCenter() {
+  const r = boardRect();
+  return r ? [r.width / 2, r.height / 2] : [0, 0];
+}
+
+function onPointerDown(e) {
+  const el = e.target.closest('.pdp-view');
+  if (!el || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  ui.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ui.pts.size === 1) { ui.moved = 0; ui.dragged = false; }
+}
+
+function onPointerMove(e) {
+  if (!ui.pts.has(e.pointerId)) return;
+  const el = view.querySelector('.pdp-view');
+  const r = boardRect();
+  if (!el || !r) return;
+  const prev = [...ui.pts.values()];
+  ui.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const now = [...ui.pts.values()];
+  if (now.length === 1) {
+    const dx = now[0].x - prev[0].x;
+    const dy = now[0].y - prev[0].y;
+    ui.moved += Math.abs(dx) + Math.abs(dy);
+    if (ui.moved < 6) return; // um toque não é arrastar
+    if (!ui.dragged) { ui.dragged = true; el.setPointerCapture?.(e.pointerId); }
+    ui.zoom = { ...ui.zoom, x: ui.zoom.x + dx, y: ui.zoom.y + dy };
+    applyZoom(true);
+  } else {
+    ui.dragged = true;
+    const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top });
+    const d0 = d(prev[0], prev[1]);
+    const m0 = mid(prev[0], prev[1]);
+    const m1 = mid(now[0], now[1]);
+    const { s, x, y } = ui.zoom;
+    const ns = Math.min(ZOOM.max, Math.max(ZOOM.min, s * (d0 ? d(now[0], now[1]) / d0 : 1)));
+    const k = ns / s;
+    ui.zoom = { s: ns, x: m1.x - (m0.x - x) * k, y: m1.y - (m0.y - y) * k };
+    applyZoom(true);
+  }
+}
+
+function onPointerUp(e) { ui.pts.delete(e.pointerId); }
+
+function onWheel(e) {
+  const el = e.target.closest('.pdp-view');
+  if (!el) return;
+  e.preventDefault();
+  const r = boardRect();
+  if (!r) return;
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.002));
 }
