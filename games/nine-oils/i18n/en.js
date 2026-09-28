@@ -61,4 +61,18 @@ export default {
   'ui.slot.blocked': 'Blocked slot',
   'ui.slot.free': 'Free slot',
   'ui.slot.filled': 'Bottle',
+  'ui.cardDetails': 'Card details',
+  'ui.close': 'Close',
+  'ui.whenToPlay': 'When to play',
+  'ui.effect': 'Effect',
+
+  'cartaInfo.TEMPTRESS.when': 'Play before rolling, on your turn.',
+  'cartaInfo.TEMPTRESS.effect': 'If you roll a Triple+Double, gain +1 extra bottle (2 total). Play both Temptress cards to gain +2 extra bottles (3 total).',
+  'cartaInfo.TEMPTRESS.flavor': 'She knows how to draw a crowd.',
+  'cartaInfo.BOY.when': 'Play on your turn, before rolling.',
+  'cartaInfo.BOY.effect': 'Steal 1 bottle from the opponent’s stall. If their stall is empty, the card does nothing. Your opponent may play a Bully to block. Play a second Boy to override a Bully defence.',
+  'cartaInfo.BOY.flavor': 'Quick hands. No conscience.',
+  'cartaInfo.BULLY.when': 'Two uses — see below.',
+  'cartaInfo.BULLY.effect': 'DEFENSIVE: on the opponent’s turn, cancel a Boy attack. Both cards are discarded.|OFFENSIVE: on your turn, play 2 Bullies together to blindly discard 1 card from the opponent’s hand.',
+  'cartaInfo.BULLY.flavor': 'Not exactly a charmer, but effective.',
 };

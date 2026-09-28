@@ -9,6 +9,8 @@
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const EMOJI = { TEMPTRESS: '💃', BOY: '🤏', BULLY: '👊' };
+const asset = (rel) => new URL(rel, import.meta.url).href;
+const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.png'), BOY: asset('./cartas/boy.png'), BULLY: asset('./cartas/bully.png') };
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;
@@ -23,8 +25,12 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: true, lastLogSeq: 0 });
+const fresh = () => ({ logOpen: true, lastLogSeq: 0, cardInfo: null });
 let ui = fresh();
+
+function onKeydown(e) {
+  if (e.key === 'Escape' && ui.cardInfo) { ui.cardInfo = null; render(); }
+}
 
 export function mount(el, context) {
   ctx = context;
@@ -36,9 +42,11 @@ export function mount(el, context) {
   root.append(view);
   el.append(root);
   root.addEventListener('click', onClick);
+  document.addEventListener('keydown', onKeydown);
 }
 
 export function unmount() {
+  document.removeEventListener('keydown', onKeydown);
   root?.remove();
   root = null; view = null; msg = null;
   ui = fresh();
@@ -58,6 +66,9 @@ export function update(next) {
 const mySeat = () => (msg && Number.isInteger(msg.seat) ? msg.seat : null);
 
 function onClick(e) {
+  const info = e.target.closest('[data-info]');
+  if (info) { ui.cardInfo = info.dataset.info; render(); return; }
+  if (e.target.closest('[data-close-info]')) { ui.cardInfo = null; render(); return; }
   const bar = e.target.closest('[data-idx]');
   if (bar) { const mv = msg.legal?.[Number(bar.dataset.idx)]; if (mv) ctx.move({ type: mv.type, payload: mv.payload }); return; }
   const discard = e.target.closest('[data-discard]');
@@ -81,7 +92,36 @@ function render() {
       ${renderLog()}
       ${renderHand(v, me)}
     </div>
-    ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}`;
+    ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
+    <div class="nof-modal-host"></div>`;
+  syncCardInfo();
+}
+
+/** Modal com a arte e as regras da carta (imagem própria; recua para o emoji se faltar). */
+function syncCardInfo() {
+  const host = view.querySelector('.nof-modal-host');
+  const type = ui.cardInfo;
+  if (!host || !type) { if (host) host.innerHTML = ''; return; }
+  const effect = ctx.t(`cartaInfo.${type}.effect`).split('|').map((p) => esc(p)).join('<br><br>');
+  host.innerHTML = `<div class="nof-modal-backdrop" data-close-info>
+    <div class="nof-modal" role="dialog" aria-label="${esc(ctx.t('ui.cardDetails'))}">
+      <button class="nof-modal-close" type="button" data-close-info aria-label="${esc(ctx.t('ui.close'))}">✕</button>
+      <div class="nof-modal-body">
+        <div class="nof-modal-art"><img alt=""></div>
+        <div class="nof-modal-text">
+          <div class="nof-modal-name">${esc(ctx.t(`carta.${type}`))}</div>
+          <div class="nof-modal-label">${esc(ctx.t('ui.whenToPlay'))}</div>
+          <p>${esc(ctx.t(`cartaInfo.${type}.when`))}</p>
+          <div class="nof-modal-label">${esc(ctx.t('ui.effect'))}</div>
+          <p>${effect}</p>
+          <p class="nof-modal-flavor">${esc(ctx.t(`cartaInfo.${type}.flavor`))}</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  const img = host.querySelector('img');
+  img.onerror = () => { img.replaceWith(Object.assign(document.createElement('span'), { className: 'nof-modal-emoji', textContent: EMOJI[type] ?? '' })); };
+  img.src = CARD_ART[type];
 }
 
 const PHASE_MOVE = { CARTAS: 'move.LANCAR', COMBO: 'move.ESCOLHER_COMBO', DEFESA: 'move.DEFENDER', ESCOLHA_CEGA: 'move.ESCOLHA_CEGA', DESCARTE: 'move.DESCARTAR' };
@@ -137,9 +177,12 @@ function renderHand(v, me) {
   if (me == null) return '<div></div>';
   const mao = v.minhaMao || [];
   const interactiveDiscard = v.fase === 'DESCARTE' && !!(msg.legal || []).length;
-  const cards = mao.map((c) => interactiveDiscard
-    ? `<button class="nof-card face" type="button" data-discard="${esc(c)}" title="${esc(ctx.t(`carta.${c}`))}">${EMOJI[c] ?? '?'}</button>`
-    : `<span class="nof-card face static" title="${esc(ctx.t(`carta.${c}`))}">${EMOJI[c] ?? '?'}</span>`).join('');
+  const cards = mao.map((c) => {
+    const cardEl = interactiveDiscard
+      ? `<button class="nof-card face" type="button" data-discard="${esc(c)}" title="${esc(ctx.t(`carta.${c}`))}">${EMOJI[c] ?? '?'}</button>`
+      : `<span class="nof-card face static" title="${esc(ctx.t(`carta.${c}`))}">${EMOJI[c] ?? '?'}</span>`;
+    return `<span class="nof-card-wrap">${cardEl}<button class="nof-info-btn" type="button" data-info="${esc(c)}" title="${esc(ctx.t('ui.cardDetails'))}">?</button></span>`;
+  }).join('');
   return `<div class="nof-hand">
     <div class="nof-lbl">${esc(ctx.t('ui.myHand'))}</div>
     <div class="nof-hand-cards">${cards || `<span class="nof-note">${esc(ctx.t('ui.handEmpty'))}</span>`}</div>

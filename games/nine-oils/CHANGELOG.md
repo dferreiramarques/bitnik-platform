@@ -1,5 +1,13 @@
 # Nine Oils — histórico de regras
 
+## 1.1.3 — Detalhes da carta (2026-09-28)
+
+Sem mudanças de jogo: cada carta da mão ganha um botão "?" que abre os
+detalhes (quando jogar, efeito completo e a frase de sabor), tal como no
+jogo online antigo (nineoils.up.railway.app). O texto vem do `REGRAS.md`;
+a arte (`ui/cartas/*.png`) ainda não está no pacote — sem ela, o modal
+mostra o emoji da carta em grande.
+
 ## 1.1.2 — UI própria, no template vanilla (2026-09-28)
 
 Sem mudanças de jogo: primeira UI própria do Nine Oils (ADR-006), sem tokens

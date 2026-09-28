@@ -61,4 +61,18 @@ export default {
   'ui.slot.blocked': 'Casa bloqueada',
   'ui.slot.free': 'Casa livre',
   'ui.slot.filled': 'Garrafa',
+  'ui.cardDetails': 'Detalhes da carta',
+  'ui.close': 'Fechar',
+  'ui.whenToPlay': 'Quando jogar',
+  'ui.effect': 'Efeito',
+
+  'cartaInfo.TEMPTRESS.when': 'Joga antes de lançar, no teu turno.',
+  'cartaInfo.TEMPTRESS.effect': 'Se lançares um Triplo + Duplo, ganha 1 garrafa adicional (2 no total). Jogar as duas Sedutoras dá 2 garrafas extra (3 no total).',
+  'cartaInfo.TEMPTRESS.flavor': 'Sabe como atrair a multidão.',
+  'cartaInfo.BOY.when': 'Joga no teu turno, antes de lançar.',
+  'cartaInfo.BOY.effect': 'Rouba 1 garrafa da banca do adversário. Se a banca estiver vazia, a carta não tem efeito. O adversário pode jogar um Valentão para bloquear. Jogar um segundo Rapaz sobrepõe-se à defesa de um Valentão.',
+  'cartaInfo.BOY.flavor': 'Mãos rápidas. Sem consciência.',
+  'cartaInfo.BULLY.when': 'Duas utilizações — ver abaixo.',
+  'cartaInfo.BULLY.effect': 'DEFESA: no turno do adversário, cancela um ataque de Rapaz. As duas cartas são descartadas.|ATAQUE: no teu turno, joga 2 Valentões juntos para descartar às cegas 1 carta da mão do adversário.',
+  'cartaInfo.BULLY.flavor': 'Não é propriamente charmoso, mas é eficaz.',
 };
