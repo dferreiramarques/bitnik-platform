@@ -1,5 +1,14 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.3 — Mesa em degradê de céu/areal (2026-09-28)
+
+Sem mudanças de jogo: o skin.json da Praia deixa de ser uma cópia exata do
+vanilla — mesa em degradê de céu para areal e painéis de vidro claro (em
+vez de escuro), a inspirar-se no jogo online antigo
+(praiadaspercebes.up.railway.app). Só os tokens da mesa mudam (fundo,
+vidro, texto sobre a mesa); base, jogadores e forma continuam iguais ao
+vanilla. `design/vanilla/skin.json` não foi tocado.
+
 ## 2.0.2 — UI própria, no template vanilla (2026-09-28)
 
 Sem mudanças de jogo: primeira UI própria da Praia (ADR-006). Tabuleiro a

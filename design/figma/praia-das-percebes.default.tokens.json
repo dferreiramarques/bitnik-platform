@@ -3,7 +3,7 @@
     "table": {
       "table-bg": {
         "$type": "string",
-        "$value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
+        "$value": "linear-gradient(160deg, #caf0f8 0%, #90e0ef 45%, #f5deb3 100%)",
         "$description": "Mesa (fundo)",
         "$extensions": {
           "bitnik": {
@@ -16,7 +16,7 @@
       },
       "table-dots": {
         "$type": "color",
-        "$value": "rgba(255,250,241,.14)",
+        "$value": "rgba(7,59,107,.08)",
         "$description": "Pontos da mesa",
         "$extensions": {
           "bitnik": {
@@ -29,7 +29,7 @@
       },
       "game-glass": {
         "$type": "color",
-        "$value": "rgba(20,32,26,.35)",
+        "$value": "rgba(255,255,255,.45)",
         "$description": "Vidro sobre a mesa",
         "$extensions": {
           "bitnik": {
@@ -42,7 +42,7 @@
       },
       "game-glass-line": {
         "$type": "color",
-        "$value": "rgba(255,250,241,.35)",
+        "$value": "rgba(2,62,138,.25)",
         "$description": "Contorno do vidro",
         "$extensions": {
           "bitnik": {
@@ -55,7 +55,7 @@
       },
       "game-glass-blur": {
         "$type": "dimension",
-        "$value": "8px",
+        "$value": "10px",
         "$description": "Desfoque do vidro",
         "$extensions": {
           "bitnik": {
@@ -68,7 +68,7 @@
       },
       "game-on-table": {
         "$type": "color",
-        "$value": "#fffaf1",
+        "$value": "#073b6b",
         "$description": "Texto sobre a mesa",
         "$extensions": {
           "bitnik": {
@@ -81,7 +81,7 @@
       },
       "game-on-table-muted": {
         "$type": "color",
-        "$value": "rgba(255,250,241,.75)",
+        "$value": "rgba(7,59,107,.72)",
         "$description": "Texto secundário sobre a mesa",
         "$extensions": {
           "bitnik": {
@@ -94,7 +94,7 @@
       },
       "game-on-table-accent": {
         "$type": "color",
-        "$value": "#ffd9c2",
+        "$value": "#ff7a00",
         "$description": "Destaque sobre a mesa",
         "$extensions": {
           "bitnik": {
@@ -107,7 +107,7 @@
       },
       "game-on-table-warn": {
         "$type": "color",
-        "$value": "#ffb38f",
+        "$value": "#e8480c",
         "$description": "Aviso sobre a mesa",
         "$extensions": {
           "bitnik": {
