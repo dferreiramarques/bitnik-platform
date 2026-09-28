@@ -328,7 +328,7 @@ A ordem da Forge é: **cartões → partida narrada → commit das regras → te
 
 ## ADR-014: A mesa ocupa o ecrã inteiro; painéis de vidro por cima
 
-**Estado:** aceite no desenho (2026-09-26); implementada no Catania e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, para Bulbous, Praia das Percebes e Nine Oils, com mensagem "É a tua vez"); faltam componentes como alvo e "Copiar convite" (ver "O que falta" no `docs/CONTEXTO.md`); a mensagem da mesa continua duplicada no Catania e no Capivaras, por trocar pelo mecanismo da plataforma; pontos por origem no fim/relatório ficam de fora, só por jogo se algum precisar
+**Estado:** aceite no desenho (2026-09-26); implementada no Catania e, desde 2026-09-28, na UI genérica (mesa em ecrã inteiro, sem tabuleiro, "Copiar convite" e mensagem "É a tua vez", para Bulbous, Praia das Percebes e Nine Oils); a mensagem da mesa continua duplicada no Catania e no Capivaras, por trocar pelo mecanismo da plataforma; componentes como alvo e pontos por origem no fim/relatório ficam de fora — só por jogo, se algum precisar (ver "O que falta" no `docs/CONTEXTO.md`)
 
 ### Contexto
 
@@ -361,10 +361,10 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 
 ### Consequências
 
-- ✔ A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro. Feito para a mesa (sem tabuleiro: jogadores, jogadas e registo em painéis de vidro); os jogos sem UI própria ainda não têm tabuleiro nem componentes como alvo.
+- ✔ A UI genérica (`packages/server/public/app.js` e `app.css`) tem de ser refeita para este desenho; a UI do Catania adapta-se aos painéis de vidro. Feito para a mesa (sem tabuleiro: jogadores, jogadas e registo em painéis de vidro). Componentes como alvo: decidido não fazer como peça genérica do contrato (2026-09-28) — só o Nine Oils precisaria (escolher às cegas uma carta da mão do adversário) e já funciona como lista de jogadas.
 - A marca de um deploy passa a dizer se é de vários jogos (Início) ou de um só (Marca-produto).
 - Os avisos de atualização deixam de ter faixa própria: falta decidir onde aparecem (proposta: uma ficha na linha de cima, que abre o texto).
-- "Copiar convite" na Entrada é novo: hoje só as mesas de aprovação, criadas na consola, têm convite.
+- ✔ "Copiar convite" na Entrada: já existia para qualquer mesa que não seja solo (públicas e de aprovação).
 - ◐ Mensagens da mesa: o mecanismo (fila, uma de cada vez, animação, `prefers-reduced-motion`) é agora da plataforma (`app.js`/`app.css`, `mountTableMessages`), usado pela UI genérica para "É a tua vez". O Catania e o Capivaras continuam com a sua própria cópia (`cat-msg`/`capi-msg`), por trocar. Falta ainda o acrescento ao `CONTRATO.md` para um jogo mandar mensagens próprias (eventos, avisos) sem UI própria.
 - Pontos por origem no fim e momentos decisivos para o relatório: adiado (2026-09-28). Não passa a ser uma peça do contrato para todos os jogos; só se um jogo concreto precisar (ex.: Bulbous) faz-se à parte, nesse jogo.
 - Antes de implementar, resolver os pendentes da secção 5 do TEMPLATE: contraste do vidro e alvos de toque de 44 px. Se o vidro passar a escuro, mudam os valores de `--game-glass` e `--game-glass-line`, não os nomes.
