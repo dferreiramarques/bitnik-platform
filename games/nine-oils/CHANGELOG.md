@@ -1,12 +1,19 @@
 # Nine Oils — histórico de regras
 
+## 1.1.4 — Arte das cartas no modal de detalhes (2026-09-28)
+
+Sem mudanças de jogo: o modal de detalhes (1.1.3) passa a mostrar a arte
+ilustrada de cada carta (`ui/cartas/{boy,bully,temptress}.jpg`, fornecida
+pelo David), em vez do emoji. O emoji continua como recuo automático se a
+imagem não carregar.
+
 ## 1.1.3 — Detalhes da carta (2026-09-28)
 
 Sem mudanças de jogo: cada carta da mão ganha um botão "?" que abre os
 detalhes (quando jogar, efeito completo e a frase de sabor), tal como no
 jogo online antigo (nineoils.up.railway.app). O texto vem do `REGRAS.md`;
-a arte (`ui/cartas/*.png`) ainda não está no pacote — sem ela, o modal
-mostra o emoji da carta em grande.
+a arte (`ui/cartas/*.png`) ainda não estava no pacote — sem ela, o modal
+mostrava o emoji da carta em grande.
 
 ## 1.1.2 — UI própria, no template vanilla (2026-09-28)
 

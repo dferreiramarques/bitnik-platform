@@ -10,7 +10,7 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const EMOJI = { TEMPTRESS: '💃', BOY: '🤏', BULLY: '👊' };
 const asset = (rel) => new URL(rel, import.meta.url).href;
-const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.png'), BOY: asset('./cartas/boy.png'), BULLY: asset('./cartas/bully.png') };
+const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;

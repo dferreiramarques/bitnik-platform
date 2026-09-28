@@ -8,7 +8,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'nine-oils',
-  version: '1.1.3',
+  version: '1.1.4',
   players: { min: 2, max: 2 },
   author: 'David Marques',
   license: 'UNLICENSED',
