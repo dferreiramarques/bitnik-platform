@@ -25,6 +25,7 @@ export default {
 
   'log.ESCOLHEU': 'activated the {cor} {especime} Baelfungious',
   'log.ULTIMA': 'brought in the last Baelfungious: the game ends after this round',
+  'msg.ULTIMA': 'Final round!',
   'log.SEQUENCIA': 'declared the sequence {ordem}',
   'log.APOSTOU': 'bet {n} card(s)',
   'log.TROCOU': 'swapped {n} card(s)',

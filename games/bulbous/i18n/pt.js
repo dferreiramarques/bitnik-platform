@@ -25,6 +25,7 @@ export default {
 
   'log.ESCOLHEU': 'ativou a Baelfungious {especime} {cor}',
   'log.ULTIMA': 'trouxe a última Baelfungious: o jogo acaba no fim desta ronda',
+  'msg.ULTIMA': 'Última ronda!',
   'log.SEQUENCIA': 'declarou a sequência {ordem}',
   'log.APOSTOU': 'apostou {n} carta(s)',
   'log.TROCOU': 'trocou {n} carta(s)',

@@ -64,7 +64,9 @@ test('ctx.log(key, params, { announce }) marca a entrada como mensagem da mesa (
   const r1 = applyMove(race, m, 0, { type: 'ROLL' });
   assert.equal(r1.match.log.at(-1).announce, undefined, 'sem opts, a entrada fica só no registo');
   const r2 = applyMove(race, r1.match, r1.match.state.cur, { type: 'ANNOUNCE' });
-  assert.equal(r2.match.log.at(-1).announce, 'warn');
+  assert.deepEqual(r2.match.log.at(-1).announce, { variant: 'warn', key: 'log.ROLL', params: { n: 9 } }, 'sem chave própria, reutiliza a do registo');
+  const r3 = applyMove(race, r2.match, r2.match.state.cur, { type: 'ANNOUNCE_SHORT' });
+  assert.deepEqual(r3.match.log.at(-1).announce, { variant: 'warn', key: 'msg.SHORT', params: { n: 9 } }, 'com chave própria, a mesa mostra um texto diferente do registo');
 });
 
 test('replay reproduz o estado, incluindo timers', () => {

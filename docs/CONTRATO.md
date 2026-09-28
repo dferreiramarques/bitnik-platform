@@ -61,6 +61,8 @@ Os ficheiros de um pacote só podem importar `@bitnik/engine` e ficheiros própr
 
 **Mensagem da mesa** (ADR-014, opcional): `ctx.log(key, params, { announce: true })` marca a entrada de registo também como mensagem da mesa — a plataforma mostra-a ao centro, ampliada, uma de cada vez, sem bloquear cliques (o mesmo mecanismo com que a UI própria já mostra "É a tua vez"). `{ announce: 'warn' }` usa a variante de aviso (`--game-on-table-warn`); sem `announce`, a entrada fica só no registo, como sempre. É o único caminho para um jogo **sem** UI própria mandar mensagens suas (eventos, avisos) além do "É a tua vez" que a plataforma já mostra sozinha; um jogo com UI própria continua a preferir `ctx.announce(title, sub, variant)` diretamente (permite um subtítulo, que o registo não tem).
 
+O registo pede uma frase completa; a mensagem, ampliada ao centro, pede uma curta. Quando não servem as duas, `{ announce: { variant, key, params } }` dá à mesa um texto próprio (`key`/`params` de outra chave i18n), sem mudar o que fica no registo. Exemplo (Bulbous): `ctx.log('log.ULTIMA', {}, { announce: { variant: 'warn', key: 'msg.ULTIMA' } })` — o registo mostra a frase toda; a mesa só "Última ronda!".
+
 **`activePlayers(state)`** diz quem pode jogar agora. Um array permite jogadas simultâneas (apostas às cegas, como nas Capivaras). Um array vazio com timers pendentes significa "à espera do relógio".
 
 **`view(state, seat)`** esconde o que cada lugar não deve ver. `seat = null` é um espectador. É aqui que ficam as mãos ocultas. Opcional, para a UI genérica de protótipo: `players: [{ score, summary }]` no view mostra, no bloco de cada jogador, a pontuação atual e uma linha curta (de preferência só símbolos, que não precisam de tradução; ex.: `🐦(2) 🟡🔴`).

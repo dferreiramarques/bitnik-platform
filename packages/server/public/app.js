@@ -539,7 +539,7 @@ function syncMesaMessage(msg) {
   const g = msg.room.gameId;
   for (const l of msg.log || []) {
     if (l.announce == null || (l.seq ?? 0) <= m.lastLogSeq) continue;
-    m.api.announce(t(l.key, l.params, g), '', l.announce);
+    m.api.announce(t(l.announce.key, l.announce.params, g), '', l.announce.variant);
   }
   m.lastLogSeq = Math.max(m.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
 }

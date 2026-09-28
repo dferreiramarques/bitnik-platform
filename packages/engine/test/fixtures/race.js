@@ -7,8 +7,8 @@ export default defineGame({
   version: '0.0.1',
   players: { min: 2, max: 4 },
   i18n: {
-    pt: { 'game.name': 'Corrida', 'move.ROLL': 'Lançar', 'log.ROLL': 'Saiu {n}', 'err.NOPE': 'Não' },
-    en: { 'game.name': 'Race', 'move.ROLL': 'Roll', 'log.ROLL': 'Rolled {n}', 'err.NOPE': 'No' },
+    pt: { 'game.name': 'Corrida', 'move.ROLL': 'Lançar', 'log.ROLL': 'Saiu {n}', 'err.NOPE': 'Não', 'msg.SHORT': 'Última volta!' },
+    en: { 'game.name': 'Race', 'move.ROLL': 'Roll', 'log.ROLL': 'Rolled {n}', 'err.NOPE': 'No', 'msg.SHORT': 'Final lap!' },
   },
   setup(ctx) {
     ctx.schedule('turn', 10000, 'TIMEOUT');
@@ -31,6 +31,10 @@ export default defineGame({
     /** Só para testar ctx.log(..., { announce }): não muda nada no estado. */
     ANNOUNCE(s, p, ctx) {
       ctx.log('log.ROLL', { n: 9 }, { announce: 'warn' });
+    },
+    /** Idem, com um texto próprio (mais curto) para a mesa, diferente do registo. */
+    ANNOUNCE_SHORT(s, p, ctx) {
+      ctx.log('log.ROLL', { n: 9 }, { announce: { variant: 'warn', key: 'msg.SHORT' } });
     },
   },
   events: {
