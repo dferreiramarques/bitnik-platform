@@ -68,19 +68,6 @@
       }
     },
     "base": {
-      "capi-panel": {
-        "$type": "color",
-        "$value": "#123a33",
-        "$description": "Painel",
-        "$extensions": {
-          "bitnik": {
-            "token": "--capi-panel",
-            "type": "color",
-            "collection": "capivaras",
-            "mode": "default"
-          }
-        }
-      },
       "capi-text": {
         "$type": "color",
         "$value": "#fffaf1",

@@ -21,7 +21,7 @@
       }
     },
     "--game-glass": {
-      "value": "rgba(255,250,241,.3)",
+      "value": "rgba(20,32,26,.35)",
       "type": "color",
       "group": "table",
       "label": {
