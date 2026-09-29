@@ -48,7 +48,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0 });
+const fresh = () => ({ logOpen: false, objOpen: false, zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0 });
 let ui = fresh();
 let boardDims = { rows: 1, cols: 1 };
 let resizeObs = null;
@@ -120,7 +120,8 @@ function onClick(e) {
   }
   const bar = e.target.closest('[data-idx]');
   if (bar) { const mv = msg.legal?.[Number(bar.dataset.idx)]; if (mv) ctx.move({ type: mv.type, payload: mv.payload }); return; }
-  if (e.target.closest('[data-act="logfold"]')) { ui.logOpen = !ui.logOpen; render(); }
+  if (e.target.closest('[data-act="logfold"]')) { ui.logOpen = !ui.logOpen; render(); return; }
+  if (e.target.closest('[data-act="objfold"]')) { ui.objOpen = !ui.objOpen; render(); }
 }
 
 function render() {
@@ -163,8 +164,10 @@ function renderPlayers(v, me) {
 
 function renderObjectives(v) {
   const extra = v.porRevelar > 0 ? `<span class="praia-note">${esc(ctx.t('ui.toReveal', { n: v.porRevelar }))}</span>` : '';
-  return `<div class="praia-objectives">
-    <div class="praia-lbl">${esc(ctx.t('ui.objectives'))}</div>
+  return `<div class="praia-objectives${ui.objOpen ? ' open' : ''}">
+    <button class="praia-lbl praia-obj-head" type="button" data-act="objfold" aria-expanded="${ui.objOpen}">
+      ${esc(ctx.t('ui.objectives'))}<i class="praia-obj-chevron" aria-hidden="true">${ui.objOpen ? '▾' : '▸'}</i>
+    </button>
     <div class="praia-obj-row">
       ${v.objetivos.map((o) => `<div class="praia-obj">
         <div class="praia-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>

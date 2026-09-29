@@ -2,6 +2,13 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.3 — Cor do registo volta ao texto da mesa
+
+Sem mudanças de jogo: o registo deixa de ser branco fixo e volta a usar
+`--game-on-table-muted`, a mesma cor dos outros textos secundários sobre a
+mesa — mais correto para um jogo (deste ou de outro tema) com mesa clara,
+sem perder o aspeto fino e discreto.
+
 ## 5.0.2 — Registo mais discreto; começa fechado; some no telemóvel
 
 Sem mudanças de jogo: o texto do registo passa a branco, fino e pequeno,

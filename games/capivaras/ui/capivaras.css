@@ -120,7 +120,7 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
    pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
    do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
 .capi-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.capi-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow: hidden; color: rgb(255 255 255 / .55); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.capi-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
 .capi-log ol { list-style: none; margin: 0; padding: 0; }
 .capi-log b { font-weight: 500; }
 .capi-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }

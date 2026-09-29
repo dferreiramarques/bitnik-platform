@@ -1,5 +1,11 @@
 # Nine Oils — histórico de regras
 
+## 1.1.10 — Cor do registo volta ao texto da mesa (2026-09-29)
+
+Sem mudanças de jogo: o registo deixa de ser branco fixo e volta a usar
+`--game-on-table-muted`, a mesma cor dos outros textos secundários sobre a
+mesa.
+
 ## 1.1.9 — Registo mais discreto; começa fechado (2026-09-29)
 
 Sem mudanças de jogo: o texto do registo passa a branco, fino e pequeno,

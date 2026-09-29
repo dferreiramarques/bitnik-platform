@@ -1,5 +1,16 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.17 — Cor do registo volta ao texto da mesa; objetivos colapsam no telemóvel (2026-09-29)
+
+Sem mudanças de jogo:
+
+- O registo deixa de ser branco fixo (ilegível numa mesa clara como a da
+  Praia) e volta a usar a mesma cor dos outros textos secundários sobre a
+  mesa (`--game-on-table-muted`); continua fino, pequeno e sem sombra.
+- No telemóvel, o painel dos objetivos passa a colapsar: fechado só mostra
+  o título "Objetivos" e uma seta; toca para abrir a lista. Começa sempre
+  fechado. No computador não muda nada (sem seta, sempre aberto).
+
 ## 2.0.16 — Registo mais discreto; começa fechado (2026-09-29)
 
 Sem mudanças de jogo: o texto do registo passa a branco, fino e pequeno,

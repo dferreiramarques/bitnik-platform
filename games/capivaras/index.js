@@ -22,7 +22,7 @@ function terminar(state, ctx) {
 
 export default defineGame({
   id: 'capivaras',
-  version: '2.0.2',
+  version: '2.0.3',
   players: { min: 2, max: 6 },
   author: 'David Marques',
   defaultLang: 'pt',

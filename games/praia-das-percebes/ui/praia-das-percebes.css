@@ -86,6 +86,10 @@
   box-sizing: border-box; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 14px; justify-content: center;
   box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
+/* O cabeçalho é um botão só para poder colapsar no telemóvel; no computador
+   fica exatamente como um rótulo normal (sem seta, sem clique visível). */
+.praia-obj-head { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.praia-obj-chevron { display: none; font-style: normal; }
 .praia-obj-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .praia-obj { box-sizing: border-box; display: flex; align-items: center; gap: 7px; }
 .praia-obj-art { width: 28px; height: 28px; border-radius: 6px; overflow: hidden; font-size: 17px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--ot) 14%, transparent); }
@@ -110,7 +114,7 @@
 .praia-view:active { cursor: grabbing; }
 .praia-zoom { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .praia-layout > :not(.praia-view) { z-index: 1; pointer-events: none; }
-.praia-layout :is(.praia-player, .praia-bar, .praia-log-head, .praia-zb) { pointer-events: auto; }
+.praia-layout :is(.praia-player, .praia-bar, .praia-log-head, .praia-obj-head, .praia-zb) { pointer-events: auto; }
 .praia-center { position: relative; min-height: 0; }
 .praia-grid {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -155,11 +159,12 @@
 /* ── Emoji de recuo, quando falta uma imagem (peça, carta, marcador) ── */
 .praia-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
 
-/* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
-   pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
-   do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
+/* ── Registo: flutuante, sem fundo nem sombra, fino e pequeno, como um log
+   discreto — mas com a mesma cor do resto do texto sobre a mesa (aqui a
+   mesa é clara, texto branco não se leria). Cresce com o conteúdo até 50%
+   da altura do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
 .praia-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.praia-log { justify-self: start; max-width: 280px; max-height: 50vh; overflow: hidden; color: rgb(255 255 255 / .55); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.praia-log { justify-self: start; max-width: 280px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
 .praia-log ol { list-style: none; margin: 0; padding: 0; }
 .praia-log b { font-weight: 500; }
 .praia-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
@@ -185,9 +190,14 @@
   .praia-topline { flex-direction: column; }
   .praia-players { display: grid; grid-template-columns: repeat(2, 1fr); }
   .praia-player { width: auto; padding: 6px 8px; }
-  /* Objetivos mais pequenos e discretos (secundários face aos jogadores). */
-  .praia-objectives { padding: 4px 8px; gap: 6px; box-shadow: 0 4px 10px rgb(0 0 0 / .2); }
+  /* Objetivos mais pequenos e discretos (secundários face aos jogadores) e
+     colapsáveis: fechado só mostra o título e a seta; aberto revela a lista. */
+  .praia-objectives { flex-direction: column; align-items: stretch; padding: 4px 8px; gap: 0; box-shadow: 0 4px 10px rgb(0 0 0 / .2); }
   .praia-lbl { font-size: 9px; }
+  .praia-obj-head { width: 100%; justify-content: space-between; }
+  .praia-obj-chevron { display: inline; font-size: 12px; }
+  .praia-obj-row { display: none; margin-top: 6px; }
+  .praia-objectives.open .praia-obj-row { display: flex; }
   .praia-obj { width: 92px; gap: 5px; }
   .praia-obj-art { width: 20px; height: 20px; font-size: 12px; }
   .praia-obj-text b { font-size: 11px; }
