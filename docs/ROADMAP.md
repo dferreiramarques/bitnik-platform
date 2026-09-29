@@ -103,10 +103,10 @@ Por fazer:
 
 ## Fase 3 — Tabuleiros ☐
 
-Proposta validada em conversa (2026-09-29), detalhe completo em `docs/TABULEIROS.md` (resumo também no `CONTRATO.md`). Um jogo poderá trazer `boards`: tipos Mesa, Grelha, Relativo, Arena, Puzzle ou Táctico, todos (exceto a Mesa) reduzidos ao mesmo modelo de localizações (nós) e ligações (arestas), com custos resolvidos na compilação e as regras nunca a ler a arte. Editor no Studio, não importado de ferramentas externas.
+Proposta validada em conversa (2026-09-29), detalhe completo em `docs/TABULEIROS.md` (resumo também no `CONTRATO.md`). Um jogo poderá trazer `boards`: tipos Mesa, Grelha, Relativo, Arena, Puzzle ou Táctico, todos (exceto a Mesa) reduzidos ao mesmo modelo de localizações (nós) e ligações (arestas), com custos resolvidos na compilação e as regras nunca a ler a arte. Componentes do Forge podem ocupar uma localização (`pieces[]`), com ações e estado próprios — só colocação `snap` a um nó por agora, colocação livre com colisão adiada (2026-09-29). Editores no Studio, não importação de ferramentas externas: Componentes (novo) e Tabuleiro/mesa de jogo (novo), além da Aparência já existente.
 
 Por fazer, por esta ordem provável:
 
-- ☐ Decisões em aberto (secção 7 do documento): `legal(state, seat)` no contrato (mudança major), movimento em passos vs. atómico, que regras espaciais entram no motor, cache de distâncias, vocabulário espacial nos cartões Gherkin, ordem de implementação dos tipos.
+- ☐ Decisões em aberto (secção 8 do documento): `legal(state, seat)` no contrato (mudança major), movimento em passos vs. atómico, que regras espaciais entram no motor, cache de distâncias, vocabulário espacial nos cartões Gherkin, ordem de implementação dos tipos, formato do cartão de componente, motor de colisão para quando a colocação livre deixar de estar adiada.
 - ☐ Começa depois da Fase 1 (o editor depende dos cartões do Forge).
 - ☐ Jogo de validação para o tipo Táctico (o mais completo: estado, buffs, slots de material, zonas).
