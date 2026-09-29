@@ -1,5 +1,12 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.16 — Registo mais discreto; começa fechado (2026-09-29)
+
+Sem mudanças de jogo: o texto do registo passa a branco, fino e pequeno,
+sem sombra — um log discreto, não uma peça de destaque. Deixa de ter
+scroll (o conteúdo mais antigo corta, não se vê); cresce até 50% da
+altura do ecrã. Começa sempre fechado.
+
 ## 2.0.15 — Registo e zoom sem fundo, como o Catania (2026-09-29)
 
 Sem mudanças de jogo: o registo e os botões de zoom/arrastar deixam de

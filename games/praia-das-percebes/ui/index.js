@@ -48,7 +48,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: true, zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0 });
+const fresh = () => ({ logOpen: false, zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0 });
 let ui = fresh();
 let boardDims = { rows: 1, cols: 1 };
 let resizeObs = null;

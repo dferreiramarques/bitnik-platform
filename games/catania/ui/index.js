@@ -50,7 +50,7 @@ let resizeObs = null;
 const fresh = () => ({
   mode: null, modal: null, keep: null, raise: null, prevPiles: null, prevFire: false, prevMine: false, prevPhase: null,
   zoom: { s: 1, x: 0, y: 0 }, pts: new Map(), dragged: false, moved: 0,
-  stripCur: null, showPiles: false, showLog: false, logOpen: true,
+  stripCur: null, showPiles: false, logOpen: false,
 });
 let ui = fresh();
 
@@ -130,7 +130,6 @@ function render() {
   if (!view || !msg) return;
   const v = msg.view;
   root.classList.toggle('show-piles', ui.showPiles);
-  root.classList.toggle('show-log', ui.showLog);
   root.classList.toggle('picking', !!ui.mode || !!legal('MOVE_FIRE').length);
   const stripX = view.querySelector('.cat-players')?.scrollLeft ?? 0;
   view.innerHTML = `
@@ -298,8 +297,7 @@ function renderMe(v) {
   return `<div class="cat-me" data-tut="me">
     <div class="cat-me-grp"><div class="cat-lbl">${esc(ctx.t('ui.villages'))}</div><div class="cat-cards">${vills}</div></div>
     <i class="cat-vsep" aria-hidden="true"></i>
-    <div class="cat-me-grp"><div class="cat-lbl">${esc(ctx.t('ui.hand'))} · ${esc(ctx.t('ui.cards', { n: p.handTotal }))}
-      <button class="cat-logbtn" data-act="log" aria-expanded="${ui.showLog}">${esc(ctx.t('ui.log'))} ${ui.showLog ? '▾' : '▴'}</button></div>
+    <div class="cat-me-grp"><div class="cat-lbl">${esc(ctx.t('ui.hand'))} · ${esc(ctx.t('ui.cards', { n: p.handTotal }))}</div>
       <div class="cat-cards">${hand}</div></div>
   </div>`;
 }
@@ -573,7 +571,6 @@ function onClick(e) {
   if (!act || act.disabled) return;
   const a = act.dataset.act;
   if (a === 'piles') { ui.showPiles = !ui.showPiles; render(); return; }
-  if (a === 'log') { ui.showLog = !ui.showLog; ui.logOpen = true; render(); return; }
   if (a === 'logfold') { ui.logOpen = !ui.logOpen; render(); return; }
   if (a === 'close-bg' && e.target !== act) return;
   if (a === 'c1' || a === 'c2') ui.mode = a;

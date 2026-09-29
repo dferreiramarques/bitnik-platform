@@ -1,5 +1,11 @@
 # Nine Oils — histórico de regras
 
+## 1.1.9 — Registo mais discreto; começa fechado (2026-09-29)
+
+Sem mudanças de jogo: o texto do registo passa a branco, fino e pequeno,
+sem sombra — um log discreto. Deixa de ter scroll (o conteúdo mais antigo
+corta, não se vê). Começa sempre fechado.
+
 ## 1.1.8 — Registo cresce até meio ecrã (2026-09-29)
 
 Sem mudanças de jogo: o registo passa a crescer com o conteúdo até 50% da

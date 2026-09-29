@@ -155,13 +155,14 @@
 /* ── Emoji de recuo, quando falta uma imagem (peça, carta, marcador) ── */
 .praia-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
 
-/* ── Registo: flutuante, sem fundo nem contorno, só texto com sombra (como
-   no Catania) — cresce para cima com o conteúdo, até 50% da altura do ecrã,
-   e depois desliza. ── */
+/* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
+   pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
+   do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
 .praia-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.praia-log { justify-self: start; max-width: 280px; max-height: 50vh; overflow-y: auto; color: var(--ot); text-shadow: var(--float-shadow); font-size: 12px; line-height: 1.5; }
+.praia-log { justify-self: start; max-width: 280px; max-height: 50vh; overflow: hidden; color: rgb(255 255 255 / .55); font-weight: 300; font-size: 10px; line-height: 1.6; }
 .praia-log ol { list-style: none; margin: 0; padding: 0; }
-.praia-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); text-shadow: inherit; cursor: pointer; }
+.praia-log b { font-weight: 500; }
+.praia-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
 .praia-piece { grid-column: 2; justify-self: center; display: grid; justify-items: center; gap: 4px; }
 
 /* ── Barra de jogadas ── */

@@ -32,7 +32,7 @@ let view = null;   // conteúdo redesenhado a cada estado
 let ctx = null;
 let msg = null;
 let resizeObs = null;
-const fresh = () => ({ prev: null, logOpen: true });
+const fresh = () => ({ prev: null, logOpen: false });
 let ui = fresh();
 
 export function mount(el, context) {

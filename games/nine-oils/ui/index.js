@@ -28,7 +28,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: true, lastLogSeq: 0, cardInfo: null, pauseTimer: null });
+const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null });
 let ui = fresh();
 
 function onKeydown(e) {

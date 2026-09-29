@@ -2,6 +2,15 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.2 — Registo mais discreto; começa fechado; some no telemóvel
+
+Sem mudanças de jogo: o texto do registo passa a branco, fino e pequeno,
+sem sombra nem cor de destaque nos nomes (era dourado) — um log discreto.
+Deixa de ter scroll (o conteúdo mais antigo corta, não se vê); cresce até
+50% da altura do ecrã. Começa sempre fechado. No telemóvel deixa de haver
+o botão "Registo" dentro de "A minha área" que o abria num pop-up: o
+registo não aparece de todo, como nos outros jogos.
+
 ## 5.0.1 — Controlos da vista sem fundo; registo cresce até meio ecrã
 
 Sem mudanças de jogo: os botões de zoom/arrastar tinham um painel de
