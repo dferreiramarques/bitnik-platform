@@ -229,7 +229,12 @@ function renderBar(v, me) {
     return `<p class="praia-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.turnOf', { nome: ctx.seatName(v.vez) }))}</p>`;
   }
   if (!legal.length) return `<p class="praia-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.turnOf', { nome: ctx.seatName(v.vez) }))}</p>`;
-  return legal.map((mv, i) => `<button class="praia-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
+  return legal.map((mv, i) => `<button class="praia-move" type="button" data-idx="${i}" title="${esc(ctx.t(mv.label.key, mv.label.params))}" aria-label="${esc(ctx.t(mv.label.key, mv.label.params))}">${moveIcon(mv)}</button>`).join('');
+}
+
+function moveIcon(mv) {
+  if (mv.type === 'SALVA_VIDAS') return `${LIFEGUARD_EMOJI} ${mv.payload.dir === 'h' ? '↔' : '↕'}`;
+  return '▶▶'; // SALTAR: não pôr salva-vidas
 }
 
 /** Vento na praia: faixas de areia a passar, decorativas, atrás de tudo — criado

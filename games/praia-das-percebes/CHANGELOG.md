@@ -1,5 +1,12 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.14 — Opções de ação por ícone, não por texto (2026-09-29)
+
+Sem mudanças de jogo: a barra de opções da vez (pôr o salva-vidas ou não)
+passa a mostrar ícones em vez de frases — 🛟↔ e 🛟↕ para vigiar a linha ou
+a coluna, ▶▶ para não pôr salva-vidas. O texto continua disponível como
+`title`/`aria-label` de cada botão.
+
 ## 2.0.13 — Objetivos à altura dos jogadores; baralho centrado (2026-09-29)
 
 Sem mudanças de jogo:
