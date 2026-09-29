@@ -31,13 +31,13 @@ const UI = {
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
     notices: 'Avisos', back: 'Voltar ao lobby', howToPlay: 'Como se joga', seeTable: 'Ver a mesa', lobby: 'Lobby',
-    homeLead: 'Jogos de tabuleiro online', writeName: 'Escreve o teu nome',
+    writeName: 'Escreve o teu nome',
     homeNote: 'A tua mesa contra bots, as mesas com outras pessoas e as de aprovação estão no lobby de cada jogo.',
     playersRange: '{n} jogadores', or: 'ou', home: 'Início',
     yourTable: 'Mesa local', vsBots: 'Contra bots', vsBotsNote: 'Só tua: ninguém mais a vê e não ocupa uma mesa pública.',
-    playWith: 'Jogar com', oneBot: '1 bot', nBots: '{n} bots', enterRound: 'Entrar · ronda {n}',
+    playWith: 'Jogar com', oneBot: '1 bot', nBots: '{n} bots',
     startGame: 'Começar', otherTables: 'Mesas online', freeOne: '1 lugar livre',
-    enter: 'Entrar', noOther: 'Ainda não há mesas com outras pessoas.', earlier: 'Partidas anteriores', inviteNote: 'por convite',
+    enter: 'Entrar', noOther: 'Ainda não há mesas com outras pessoas.', earlier: 'Mesas abertas', inviteNote: 'por convite',
     botsFill: 'Os lugares vazios ficam com bots quando começares.', copyInvite: 'Copiar convite', inviteCopied: 'Convite copiado.',
     startShort: 'Começar', ready: 'pronto', waitingStart: 'À espera de que alguém carregue em Começar.',
   },
@@ -65,13 +65,13 @@ const UI = {
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
     notices: 'Notices', back: 'Back to lobby', howToPlay: 'How to play', seeTable: 'See the table', lobby: 'Lobby',
-    homeLead: 'Online board games', writeName: 'Type your name',
+    writeName: 'Type your name',
     homeNote: 'Your table against bots, tables with other people and review tables are in each game\'s lobby.',
     playersRange: '{n} players', or: 'or', home: 'Home',
     yourTable: 'Local table', vsBots: 'Against bots', vsBotsNote: 'Only yours: nobody else sees it and it does not take a public table.',
-    playWith: 'Play with', oneBot: '1 bot', nBots: '{n} bots', enterRound: 'Enter · round {n}',
+    playWith: 'Play with', oneBot: '1 bot', nBots: '{n} bots',
     startGame: 'Start', otherTables: 'Online tables', freeOne: '1 seat free',
-    enter: 'Enter', noOther: 'No tables with other people yet.', earlier: 'Earlier games', inviteNote: 'by invitation',
+    enter: 'Enter', noOther: 'No tables with other people yet.', earlier: 'Open tables', inviteNote: 'by invitation',
     botsFill: 'Empty seats get bots when you start.', copyInvite: 'Copy invite', inviteCopied: 'Invite copied.',
     startShort: 'Start', ready: 'ready', waitingStart: 'Waiting for someone to press Start.',
   },
@@ -202,8 +202,7 @@ function renderLobby(only = null) {
   const sel = counts.includes(app.botSel[g.id]) ? app.botSel[g.id] : counts[counts.length - 1];
   const mine = app.rooms.mine.filter((r) => r.gameId === g.id);
   const solos = mine.filter((r) => r.kind === 'solo');
-  const current = solos.find((r) => r.status === 'playing' || r.status === 'waiting');
-  const earlier = solos.filter((r) => r !== current).slice(0, 6);
+  const earlier = solos.slice(0, 6);
   const others = [...mine.filter((r) => r.kind === 'invite'), ...app.rooms.public.filter((r) => r.gameId === g.id)];
   const bots = (n) => (n - 1 === 1 ? u('oneBot') : u('nBots', { n: n - 1 }));
   return `<section class="home lob${g.cover ? ' has-cover' : ''}"${g.cover ? ` style="--lob-cover:url('${esc(g.cover)}')"` : ''}>
@@ -220,9 +219,7 @@ function renderLobby(only = null) {
         <div class="lob-card mine solo">
           <div class="lob-solo-id"><h3>${u('vsBots')}</h3><p>${u('vsBotsNote')}</p></div>
           <div class="lob-bots"><span>${u('playWith')}</span>${counts.map((n) => `<button class="lob-btn sm${n === sel ? ' on' : ''}" data-bots="${esc(g.id)}" data-n="${n}" aria-pressed="${n === sel}">${bots(n)}</button>`).join('')}</div>
-          <div class="lob-acts">${current
-            ? `<button class="lob-btn pri" data-open="${current.id}">${current.round ? u('enterRound', { n: current.round }) : u('enter')}</button>`
-            : `<button class="lob-btn pri" data-solo="${esc(g.id)}" data-n="${sel}">${u('startGame')}</button>`}</div>
+          <div class="lob-acts"><button class="lob-btn pri" data-solo="${esc(g.id)}" data-n="${sel}">${u('startGame')}</button></div>
         </div>
       </div>
       <h2 class="lob-lbl">${u('otherTables')}</h2>
@@ -265,7 +262,6 @@ function renderHome() {
     <div class="home-main">
       <div class="home-head">
         <h1 class="home-brand">${esc(brand)}</h1>
-        <p class="home-lead">${u('homeLead')}</p>
         <label class="home-name"><span>${u('writeName')}</span>
           <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}"></label>
       </div>

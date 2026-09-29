@@ -421,7 +421,6 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 }
 .home-head { display: grid; gap: 8px; justify-items: center; text-align: center; }
 .home-brand { margin: 0; font: 800 clamp(36px, 7vh, 56px)/1 var(--ui-display); color: #fff; text-shadow: 0 2px 12px rgb(0 0 0 / .2); }
-.home-lead { margin: 0; font-size: 14px; opacity: .9; }
 .home-name { display: grid; gap: 8px; justify-items: center; margin: clamp(4px, 1.5vh, 16px) 0 0; }
 .home-name span { font: 700 18px var(--ui-display); }
 /* O campo do nome é sólido e claro (ADR-014): a única entrada de texto sobre o fundo. */
@@ -455,7 +454,6 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 @media (max-width: 760px) {
   .home-main { align-self: start; padding-top: 8px; gap: 12px; }
   .home-brand { font-size: 40px; }
-  .home-lead { font-size: 12px; }
   .home-name input { width: 100%; }
   .home-name { width: 100%; }
   .home-grid { grid-template-columns: minmax(0, 1fr); }
