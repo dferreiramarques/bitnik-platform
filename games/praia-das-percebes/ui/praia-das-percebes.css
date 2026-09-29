@@ -72,6 +72,7 @@
 .pdp-pmeta img, .pdp-pmeta .pdp-emoji-fallback { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
 
 /* ── Objetivos: um único painel com contorno, cartões com o nome bem legível ── */
+.pdp-obj-wrap { display: grid; justify-items: center; gap: 6px; }
 .pdp-objectives {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border-radius: 14px; justify-content: center;
   box-shadow: 0 8px 24px rgb(0 0 0 / .3);
@@ -83,6 +84,13 @@
 .pdp-obj-text { min-width: 0; display: grid; gap: 0; }
 .pdp-obj-text b { font-size: 13px; font-weight: 700; line-height: 1.25; }
 .pdp-obj-text span { font-size: 12px; font-weight: 800; color: var(--game-on-table-accent, #ffd9c2); }
+
+/* ── Peças restantes no baralho, em baixo dos objetivos ── */
+.pdp-deck {
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+  padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgb(0 0 0 / .25);
+}
 
 /* ── Tabuleiro com zoom, em camadas (ADR-014, como o Catania) ──
    0: o tabuleiro (.pdp-view) ocupa o ecrã inteiro, por cima do fundo da mesa;

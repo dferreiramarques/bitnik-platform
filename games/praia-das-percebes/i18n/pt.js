@@ -36,6 +36,7 @@ export default {
   'ui.objectives': 'Objetivos',
   'ui.objPts': 'Objetivos: {n}',
   'ui.toReveal': '+{n} por revelar',
+  'ui.deckLeft': '{n} de {total} no baralho',
   'ui.placeHint': 'Toca numa casa livre para colocar a peça.',
   'ui.placeHere': 'Colocar aqui',
   'ui.turnOf': 'Vez de {nome}…',

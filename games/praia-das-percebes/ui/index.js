@@ -158,15 +158,18 @@ function renderPlayers(v, me) {
 
 function renderObjectives(v) {
   const extra = v.porRevelar > 0 ? `<span class="pdp-note">${esc(ctx.t('ui.toReveal', { n: v.porRevelar }))}</span>` : '';
-  return `<div class="pdp-objectives">
-    <div class="pdp-lbl">${esc(ctx.t('ui.objectives'))}</div>
-    <div class="pdp-obj-row">
-      ${v.objetivos.map((o) => `<div class="pdp-obj">
-        <div class="pdp-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
-        <div class="pdp-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
-      </div>`).join('')}
-      ${extra}
+  return `<div class="pdp-obj-wrap">
+    <div class="pdp-objectives">
+      <div class="pdp-lbl">${esc(ctx.t('ui.objectives'))}</div>
+      <div class="pdp-obj-row">
+        ${v.objetivos.map((o) => `<div class="pdp-obj">
+          <div class="pdp-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
+          <div class="pdp-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
+        </div>`).join('')}
+        ${extra}
+      </div>
     </div>
+    <div class="pdp-deck">${esc(ctx.t('ui.deckLeft', { n: v.baralho, total: v.total }))}</div>
   </div>`;
 }
 

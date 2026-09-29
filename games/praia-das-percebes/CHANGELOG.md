@@ -1,5 +1,10 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.11 — Peças restantes no baralho (2026-09-29)
+
+Sem mudanças de jogo: uma pill por baixo dos objetivos mostra quantas
+peças faltam no baralho ("N de TOTAL no baralho").
+
 ## 2.0.10 — Vento a branco (2026-09-29)
 
 Sem mudanças de jogo: o ícone do vento passa a branco (era o texto sobre

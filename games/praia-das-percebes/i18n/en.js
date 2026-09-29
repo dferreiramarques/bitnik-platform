@@ -36,6 +36,7 @@ export default {
   'ui.objectives': 'Objectives',
   'ui.objPts': 'Objectives: {n}',
   'ui.toReveal': '+{n} to reveal',
+  'ui.deckLeft': '{n} of {total} in the deck',
   'ui.placeHint': 'Tap a free spot to place the tile.',
   'ui.placeHere': 'Place here',
   'ui.turnOf': '{nome}’s turn…',
