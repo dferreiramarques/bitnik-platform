@@ -1,5 +1,19 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.13 — Objetivos à altura dos jogadores; baralho centrado (2026-09-29)
+
+Sem mudanças de jogo:
+
+- O painel dos objetivos passa a esticar até à mesma altura dos cartões
+  dos jogadores no ecrã (`align-items: stretch` na linha, em vez de
+  `center`), no lugar de ficar mais baixo.
+- A pill do baralho ("N de TOTAL no baralho") sai de dentro do bloco dos
+  objetivos e fica centrada no ecrã, numa linha própria por baixo dos
+  jogadores/objetivos.
+- No telemóvel, os objetivos ficam mais pequenos e discretos (texto e
+  ícones menores, menos padding e sombra), para não competirem com os
+  cartões dos jogadores.
+
 ## 2.0.12 — Jogadores e objetivos numa linha; sem registo no telemóvel (2026-09-29)
 
 Sem mudanças de jogo:

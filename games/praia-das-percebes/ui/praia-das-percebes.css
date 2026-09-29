@@ -46,9 +46,13 @@
   grid-template-rows: auto minmax(0, 1fr) auto auto; row-gap: 10px;
   padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
 }
-/* Jogadores e objetivos numa só linha (desktop); em telemóvel, cada bloco
-   fica na sua linha (jogadores 2 a 2, objetivos por baixo — ver media query). */
-.praia-topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+/* Jogadores e objetivos numa só linha (desktop, mesma altura — align-items:
+   stretch faz o painel dos objetivos esticar até à altura dos jogadores);
+   em telemóvel, cada bloco fica na sua linha (jogadores 2 a 2, objetivos por
+   baixo — ver media query). O baralho fica sempre centrado no ecrã, por
+   baixo, fora da linha (.praia-topbar). */
+.praia-topbar { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.praia-topline { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 8px; width: 100%; }
 .praia-lbl {
   font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--otm);
   display: flex; align-items: center; gap: 8px;
@@ -74,10 +78,11 @@
 .praia-pmeta { display: flex; gap: 10px; font-size: 11px; color: var(--otm); }
 .praia-pmeta img, .praia-pmeta .praia-emoji-fallback { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
 
-/* ── Objetivos: um único painel com contorno, cartões com o nome bem legível ── */
-.praia-obj-wrap { display: grid; justify-items: center; gap: 6px; }
+/* ── Objetivos: um único painel com contorno, cartões com o nome bem legível.
+   box-sizing:border-box + align-items:stretch no .praia-topline (acima) fazem-no
+   esticar até à mesma altura dos cartões dos jogadores, sem valores fixos. ── */
 .praia-objectives {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border-radius: 14px; justify-content: center;
+  box-sizing: border-box; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 14px; justify-content: center;
   box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
 .praia-obj-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -88,8 +93,9 @@
 .praia-obj-text b { font-size: 13px; font-weight: 700; line-height: 1.25; }
 .praia-obj-text span { font-size: 12px; font-weight: 800; color: var(--game-on-table-accent, #ffd9c2); }
 
-/* ── Peças restantes no baralho, em baixo dos objetivos ── */
+/* ── Peças restantes no baralho: pill centrada no ecrã, por baixo da linha ── */
 .praia-deck {
+  align-self: center;
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
   padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgb(0 0 0 / .25);
@@ -171,10 +177,17 @@
 @container (max-width: 760px) {
   .praia-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
   /* Jogadores 2 a 2, objetivos numa linha por baixo (cada bloco stretch à largura toda). */
-  .praia-topline { flex-direction: column; align-items: stretch; }
+  .praia-topline { flex-direction: column; }
   .praia-players { display: grid; grid-template-columns: repeat(2, 1fr); }
   .praia-player { width: auto; padding: 6px 8px; }
-  .praia-obj { width: 108px; }
+  /* Objetivos mais pequenos e discretos (secundários face aos jogadores). */
+  .praia-objectives { padding: 4px 8px; gap: 6px; box-shadow: 0 4px 10px rgb(0 0 0 / .2); }
+  .praia-lbl { font-size: 9px; }
+  .praia-obj { width: 92px; gap: 5px; }
+  .praia-obj-art { width: 20px; height: 20px; font-size: 12px; }
+  .praia-obj-text b { font-size: 11px; }
+  .praia-obj-text span { font-size: 10px; }
+  .praia-note { font-size: 10px; }
   .praia-bottom { grid-template-columns: minmax(0, 1fr); }
   .praia-bottom > .praia-log { display: none; }
   .praia-piece { grid-column: 1; }

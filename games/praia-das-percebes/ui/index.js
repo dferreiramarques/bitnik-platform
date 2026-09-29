@@ -129,9 +129,12 @@ function render() {
   const me = mySeat();
   view.innerHTML = `
     <div class="praia-view"><div class="praia-zoom">${renderBoard(v)}</div></div>
-    <div class="praia-topline">
-      ${renderPlayers(v, me)}
-      ${renderObjectives(v)}
+    <div class="praia-topbar">
+      <div class="praia-topline">
+        ${renderPlayers(v, me)}
+        ${renderObjectives(v)}
+      </div>
+      ${renderDeck(v)}
     </div>
     <div class="praia-center" data-tut="board">
       <div class="praia-zoombar">
@@ -160,19 +163,20 @@ function renderPlayers(v, me) {
 
 function renderObjectives(v) {
   const extra = v.porRevelar > 0 ? `<span class="praia-note">${esc(ctx.t('ui.toReveal', { n: v.porRevelar }))}</span>` : '';
-  return `<div class="praia-obj-wrap">
-    <div class="praia-objectives">
-      <div class="praia-lbl">${esc(ctx.t('ui.objectives'))}</div>
-      <div class="praia-obj-row">
-        ${v.objetivos.map((o) => `<div class="praia-obj">
-          <div class="praia-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
-          <div class="praia-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
-        </div>`).join('')}
-        ${extra}
-      </div>
+  return `<div class="praia-objectives">
+    <div class="praia-lbl">${esc(ctx.t('ui.objectives'))}</div>
+    <div class="praia-obj-row">
+      ${v.objetivos.map((o) => `<div class="praia-obj">
+        <div class="praia-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
+        <div class="praia-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
+      </div>`).join('')}
+      ${extra}
     </div>
-    <div class="praia-deck">${esc(ctx.t('ui.deckLeft', { n: v.baralho, total: v.total }))}</div>
   </div>`;
+}
+
+function renderDeck(v) {
+  return `<div class="praia-deck">${esc(ctx.t('ui.deckLeft', { n: v.baralho, total: v.total }))}</div>`;
 }
 
 function tileCell(p) {
