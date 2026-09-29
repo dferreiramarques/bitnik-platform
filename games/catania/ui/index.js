@@ -311,7 +311,7 @@ function renderPiles(v) {
 }
 
 function renderLog() {
-  const items = [...(msg.log || [])].reverse().slice(0, ui.logOpen ? 4 : 0);
+  const items = ui.logOpen ? [...(msg.log || [])].reverse() : [];
   return `<aside class="cat-log" data-tut="log">
     <button class="cat-lbl cat-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
     ${items.length ? `<ol>${items.map((l) => `<li>${l.seat != null ? `<b>${esc(ctx.seatName(l.seat))}</b> ` : ''}${esc(ctx.t(l.key, l.params))}</li>`).join('')}</ol>` : ''}

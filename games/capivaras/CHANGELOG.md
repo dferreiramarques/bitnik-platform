@@ -1,5 +1,11 @@
 # Capivaras — histórico de regras
 
+## 2.0.1 — Registo cresce até meio ecrã (2026-09-29)
+
+Sem mudanças de jogo: o registo passa a crescer com o conteúdo até 50% da
+altura do ecrã e só a partir daí desliza, em vez de cortar nas últimas 4
+entradas (mesmo comportamento em todos os jogos, `design/figma/TEMPLATE.md`).
+
 ## 2.0.0 — Baralho do jogo e UI própria (2026-09-27)
 
 **Baralho igual ao do jogo.** O baralho da 1.0.0 foi gerado na Forge: tinha a mesma distribuição de capivaras (6, 13, 11, 4 e 2), mas os pássaros e os nenúfares eram inventados.

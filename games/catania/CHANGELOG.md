@@ -2,6 +2,14 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.1 — Controlos da vista sem fundo; registo cresce até meio ecrã
+
+Sem mudanças de jogo: os botões de zoom/arrastar tinham um painel de
+vidro por engano — o template vanilla já dizia que deviam flutuar sem
+fundo, como o registo (`design/figma/TEMPLATE.md`). Corrigido: só o ícone,
+com sombra. O registo passa a crescer com o conteúdo até 50% da altura do
+ecrã e só a partir daí desliza, em vez de cortar nas últimas 4 entradas.
+
 ## 5.0.0 — Pilhas como pilhas
 
 **A pilha de cada recurso deixa de estar ordenada.** Quem recolhe 2 cartas tira o disco mais alto da torre e põe-no **em cima** da pilha desse recurso: esse disco passa a ser o valor, mesmo que seja mais alto do que o anterior. Ao valorizar, sai o disco de cima (o último que lá foi posto), volta à torre e o valor volta ao do disco de baixo. A torre continua ordenada.

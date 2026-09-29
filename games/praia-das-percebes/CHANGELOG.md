@@ -1,5 +1,14 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.15 — Registo e zoom sem fundo, como o Catania (2026-09-29)
+
+Sem mudanças de jogo: o registo e os botões de zoom/arrastar deixam de
+ter o painel de vidro — passam a flutuar sobre a mesa sem fundo nem
+contorno, só com sombra no texto/ícone, como manda o template vanilla
+(`design/figma/TEMPLATE.md`). O registo cresce com o conteúdo até 50% da
+altura do ecrã e a partir daí desliza, em vez de cortar nas últimas 5
+entradas.
+
 ## 2.0.14 — Opções de ação por ícone, não por texto (2026-09-29)
 
 Sem mudanças de jogo: a barra de opções da vez (pôr o salva-vidas ou não)

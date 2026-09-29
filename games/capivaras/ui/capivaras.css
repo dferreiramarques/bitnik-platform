@@ -118,7 +118,7 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
 
 /* ── Registo (flutuante) e a minha área ── */
 .capi-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.capi-log { justify-self: start; max-width: 300px; color: var(--ot); text-shadow: var(--float-shadow); font-size: 12px; line-height: 1.55; }
+.capi-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow-y: auto; color: var(--ot); text-shadow: var(--float-shadow); font-size: 12px; line-height: 1.55; }
 .capi-log ol { list-style: none; margin: 0; padding: 0; }
 .capi-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); text-shadow: inherit; cursor: pointer; }
 .capi-me { border-radius: 10px; padding: 8px 12px; display: flex; gap: 14px; max-width: 100%; box-sizing: border-box; }

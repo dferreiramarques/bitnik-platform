@@ -1,5 +1,11 @@
 # Nine Oils — histórico de regras
 
+## 1.1.8 — Registo cresce até meio ecrã (2026-09-29)
+
+Sem mudanças de jogo: o registo passa a crescer com o conteúdo até 50% da
+altura do ecrã e só a partir daí desliza, em vez de cortar nas últimas 5
+entradas (mesmo comportamento em todos os jogos, `design/figma/TEMPLATE.md`).
+
 ## 1.1.7 — X de descarte no canto da carta (2026-09-28)
 
 Sem mudanças de jogo: no descarte, a carta em si continua a abrir os

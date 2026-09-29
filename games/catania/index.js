@@ -7,7 +7,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'catania',
-  version: '5.0.0',
+  version: '5.0.1',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'CC-BY-4.0',

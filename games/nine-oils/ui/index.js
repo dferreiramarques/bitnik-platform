@@ -209,7 +209,7 @@ function renderHand(v, me) {
 }
 
 function renderLog() {
-  const items = [...(msg.log || [])].reverse().slice(0, ui.logOpen ? 5 : 0);
+  const items = ui.logOpen ? [...(msg.log || [])].reverse() : [];
   return `<aside class="nof-log">
     <button class="nof-lbl nof-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
     ${items.length ? `<ol>${items.map((l) => `<li>${l.seat != null ? `<b>${esc(ctx.seatName(l.seat))}</b> ` : ''}${esc(ctx.t(l.key, l.params))}</li>`).join('')}</ol>` : ''}

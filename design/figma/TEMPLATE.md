@@ -77,9 +77,9 @@ A mesa ocupa o ecrã inteiro (`--table-bg` com `--table-dots` por cima). Não h�
 - **Mensagem da mesa**: ver secção 4.
 - **A minha área**: mão e peças do jogador, em baixo ao centro.
 - **Barra de ações**: em baixo ao centro; ação principal em `--game-accent`, as outras em vidro.
-- **Registo**: em baixo à esquerda, **flutuante**: sem fundo nem contorno, só texto com sombra (`0 1px 3px rgba(0,0,0,.7), 0 0 12px rgba(0,0,0,.4)`) para se ler em cima da mesa. No telemóvel dobra-se dentro de "A minha área" (REGISTO ▴).
+- **Registo**: em baixo à esquerda, **flutuante**: sem fundo nem contorno, só texto com sombra (`0 1px 3px rgba(0,0,0,.7), 0 0 12px rgba(0,0,0,.4)`, token `--float-shadow`) para se ler em cima da mesa. Cresce para cima com o conteúdo até 50% da altura do ecrã (`max-height: 50vh`) e a partir daí desliza (`overflow-y: auto`), em vez de cortar num número fixo de linhas. No telemóvel dobra-se dentro de "A minha área" (REGISTO ▴).
 - **Painel do jogo**: informação partilhada do jogo (pilhas, mercado, objetivos, baralho), à direita, flutuante como o registo, alinhado à direita, a 48 px da margem do ecrã e centrado na vertical com o tabuleiro. No telemóvel é uma ficha "Painel ▾" que abre; na horizontal é uma coluna compacta à direita.
-- **Controlos da vista**: em baixo à direita (mover, aproximar, afastar, ver tudo).
+- **Controlos da vista**: em baixo à direita (mover, aproximar, afastar, ver tudo); **flutuantes como o registo, sem fundo**: só o ícone, com a mesma sombra (`--float-shadow`), não um painel de vidro. Um leve realce (`--tint` ou equivalente) aparece só ao passar o rato/tocar, nunca em repouso.
 
 No telemóvel (390 × 844): topo com voltar, nome do jogo, guia e língua; os jogadores numa faixa com a altura de um cartão (148 px de largura cada, o 3.º a espreitar à direita), com scroll horizontal: os restantes veem-se com swipe, sem botão "+N" nem ecrã por cima; quando a vez muda, a faixa mostra quem joga; fichas a meio entre os jogadores e o tabuleiro; tabuleiro centrado na vertical; a minha área; barra de ações em grelha 2:1:1.
 
@@ -111,9 +111,7 @@ No telemóvel **na horizontal** (844 × 390): linha de cima com voltar, nome do 
 | Carta / peça | com nome e quantidade (×3), vazia (tracejada) | `game-panel-2`, `game-line`, `game-muted` |
 | Jogador | da vez, à espera, bot; componentes como botões | `game-color-n`, `game-accent`, `game-panel`, `game-line` |
 | Disco / marcador | normal, alerta | `game-panel-2`, `game-color-n`, `game-danger` |
-| Painel | registo | `game-panel`, `game-line`, `game-muted` |
-| Registo e painel do jogo (flutuantes) | sem fundo; texto com sombra, alinhado à esquerda (registo) ou à direita (painel) | `game-on-table`, `game-on-table-muted` |
-| Controlos da vista | aproximar, afastar, ver tudo (44 px); escondidos no telemóvel | `game-glass`, `game-on-table` |
+| Registo, painel do jogo e controlos da vista (flutuantes) | sem fundo nem contorno; só texto/ícone com sombra, nunca vidro — registo à esquerda (cresce até 50vh, depois desliza), painel do jogo à direita, controlos (aproximar, afastar, ver tudo, 44 px) ao fundo à direita; controlos escondidos no telemóvel | `game-on-table`, `game-on-table-muted` |
 | Modal | título, texto, 2 botões | `game-panel`, `game-line`, `game-accent` |
 | Tutorial | alvo com contorno, balão com passo, título e Seguinte | `game-panel`, `game-accent` |
 | Mensagem da mesa | vez, evento com subtítulo, aviso (cor `game-on-table-warn`), fim | `game-on-table`, `game-font-display` |

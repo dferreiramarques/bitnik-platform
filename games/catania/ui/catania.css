@@ -25,8 +25,8 @@
 .cat :focus-visible { outline: 3px solid var(--cat-gold); outline-offset: 2px; }
 .cat img { display: block; }
 
-/* Vidro: jogadores, fichas, a minha área, barra de ações, controlos da vista */
-.cat-player, .cat-chip, .cat-me, .cat-bar, .cat-zoombar {
+/* Vidro: jogadores, fichas, a minha área, barra de ações */
+.cat-player, .cat-chip, .cat-me, .cat-bar {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
@@ -131,9 +131,10 @@
 }
 .cat-hex:focus { outline: none; }
 .cat-hex:focus-visible .cat-hex-shape { stroke: var(--cat-text); stroke-width: 4; }
-.cat-zoombar { position: absolute; right: 0; bottom: 0; display: flex; gap: 2px; padding: 2px; border-radius: 12px; z-index: 2; }
+/* Sem fundo (como o registo): só ícone com sombra, para se ler em cima da mesa. */
+.cat-zoombar { position: absolute; right: 0; bottom: 0; display: flex; gap: 2px; padding: 2px; z-index: 2; }
 .cat-zb {
-  width: 44px; height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--cat-text);
+  width: 44px; height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--ot); text-shadow: var(--float-shadow);
   display: grid; place-items: center;
 }
 .cat-zb:hover { background: var(--tint); }
@@ -149,7 +150,7 @@
 
 /* ── Registo (flutuante) e a minha área ── */
 .cat-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.cat-log { justify-self: start; max-width: 300px; color: var(--ot); text-shadow: var(--float-shadow); font-size: 12px; line-height: 1.55; }
+.cat-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow-y: auto; color: var(--ot); text-shadow: var(--float-shadow); font-size: 12px; line-height: 1.55; }
 .cat-log ol { list-style: none; margin: 0; padding: 0; }
 .cat-log b { color: var(--cat-gold); font-weight: 600; }
 .cat-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); text-shadow: inherit; }

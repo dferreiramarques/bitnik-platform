@@ -223,7 +223,7 @@ function logParams(l) {
 }
 
 function renderLog() {
-  const items = [...(msg.log || [])].filter((l) => l.key !== 'log.APOSTOU').reverse().slice(0, ui.logOpen ? 4 : 0);
+  const items = ui.logOpen ? [...(msg.log || [])].filter((l) => l.key !== 'log.APOSTOU').reverse() : [];
   return `<aside class="capi-log">
     <button class="capi-lbl capi-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
     ${items.length ? `<ol>${items.map((l) => `<li>${esc(ctx.t(`ui.${l.key}`, logParams(l)))}</li>`).join('')}</ol>` : ''}
