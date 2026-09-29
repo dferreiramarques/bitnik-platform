@@ -215,6 +215,14 @@
 .cat-modal .cat-btn { background: var(--cat-panel-2); border-color: var(--cat-line); }
 .cat-modal .cat-btn.pri { background: var(--cat-gold); border-color: transparent; }
 
+/* Modal "Como se joga" (rules-box, da plataforma): mesmo estilo do .cat-modal
+   — painel, borda e tipografia do jogo, em vez das cores genéricas. */
+.rules-box { background: var(--cat-panel); color: var(--cat-text); border: 2px solid var(--cat-gold-dark); border-radius: var(--cat-radius); }
+.rules-head { border-bottom-color: var(--cat-line); }
+.rules-head h2 { font-family: var(--cat-font-display); color: var(--cat-gold); }
+.rules-body h3 { font-family: var(--cat-font-display); color: var(--cat-gold); }
+.rules-chip { background: var(--cat-panel-2); border-color: var(--cat-line); }
+
 /* ── Tutorial: guia por cima da mesa e zonas destacadas ── */
 .cat-guide {
   position: absolute; z-index: 15; left: 12px; top: 50%; transform: translateY(-50%);

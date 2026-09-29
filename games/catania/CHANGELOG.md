@@ -2,6 +2,21 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.5 — Modal das regras ao estilo do jogo, com visuais dos componentes
+
+Sem mudanças de jogo. A modal "Como se joga" passa a usar o painel, a
+borda dourada e a tipografia do jogo (como a modal de fundar aldeia), em
+vez das cores genéricas da plataforma — a diferença só se nota a partir
+da mesa (o CSS do jogo só carrega aí; no lobby e na sala de espera a
+modal mantém o estilo genérico). Ganha também visuais dos componentes
+reais: os 5 ícones de recurso em "Objetivo", a ficha de aldeia (como
+aparece no cartão do jogador) em "Fundar uma aldeia", e a sequência de
+discos (normal → normal → vermelho) em "Torre e pilhas".
+
+O botão "Como se joga" do lobby e da sala de espera (antes de entrar na
+mesa) também passa a preferir a modal em vez de saltar logo para o
+tutorial — antes só o "?" a meio do jogo tinha essa correção.
+
 ## 5.0.4 — Regras numa modal; botões de ação sem texto informativo; layout horizontal afinado
 
 O botão "?" durante o jogo mostrava sempre o tutorial guiado (e tirava o

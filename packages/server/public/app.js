@@ -207,12 +207,13 @@ function renderLobby(only = null) {
   const others = [...mine.filter((r) => r.kind === 'invite'), ...app.rooms.public.filter((r) => r.gameId === g.id)];
   const bots = (n) => (n - 1 === 1 ? u('oneBot') : u('nBots', { n: n - 1 }));
   return `<section class="home lob${g.cover ? ' has-cover' : ''}"${g.cover ? ` style="--lob-cover:url('${esc(g.cover)}')"` : ''}>
+    ${renderRulesModal(g)}
     ${renderBrandTop(g.id)}
     <div class="lob-main">
       <div class="lob-head">
         <div class="lob-title"><h1>${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</h1>
           <p>${playersText(g.players)}</p></div>
-        ${g.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(g.id)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${u('howToPlay')}</a>` : ''}
+        ${guideLink(g, g.id)}
       </div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
       <div class="lob-grid">
@@ -450,7 +451,19 @@ function guideButton(meta) {
   return '';
 }
 
-/** Modal "Como se joga": secções do jogo, na língua atual (recua para pt). */
+/** Como guideButton(), mas com texto (lobby e sala de espera, antes da mesa). */
+function guideLink(meta, id) {
+  const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
+  if (meta?.rules) return `<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
+  if (meta?.tutorial) return `<a class="lob-btn" href="#/tutorial/${esc(id)}">${icon}${u('howToPlay')}</a>`;
+  return '';
+}
+
+/**
+ * Modal "Como se joga": secções do jogo, na língua atual (recua para pt).
+ * `s.visual`, quando presente, é HTML de confiança (vem do pacote do jogo,
+ * nunca de jogadores) com os componentes reais do jogo — não é escapado.
+ */
 function renderRulesModal(meta) {
   if (!app.rulesOpen || !meta?.rules) return '';
   const sections = meta.rules[app.lang] || meta.rules.pt || [];
@@ -458,7 +471,7 @@ function renderRulesModal(meta) {
     <div class="rules-box">
       <div class="rules-head"><h2>${esc(t('game.name', {}, meta.id))} · ${esc(u('howToPlay'))}</h2>
         <button class="mesa-btn" data-closerules aria-label="${esc(u('dismiss'))}">✕</button></div>
-      <div class="rules-body">${sections.map((s) => `<h3>${esc(s.title)}</h3>${s.body.map((p) => `<p>${esc(p)}</p>`).join('')}`).join('')}</div>
+      <div class="rules-body">${sections.map((s) => `<h3>${esc(s.title)}</h3>${s.body.map((p) => `<p>${esc(p)}</p>`).join('')}${s.visual || ''}`).join('')}</div>
     </div>
   </div>`;
 }
@@ -638,8 +651,9 @@ function renderEntrada(msg) {
   const seated = msg.seat != null;
   const canLeave = msg.room.kind !== 'solo' && seated;
   const info = msg.room.kind === 'invite' ? esc(msg.room.name || u('inviteTable')) : u('tableOf', { n: msg.room.numPlayers });
-  const guide = meta?.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(g)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${u('howToPlay')}</a>` : '';
+  const guide = guideLink(meta, g);
   return `<section class="home ent">
+    ${renderRulesModal(meta)}
     <header class="home-top">
       <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong><span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, g))}</strong><span class="ent-meta">${info}</span></div>
       <div class="mesa-actions"><span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>

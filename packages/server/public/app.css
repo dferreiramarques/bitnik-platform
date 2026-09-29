@@ -263,6 +263,16 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
 .rules-body h3 { margin: 14px 0 4px; font-size: .95rem; color: var(--game-accent-strong, inherit); }
 .rules-body h3:first-child { margin-top: 0; }
 .rules-body p { margin: 0 0 8px; font-size: .88rem; line-height: 1.5; color: inherit; }
+/* Visuais dos componentes (opcionais, `s.visual` de rules-text.js): usam
+   currentColor, para se ajustarem à cor do jogo sem tokens próprios. */
+.rules-visual { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.rules-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent); border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  font-size: .82rem; font-weight: 600;
+}
+.rules-chip img { display: block; }
+.rules-note { font-size: .8rem; opacity: .75; }
 
 /* Mesa em ecrã inteiro sem tabuleiro próprio (Bulbous, Praia, Nine Oils): jogadores,
    jogadas e registo em painéis de vidro, sem a camada de tabuleiro (ADR-014). */
