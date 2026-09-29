@@ -33,6 +33,8 @@ export default defineGame({
   ui: './ui/index.js',                            // UI própria (ADR-006)
   tutorial: './ui/tutorial.js',                   // tutorial no browser (ADR-007)
   skin: './ui/skin.json',                         // tokens por omissão (ADR-008)
+  cover: './ui/cover.jpg',                        // imagem do lobby do jogo (fundo escurecido); sem ela, gradiente da marca
+  rules: { pt: [{ title, body: [...] }], en: [...] }, // "Como se joga": modal com as regras (sem tutorial)
   themes: { dia: './ui/themes/dia/theme.json' },  // temas de design à medida
   preview: { scenario: 'tutorial-meio', players: 4 }, // pré-visualização na consola
 });

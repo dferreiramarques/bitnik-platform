@@ -505,6 +505,8 @@ export function createPlatform({
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),
+          cover: gameFileUrl(g, g.cover),
+          rules: g.rules || null,
           themes: Object.fromEntries(Object.entries(g.themes || {}).map(([k, rel]) => [k, gameFileUrl(g, rel)])),
         })),
         notices: activeNotices(),

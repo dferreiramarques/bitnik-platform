@@ -1,5 +1,10 @@
 # Bulbous — histórico de regras
 
+## 1.1.3 — Imagem do lobby (2026-09-29)
+
+Sem mudanças de jogo: acrescenta `cover` ao contrato (uma das artes das
+cartas), usada como fundo escurecido do lobby na plataforma.
+
 ## 1.1.2 — Arte a sério do jogo antigo (2026-09-29)
 
 Sem mudanças de jogo: as 50 imagens do jogo antigo (repositório `bulbous`,
