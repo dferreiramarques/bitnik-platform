@@ -264,6 +264,14 @@ function boardRect(refit = false) {
   return { left: o.left + frame.L, top: o.top + frame.T, width: frame.w, height: frame.h };
 }
 
+// A grelha (gridW×gridH) fica centrada na zona livre (r), que raramente tem a
+// mesma proporção (a grelha mantém as casas quadradas). `anchor` é por isso o
+// ponto onde a grelha começa de facto no ecrã — diferente de r.left/r.top —
+// e é a referência certa para "zoom aqui" (roda, pinça, botões); usar r.left
+// como se fosse a origem fazia o zoom derivar para o lado sempre que a
+// grelha não enchia a zona livre toda numa das direções.
+let anchor = { left: 0, top: 0, w: 0, h: 0 };
+
 /** `limit`: depois de um gesto, não deixar o tabuleiro sair do ecrã. */
 function applyZoom(limit = false, refit = false) {
   const vw = view?.querySelector('.pdp-view');
@@ -279,6 +287,7 @@ function applyZoom(limit = false, refit = false) {
   const T = (r.top - o.top) + (r.height - gridH) / 2;
   Object.assign(z.style, { left: `${L}px`, top: `${T}px`, width: `${gridW}px`, height: `${gridH}px` });
   z.style.setProperty('--cell', `${Math.floor(cell)}px`);
+  anchor = { left: o.left + L, top: o.top + T, w: gridW, h: gridH };
   if (limit && o.width && gridW) {
     const { s } = ui.zoom;
     const clamp = (v, lo, hi) => Math.min(Math.max(v, Math.min(lo, hi)), Math.max(lo, hi));
@@ -301,8 +310,7 @@ function zoomAt(px, py, f) {
 }
 
 function viewCenter() {
-  const r = boardRect();
-  return r ? [r.width / 2, r.height / 2] : [0, 0];
+  return [anchor.w / 2, anchor.h / 2];
 }
 
 function onPointerDown(e) {
@@ -331,7 +339,7 @@ function onPointerMove(e) {
   } else {
     ui.dragged = true;
     const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-    const mid = (a, b) => ({ x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top });
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2 - anchor.left, y: (a.y + b.y) / 2 - anchor.top });
     const d0 = d(prev[0], prev[1]);
     const m0 = mid(prev[0], prev[1]);
     const m1 = mid(now[0], now[1]);
@@ -349,7 +357,5 @@ function onWheel(e) {
   const el = e.target.closest('.pdp-view');
   if (!el) return;
   e.preventDefault();
-  const r = boardRect();
-  if (!r) return;
-  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.002));
+  zoomAt(e.clientX - anchor.left, e.clientY - anchor.top, Math.exp(-e.deltaY * 0.002));
 }

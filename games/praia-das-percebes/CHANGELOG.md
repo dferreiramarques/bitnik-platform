@@ -1,5 +1,15 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.8 — Corrigido: o zoom já centra no rato (2026-09-29)
+
+Sem mudanças de jogo: o zoom (roda, pinça, botões) derivava para a
+esquerda em vez de ficar centrado onde o rato/dedo está. A grelha do
+tabuleiro fica centrada na zona livre (para as casas ficarem sempre
+quadradas), e essa zona raramente tem a mesma proporção da grelha — a
+matemática do zoom usava o canto da zona livre como referência, não o
+canto onde a grelha começa mesmo (`anchor`, na roda do rato, na pinça de
+dois dedos e nos botões +/−/ver tudo).
+
 ## 2.0.7 — Cartões dos jogadores e objetivos como a barra de jogadas (2026-09-29)
 
 Sem mudanças de jogo: os cartões dos jogadores e o painel dos objetivos
