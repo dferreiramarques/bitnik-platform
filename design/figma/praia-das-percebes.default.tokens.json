@@ -29,7 +29,7 @@
       },
       "game-glass": {
         "$type": "color",
-        "$value": "rgba(255,255,255,.45)",
+        "$value": "rgba(255,255,255,.4)",
         "$description": "Vidro sobre a mesa",
         "$extensions": {
           "bitnik": {
@@ -42,7 +42,7 @@
       },
       "game-glass-line": {
         "$type": "color",
-        "$value": "rgba(2,62,138,.25)",
+        "$value": "rgba(255,255,255,.75)",
         "$description": "Contorno do vidro",
         "$extensions": {
           "bitnik": {

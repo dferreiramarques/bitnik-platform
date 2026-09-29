@@ -14,6 +14,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const TILE_EMOJI = { normal: '🧍', prancha: '🏄', rocha: '🪨', areia: '▫️' };
 const OBJ_EMOJI = { quadrado3: '🔲', quadrado5: '⬛', linha5: '↔️', linha7: '➡️', coluna4: '↕️', coluna6: '⬆️', pranchas: '🏄', excursao: '🧳' };
 const LIFEGUARD_EMOJI = '🛟';
+// Ícone do vento (svgrepo.com), um só <path>: recolorido por CSS (fill: currentColor via var(--game-on-table)).
+const WIND_PATH = 'M156.7 256H16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h142.2c15.9 0 30.8 10.9 33.4 26.6 3.3 20-12.1 37.4-31.6 37.4-14.1 0-26.1-9.2-30.4-21.9-2.1-6.3-8.6-10.1-15.2-10.1H81.6c-9.8 0-17.7 8.8-15.9 18.4 8.6 44.1 47.6 77.6 94.2 77.6 57.1 0 102.7-50.1 95.2-108.6C249 291 205.4 256 156.7 256zM16 224h336c59.7 0 106.8-54.8 93.8-116.7-7.6-36.2-36.9-65.5-73.1-73.1-55.4-11.6-105.1 24.9-114.9 75.5-1.9 9.6 6.1 18.3 15.8 18.3h32.8c6.7 0 13.1-3.8 15.2-10.1C325.9 105.2 337.9 96 352 96c19.4 0 34.9 17.4 31.6 37.4-2.6 15.7-17.4 26.6-33.4 26.6H16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16zm384 32H243.7c19.3 16.6 33.2 38.8 39.8 64H400c26.5 0 48 21.5 48 48s-21.5 48-48 48c-17.9 0-33.3-9.9-41.6-24.4-2.9-5-8.7-7.6-14.5-7.6h-33.8c-10.9 0-19 10.8-15.3 21.1 17.8 50.6 70.5 84.8 129.4 72.3 41.2-8.7 75.1-41.6 84.7-82.7C526 321.5 470.5 256 400 256z';
 const ZOOM = { min: 0.6, max: 3 };
 const EDGE = 40; // px do tabuleiro que ficam sempre no ecrã
 const GAP = 4;
@@ -227,12 +229,15 @@ function renderWind() {
   const wind = document.createElement('div');
   wind.className = 'pdp-wind';
   wind.setAttribute('aria-hidden', 'true');
-  wind.innerHTML = Array.from({ length: 6 }, (_, i) => {
+  const defs = `<svg width="0" height="0" style="position:absolute"><defs><symbol id="pdp-wind-icon" viewBox="0 0 512 512"><path d="${WIND_PATH}"/></symbol></defs></svg>`;
+  const gusts = Array.from({ length: 6 }, (_, i) => {
     const top = 8 + ((i * 37) % 90);
+    const size = 30 + (i % 3) * 12;
     const dur = 7 + (i % 4) * 2.3;
     const delay = -(i * 2.7);
-    return `<i class="pdp-gust" style="top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s"></i>`;
+    return `<svg class="pdp-gust" viewBox="0 0 512 512" style="top:${top}%;width:${size}px;height:${size}px;animation-duration:${dur}s;animation-delay:${delay}s"><use href="#pdp-wind-icon"/></svg>`;
   }).join('');
+  wind.innerHTML = defs + gusts;
   return wind;
 }
 

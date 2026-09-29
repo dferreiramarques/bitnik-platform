@@ -1,5 +1,16 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.6 — Ícone do vento, vidro branco, zoom no canto (2026-09-29)
+
+Sem mudanças de jogo:
+
+- Vento com um ícone a sério (svgrepo.com), em vez de uma faixa simples.
+- Vidro dos painéis passa a branco (era azul-ciano), para se ver bem o
+  contorno de cada um contra o fundo.
+- Os botões de zoom/arrastar ficam sempre fixos no canto inferior direito
+  da mesa (antes só a partir de 900px de largura, e escondidos no
+  telemóvel).
+
 ## 2.0.5 — Pontuação ao vivo e painéis com mais contraste (2026-09-29)
 
 Sem mudanças de jogo:
