@@ -27,7 +27,7 @@
 .pdp-wind { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 .pdp-gust {
   position: absolute; left: -60px; opacity: 0;
-  fill: var(--game-on-table, #fffaf1);
+  fill: #fff;
   filter: drop-shadow(0 1px 3px rgb(0 0 0 / .18));
   animation-name: pdp-blow; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
 }

@@ -1,5 +1,10 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.10 — Vento a branco (2026-09-29)
+
+Sem mudanças de jogo: o ícone do vento passa a branco (era o texto sobre
+a mesa, azul-marinho).
+
 ## 2.0.9 — Vento mais subtil (2026-09-29)
 
 Sem mudanças de jogo: opacidade do vento entre 10% e 30% (era 40%-55%),
