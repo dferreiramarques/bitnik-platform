@@ -4,7 +4,7 @@ Estado das fases da plataforma e os passos de cada uma. É o único sítio onde 
 
 Legenda: ✔ feito · ◐ em curso · ☐ por fazer.
 
-Atualizado a 2026-09-28.
+Atualizado a 2026-09-29.
 
 ## Resumo
 
@@ -14,7 +14,7 @@ Atualizado a 2026-09-28.
 | 0b | ✔ | UI própria do Catania e template vanilla |
 | 0c | ✔ | Consola em `/console` |
 | 1 | ◐ | Forge na consola do Studio (falta a geração pela API, opcional) |
-| 2 | ◐ | Migração dos jogos antigos (4 migrados; UI genérica com o novo template e UIs próprias por fazer) |
+| 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta rever pontos do CHANGELOG e a secção "Clientes" na consola) |
 
 ## Fase 0 — Base ✔
 
@@ -91,11 +91,11 @@ Por fazer:
   - ✔ Mensagens da mesa: mecanismo da plataforma feito (fila, animação, "É a tua vez") e ligado à UI genérica; Catania e Capivaras já usam o mesmo mecanismo pelo `ctx.announce` (sem cópia própria). O `CONTRATO.md` ganhou `ctx.log(key, params, { announce })`, com uma forma curta (reutiliza a chave do registo) e uma com texto próprio (`{ variant, key, params }`), para quando a frase do registo é longa de mais para a mesa. Adotado nos três jogos sem UI própria, num momento raro e marcante de cada um: Bulbous "Última ronda!" (quando entra a última Baelfungious), Praia "Objetivo cumprido!" (só 8 no baralho) e Nine Oils "Penta!" (~5% dos lançamentos, o adversário descarta a mão). O fim do jogo nunca leva mensagem própria: coincide sempre com o resultado, que já mostra o vencedor.
   - ✔ Componentes como alvo: decidido não fazer como peça genérica do contrato (2026-09-28) — só o Nine Oils precisaria e a lista de jogadas já é clara, ainda por cima às cegas (não há nada visível para mostrar). Resolvido só com CSS: os botões de "tirar às cegas" (`data-type="ESCOLHA_CEGA"`) parecem cartas viradas para baixo com o número, mantendo o texto completo para leitores de ecrã.
   - Pontos por origem no fim/relatório: adiado. Não é uma peça do contrato para todos os jogos; só se um jogo concreto precisar (ex.: Bulbous) implementa-se à parte, nesse jogo.
-- ◐ UIs próprias de cada jogo, no template:
+- ✔ UIs próprias de cada jogo, no template:
   - ✔ Catania;
   - ✔ Capivaras (2.0.0): cartas ilustradas ao centro, revelação com quem apostou em cada carta, nenúfares e pássaro;
   - ✔ Nine Oils (1.1.7): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas (🧪 garrafa), mão com a arte da carta em dobro (❤️‍🔥👦🏽💪🏼), dados animados, escolha às cegas como cartas viradas para baixo, sem pausa manual a "ver os dados";
   - ✔ Praia das Percebes (2.0.4): tabuleiro a sério com zoom e arrastar (como o Catania), objetivos em cartões com o nome, salva-vidas marcados na peça, vento decorativo na praia; peças/objetivos/marcador pela convenção de componentes reutilizáveis (`--card-*`/`--token-*`), sem arte publicada ainda (emoji); mesa em degradê de céu/areal, inspirada no jogo online antigo — só o `skin.json` do jogo mudou, não o vanilla;
-  - ☐ Bulbous usa a UI genérica.
+  - ✔ Bulbous (1.1.0): conversão 1:1 do visual do jogo antigo (repositório `bulbous`, `client.html`) — fundo quase-preto, roxo brilhante em destaque, as 4 cores de bolbo, cartas de charme com símbolo (▲/●) + valor desenhadas só a CSS, como já estavam no original. Baelfungious pela convenção de componentes reutilizáveis (emoji de recuo por espécime, sem arte publicada ainda). Escolher/declarar sequência/apostar/trocar/descartar/desempatar têm interação própria (clique direto ou seleção de cartas + confirmar), sem depender de `msg.legal` para Apostar (exponencial em subconjuntos da mão).
 - ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.

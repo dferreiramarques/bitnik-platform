@@ -1,5 +1,25 @@
 # Bulbous — histórico de regras
 
+## 1.1.0 — UI própria, no template vanilla (2026-09-29)
+
+Sem mudanças de jogo: primeira UI própria do Bulbous (ADR-006), no
+template vanilla da plataforma (jogadores em vidro, registo flutuante,
+sem tabuleiro). Paleta e proporções das cartas seguem 1:1 o jogo antigo
+(repositório `bulbous`, `client.html`): fundo quase-preto, roxo brilhante
+em destaque, as 4 cores de bolbo (vermelho, azul, verde, amarelo) e as
+cartas de charme com símbolo (▲ triângulo / ● círculo) + valor, tal como
+no original — essas continuam desenhadas só a CSS, sem imagens, como já
+estavam lá. As Baelfungious (sem arte publicada ainda) seguem a convenção
+de componentes reutilizáveis do `CONTRATO.md` (`--card-baelf-<cor>-<espécime>`),
+com um emoji de recuo por espécime (🌱🍄🧌👑) até haver imagem.
+
+Interação: escolher uma Baelfungious é um clique direto; declarar a
+sequência da ronda é tocar as 4 Baelfungious ativas pela ordem (o
+Governante); apostar/trocar/descartar selecionam cartas da mão e
+confirmam num botão — constroem a jogada diretamente (não percorrem
+`msg.legal`, que para Apostar listaria um botão por cada subconjunto
+possível da mão). O desempate mostra só as cartas da cor certa.
+
 ## 1.0.2 — Mensagem da última ronda mais curta (2026-09-28)
 
 A frase completa do registo ("trouxe a última Baelfungious: o jogo acaba no fim desta ronda") ficava grande de mais como mensagem ao centro da mesa, em duas linhas, a tapar o painel de jogadas. Passa a ter um texto próprio, mais curto, só para a mesa: "Última ronda!" (nova chave `msg.ULTIMA`), com `ctx.log('log.ULTIMA', {}, { announce: { variant: 'warn', key: 'msg.ULTIMA' } })`. O registo mantém a frase completa.

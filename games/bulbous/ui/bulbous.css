@@ -1,0 +1,162 @@
+/* Bulbous — UI própria (ADR-006, ADR-014), no template vanilla. Paleta e
+   proporções das cartas seguem 1:1 o jogo antigo (repositório bulbous,
+   client.html: fundo quase-preto, roxo brilhante em destaque, 4 cores de
+   bolbo) — só os tokens --game-* e --bulb-* mudam (skin.json), a estrutura
+   dos painéis é a da plataforma (vidro, registo flutuante, sem tabuleiro). */
+
+.bulbous {
+  --g: var(--game-glass, rgba(31, 31, 56, .6));
+  --gl: var(--game-glass-line, rgba(46, 46, 80, .9));
+  --ot: var(--game-on-table, #e8e8f0);
+  --otm: var(--game-on-table-muted, #9494c0);
+  --float-shadow: 0 1px 3px rgb(0 0 0 / .6), 0 0 12px rgb(0 0 0 / .35);
+  position: absolute; inset: 0; overflow: hidden;
+  container-type: size;
+  color: var(--ot);
+  font-family: var(--game-font-body, Inter, system-ui, sans-serif);
+  -webkit-user-select: none; user-select: none;
+}
+.bulbous button { font-family: inherit; line-height: 1.25; cursor: pointer; }
+.bulbous :focus-visible { outline: 3px solid var(--bulb-accent, #c084fc); outline-offset: 2px; }
+
+.bulbous-player, .bulbous-bar, .bulbous-chips {
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+}
+
+.bulbous-layout {
+  position: absolute; inset: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto; row-gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+}
+.bulbous-lbl {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--otm);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Topo: adversários (vidro) + fichas de ronda/baralho ── */
+.bulbous-topline { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 8px; }
+.bulbous-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.bulbous-player {
+  box-sizing: border-box; width: 168px; padding: 8px 10px; border-radius: var(--bulb-radius, 12px); display: grid; gap: 5px; align-content: start;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .4);
+}
+.bulbous-player.active { border-color: var(--bulb-accent, #c084fc); border-width: 2px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--bulb-accent, #c084fc) 45%, transparent), 0 8px 24px rgb(0 0 0 / .4); animation: bulbous-pulse 1s ease infinite alternate; }
+@keyframes bulbous-pulse { from { box-shadow: 0 0 0 2px color-mix(in srgb, var(--bulb-accent, #c084fc) 30%, transparent), 0 8px 24px rgb(0 0 0 / .4); } to { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bulb-accent, #c084fc) 55%, transparent), 0 8px 24px rgb(0 0 0 / .4); } }
+.bulbous-player.governor { border-color: var(--bulb-yellow, #f4c430); }
+.bulbous-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
+.bulbous-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bulbous-gov { flex: none; font-size: 12px; }
+.bulbous-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: 0 0 6px currentColor, 0 0 0 1px rgb(0 0 0 / .35); }
+.bulbous-pstate { font-size: 11px; color: var(--otm); height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bulbous-pcards { font-size: 11px; color: var(--otm); }
+
+.bulbous-chips { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgb(0 0 0 / .3); align-self: center; }
+.bulbous-chips b { color: var(--bulb-accent, #c084fc); font-weight: 800; }
+
+/* ── Mini-Baelfungious (nos painéis dos adversários): fila de pips ── */
+.bulbous-minis { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.bulbous-mini {
+  display: flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 7px;
+  background: color-mix(in srgb, var(--pc, var(--bulb-accent)) 16%, transparent); border: 1px solid color-mix(in srgb, var(--pc, var(--bulb-accent)) 45%, transparent);
+}
+.bulbous-mini.complete { opacity: .4; }
+.bulbous-mini-dots { display: flex; gap: 2px; }
+.bulbous-mini-dot { width: 6px; height: 6px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--pc, var(--bulb-accent)) 70%, transparent); background: transparent; }
+.bulbous-mini-dot.filled { background: var(--pc, var(--bulb-accent)); box-shadow: 0 0 4px var(--pc, var(--bulb-accent)); border-color: transparent; }
+
+/* ── Centro: as Baelfungious ativas (a mesa em disputa) ── */
+.bulbous-center {
+  display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
+  padding: 8px 12px; overflow-y: auto; min-height: 0;
+}
+.bulbous-baelf-slot { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+.bulbous-escolher { flex-basis: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 8px; }
+.bulbous-choices { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.bulbous-owner { font-size: 11px; color: var(--otm); max-width: 108px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bulbous-baelf {
+  width: 108px; aspect-ratio: 9 / 15; border-radius: var(--bulb-radius, 12px); position: relative; overflow: hidden;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--bc) 55%, #0d0d1a) 0%, color-mix(in srgb, var(--bc) 22%, #0d0d1a) 100%);
+  border: 2px solid color-mix(in srgb, var(--bc) 70%, transparent);
+  box-shadow: 0 10px 26px rgb(0 0 0 / .45);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+.bulbous-baelf.clickable { cursor: pointer; }
+.bulbous-baelf.clickable:hover { transform: translateY(-4px); }
+.bulbous-baelf.target { border-color: var(--bulb-accent, #c084fc); box-shadow: 0 0 0 2px var(--bulb-accent, #c084fc), 0 10px 26px rgb(0 0 0 / .45); }
+.bulbous-baelf.contested { border-color: var(--bulb-yellow, #f4c430); box-shadow: 0 0 18px 2px var(--bulb-yellow, #f4c430); }
+.bulbous-baelf.selected { border-color: var(--bulb-accent, #c084fc); box-shadow: 0 0 0 3px var(--bulb-accent, #c084fc); transform: translateY(-4px); }
+.bulbous-baelf.complete { opacity: .5; }
+.bulbous-baelf-art { font-size: 34px; filter: drop-shadow(0 2px 6px rgb(0 0 0 / .5)); }
+.bulbous-baelf-dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 80%; }
+.bulbous-baelf-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgb(255 255 255 / .35); background: rgb(255 255 255 / .06); }
+.bulbous-baelf-dot.filled { background: #fff; border-color: #fff; box-shadow: 0 0 6px #fff; }
+.bulbous-baelf-badge {
+  position: absolute; top: 6px; right: 6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box;
+  background: var(--bulb-accent, #c084fc); color: var(--bulb-on-accent, #0d0d1a); font-family: var(--game-font-display); font-weight: 800; font-size: 13px;
+  border-radius: 999px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center;
+}
+.bulbous-center .bulbous-baelf { width: 132px; }
+
+/* ── Registo e a minha zona de Baelfungious ── */
+.bulbous-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
+.bulbous-log { justify-self: start; max-width: 280px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.bulbous-log ol { list-style: none; margin: 0; padding: 0; }
+.bulbous-log b { font-weight: 500; }
+.bulbous-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
+.bulbous-mybaelfs { grid-column: 2; justify-self: center; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 60vw; }
+
+/* ── Ações: mão e barra ── */
+.bulbous-hand { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 4px 0; }
+.bulbous-card {
+  width: 58px; height: 82px; flex: none; box-sizing: border-box; border-radius: 9px; border: 2px solid var(--cc, var(--bulb-accent));
+  background: color-mix(in srgb, var(--cc, var(--bulb-accent)) 20%, #16162a);
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 5px 4px;
+  color: #fff; position: relative; transition: transform .15s ease, box-shadow .15s ease;
+}
+.bulbous-card.clickable { cursor: pointer; }
+.bulbous-card.clickable:hover { transform: translateY(-6px); box-shadow: 0 10px 18px rgb(0 0 0 / .4); }
+.bulbous-card.selected { border-color: #fff; box-shadow: 0 0 0 2px #fff, 0 0 14px var(--cc, var(--bulb-accent)); transform: translateY(-9px); z-index: 5; }
+.bulbous-card.dim { opacity: .35; }
+.bulbous-card-top { font-size: 15px; line-height: 1; }
+.bulbous-card-mid { font-family: var(--game-font-display); font-weight: 800; font-size: 21px; line-height: 1; }
+.bulbous-card-bot { font-size: 8px; letter-spacing: .04em; opacity: .8; text-transform: uppercase; }
+.bulbous-card.joker { background: linear-gradient(160deg, color-mix(in srgb, var(--bulb-accent, #c084fc) 45%, #16162a), #16162a); border-color: var(--bulb-accent, #c084fc); }
+
+.bulbous-bar {
+  justify-self: center; max-width: 100%; box-sizing: border-box;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .35);
+}
+.bulbous-bar:empty { display: none; }
+.bulbous-move {
+  min-height: 44px; padding: 8px 18px; border-radius: 999px; box-sizing: border-box;
+  border: 0; font-weight: 700; font-size: 13px; font-family: var(--game-font-display);
+}
+.bulbous-move:disabled { opacity: .35; cursor: not-allowed; }
+.bulbous-move.bet { background: var(--bulb-green, #43aa8b); color: #fff; }
+.bulbous-move.swap { background: var(--bulb-blue, #3a86ff); color: #fff; }
+.bulbous-move.pass { background: var(--g); color: var(--ot); border: 1px solid var(--gl); }
+.bulbous-move.confirm { background: var(--bulb-accent, #c084fc); color: var(--bulb-on-accent, #0d0d1a); }
+.bulbous-move.cancel { background: transparent; color: var(--otm); border: 1px solid var(--gl); }
+.bulbous-hint, .bulbous-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--otm); font-style: italic; }
+
+/* ── Emoji de recuo, quando falta uma imagem (Baelfungious) ── */
+.bulbous-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
+
+@container (max-width: 760px) {
+  .bulbous-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  .bulbous-topline { flex-direction: column; }
+  .bulbous-players { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .bulbous-player { width: auto; padding: 6px 8px; }
+  .bulbous-chips { align-self: stretch; justify-content: center; }
+  .bulbous-baelf { width: 72px; }
+  .bulbous-center .bulbous-baelf { width: 84px; }
+  .bulbous-owner { max-width: 72px; font-size: 10px; }
+  .bulbous-bottom { grid-template-columns: minmax(0, 1fr); }
+  .bulbous-bottom > .bulbous-log { display: none; }
+  .bulbous-mybaelfs { grid-column: 1; }
+  .bulbous-card { width: 50px; height: 70px; }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Baelfungious",
+  "description": "Mesa escura e roxo brilhante do jogo original (repositório bulbous, client.html): mesmas cores --bg/--surface/--accent e as 4 cores dos bolbos (vermelho, azul, verde, amarelo).",
+  "tokens": {
+    "--table-bg": {
+      "value": "radial-gradient(rgba(232,232,240,.05) 1px, transparent 1.4px) 0 0 / 24px 24px, radial-gradient(ellipse at 50% 28%, #1f1040 0%, #0d0d1a 62%)",
+      "type": "background", "group": "table",
+      "label": { "pt": "Mesa", "en": "Table" }
+    },
+    "--game-on-table": { "value": "#e8e8f0", "type": "color", "group": "table", "label": { "pt": "Texto sobre a mesa", "en": "Text on the table" } },
+    "--game-on-table-muted": { "value": "#9494c0", "type": "color", "group": "table", "label": { "pt": "Texto secundário sobre a mesa", "en": "Secondary text on the table" } },
+    "--game-glass": { "value": "rgba(31,31,56,.6)", "type": "color", "group": "table", "label": { "pt": "Vidro dos painéis", "en": "Panel glass" } },
+    "--game-glass-line": { "value": "rgba(46,46,80,.9)", "type": "color", "group": "table", "label": { "pt": "Contorno do vidro", "en": "Glass outline" } },
+    "--game-on-table-accent": { "value": "#c084fc", "type": "color", "group": "table", "label": { "pt": "Destaque sobre a mesa", "en": "Accent on the table" } },
+    "--game-on-table-warn": { "value": "#f4c430", "type": "color", "group": "table", "label": { "pt": "Aviso sobre a mesa", "en": "Warning on the table" } },
+    "--bulb-text": { "value": "#e8e8f0", "type": "color", "group": "base", "label": { "pt": "Texto", "en": "Text" } },
+    "--bulb-muted": { "value": "#7070a0", "type": "color", "group": "base", "label": { "pt": "Texto secundário", "en": "Secondary text" } },
+    "--bulb-accent": { "value": "#c084fc", "type": "color", "group": "base", "label": { "pt": "Destaque (roxo brilhante)", "en": "Highlight (bright purple)" } },
+    "--bulb-on-accent": { "value": "#0d0d1a", "type": "color", "group": "base", "label": { "pt": "Texto sobre o destaque", "en": "Text on the highlight" } },
+    "--bulb-red": { "value": "#e63946", "type": "color", "group": "cores", "label": { "pt": "Bolbo vermelho", "en": "Red bulb" } },
+    "--bulb-blue": { "value": "#3a86ff", "type": "color", "group": "cores", "label": { "pt": "Bolbo azul", "en": "Blue bulb" } },
+    "--bulb-green": { "value": "#43aa8b", "type": "color", "group": "cores", "label": { "pt": "Bolbo verde", "en": "Green bulb" } },
+    "--bulb-yellow": { "value": "#f4c430", "type": "color", "group": "cores", "label": { "pt": "Bolbo amarelo", "en": "Yellow bulb" } },
+    "--bulb-font-display": { "value": "var(--font-display, 'Baloo 2', system-ui, sans-serif)", "type": "font", "group": "type", "label": { "pt": "Letra dos títulos", "en": "Display font" } },
+    "--bulb-radius": { "value": "12px", "type": "size", "group": "shape", "label": { "pt": "Cantos", "en": "Corners" } }
+  },
+  "contrast": [
+    ["--bulb-on-accent", "--bulb-accent"],
+    ["--bulb-text", "--game-glass"]
+  ]
+}

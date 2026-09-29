@@ -13,7 +13,7 @@ Plataforma de jogos de tabuleiro online da Bitnik Games. Ler primeiro `docs/CONT
 ## Estado e fases
 
 - Feitas: Fase 0 (motor, servidor, SDK, Catania, Studio e runtime limpo), Fase 0b (UI do Catania e template vanilla, desenhado no Claude Design; ver `design/figma/TEMPLATE.md` e ADR-014) e Fase 0c (consola em `/console`).
-- Em curso: Fase 1 (Forge completa até à publicação; falta a geração pela API, opcional) e Fase 2 (Bulbous, Capivaras, Praia das Percebes e Nine Oils migrados; o Capivaras já tem UI própria no template; falta a UI genérica com o novo template e as UIs dos outros).
+- Em curso: Fase 1 (Forge completa até à publicação; falta a geração pela API, opcional) e Fase 2 (Bulbous, Capivaras, Praia das Percebes e Nine Oils migrados, todos já com UI própria no template; falta rever pontos do CHANGELOG de cada um e a secção "Clientes" na consola).
 - Detalhe de cada fase e etapa, e o que falta: `docs/ROADMAP.md`. Ao fechar uma etapa, atualizar lá (e aqui só se mudar o resumo).
 
 ## Convenções
