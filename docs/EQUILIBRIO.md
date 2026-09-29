@@ -2,7 +2,7 @@
 
 Regras que dão vantagem a um lugar à mesa, por jogo. Números de simulação com bots (vitórias por lugar, em %). Os bots são simples: o que está marcado "a confirmar" deve ser visto em mesas de aprovação com jogadores reais antes de mexer nas regras.
 
-Atualizado a 2026-09-26.
+Atualizado a 2026-09-29.
 
 ## Catania (5.0.0)
 
@@ -33,7 +33,7 @@ Atualizado a 2026-09-26.
 |---|---|
 | 2 | 50,2 / 49,8 (quem começa é sorteado) |
 
-- **Quem começa** ganha 53% (corrida às 6 garrafas: quem lança primeiro chega primeiro). Igual com 2 ou 3 Rapazes. *A confirmar; se se mantiver, compensar o 2.º jogador (ex.: começa com 1 carta a mais).*
+- **Quem começa** ganha ~53-54% (corrida às 6 garrafas: quem lança primeiro chega primeiro). Igual com 2 ou 3 Rapazes. Testadas duas compensações por cartas (2.ª carta para quem não começa; 0 cartas para quem começa) em 12 000 partidas cada: nenhuma desloca mais de ~1 ponto percentual, dentro do ruído da simulação — a vantagem vem de jogar primeiro na corrida, não do número de cartas na mão. **Decidido não mexer** (2026-09-29): é elegante manter a simetria, cada jogador começa com 1 carta.
 
 ## Bulbous (1.0.0)
 
