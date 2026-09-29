@@ -154,6 +154,14 @@ O aviso chega a todos os ligados (`NOTICES`) e a quem se ligar depois (`WELCOME.
 
 Todo o texto visível sai de chaves: `game.name`, `game.tagline`, `move.X`, `moveLabel.X`, `log.X`, `err.X`, e as que o jogo precisar (`res.vinho`). `checkGame` recusa pacotes em que as línguas não têm as mesmas chaves, e os testes do Catania verificam que cada `err.`/`log.` usado nas regras existe em PT e EN.
 
+## Tabuleiros (proposta, ainda não implementada)
+
+Detalhe completo em [TABULEIROS.md](TABULEIROS.md); resumo:
+
+Um pacote poderá trazer `boards` (lista, para suportar vários tabuleiros por jogo no futuro), cada um com um `type` — Mesa, Grelha, Relativo, Arena, Puzzle ou Táctico — que escolhe o editor no Studio, os helpers do motor e o comportamento da UI. Exceto a Mesa, todos os tipos reduzem-se ao mesmo modelo: localizações (nós, com id imutável, posição normalizada 0–1 e um cartão Forge opcional) e ligações (arestas, com custo fixo ou resolvido na compilação a partir de um componente). As regras nunca leem a arte (PNG); tudo o que usam compila para dados, e o tabuleiro fica versionado com o pacote, como as regras. Os tabuleiros criam-se no editor do Studio, nunca por importação externa.
+
+Para implementar depois da Fase 1 (o editor depende dos cartões do Forge). Tem decisões em aberto (ex.: `legal(state, seat)` no contrato, passos vs. movimento atómico) — ver a secção 7 do documento.
+
 ## Ligação ao Forge (Fase 1)
 
 A taxonomia BGE mapeia diretamente no contrato:

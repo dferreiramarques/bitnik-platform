@@ -14,7 +14,8 @@ Atualizado a 2026-09-29.
 | 0b | ✔ | UI própria do Catania e template vanilla |
 | 0c | ✔ | Consola em `/console` |
 | 1 | ◐ | Forge na consola do Studio (falta a geração pela API, opcional) |
-| 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta rever pontos do CHANGELOG e a secção "Clientes" na consola) |
+| 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta a secção "Clientes" na consola) |
+| 3 | ☐ | Tabuleiros — proposta em `docs/TABULEIROS.md`, para começar depois da Fase 1 (o editor depende dos cartões do Forge) |
 
 ## Fase 0 — Base ✔
 
@@ -97,5 +98,15 @@ Por fazer:
   - ✔ Nine Oils (1.1.7): sem tokens próprios (skin.json é uma cópia do vanilla), para mostrar a clientes o aspeto de base da plataforma — banca de 6 casas (🧪 garrafa), mão com a arte da carta em dobro (❤️‍🔥👦🏽💪🏼), dados animados, escolha às cegas como cartas viradas para baixo, sem pausa manual a "ver os dados";
   - ✔ Praia das Percebes (2.0.4): tabuleiro a sério com zoom e arrastar (como o Catania), objetivos em cartões com o nome, salva-vidas marcados na peça, vento decorativo na praia; peças/objetivos/marcador pela convenção de componentes reutilizáveis (`--card-*`/`--token-*`), sem arte publicada ainda (emoji); mesa em degradê de céu/areal, inspirada no jogo online antigo — só o `skin.json` do jogo mudou, não o vanilla;
   - ✔ Bulbous (1.1.1): conversão 1:1 do visual do jogo antigo (repositório `bulbous`) — fundo quase-preto, roxo brilhante em destaque, as 4 cores de bolbo, e as 50 imagens do jogo antigo (16 Baelfungious + 34 cartas de charme, `public/cards/*.webp`) trazidas para `ui/cards/`; bolbos colocados desenham-se por cima da arte, na cor de quem os pôs, nas posições medidas no jogo antigo. Emoji de recuo só se uma imagem faltar. Escolher/declarar sequência/apostar/trocar/descartar/desempatar têm interação própria (clique direto ou seleção de cartas + confirmar), sem depender de `msg.legal` para Apostar (exponencial em subconjuntos da mão).
-- ☐ Pontos "para rever" de cada `CHANGELOG.md` (iteração seguinte). Vantagens de lugar por confirmar em `docs/EQUILIBRIO.md`.
+- ✔ Pontos "para rever" de cada `CHANGELOG.md` e vantagens de lugar de `docs/EQUILIBRIO.md` (2026-09-29): Nine Oils testado por simulação (2ª carta ou 0 cartas para quem começa não resolvem o desequilíbrio — fica simétrico, 1 carta cada) e o resto fechado ou já resolvido em versões anteriores.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.
+
+## Fase 3 — Tabuleiros ☐
+
+Proposta validada em conversa (2026-09-29), detalhe completo em `docs/TABULEIROS.md` (resumo também no `CONTRATO.md`). Um jogo poderá trazer `boards`: tipos Mesa, Grelha, Relativo, Arena, Puzzle ou Táctico, todos (exceto a Mesa) reduzidos ao mesmo modelo de localizações (nós) e ligações (arestas), com custos resolvidos na compilação e as regras nunca a ler a arte. Editor no Studio, não importado de ferramentas externas.
+
+Por fazer, por esta ordem provável:
+
+- ☐ Decisões em aberto (secção 7 do documento): `legal(state, seat)` no contrato (mudança major), movimento em passos vs. atómico, que regras espaciais entram no motor, cache de distâncias, vocabulário espacial nos cartões Gherkin, ordem de implementação dos tipos.
+- ☐ Começa depois da Fase 1 (o editor depende dos cartões do Forge).
+- ☐ Jogo de validação para o tipo Táctico (o mais completo: estado, buffs, slots de material, zonas).

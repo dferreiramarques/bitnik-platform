@@ -94,7 +94,7 @@ Para rever:
 
 - O baralho do jogo antigo tinha 3 Rapazes (resolvido na 1.1.0: 2).
 - Quando um lançamento dá várias opções, a lista inclui também conjuntos com menos combinações (resolvido na 1.1.0: as melhores com ★).
-- A pausa depois de lançar (para os dois verem os dados) é uma jogada, "Continuar".
+- A pausa depois de lançar (para os dois verem os dados) é uma jogada, "Continuar" (resolvido na UI, 1.1.5: a mesa avança sozinha ~1s depois de mostrar os dados, sem botão manual).
 
 Vitórias por lugar em simulação com bots (1000 partidas, quem começa é sorteado): 48,8 / 51,2.
 
