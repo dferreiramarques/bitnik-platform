@@ -35,9 +35,11 @@
   display: flex; align-items: center; gap: 8px;
 }
 
-/* ── Topo: adversários (vidro) + fichas de ronda/baralho ── */
-.bulbous-topline { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 8px; }
-.bulbous-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+/* ── Topo: adversários (vidro) e, sempre numa linha própria centrada por
+   baixo (design/figma/TEMPLATE.md), as fichas de ronda/baralho — nunca ao
+   lado dos jogadores, mesmo que caibam. ── */
+.bulbous-topline { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bulbous-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; width: 100%; }
 .bulbous-player {
   box-sizing: border-box; width: 168px; padding: 8px 10px; border-radius: var(--bulb-radius, 12px); display: grid; gap: 5px; align-content: start;
   box-shadow: 0 8px 24px rgb(0 0 0 / .4);
@@ -148,7 +150,6 @@
 
 @container (max-width: 760px) {
   .bulbous-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
-  .bulbous-topline { flex-direction: column; }
   .bulbous-players { display: grid; grid-template-columns: repeat(2, 1fr); }
   .bulbous-player { width: auto; padding: 6px 8px; }
   .bulbous-chips { align-self: stretch; justify-content: center; }

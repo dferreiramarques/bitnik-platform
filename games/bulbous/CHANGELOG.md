@@ -1,5 +1,14 @@
 # Bulbous — histórico de regras
 
+## 1.1.1 — Fichas da ronda por baixo dos jogadores (2026-09-29)
+
+Sem mudanças de jogo: a ficha "Ronda N · M no baralho" estava ao lado dos
+cartões dos jogadores (linha `.bulbous-topline` em flex-row); passa a
+ficar sempre numa linha própria, centrada, por baixo deles — como no
+Catania e no Capivaras. `design/figma/TEMPLATE.md` tornado explícito
+sobre esta regra (secção 3): fichas de ronda/vez/baralho nunca ao lado
+dos jogadores, mesmo quando cabem.
+
 ## 1.1.0 — UI própria, no template vanilla (2026-09-29)
 
 Sem mudanças de jogo: primeira UI própria do Bulbous (ADR-006), no

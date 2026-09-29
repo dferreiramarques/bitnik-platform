@@ -72,7 +72,7 @@ A mesa ocupa o ecrã inteiro (`--table-bg` com `--table-dots` por cima). Não h�
 - **Topo à esquerda**: marca, nome do jogo e tamanho da mesa, em `--game-on-table` a 78%.
 - **Topo à direita**: Guia (tutorial), Voltar ao lobby e a língua.
 - **Jogadores**: um cartão de vidro por jogador, com o ponto da cor, o nome em maiúsculas, os pontos, o estado e os **componentes** (Cartas 5, Tokens 2…). Os componentes são botões: servem de alvo quando uma ação escolhe um jogador (roubar uma carta, tirar um token). O jogador da vez tem contorno `--game-accent` e o estado em `--game-on-table-accent`.
-- **Fichas da ronda**: ronda, "Última ronda" (fundo `--game-accent`) e avisos curtos do jogo.
+- **Fichas da ronda**: ronda, vez, peças que faltam no baralho/mão, "Última ronda" (fundo `--game-accent`) e avisos curtos do jogo. **Ficam sempre numa linha própria, centrada, por baixo dos cartões dos jogadores** — nunca ao lado deles, mesmo que caibam; é o mesmo grupo de informação em todos os jogos (ronda/vez/baralho variam por jogo, a posição não).
 - **Tabuleiro**: mesa infinita; arrasta para mover, roda (ou dois dedos) para aproximar. Fica **centrado no ecrã**, na horizontal e na vertical (no vanilla, 868 × 400 em (206, 200)); as fichas da ronda ficam a meio do espaço entre os jogadores e o tabuleiro.
 - **Mensagem da mesa**: ver secção 4.
 - **A minha área**: mão e peças do jogador, em baixo ao centro.
