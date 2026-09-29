@@ -1,9 +1,9 @@
 /* Praia das Percebes — UI própria (ADR-006, ADR-014), no template vanilla:
    só usa tokens --game-* (skin.json é a mesa própria do jogo) mais os
-   componentes reutilizáveis --card-*/--token-* (CONTRATO.md). Tabuleiro
+   componentes reutilizáveis --card-* e --token-* (CONTRATO.md). Tabuleiro
    com zoom e arrastar tal como o Catania (games/catania/ui/catania.css). */
 
-.pdp {
+.praia {
   --g: var(--game-glass, rgb(20 32 26 / .35));
   --gl: var(--game-glass-line, rgb(255 250 241 / .35));
   --ot: var(--game-on-table, #fffaf1);
@@ -14,162 +14,168 @@
   font-family: var(--game-font-body, Inter, system-ui, sans-serif);
   -webkit-user-select: none; user-select: none;
 }
-.pdp button { font-family: inherit; line-height: 1.25; cursor: pointer; }
-.pdp :focus-visible { outline: 3px solid var(--game-on-table-accent, #ffd9c2); outline-offset: 2px; }
+.praia button { font-family: inherit; line-height: 1.25; cursor: pointer; }
+.praia :focus-visible { outline: 3px solid var(--game-on-table-accent, #ffd9c2); outline-offset: 2px; }
 
-.pdp-player, .pdp-bar, .pdp-objectives, .pdp-log, .pdp-zoombar {
+.praia-player, .praia-bar, .praia-objectives, .praia-log, .praia-zoombar {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
 }
 
 /* Vento na praia: o ícone a passar atrás de tudo, criado uma vez ao montar
    (não é regenerado a cada estado, por isso a animação nunca reinicia). */
-.pdp-wind { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
-.pdp-gust {
+.praia-wind { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.praia-gust {
   position: absolute; left: -60px; opacity: 0;
   fill: #fff;
   filter: drop-shadow(0 1px 3px rgb(0 0 0 / .18));
-  animation-name: pdp-blow; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+  animation-name: praia-blow; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
 }
-@keyframes pdp-blow {
+@keyframes praia-blow {
   0% { opacity: 0; transform: translateX(0) rotate(0deg); }
   10% { opacity: .3; }
   50% { transform: translateX(50vw) rotate(6deg); }
   90% { opacity: .1; }
   100% { opacity: 0; transform: translateX(calc(100vw + 80px)) rotate(-4deg); }
 }
-@media (prefers-reduced-motion: reduce) { .pdp-gust { animation: none; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .praia-gust { animation: none; opacity: 0; } }
 
-.pdp-layout {
+.praia-layout {
   position: absolute; inset: 0;
   display: grid; grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto; row-gap: 10px;
+  grid-template-rows: auto minmax(0, 1fr) auto auto; row-gap: 10px;
   padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
 }
-.pdp-lbl {
+/* Jogadores e objetivos numa só linha (desktop); em telemóvel, cada bloco
+   fica na sua linha (jogadores 2 a 2, objetivos por baixo — ver media query). */
+.praia-topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.praia-lbl {
   font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--otm);
   display: flex; align-items: center; gap: 8px;
 }
-.pdp-note { font-size: 11px; color: var(--otm); align-self: center; }
+.praia-note { font-size: 11px; color: var(--otm); align-self: center; }
 
 /* ── Jogadores (como no Catania: cartões de vidro de largura fixa, com
    contorno próprio e destaque forte no jogador ativo) ── */
-.pdp-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.pdp-player {
+.praia-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.praia-player {
   width: 190px; box-sizing: border-box; padding: 8px 10px; border-radius: 14px; display: grid; gap: 4px; align-content: start;
   box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
-.pdp-player.me { border-color: var(--ot); }
-.pdp-player.active {
+.praia-player.me { border-color: var(--ot); }
+.praia-player.active {
   border-color: var(--game-on-table-accent, #ffd9c2); border-width: 2px;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 45%, transparent), 0 8px 24px rgb(0 0 0 / .3);
 }
-.pdp-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
-.pdp-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pdp-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
-.pdp-score { font-family: var(--game-font-display); font-weight: 800; font-size: 15px; line-height: 1; color: var(--game-on-table-accent, #ffd9c2); }
-.pdp-pmeta { display: flex; gap: 10px; font-size: 11px; color: var(--otm); }
-.pdp-pmeta img, .pdp-pmeta .pdp-emoji-fallback { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
+.praia-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
+.praia-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.praia-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
+.praia-score { font-family: var(--game-font-display); font-weight: 800; font-size: 15px; line-height: 1; color: var(--game-on-table-accent, #ffd9c2); }
+.praia-pmeta { display: flex; gap: 10px; font-size: 11px; color: var(--otm); }
+.praia-pmeta img, .praia-pmeta .praia-emoji-fallback { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
 
 /* ── Objetivos: um único painel com contorno, cartões com o nome bem legível ── */
-.pdp-obj-wrap { display: grid; justify-items: center; gap: 6px; }
-.pdp-objectives {
+.praia-obj-wrap { display: grid; justify-items: center; gap: 6px; }
+.praia-objectives {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border-radius: 14px; justify-content: center;
   box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
-.pdp-obj-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.pdp-obj { box-sizing: border-box; display: flex; align-items: center; gap: 7px; }
-.pdp-obj-art { width: 28px; height: 28px; border-radius: 6px; overflow: hidden; font-size: 17px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--ot) 14%, transparent); }
-.pdp-obj-art img { width: 100%; height: 100%; object-fit: cover; }
-.pdp-obj-text { min-width: 0; display: grid; gap: 0; }
-.pdp-obj-text b { font-size: 13px; font-weight: 700; line-height: 1.25; }
-.pdp-obj-text span { font-size: 12px; font-weight: 800; color: var(--game-on-table-accent, #ffd9c2); }
+.praia-obj-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.praia-obj { box-sizing: border-box; display: flex; align-items: center; gap: 7px; }
+.praia-obj-art { width: 28px; height: 28px; border-radius: 6px; overflow: hidden; font-size: 17px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--ot) 14%, transparent); }
+.praia-obj-art img { width: 100%; height: 100%; object-fit: cover; }
+.praia-obj-text { min-width: 0; display: grid; gap: 0; }
+.praia-obj-text b { font-size: 13px; font-weight: 700; line-height: 1.25; }
+.praia-obj-text span { font-size: 12px; font-weight: 800; color: var(--game-on-table-accent, #ffd9c2); }
 
 /* ── Peças restantes no baralho, em baixo dos objetivos ── */
-.pdp-deck {
+.praia-deck {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
   padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgb(0 0 0 / .25);
 }
 
 /* ── Tabuleiro com zoom, em camadas (ADR-014, como o Catania) ──
-   0: o tabuleiro (.pdp-view) ocupa o ecrã inteiro, por cima do fundo da mesa;
-   1: a UI por cima. A .pdp-center é a zona livre onde a grelha encaixa com
+   0: o tabuleiro (.praia-view) ocupa o ecrã inteiro, por cima do fundo da mesa;
+   1: a UI por cima. A .praia-center é a zona livre onde a grelha encaixa com
    zoom 1 (o JS mede-a); só guarda os botões de zoom. */
-.pdp-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
-.pdp-view:active { cursor: grabbing; }
-.pdp-zoom { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
-.pdp-layout > :not(.pdp-view) { z-index: 1; pointer-events: none; }
-.pdp-layout :is(.pdp-player, .pdp-bar, .pdp-log-head, .pdp-zb) { pointer-events: auto; }
-.pdp-center { position: relative; min-height: 0; }
-.pdp-grid {
+.praia-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+.praia-view:active { cursor: grabbing; }
+.praia-zoom { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.praia-layout > :not(.praia-view) { z-index: 1; pointer-events: none; }
+.praia-layout :is(.praia-player, .praia-bar, .praia-log-head, .praia-zb) { pointer-events: auto; }
+.praia-center { position: relative; min-height: 0; }
+.praia-grid {
   position: absolute; inset: 0; width: 100%; height: 100%;
   display: grid; grid-template-rows: repeat(var(--rows, 1), 1fr); grid-template-columns: repeat(var(--cols, 1), 1fr); gap: 4px;
 }
-.pdp-cell {
+.praia-cell {
   position: relative; box-sizing: border-box; border-radius: 6px; overflow: hidden;
   display: grid; place-items: center; font-size: calc(var(--cell, 44px) * .5); padding: 0; border: 0;
 }
-.pdp-cell.tile { background: var(--game-panel, #fffaf1); box-shadow: 0 2px 6px rgb(0 0 0 / .35); }
-.pdp-cell.tile img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
-.pdp-cell.tile.last { box-shadow: 0 0 0 2px var(--game-on-table-accent, #ffd9c2), 0 2px 6px rgb(0 0 0 / .35); }
-.pdp-cell.ghost {
+.praia-cell.tile { background: var(--game-panel, #fffaf1); box-shadow: 0 2px 6px rgb(0 0 0 / .35); }
+.praia-cell.tile img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.praia-cell.tile.last { box-shadow: 0 0 0 2px var(--game-on-table-accent, #ffd9c2), 0 2px 6px rgb(0 0 0 / .35); }
+.praia-cell.ghost {
   background: color-mix(in srgb, var(--ot) 12%, transparent); box-shadow: inset 0 0 0 1px var(--gl);
   cursor: pointer; transition: background .15s ease;
 }
-.pdp-cell.ghost:hover, .pdp-cell.ghost:focus-visible { background: color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 45%, transparent); }
-.pdp-cell.big { width: calc(var(--cell, 44px) * 1.6); height: calc(var(--cell, 44px) * 1.6); }
-.pdp-n {
+.praia-cell.ghost:hover, .praia-cell.ghost:focus-visible { background: color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 45%, transparent); }
+.praia-cell.big { width: calc(var(--cell, 44px) * 1.6); height: calc(var(--cell, 44px) * 1.6); }
+.praia-n {
   position: absolute; bottom: 1px; right: 2px; font-family: var(--game-font-display); font-weight: 800;
   font-size: calc(var(--cell, 44px) * .3); color: var(--game-text, #2b1b12); text-shadow: 0 1px 2px rgb(255 255 255 / .6);
   z-index: 1;
 }
-.pdp-lg {
+.praia-lg {
   position: absolute; top: 1px; left: 1px; display: flex; align-items: center; gap: 1px;
   background: var(--pc, var(--game-accent)); border-radius: 4px; padding: 1px 2px; z-index: 1;
 }
-.pdp-lg img, .pdp-lg .pdp-emoji-fallback { width: calc(var(--cell, 44px) * .22); height: calc(var(--cell, 44px) * .22); font-size: calc(var(--cell, 44px) * .2); }
-.pdp-lg b { font-size: calc(var(--cell, 44px) * .22); color: #fff; line-height: 1; }
+.praia-lg img, .praia-lg .praia-emoji-fallback { width: calc(var(--cell, 44px) * .22); height: calc(var(--cell, 44px) * .22); font-size: calc(var(--cell, 44px) * .2); }
+.praia-lg b { font-size: calc(var(--cell, 44px) * .22); color: #fff; line-height: 1; }
 
 /* ── Botões de zoom (canto da zona livre; escondidos no telemóvel, onde o zoom é por gesto) ── */
-/* Sempre fixo ao canto inferior direito da mesa (.pdp tem container-type:size,
+/* Sempre fixo ao canto inferior direito da mesa (.praia tem container-type:size,
    por isso é o contentor do fixed, mesmo dentro de um ecrã mais pequeno). */
-.pdp-zoombar {
+.praia-zoombar {
   position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   display: flex; gap: 2px; padding: 2px; border-radius: 12px; z-index: 2;
 }
-.pdp-zb { width: 40px; height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--ot); font-size: 17px; font-weight: 700; display: grid; place-items: center; }
-.pdp-zb:hover { background: color-mix(in srgb, var(--ot) 12%, transparent); }
+.praia-zb { width: 40px; height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--ot); font-size: 17px; font-weight: 700; display: grid; place-items: center; }
+.praia-zb:hover { background: color-mix(in srgb, var(--ot) 12%, transparent); }
 
 /* ── Emoji de recuo, quando falta uma imagem (peça, carta, marcador) ── */
-.pdp-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
+.praia-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
 
 /* ── Registo e a peça a colocar ── */
-.pdp-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.pdp-log { justify-self: start; max-width: 280px; padding: 6px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; }
-.pdp-log ol { list-style: none; margin: 0; padding: 0; }
-.pdp-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
-.pdp-piece { grid-column: 2; justify-self: center; display: grid; justify-items: center; gap: 4px; }
+.praia-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
+.praia-log { justify-self: start; max-width: 280px; padding: 6px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; }
+.praia-log ol { list-style: none; margin: 0; padding: 0; }
+.praia-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
+.praia-piece { grid-column: 2; justify-self: center; display: grid; justify-items: center; gap: 4px; }
 
 /* ── Barra de jogadas ── */
-.pdp-bar {
+.praia-bar {
   justify-self: center; max-width: 100%; box-sizing: border-box;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
   padding: 8px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
-.pdp-bar:empty { display: none; }
-.pdp-move {
+.praia-bar:empty { display: none; }
+.praia-move {
   min-height: 44px; padding: 8px 14px; border-radius: var(--ui-r-pill, 999px); box-sizing: border-box;
   background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); border: 0; font-weight: 700; font-size: 13px; cursor: pointer;
 }
-.pdp-move:hover, .pdp-move:focus-visible { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); }
-.pdp-hint, .pdp-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; color: var(--otm); font-style: italic; }
+.praia-move:hover, .praia-move:focus-visible { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); }
+.praia-hint, .praia-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; color: var(--otm); font-style: italic; }
 
 @container (max-width: 760px) {
-  .pdp-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
-  .pdp-player { width: 148px; padding: 6px 8px; }
-  .pdp-obj { width: 108px; }
-  .pdp-bottom { grid-template-columns: minmax(0, 1fr); }
-  .pdp-bottom > .pdp-log { display: none; }
-  .pdp-piece { grid-column: 1; }
+  .praia-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  /* Jogadores 2 a 2, objetivos numa linha por baixo (cada bloco stretch à largura toda). */
+  .praia-topline { flex-direction: column; align-items: stretch; }
+  .praia-players { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .praia-player { width: auto; padding: 6px 8px; }
+  .praia-obj { width: 108px; }
+  .praia-bottom { grid-template-columns: minmax(0, 1fr); }
+  .praia-bottom > .praia-log { display: none; }
+  .praia-piece { grid-column: 1; }
 }

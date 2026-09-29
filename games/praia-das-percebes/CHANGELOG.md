@@ -1,5 +1,22 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.12 — Jogadores e objetivos numa linha; sem registo no telemóvel (2026-09-29)
+
+Sem mudanças de jogo:
+
+- Jogadores e objetivos passam a partilhar uma só linha, em vez de duas
+  (`.praia-topline`).
+- No telemóvel (largura até 760px): os jogadores ficam 2 a 2, os objetivos
+  numa linha por baixo, e o registo de jogadas fica escondido (cabe pouco e
+  a peça a colocar já diz o essencial).
+- Corrigido (visual, sem relação com o pedido acima): o comentário no topo
+  do ficheiro CSS tinha `--card-*/--token-*`, e o `*/` a meio fechava o
+  comentário mais cedo do que devia — o resto do ficheiro, incluindo o
+  `*/` a sério, ficava a fazer parte de uma única regra inválida que
+  engolia a primeira regra a seguir (`.praia`, a que dá posição e
+  `container-type` a tudo). Só nalgumas larguras (por acaso, as de
+  telemóvel) é que isso se notava.
+
 ## 2.0.11 — Peças restantes no baralho (2026-09-29)
 
 Sem mudanças de jogo: uma pill por baixo dos objetivos mostra quantas

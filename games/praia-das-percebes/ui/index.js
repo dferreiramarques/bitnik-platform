@@ -7,7 +7,7 @@
 // ainda (por publicar), a UI recua para um emoji.
 //
 // Tabuleiro com zoom e arrastar (dois dedos, roda, botões) tal como o
-// Catania: `.pdp-view` ocupa o ecrã inteiro por baixo da UI, `.pdp-center`
+// Catania: `.praia-view` ocupa o ecrã inteiro por baixo da UI, `.praia-center`
 // é só a zona livre medida para encaixar a grelha com zoom 1.
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -41,7 +41,7 @@ function art(tokenName, fallbackKey, emoji) {
   const url = tokenUrl(tokenName);
   return url
     ? `<img src="${esc(url)}" data-fallback="${esc(fallbackKey)}" alt="">`
-    : `<span class="pdp-emoji-fallback">${emoji}</span>`;
+    : `<span class="praia-emoji-fallback">${emoji}</span>`;
 }
 
 let root = null;
@@ -59,17 +59,17 @@ function onImgError(e) {
   if (img.tagName !== 'IMG' || !img.dataset.fallback) return;
   const key = img.dataset.fallback;
   const emoji = TILE_EMOJI[key] ?? OBJ_EMOJI[key] ?? (key === 'salvavidas' ? LIFEGUARD_EMOJI : '');
-  img.replaceWith(Object.assign(document.createElement('span'), { className: 'pdp-emoji-fallback', textContent: emoji }));
+  img.replaceWith(Object.assign(document.createElement('span'), { className: 'praia-emoji-fallback', textContent: emoji }));
 }
 
 export function mount(el, context) {
   ctx = context;
   ensureCss();
   root = document.createElement('div');
-  root.className = 'pdp';
+  root.className = 'praia';
   root.append(renderWind());
   view = document.createElement('div');
-  view.className = 'pdp-layout';
+  view.className = 'praia-layout';
   root.append(view);
   el.append(root);
   root.addEventListener('click', onClickCapture, true);
@@ -100,7 +100,7 @@ const mySeat = () => (msg && Number.isInteger(msg.seat) ? msg.seat : null);
 
 /** Um arrastar no tabuleiro não conta como clique numa casa. */
 function onClickCapture(e) {
-  if (ui.dragged && e.target.closest('.pdp-view')) { e.stopPropagation(); e.preventDefault(); }
+  if (ui.dragged && e.target.closest('.praia-view')) { e.stopPropagation(); e.preventDefault(); }
   ui.dragged = false;
 }
 
@@ -128,28 +128,30 @@ function render() {
   const v = msg.view;
   const me = mySeat();
   view.innerHTML = `
-    <div class="pdp-view"><div class="pdp-zoom">${renderBoard(v)}</div></div>
-    ${renderPlayers(v, me)}
-    ${renderObjectives(v)}
-    <div class="pdp-center" data-tut="board">
-      <div class="pdp-zoombar">
-        <button class="pdp-zb" data-zoom="in" type="button" aria-label="${esc(ctx.t('ui.zoomIn'))}">+</button>
-        <button class="pdp-zb" data-zoom="out" type="button" aria-label="${esc(ctx.t('ui.zoomOut'))}">−</button>
-        <button class="pdp-zb" data-zoom="fit" type="button" aria-label="${esc(ctx.t('ui.zoomFit'))}">⤢</button>
+    <div class="praia-view"><div class="praia-zoom">${renderBoard(v)}</div></div>
+    <div class="praia-topline">
+      ${renderPlayers(v, me)}
+      ${renderObjectives(v)}
+    </div>
+    <div class="praia-center" data-tut="board">
+      <div class="praia-zoombar">
+        <button class="praia-zb" data-zoom="in" type="button" aria-label="${esc(ctx.t('ui.zoomIn'))}">+</button>
+        <button class="praia-zb" data-zoom="out" type="button" aria-label="${esc(ctx.t('ui.zoomOut'))}">−</button>
+        <button class="praia-zb" data-zoom="fit" type="button" aria-label="${esc(ctx.t('ui.zoomFit'))}">⤢</button>
       </div>
     </div>
-    <div class="pdp-bottom">
+    <div class="praia-bottom">
       ${renderLog()}
       ${renderPiece(v, me)}
     </div>
-    ${msg.result ? '' : `<div class="pdp-bar">${renderBar(v, me)}</div>`}`;
+    ${msg.result ? '' : `<div class="praia-bar">${renderBar(v, me)}</div>`}`;
   applyZoom();
 }
 
 function renderPlayers(v, me) {
-  return `<div class="pdp-players">${v.jogadores.map((j, i) => `<div class="pdp-player${i === me ? ' me' : ''}${i === v.vez ? ' active' : ''}">
-    <div class="pdp-pname"><i class="pdp-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span><b class="pdp-score">${j.pts}</b></div>
-    <div class="pdp-pmeta">
+  return `<div class="praia-players">${v.jogadores.map((j, i) => `<div class="praia-player${i === me ? ' me' : ''}${i === v.vez ? ' active' : ''}">
+    <div class="praia-pname"><i class="praia-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span><b class="praia-score">${j.pts}</b></div>
+    <div class="praia-pmeta">
       <span>${art('token-salvavidas', 'salvavidas', LIFEGUARD_EMOJI)}×${j.fichas}</span>
       <span>${esc(ctx.t('ui.objPts', { n: j.objPts }))}</span>
     </div>
@@ -157,24 +159,24 @@ function renderPlayers(v, me) {
 }
 
 function renderObjectives(v) {
-  const extra = v.porRevelar > 0 ? `<span class="pdp-note">${esc(ctx.t('ui.toReveal', { n: v.porRevelar }))}</span>` : '';
-  return `<div class="pdp-obj-wrap">
-    <div class="pdp-objectives">
-      <div class="pdp-lbl">${esc(ctx.t('ui.objectives'))}</div>
-      <div class="pdp-obj-row">
-        ${v.objetivos.map((o) => `<div class="pdp-obj">
-          <div class="pdp-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
-          <div class="pdp-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
+  const extra = v.porRevelar > 0 ? `<span class="praia-note">${esc(ctx.t('ui.toReveal', { n: v.porRevelar }))}</span>` : '';
+  return `<div class="praia-obj-wrap">
+    <div class="praia-objectives">
+      <div class="praia-lbl">${esc(ctx.t('ui.objectives'))}</div>
+      <div class="praia-obj-row">
+        ${v.objetivos.map((o) => `<div class="praia-obj">
+          <div class="praia-obj-art">${art(`card-${o.id}`, o.id, OBJ_EMOJI[o.id] ?? '❔')}</div>
+          <div class="praia-obj-text"><b>${esc(ctx.t(`obj.${o.id}`))}</b><span>+${o.pts}</span></div>
         </div>`).join('')}
         ${extra}
       </div>
     </div>
-    <div class="pdp-deck">${esc(ctx.t('ui.deckLeft', { n: v.baralho, total: v.total }))}</div>
+    <div class="praia-deck">${esc(ctx.t('ui.deckLeft', { n: v.baralho, total: v.total }))}</div>
   </div>`;
 }
 
 function tileCell(p) {
-  return `${art(`card-${p.tipo}`, p.tipo, TILE_EMOJI[p.tipo] ?? '❔')}${p.banhistas > 0 ? `<b class="pdp-n">${p.banhistas}</b>` : ''}`;
+  return `${art(`card-${p.tipo}`, p.tipo, TILE_EMOJI[p.tipo] ?? '❔')}${p.banhistas > 0 ? `<b class="praia-n">${p.banhistas}</b>` : ''}`;
 }
 
 function renderBoard(v) {
@@ -191,27 +193,27 @@ function renderBoard(v) {
   const tiles = cells.map(({ r, c, p }) => {
     const lg = v.salvaVidas.find((s) => s.r === r && s.c === c);
     const last = v.ultima && v.ultima.r === r && v.ultima.c === c ? ' last' : '';
-    return `<div class="pdp-cell tile ${p.tipo}${last}" style="${g(r, c)}" title="${esc(ctx.t(`peca.${p.tipo}`))}${p.banhistas ? ` (${p.banhistas})` : ''}">
+    return `<div class="praia-cell tile ${p.tipo}${last}" style="${g(r, c)}" title="${esc(ctx.t(`peca.${p.tipo}`))}${p.banhistas ? ` (${p.banhistas})` : ''}">
       ${tileCell(p)}
-      ${lg ? `<i class="pdp-lg" style="--pc:var(--game-color-${lg.jogador + 1})" title="${esc(ctx.t(lg.dir === 'h' ? 'moveLabel.SALVA_VIDAS_H' : 'moveLabel.SALVA_VIDAS_V'))}">${art('token-salvavidas', 'salvavidas', LIFEGUARD_EMOJI)}<b>${lg.dir === 'h' ? '↔' : '↕'}</b></i>` : ''}
+      ${lg ? `<i class="praia-lg" style="--pc:var(--game-color-${lg.jogador + 1})" title="${esc(ctx.t(lg.dir === 'h' ? 'moveLabel.SALVA_VIDAS_H' : 'moveLabel.SALVA_VIDAS_V'))}">${art('token-salvavidas', 'salvavidas', LIFEGUARD_EMOJI)}<b>${lg.dir === 'h' ? '↔' : '↕'}</b></i>` : ''}
     </div>`;
   }).join('');
-  const ghostCells = ghosts.map(({ r, c }) => `<button class="pdp-cell ghost" type="button" data-place="${r},${c}" style="${g(r, c)}" aria-label="${esc(ctx.t('ui.placeHere'))}"></button>`).join('');
-  return `<div class="pdp-grid" style="--rows:${boardDims.rows};--cols:${boardDims.cols}">${tiles}${ghostCells}</div>`;
+  const ghostCells = ghosts.map(({ r, c }) => `<button class="praia-cell ghost" type="button" data-place="${r},${c}" style="${g(r, c)}" aria-label="${esc(ctx.t('ui.placeHere'))}"></button>`).join('');
+  return `<div class="praia-grid" style="--rows:${boardDims.rows};--cols:${boardDims.cols}">${tiles}${ghostCells}</div>`;
 }
 
 function renderPiece(v, me) {
   if (me == null || v.fase !== 'COLOCAR' || !v.peca || v.peca.escondida) return '<div></div>';
-  return `<div class="pdp-piece">
-    <div class="pdp-lbl">${esc(ctx.t('ui.myPiece'))}</div>
-    <div class="pdp-cell tile ${v.peca.tipo} big">${tileCell(v.peca)}</div>
+  return `<div class="praia-piece">
+    <div class="praia-lbl">${esc(ctx.t('ui.myPiece'))}</div>
+    <div class="praia-cell tile ${v.peca.tipo} big">${tileCell(v.peca)}</div>
   </div>`;
 }
 
 function renderLog() {
   const items = [...(msg.log || [])].reverse().slice(0, ui.logOpen ? 5 : 0);
-  return `<aside class="pdp-log">
-    <button class="pdp-lbl pdp-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
+  return `<aside class="praia-log">
+    <button class="praia-lbl praia-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
     ${items.length ? `<ol>${items.map((l) => `<li>${l.seat != null ? `<b>${esc(ctx.seatName(l.seat))}</b> ` : ''}${esc(ctx.t(l.key, l.params))}</li>`).join('')}</ol>` : ''}
   </aside>`;
 }
@@ -219,47 +221,47 @@ function renderLog() {
 function renderBar(v, me) {
   const legal = msg.legal || [];
   if (v.fase === 'COLOCAR') {
-    if (me === v.vez) return `<p class="pdp-hint">${esc(ctx.t('ui.placeHint'))}</p>`;
-    return `<p class="pdp-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.turnOf', { nome: ctx.seatName(v.vez) }))}</p>`;
+    if (me === v.vez) return `<p class="praia-hint">${esc(ctx.t('ui.placeHint'))}</p>`;
+    return `<p class="praia-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.turnOf', { nome: ctx.seatName(v.vez) }))}</p>`;
   }
-  if (!legal.length) return `<p class="pdp-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.turnOf', { nome: ctx.seatName(v.vez) }))}</p>`;
-  return legal.map((mv, i) => `<button class="pdp-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
+  if (!legal.length) return `<p class="praia-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.turnOf', { nome: ctx.seatName(v.vez) }))}</p>`;
+  return legal.map((mv, i) => `<button class="praia-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
 }
 
 /** Vento na praia: faixas de areia a passar, decorativas, atrás de tudo — criado
  * uma vez (não é regenerado a cada estado, por isso a animação nunca reinicia). */
 function renderWind() {
   const wind = document.createElement('div');
-  wind.className = 'pdp-wind';
+  wind.className = 'praia-wind';
   wind.setAttribute('aria-hidden', 'true');
-  const defs = `<svg width="0" height="0" style="position:absolute"><defs><symbol id="pdp-wind-icon" viewBox="0 0 512 512"><path d="${WIND_PATH}"/></symbol></defs></svg>`;
+  const defs = `<svg width="0" height="0" style="position:absolute"><defs><symbol id="praia-wind-icon" viewBox="0 0 512 512"><path d="${WIND_PATH}"/></symbol></defs></svg>`;
   const gusts = Array.from({ length: 6 }, (_, i) => {
     const top = 8 + ((i * 37) % 90);
     const size = 30 + (i % 3) * 12;
     const dur = 7 + (i % 4) * 2.3;
     const delay = -(i * 2.7);
-    return `<svg class="pdp-gust" viewBox="0 0 512 512" style="top:${top}%;width:${size}px;height:${size}px;animation-duration:${dur}s;animation-delay:${delay}s"><use href="#pdp-wind-icon"/></svg>`;
+    return `<svg class="praia-gust" viewBox="0 0 512 512" style="top:${top}%;width:${size}px;height:${size}px;animation-duration:${dur}s;animation-delay:${delay}s"><use href="#praia-wind-icon"/></svg>`;
   }).join('');
   wind.innerHTML = defs + gusts;
   return wind;
 }
 
 // ─── Zoom e arrastar no tabuleiro (tal como o Catania) ───────
-// `.pdp-view` ocupa o ecrã inteiro, por baixo da UI. Com zoom 1 o tabuleiro
-// encaixa na zona livre (.pdp-center, a célula da grelha entre os
+// `.praia-view` ocupa o ecrã inteiro, por baixo da UI. Com zoom 1 o tabuleiro
+// encaixa na zona livre (.praia-center, a célula da grelha entre os
 // objetivos e o registo); ao aproximar ou arrastar, passa por baixo dos
 // painéis. A zona é medida uma vez e fica fixa enquanto o ecrã não mudar.
-let frame = null; // { L, T, w, h, ow, oh }: zona livre relativa a .pdp-view
+let frame = null; // { L, T, w, h, ow, oh }: zona livre relativa a .praia-view
 
 function measureFrame(o) {
-  const cell = view?.querySelector('.pdp-center');
+  const cell = view?.querySelector('.praia-center');
   if (!cell) return null;
   const r = cell.getBoundingClientRect();
   return { L: r.left - o.left, T: r.top - o.top, w: r.width, h: r.height, ow: o.width, oh: o.height };
 }
 
 function boardRect(refit = false) {
-  const vw = view?.querySelector('.pdp-view');
+  const vw = view?.querySelector('.praia-view');
   if (!vw) return null;
   const o = vw.getBoundingClientRect();
   if (refit || !frame || !frame.w || frame.ow !== o.width || frame.oh !== o.height) frame = measureFrame(o);
@@ -277,8 +279,8 @@ let anchor = { left: 0, top: 0, w: 0, h: 0 };
 
 /** `limit`: depois de um gesto, não deixar o tabuleiro sair do ecrã. */
 function applyZoom(limit = false, refit = false) {
-  const vw = view?.querySelector('.pdp-view');
-  const z = view?.querySelector('.pdp-zoom');
+  const vw = view?.querySelector('.praia-view');
+  const z = view?.querySelector('.praia-zoom');
   const r = boardRect(refit);
   if (!vw || !z || !r) return;
   const o = vw.getBoundingClientRect();
@@ -317,7 +319,7 @@ function viewCenter() {
 }
 
 function onPointerDown(e) {
-  const el = e.target.closest('.pdp-view');
+  const el = e.target.closest('.praia-view');
   if (!el || (e.pointerType === 'mouse' && e.button !== 0)) return;
   ui.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (ui.pts.size === 1) { ui.moved = 0; ui.dragged = false; }
@@ -325,7 +327,7 @@ function onPointerDown(e) {
 
 function onPointerMove(e) {
   if (!ui.pts.has(e.pointerId)) return;
-  const el = view.querySelector('.pdp-view');
+  const el = view.querySelector('.praia-view');
   const r = boardRect();
   if (!el || !r) return;
   const prev = [...ui.pts.values()];
@@ -357,7 +359,7 @@ function onPointerMove(e) {
 function onPointerUp(e) { ui.pts.delete(e.pointerId); }
 
 function onWheel(e) {
-  const el = e.target.closest('.pdp-view');
+  const el = e.target.closest('.praia-view');
   if (!el) return;
   e.preventDefault();
   zoomAt(e.clientX - anchor.left, e.clientY - anchor.top, Math.exp(-e.deltaY * 0.002));
