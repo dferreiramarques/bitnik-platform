@@ -146,7 +146,7 @@ function render() {
 
 function renderPlayers(v, me) {
   return `<div class="pdp-players">${v.jogadores.map((j, i) => `<div class="pdp-player${i === me ? ' me' : ''}${i === v.vez ? ' active' : ''}">
-    <div class="pdp-pname"><i class="pdp-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span></div>
+    <div class="pdp-pname"><i class="pdp-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span><b class="pdp-score">${j.pts}</b></div>
     <div class="pdp-pmeta">
       <span>${art('token-salvavidas', 'salvavidas', LIFEGUARD_EMOJI)}×${j.fichas}</span>
       <span>${esc(ctx.t('ui.objPts', { n: j.objPts }))}</span>

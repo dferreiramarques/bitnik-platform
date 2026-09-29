@@ -15,13 +15,13 @@
       "label": { "pt": "Pontos da mesa", "en": "Table dots" }
     },
     "--game-glass": {
-      "value": "rgba(255,255,255,.45)",
+      "value": "rgba(0,168,204,.4)",
       "type": "color",
       "group": "table",
       "label": { "pt": "Vidro sobre a mesa", "en": "Glass on the table" }
     },
     "--game-glass-line": {
-      "value": "rgba(2,62,138,.25)",
+      "value": "rgba(0,119,182,.6)",
       "type": "color",
       "group": "table",
       "label": { "pt": "Contorno do vidro", "en": "Glass outline" }

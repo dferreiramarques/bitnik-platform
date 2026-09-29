@@ -1,5 +1,22 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.5 — Pontuação ao vivo e painéis com mais contraste (2026-09-29)
+
+Sem mudanças de jogo:
+
+- `view()` passa a dar a pontuação atual de cada jogador (salva-vidas com
+  o tabuleiro de agora + fichas por usar + objetivos), não só no fim — dá
+  o mesmo valor final, só que ao vivo. A UI própria mostra-a junto do nome,
+  como o Catania.
+- Vidro dos painéis (jogadores, objetivos, registo) em azul-ciano, para se
+  destacar do fundo em vez de se confundir com ele.
+- Painel dos objetivos passa a ser um só bloco com contorno (em vez de
+  cada carta separada), texto maior e mais legível.
+- Jogador ativo com contorno próprio, mais forte que antes.
+- O ecrã de fim de jogo (plataforma, `app.css`) passa a usar os tokens do
+  próprio jogo (`--game-panel`, `--game-accent`, …) em vez das cores fixas
+  da marca — todos os jogos com UI própria ganham isto, não só a Praia.
+
 ## 2.0.4 — Zoom, vento e cartões de objetivo (2026-09-28)
 
 Sem mudanças de jogo, tudo ao estilo do Catania:

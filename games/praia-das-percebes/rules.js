@@ -139,15 +139,22 @@ function proximoTurno(s, ctx) {
   return undefined;
 }
 
+/** Pontuação de um jogador com o tabuleiro atual: soma dos seus salva-vidas
+ * (banhistas do troço vigiado), fichas por usar (×2) e objetivos conquistados.
+ * Dá o mesmo valor a meio do jogo e no fim (congela sozinha, o tabuleiro
+ * e as fichas param de mudar); serve para mostrar a pontuação ao vivo. */
+function pontosJogador(s, i) {
+  const j = s.jogadores[i];
+  const salva = s.salvaVidas.filter((g) => g.jogador === i)
+    .reduce((soma, g) => soma + banhistasVigiados(s.tabuleiro, g.r, g.c, g.dir), 0);
+  return salva + j.fichas * 2 + j.objPts;
+}
+
 function terminar(s, ctx) {
   s.fase = 'FIM';
   s.peca = null;
-  for (const j of s.jogadores) j.pts = 0;
-  for (const g of s.salvaVidas) {
-    g.pts = banhistasVigiados(s.tabuleiro, g.r, g.c, g.dir);
-    s.jogadores[g.jogador].pts += g.pts;
-  }
-  for (const j of s.jogadores) j.pts += j.fichas * 2 + j.objPts;
+  for (const g of s.salvaVidas) g.pts = banhistasVigiados(s.tabuleiro, g.r, g.c, g.dir);
+  s.jogadores.forEach((j, i) => { j.pts = pontosJogador(s, i); });
   ctx.log('log.FIM');
 }
 
@@ -206,10 +213,17 @@ export function enumerate(s, lugar) {
   ];
 }
 
-/** Todos veem a praia; a peça tirada só a vê o jogador da vez; o baralho só pelo número. */
+/** Todos veem a praia; a peça tirada só a vê o jogador da vez; o baralho só pelo número.
+ * `pts` de cada jogador é sempre a pontuação atual (ver `pontosJogador`), não só no fim. */
 export function view(s, lugar) {
   const { baralho: b, porRevelar, peca, ...resto } = s;
-  return { ...resto, baralho: b.length, porRevelar: porRevelar.length, peca: peca && (lugar === s.vez ? peca : { escondida: true }) };
+  return {
+    ...resto,
+    baralho: b.length,
+    porRevelar: porRevelar.length,
+    peca: peca && (lugar === s.vez ? peca : { escondida: true }),
+    jogadores: s.jogadores.map((j, i) => ({ ...j, pts: pontosJogador(s, i) })),
+  };
 }
 
 export function result(s) {
