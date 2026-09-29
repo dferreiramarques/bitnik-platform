@@ -82,7 +82,6 @@
   background: linear-gradient(160deg, color-mix(in srgb, var(--bc) 55%, #0d0d1a) 0%, color-mix(in srgb, var(--bc) 22%, #0d0d1a) 100%);
   border: 2px solid color-mix(in srgb, var(--bc) 70%, transparent);
   box-shadow: 0 10px 26px rgb(0 0 0 / .45);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   transition: transform .15s ease, box-shadow .2s ease;
 }
 .bulbous-baelf.clickable { cursor: pointer; }
@@ -91,10 +90,16 @@
 .bulbous-baelf.contested { border-color: var(--bulb-yellow, #f4c430); box-shadow: 0 0 18px 2px var(--bulb-yellow, #f4c430); }
 .bulbous-baelf.selected { border-color: var(--bulb-accent, #c084fc); box-shadow: 0 0 0 3px var(--bulb-accent, #c084fc); transform: translateY(-4px); }
 .bulbous-baelf.complete { opacity: .5; }
-.bulbous-baelf-art { font-size: 34px; filter: drop-shadow(0 2px 6px rgb(0 0 0 / .5)); }
-.bulbous-baelf-dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 80%; }
-.bulbous-baelf-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgb(255 255 255 / .35); background: rgb(255 255 255 / .06); }
-.bulbous-baelf-dot.filled { background: #fff; border-color: #fff; box-shadow: 0 0 6px #fff; }
+.bulbous-baelf-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
+/* Recuo (só visível se a imagem faltar: onImgError remove a <img>) — o
+   mesmo emoji de recuo por espécime, centrado no cartão. */
+.bulbous-baelf-art { position: absolute; inset: 0; display: grid; place-items: center; font-size: 34px; filter: drop-shadow(0 2px 6px rgb(0 0 0 / .5)); }
+/* Um bolbo por dono, na posição exata da arte (SLOT_POS, index.js); os
+   anéis vazios já estão desenhados na própria imagem. */
+.bulbous-baelf-dot {
+  position: absolute; z-index: 2; width: 15%; aspect-ratio: 1; border-radius: 50%;
+  transform: translate(-50%, -50%); box-shadow: 0 0 5px currentColor, inset 0 0 3px rgb(0 0 0 / .45);
+}
 .bulbous-baelf-badge {
   position: absolute; top: 6px; right: 6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box;
   background: var(--bulb-accent, #c084fc); color: var(--bulb-on-accent, #0d0d1a); font-family: var(--game-font-display); font-weight: 800; font-size: 13px;
@@ -126,6 +131,8 @@
 .bulbous-card-mid { font-family: var(--game-font-display); font-weight: 800; font-size: 21px; line-height: 1; }
 .bulbous-card-bot { font-size: 8px; letter-spacing: .04em; opacity: .8; text-transform: uppercase; }
 .bulbous-card.joker { background: linear-gradient(160deg, color-mix(in srgb, var(--bulb-accent, #c084fc) 45%, #16162a), #16162a); border-color: var(--bulb-accent, #c084fc); }
+/* A arte a sério (recuo: o cartão a CSS por baixo, texto+cor, sempre presente). */
+.bulbous-card-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
 
 .bulbous-bar {
   justify-self: center; max-width: 100%; box-sizing: border-box;

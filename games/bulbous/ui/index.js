@@ -4,17 +4,33 @@
 // listaria um botão por cada subconjunto possível da mão (exponencial).
 // ESCOLHER e DESEMPATAR têm poucas opções e usam msg.legal normalmente.
 //
-// Visual 1:1 com o jogo antigo (repositório bulbous, client.html): fundo
-// quase-preto, roxo brilhante em destaque, 4 cores de bolbo, cartas de
-// charme com símbolo (triângulo/círculo) + valor. As Baelfungious (sem arte
-// publicada ainda) seguem a convenção de componentes reutilizáveis do
-// CONTRATO.md — emoji de recuo por espécime até haver imagem.
+// Visual 1:1 com o jogo antigo (repositório bulbous): fundo quase-preto,
+// roxo brilhante em destaque, 4 cores de bolbo. As 50 imagens em ./cards
+// (16 Baelfungious + 34 cartas de charme) são as mesmas do jogo antigo
+// (public/cards/*.webp), trazidas tal como estavam — o jogo antigo já as
+// tinha como arte principal, com o cartão a puro CSS (símbolo + valor) só
+// como recuo se a imagem falhar (client.html, mkCharm/mkBaelf: a mesma
+// ideia é replicada aqui). Os bolbos colocados numa Baelfungious desenham-se
+// por cima da própria arte, nas posições medidas no jogo antigo (SLOT_POS),
+// coloridos pela cor de quem os colocou — os anéis vazios já estão na arte.
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const CORES = ['red', 'blue', 'green', 'yellow'];
 const SIMBOLO = { red: 'triangle', yellow: 'triangle', blue: 'circle', green: 'circle' };
 const SIMBOLO_ICON = { triangle: '▲', circle: '●' };
 const BAELF_EMOJI = { 1: '🌱', 2: '🍄', 3: '🧌', 4: '👑' };
+/** Posição (%) de cada bolbo sobre a arte da Baelfungious, por nº de espaços
+ * (medida no jogo antigo, client.html: SLOT_POS). */
+const SLOT_POS = {
+  1: [{ x: 49.6, y: 80.5 }],
+  2: [{ x: 36.9, y: 80.4 }, { x: 62.3, y: 80.5 }],
+  3: [{ x: 25.0, y: 80.6 }, { x: 49.6, y: 80.6 }, { x: 73.9, y: 80.6 }],
+  4: [{ x: 49.7, y: 74.0 }, { x: 70.0, y: 80.7 }, { x: 29.0, y: 80.8 }, { x: 49.5, y: 87.1 }],
+};
+
+const asset = (rel) => new URL(rel, import.meta.url).href;
+const baelfImg = (cor, espacos) => asset(`./cards/baelf_${cor}_${espacos}.webp`);
+const charmImg = (c) => (c.tipo === 'joker' ? asset(`./cards/card_joker_${c.simbolo}.webp`) : c.tipo === 'duplo' ? asset(`./cards/card_${c.cor}_x2.webp`) : asset(`./cards/card_${c.cor}_${c.valor}.webp`));
 
 function ensureCss() {
   const href = new URL('./bulbous.css', import.meta.url).href;
@@ -25,26 +41,10 @@ function ensureCss() {
   document.head.append(link);
 }
 
-/** Arte reutilizável (CONTRATO.md): --card-<nome> no skin.json (vazio por
- * omissão); sem imagem publicada, mostra o emoji de recuo. */
-function tokenUrl(name) {
-  const raw = getComputedStyle(root).getPropertyValue(`--card-${name}`).trim();
-  const m = raw.match(/^url\((['"]?)(.*)\1\)$/);
-  return m ? m[2] : null;
-}
-function art(tokenName, fallbackEmoji) {
-  const url = tokenName ? tokenUrl(tokenName) : null;
-  return url
-    ? `<img src="${esc(url)}" alt="" data-fallback="${esc(fallbackEmoji)}">`
-    : `<span class="bulbous-emoji-fallback">${fallbackEmoji}</span>`;
-}
+/** A imagem falhar (ficheiro em falta) remove-a: o cartão a CSS por baixo,
+ * já sempre presente, fica visível sozinho. */
 function onImgError(e) {
-  const img = e.target.closest('img[data-fallback]');
-  if (!img) return;
-  const span = document.createElement('span');
-  span.className = 'bulbous-emoji-fallback';
-  span.textContent = img.dataset.fallback;
-  img.replaceWith(span);
+  e.target.closest('img.bulbous-art')?.remove();
 }
 
 let root = null;
@@ -209,7 +209,7 @@ function renderChips(v) {
   </div>`;
 }
 
-function baelfCard(b, { clickable = false, choose = null, order = null, target = false, contested = false, selected = false } = {}) {
+function baelfCard(b, v, { clickable = false, choose = null, order = null, target = false, contested = false, selected = false } = {}) {
   const cls = ['bulbous-baelf'];
   if (clickable) cls.push('clickable');
   if (target) cls.push('target');
@@ -217,9 +217,18 @@ function baelfCard(b, { clickable = false, choose = null, order = null, target =
   if (selected) cls.push('selected');
   if (b.completa) cls.push('complete');
   const attrs = choose !== null ? `data-choose="${choose}"` : order !== null ? `data-order="${order}"` : '';
+  // Um bolbo por dono, na posição medida na arte (SLOT_POS); anéis vazios
+  // não precisam de nada — já aparecem vazios na própria imagem.
+  const dots = b.bolbos.map((seat, k) => {
+    const pos = SLOT_POS[b.espacos]?.[k];
+    if (!pos) return '';
+    const cor = v.jogadores[seat]?.cor;
+    return `<i class="bulbous-baelf-dot" style="left:${pos.x}%;top:${pos.y}%;background:var(--bulb-${cor})" title="${esc(ctx.seatName(seat))}"></i>`;
+  }).join('');
   return `<div class="${cls.join(' ')}" style="--bc:var(--bulb-${b.cor})" ${attrs} role="${attrs ? 'button' : 'img'}" tabindex="${attrs ? '0' : '-1'}" aria-label="${esc(ctx.t(`esp.${b.espacos}`))} ${esc(ctx.t(`cor.${b.cor}`))}">
-    <div class="bulbous-baelf-art">${art(`baelf-${b.cor}-${b.espacos}`, BAELF_EMOJI[b.espacos])}</div>
-    <div class="bulbous-baelf-dots">${Array.from({ length: b.espacos }, (_, k) => `<i class="bulbous-baelf-dot${k < b.bolbos.length ? ' filled' : ''}"></i>`).join('')}</div>
+    <img class="bulbous-art bulbous-baelf-img" src="${baelfImg(b.cor, b.espacos)}" alt="">
+    <span class="bulbous-baelf-art bulbous-emoji-fallback">${BAELF_EMOJI[b.espacos]}</span>
+    ${dots}
   </div>`;
 }
 
@@ -239,7 +248,7 @@ function renderCenter(v) {
     return `<div class="bulbous-baelf-slot">
       <span class="bulbous-owner">${esc(ctx.seatName(jogador))}</span>
       <div style="position:relative">
-        ${baelfCard(baelf, { clickable: orderable, order: orderable ? `${jogador},${posicao}` : null, target: isTarget, contested: isContested })}
+        ${baelfCard(baelf, v, { clickable: orderable, order: orderable ? `${jogador},${posicao}` : null, target: isTarget, contested: isContested })}
         ${badge ? `<span class="bulbous-baelf-badge">${badge}</span>` : ''}
       </div>
     </div>`;
@@ -258,7 +267,7 @@ function renderEscolher(v) {
   return `<div class="bulbous-escolher">
     <span class="bulbous-lbl">${esc(ctx.t('ui.chooseBaelf'))}</span>
     <div class="bulbous-choices">
-      ${opcoes.map((m) => baelfCard(p.baelfs[m.payload.baelf], { clickable: true, choose: m.payload.baelf })).join('')}
+      ${opcoes.map((m) => baelfCard(p.baelfs[m.payload.baelf], v, { clickable: true, choose: m.payload.baelf })).join('')}
     </div>
   </div>`;
 }
@@ -293,6 +302,7 @@ function renderHand(v) {
       <span class="bulbous-card-top">${vis.top}</span>
       <span class="bulbous-card-mid">${vis.mid}</span>
       <span class="bulbous-card-bot">${vis.bot}</span>
+      <img class="bulbous-art bulbous-card-img" src="${charmImg(c)}" alt="">
     </div>`;
   }).join('')}</div>`;
 }

@@ -1,5 +1,17 @@
 # Bulbous — histórico de regras
 
+## 1.1.2 — Arte a sério do jogo antigo (2026-09-29)
+
+Sem mudanças de jogo: as 50 imagens do jogo antigo (repositório `bulbous`,
+`public/cards/*.webp` — 16 Baelfungious, uma por cor×espécime, e 34
+cartas de charme, uma por cor×valor mais os 2 Jokers) passam a fazer
+parte do pacote (`ui/cards/`), trazidas tal como estavam. Os bolbos já
+colocados numa Baelfungious desenham-se por cima da própria arte, nas
+posições exatas medidas no jogo antigo (`SLOT_POS`), na cor de quem os
+colocou — os anéis vazios já estão desenhados na imagem, não precisam de
+nada por cima. O cartão a CSS (símbolo/emoji + valor) da versão anterior
+fica só como recuo, se alguma imagem faltar.
+
 ## 1.1.1 — Fichas da ronda por baixo dos jogadores (2026-09-29)
 
 Sem mudanças de jogo: a ficha "Ronda N · M no baralho" estava ao lado dos
