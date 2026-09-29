@@ -337,18 +337,19 @@ function renderActions(v) {
   const c1 = collects.some((m) => !m.payload.take2);
   const c2 = collects.some((m) => m.payload.take2);
   const found = legal('FOUND').length > 0;
-  const types = RES.filter((r) => v.players[v.me].hand[r] > 0).length;
   const total = v.players[v.me].handTotal;
-  const foundWhy = t.founded ? ctx.t('ui.foundDone') : total < 5 ? ctx.t('ui.foundNeed5', { n: total }) : types < 2 ? ctx.t('ui.foundNeed2') : '';
+  // Só "Fundar aldeia" ganha texto informativo (quantas cartas faltam, a
+  // contar até 0) — os outros botões dizem só a ação; a info da torre já
+  // está nas fichas de cima (.cat-chips), não precisa de repetir aqui.
+  const missing = Math.max(0, 5 - total);
+  const foundSub = !found && !t.founded && missing > 0 ? ctx.t(missing === 1 ? 'ui.foundMissing1' : 'ui.foundMissing', { n: missing }) : '';
   const step = t.founded || t.collects >= 2 ? 'ui.collectDone' : t.collects === 0 ? 'ui.collectStep1' : 'ui.collectStep2';
   const done = t.collects > 0 || t.founded;
-  const opening = v.round === 1 && v.me === 0 && t.collects === 1 && !t.founded && v.tower > 0;
-  const next = v.tower ? ctx.t(RED.has(v.towerTop) ? 'ui.nextDiscRed' : 'ui.nextDisc', { disc: v.towerTop }) : ctx.t('ui.towerEmpty');
   return `<div class="cat-step">${esc(ctx.t(step))}</div>
     ${!t.founded && t.collects < 2 ? `
       ${btn(ctx.t('ui.collect1'), `data-act="c1" ${c1 ? '' : 'disabled'}`, 'pri')}
-      ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`, '', opening ? ctx.t('ui.openingRule') : next)}` : ''}
-    ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : 'disabled'}`, found ? 'pri' : '', found ? '' : foundWhy)}
+      ${btn(ctx.t('ui.collect2'), `data-act="c2" ${c2 ? '' : 'disabled'}`)}` : ''}
+    ${btn(ctx.t('ui.found'), `data-act="found" ${found ? '' : 'disabled'}`, found ? 'pri' : '', foundSub)}
     ${btn(ctx.t(done ? 'ui.endTurn' : 'ui.pass'), `data-act="end" ${legal('END_TURN').length ? '' : 'disabled'}`)}`;
 }
 

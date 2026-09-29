@@ -4,10 +4,11 @@ import * as rules from './rules.js';
 import { defaultBot } from './bot.js';
 import pt from './i18n/pt.js';
 import en from './i18n/en.js';
+import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'catania',
-  version: '5.0.3',
+  version: '5.0.4',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'CC-BY-4.0',
@@ -17,6 +18,9 @@ export default defineGame({
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
   tutorial: './ui/tutorial.js',
+  // Modal "Como se joga" (botão ? durante a partida, plataforma): condensado
+  // do REGRAS.md, nas duas línguas — não é lido pelas regras.
+  rules: rulesText,
   // Aparência (ADR-008): tokens por omissão e temas de design à medida.
   skin: './ui/skin.json',
   themes: { dia: './ui/themes/dia/theme.json' },

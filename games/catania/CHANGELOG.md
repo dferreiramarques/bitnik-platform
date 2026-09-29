@@ -2,6 +2,27 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.4 — Regras numa modal; botões de ação sem texto informativo; layout horizontal afinado
+
+O botão "?" durante o jogo mostrava sempre o tutorial guiado (e tirava o
+jogador da mesa a meio de uma partida). Passa a abrir uma modal com as
+regras em texto (`ui/rules-text.js`, PT e EN), sem navegar para fora da
+mesa; segue a língua escolhida no jogo. O mecanismo é genérico
+(`meta.rules` no contrato) e serve qualquer jogo — os que só têm
+`tutorial` continuam a usá-lo como recuo.
+
+Sem mudanças de jogo, no resto: os botões de ação (Recolher, Fundar
+aldeia, Passar) deixam de explicar a regra: só o "Fundar aldeia" mantém
+uma contagem decrescente ("faltam N cartas") até chegar a 0 — a
+informação sobre o próximo disco já estava nas fichas de cima e não
+precisava de se repetir. No layout horizontal (telemóvel deitado): o
+contentor da mão e o da barra de ações passam a ter a mesma altura; os
+jogadores ganham o estado ("a jogar"/"à espera") e mais respiração
+vertical, e deixam de esconder a contagem de cartas do próprio jogador;
+as pilhas de recursos colapsam numa ficha "Pilhas ▾" centrada, como no
+layout vertical, em vez de ficarem sempre expandidas ao lado do
+tabuleiro.
+
 ## 5.0.3 — Cor do registo volta ao texto da mesa
 
 Sem mudanças de jogo: o registo deixa de ser branco fixo e volta a usar
