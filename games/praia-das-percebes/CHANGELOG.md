@@ -1,5 +1,10 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.9 — Vento mais subtil (2026-09-29)
+
+Sem mudanças de jogo: opacidade do vento entre 10% e 30% (era 40%-55%),
+mais discreto.
+
 ## 2.0.8 — Corrigido: o zoom já centra no rato (2026-09-29)
 
 Sem mudanças de jogo: o zoom (roda, pinça, botões) derivava para a

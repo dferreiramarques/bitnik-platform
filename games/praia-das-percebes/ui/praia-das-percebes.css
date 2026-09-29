@@ -33,9 +33,9 @@
 }
 @keyframes pdp-blow {
   0% { opacity: 0; transform: translateX(0) rotate(0deg); }
-  10% { opacity: .55; }
+  10% { opacity: .3; }
   50% { transform: translateX(50vw) rotate(6deg); }
-  90% { opacity: .4; }
+  90% { opacity: .1; }
   100% { opacity: 0; transform: translateX(calc(100vw + 80px)) rotate(-4deg); }
 }
 @media (prefers-reduced-motion: reduce) { .pdp-gust { animation: none; opacity: 0; } }
