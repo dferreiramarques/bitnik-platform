@@ -2,6 +2,17 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.6 — Controlos de zoom sempre presos ao canto da mesa
+
+Sem mudanças de jogo. Os controlos de zoom e pan tinham dois mecanismos
+de posicionamento diferentes (um preso ao tabuleiro, outro preso à mesa a
+partir dos 1200 px de largura): ao redimensionar perto dessa fronteira,
+ou em ecrãs largos mas baixos (telemóvel/tablet na horizontal), saltavam
+de posição consoante o tamanho do resto do layout. Passam a usar sempre
+o mesmo mecanismo (preso ao canto inferior direito da mesa, como a Praia
+das Percebes já fazia) — a barra de ações reserva-lhes espaço para nunca
+ficarem sobrepostos.
+
 ## 5.0.5 — Modal das regras ao estilo do jogo, com visuais dos componentes
 
 Sem mudanças de jogo. A modal "Como se joga" passa a usar o painel, a

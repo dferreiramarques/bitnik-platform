@@ -131,8 +131,14 @@
 }
 .cat-hex:focus { outline: none; }
 .cat-hex:focus-visible .cat-hex-shape { stroke: var(--cat-text); stroke-width: 4; }
-/* Sem fundo (como o registo): só ícone com sombra, para se ler em cima da mesa. */
-.cat-zoombar { position: absolute; right: 0; bottom: 0; display: flex; gap: 2px; padding: 2px; z-index: 2; }
+/* Sem fundo (como o registo): só ícone com sombra, para se ler em cima da mesa.
+   `fixed` é relativo à .cat (container-type:size cria o "containing block"),
+   por isso fica sempre preso ao canto da MESA, e não ao do tabuleiro (que muda
+   de tamanho consoante o resto do layout — dava saltos ao redimensionar). */
+.cat-zoombar {
+  position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  display: flex; gap: 2px; padding: 2px; z-index: 2;
+}
 .cat-zb {
   width: 44px; height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--ot); text-shadow: var(--float-shadow);
   display: grid; place-items: center;
@@ -174,7 +180,11 @@
 
 /* ── Barra de ações ── */
 .cat-bar {
-  justify-self: center; max-width: 100%; box-sizing: border-box;
+  /* margin-right desloca o centro para a esquerda, para nunca ficar por
+     baixo dos controlos de zoom (presos ao canto, ver .cat-zoombar) — só
+     interessa aqui, onde a barra fica centrada; nos layouts de telemóvel
+     (abaixo) os zoombar estão escondidos e a barra ocupa a linha toda. */
+  justify-self: center; max-width: 100%; margin-right: 328px; box-sizing: border-box;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
   padding: 6px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
@@ -238,13 +248,6 @@
 .tut-hi { outline: 3px solid var(--cat-gold); outline-offset: 3px; border-radius: 10px; animation: cat-pulse 1.6s ease-in-out infinite; }
 @keyframes cat-pulse { 50% { outline-color: transparent; } }
 
-/* Mesa larga: os controlos da vista vão para o canto inferior direito da mesa,
-   ao lado da barra de ações. Abaixo de 1200 px ficariam por cima da barra e
-   continuam no canto do tabuleiro. (fixed é relativo à .cat, que é contentor.) */
-@container (min-width: 1200px) and (min-height: 501px) {
-  .cat-zoombar { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .tut-hi { animation: none; }
   .cat-fire, .cat-fire-glow, .cat-firepicks polygon { animation: none; }
@@ -290,7 +293,7 @@
   .show-piles .cat-piles { display: grid; }
   /* No telemóvel o zoom faz-se com os dedos (pinça, arrastar): os botões ficam
      no layout mas escondidos, para não taparem o tabuleiro. */
-  .cat-zoombar { flex-direction: column; right: 4px; bottom: 4px; display: none; }
+  .cat-zoombar { display: none; }
   .cat-bottom { grid-template-columns: minmax(0, 1fr); }
   .cat-bottom > div:empty { display: none; }
   /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
@@ -301,7 +304,7 @@
   .cat-card { width: 34px; height: 46px; }
   .cat-card img { width: 16px; height: 16px; }
   .cat-card b { font-size: 12px; }
-  .cat-bar { justify-self: stretch; gap: 4px; padding: 4px; border-radius: 12px; }
+  .cat-bar { justify-self: stretch; margin-right: 0; gap: 4px; padding: 4px; border-radius: 12px; }
   .cat-bar .cat-btn { flex: 1 1 calc(50% - 4px); }
   .cat-bar .cat-info { flex: 3 1 60%; max-width: none; }
   .cat-bar .cat-info + .cat-btn { flex: 1 1 25%; }
@@ -337,7 +340,7 @@
   .cat-pile { min-height: 32px; font-size: 11px; }
   .cat-pile .cat-disc { width: 26px; height: 26px; font-size: 12px; }
   .show-piles .cat-piles { display: grid; }
-  .cat-zoombar { flex-direction: row; right: auto; left: 0; bottom: 0; display: none; }
+  .cat-zoombar { display: none; }
   .cat-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
   .cat-bottom > div:empty { display: none; }
   .cat-log { display: none; }
@@ -350,7 +353,7 @@
   .cat-bar .cat-btn { padding: 4px 8px; }
   .cat-me { justify-content: flex-start; }
   .cat-card { width: 32px; height: 44px; }
-  .cat-bar { grid-area: bar; justify-self: stretch; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cat-bar { grid-area: bar; justify-self: stretch; margin-right: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .cat-bar .cat-step { display: none; }
   .cat-bar .cat-info { grid-column: span 3; }
   .cat-bar .cat-wait { grid-column: 1 / -1; }
