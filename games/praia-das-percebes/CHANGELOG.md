@@ -1,5 +1,11 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.7 — Cartões dos jogadores e objetivos como a barra de jogadas (2026-09-29)
+
+Sem mudanças de jogo: os cartões dos jogadores e o painel dos objetivos
+ganham o mesmo arredondamento e sombra suave da barra de jogadas (que já
+tinha esse aspeto), para os três lerem como a mesma família de vidro.
+
 ## 2.0.6 — Ícone do vento, vidro branco, zoom no canto (2026-09-29)
 
 Sem mudanças de jogo:

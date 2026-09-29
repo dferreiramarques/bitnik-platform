@@ -55,11 +55,14 @@
 /* ── Jogadores (como no Catania: cartões de vidro de largura fixa, com
    contorno próprio e destaque forte no jogador ativo) ── */
 .pdp-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.pdp-player { width: 190px; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; display: grid; gap: 4px; align-content: start; }
+.pdp-player {
+  width: 190px; box-sizing: border-box; padding: 8px 10px; border-radius: 14px; display: grid; gap: 4px; align-content: start;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .3);
+}
 .pdp-player.me { border-color: var(--ot); }
 .pdp-player.active {
   border-color: var(--game-on-table-accent, #ffd9c2); border-width: 2px;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 45%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 45%, transparent), 0 8px 24px rgb(0 0 0 / .3);
 }
 .pdp-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
 .pdp-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -69,7 +72,10 @@
 .pdp-pmeta img, .pdp-pmeta .pdp-emoji-fallback { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
 
 /* ── Objetivos: um único painel com contorno, cartões com o nome bem legível ── */
-.pdp-objectives { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border-radius: 10px; justify-content: center; }
+.pdp-objectives {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border-radius: 14px; justify-content: center;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .3);
+}
 .pdp-obj-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .pdp-obj { box-sizing: border-box; display: flex; align-items: center; gap: 7px; }
 .pdp-obj-art { width: 28px; height: 28px; border-radius: 6px; overflow: hidden; font-size: 17px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--ot) 14%, transparent); }
