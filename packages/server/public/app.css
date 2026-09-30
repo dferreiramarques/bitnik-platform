@@ -497,6 +497,12 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .lob-title p { margin: 0; font-size: 13px; opacity: .9; }
 .lob-lbl { margin: 8px 0 0; font: 600 10px var(--ui-body); letter-spacing: .06em; text-transform: uppercase; opacity: .8; color: #fff; }
 .lob-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* Menos de 3 mesas (ex.: Bulbous só tem contagens 2 e 4 — nunca 3 —, Nine
+   Oils só tem 2): a grelha segue o número real de cartões em vez de deixar
+   sempre 3 colunas, senão fica uma coluna vazia à direita, diferente dos
+   jogos com 3+ opções — em qualquer largura de ecrã, não só no telemóvel. */
+.lob-grid:has(> .lob-card:only-child) { grid-template-columns: minmax(0, 1fr); }
+.lob-grid:has(> .lob-card:nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .lob-card {
   min-height: 148px; box-sizing: border-box; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px;
   background: rgb(255 250 241 / .22); border: 1px solid rgb(255 250 241 / .35);
@@ -584,7 +590,6 @@ body.is-home { background: var(--brand-primary, #b8461f); }
   .lob-title h1 { font-size: 28px; }
   .lob-title p { font-size: 11px; }
   .lob-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lob-grid:has(> .lob-card:only-child) { grid-template-columns: minmax(0, 1fr); }
   .lob-card { min-height: 0; padding: 8px; gap: 6px; }
   .lob-card h3 { font-size: 16px; }
   .lob-acts .lob-btn { min-height: 32px; }
