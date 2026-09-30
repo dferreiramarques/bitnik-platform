@@ -259,7 +259,13 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
 }
 .rules-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; border-bottom: 1px solid var(--game-line, rgb(0 0 0 / .1)); }
 .rules-head h2 { flex: 1; margin: 0; font-size: 1.1rem; color: inherit; }
-.rules-body { overflow-y: auto; padding: 4px 16px 16px; }
+.rules-body {
+  overflow-y: auto; padding: 4px 16px 16px;
+  scrollbar-width: thin; scrollbar-color: var(--game-line, color-mix(in srgb, currentColor 35%, transparent)) transparent;
+}
+.rules-body::-webkit-scrollbar { width: 8px; }
+.rules-body::-webkit-scrollbar-track { background: transparent; }
+.rules-body::-webkit-scrollbar-thumb { background: var(--game-line, color-mix(in srgb, currentColor 35%, transparent)); border-radius: 8px; }
 .rules-body h3 { margin: 14px 0 4px; font-size: .95rem; color: var(--game-accent-strong, inherit); }
 .rules-body h3:first-child { margin-top: 0; }
 .rules-body p { margin: 0 0 8px; font-size: .88rem; line-height: 1.5; color: inherit; }
