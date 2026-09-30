@@ -27,6 +27,7 @@ export default {
   'log.ULTIMA': 'brought in the last Baelfungious: the game ends after this round',
   'msg.ULTIMA': 'Final round!',
   'log.SEQUENCIA': 'declared the sequence {ordem}',
+  'msg.SEQUENCIA': 'Sequence declared!',
   'log.APOSTOU': 'bet {n} card(s)',
   'log.TROCOU': 'swapped {n} card(s)',
   'log.PASSOU': 'passed',

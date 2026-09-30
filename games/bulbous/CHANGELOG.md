@@ -1,5 +1,18 @@
 # Bulbous — histórico de regras
 
+## 1.1.10 — Sequência declarada, visível na mesa (2026-09-30)
+
+A UI própria do Bulbous (desde a 1.1.0) nunca ligou as entradas do
+registo marcadas para aparecer como mensagem da mesa (`ctx.announce`,
+ADR-014) — a UI genérica faz isso sozinha, mas uma UI própria tem de o
+fazer explicitamente, e faltava aqui. Na prática, isto significa que a
+sequência declarada pelo Governante (e também o "Última ronda!", já
+existente mas nunca visível) não aparecia a ninguém como mensagem na
+mesa, só no registo (fechado por omissão). Agora "Sequência
+declarada!" aparece a todos assim que o Governante confirma — a ordem
+em si já se via (e continua a ver-se) nos números sobre cada
+Baelfungious ativa, durante toda a ronda.
+
 ## 1.1.9 — Jogadores mais compactos na horizontal (2026-09-30)
 
 Sem mudanças de jogo. No layout horizontal (telemóvel deitado), a

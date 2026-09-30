@@ -52,7 +52,7 @@ let view = null;
 let ctx = null;
 let msg = null;
 let resizeObs = null;
-const fresh = () => ({ logOpen: false, selected: new Set(), declareOrder: [], prevKey: null });
+const fresh = () => ({ logOpen: false, selected: new Set(), declareOrder: [], prevKey: null, lastLogSeq: 0 });
 let ui = fresh();
 
 export function mount(el, context) {
@@ -84,6 +84,14 @@ export function update(next) {
   // construção deixam de fazer sentido, limpa para a próxima ação.
   const key = `${v.fase}-${v.vazaNum}-${v.ronda}`;
   if (ui.prevKey !== key) { ui.selected = new Set(); ui.declareOrder = []; ui.prevKey = key; }
+  // Entradas do registo marcadas com { announce } (ex.: sequência declarada,
+  // última ronda) viram mensagem da mesa — a UI genérica faz isto sozinha,
+  // mas a UI própria tem de a chamar (ADR-014).
+  for (const l of msg.log || []) {
+    if (l.announce == null || (l.seq ?? 0) <= ui.lastLogSeq) continue;
+    ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
+  }
+  ui.lastLogSeq = Math.max(ui.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
   render();
 }
 

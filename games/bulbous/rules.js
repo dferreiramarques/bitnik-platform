@@ -185,7 +185,7 @@ function declarar(s, { ordem }, ctx) {
     vistas.add(key);
   }
   s.sequencia = ordem.map((o) => ({ jogador: o.jogador, posicao: o.posicao }));
-  ctx.log('log.SEQUENCIA', { ordem: ordemTexto(s, s.sequencia) });
+  ctx.log('log.SEQUENCIA', { ordem: ordemTexto(s, s.sequencia) }, { announce: { key: 'msg.SEQUENCIA' } });
   comecarVaza(s);
   return undefined;
 }
