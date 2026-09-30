@@ -8,7 +8,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'bulbous',
-  version: '1.1.6',
+  version: '1.1.7',
   // 2 jogadores, ou 4 (individual; em equipas com options.equipas). A 3 não se joga.
   players: { min: 2, max: 4, counts: [2, 4] },
   author: 'David Marques',

@@ -51,6 +51,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
+let resizeObs = null;
 const fresh = () => ({ logOpen: false, selected: new Set(), declareOrder: [], prevKey: null });
 let ui = fresh();
 
@@ -65,9 +66,12 @@ export function mount(el, context) {
   el.append(root);
   root.addEventListener('click', onClick);
   root.addEventListener('error', onImgError, true);
+  // A mão nunca quebra linha: sobrepõe as cartas conforme o espaço muda (rodar o telemóvel).
+  if (typeof ResizeObserver !== 'undefined') { resizeObs = new ResizeObserver(() => fitHand()); resizeObs.observe(root); }
 }
 
 export function unmount() {
+  resizeObs?.disconnect(); resizeObs = null;
   root?.remove();
   root = null; view = null; msg = null;
   ui = fresh();
@@ -169,6 +173,27 @@ function render() {
     </div>
     ${renderHand(v)}
     ${msg.result ? '' : `<div class="bulbous-bar">${renderBar(v)}</div>`}`;
+  fitHand();
+}
+
+/** As cartas da mão nunca quebram linha: sobrepõem-se (margem negativa) só o
+ * necessário para caberem todas, em vez de encolher ou passar a duas linhas. */
+function fitHand() {
+  const box = view?.querySelector('.bulbous-hand');
+  if (!box) return;
+  const cards = [...box.children];
+  if (cards.length < 2) return;
+  const w = box.clientWidth;
+  const cw = cards[0].getBoundingClientRect().width;
+  if (!w || !cw) return;
+  const gap = 7;
+  const n = cards.length;
+  // Largura total = cw*n + margem*(n-1) — a fórmula tem de contar a largura
+  // de todas as cartas, não só da primeira, senão nunca sobrepõe a tempo.
+  const step = cw * n + gap * (n - 1) <= w ? gap : (w - cw * n) / (n - 1);
+  const minStep = -cw + 16; // pelo menos 16px de cada cartão visíveis
+  const margin = `${Math.max(step, minStep)}px`;
+  cards.forEach((c, i) => { c.style.marginLeft = i === 0 ? '0' : margin; });
 }
 
 function renderPlayers(v) {

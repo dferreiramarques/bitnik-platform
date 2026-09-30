@@ -1,5 +1,13 @@
 # Bulbous — histórico de regras
 
+## 1.1.7 — Mão nunca quebra linha (2026-09-30)
+
+Sem mudanças de jogo. As cartas da mão passam a sobrepor-se (em vez de
+passar para uma 2ª linha) quando não cabem todas lado a lado no espaço
+disponível — o espaçamento normal só encolhe até se tornar sobreposição
+(nunca menos de 16px visíveis por cartão), recalculado sempre que o
+espaço muda (rodar o telemóvel, painéis que aparecem/somem).
+
 ## 1.1.6 — Ações numa coluna na horizontal; coroa como crachá (2026-09-30)
 
 Sem mudanças de jogo. No layout horizontal (telemóvel/tablet deitado),
