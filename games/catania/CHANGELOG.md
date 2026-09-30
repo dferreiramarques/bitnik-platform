@@ -2,6 +2,13 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.7 — Imagem do lobby
+
+Sem mudanças de jogo: acrescenta `cover` ao contrato (a ilha de
+hexágonos, com o vulcão a arder, no mesmo desenho do tabuleiro),
+usada como fundo escurecido do lobby na plataforma e como miniatura
+na página da marca — como o Bulbous já tinha (1.1.3).
+
 ## 5.0.6 — Controlos de zoom sempre presos ao canto da mesa
 
 Sem mudanças de jogo. Os controlos de zoom e pan tinham dois mecanismos
