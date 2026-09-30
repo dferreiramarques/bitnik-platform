@@ -37,7 +37,8 @@ export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const studio = makeStudio({ dataDir: process.env.DATA_DIR || './data/studio' });
+  // "/" é a consola (a ferramenta); o lobby da Bitnik, o "produto" dela, fica em "/bitnik".
+  const studio = makeStudio({ dataDir: process.env.DATA_DIR || './data/studio', consoleAtRoot: true });
   studio.listen(process.env.PORT || 3000);
   // Railway (e outros) param o processo com SIGTERM a cada deploy: fecha as ligações com calma.
   for (const sig of ['SIGTERM', 'SIGINT']) {

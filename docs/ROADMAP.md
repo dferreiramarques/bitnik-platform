@@ -4,7 +4,7 @@ Estado das fases da plataforma e os passos de cada uma. É o único sítio onde 
 
 Legenda: ✔ feito · ◐ em curso · ☐ por fazer.
 
-Atualizado a 2026-09-29.
+Atualizado a 2026-09-30.
 
 ## Resumo
 
@@ -12,10 +12,11 @@ Atualizado a 2026-09-29.
 |---|---|---|
 | 0 | ✔ | Motor, servidor, SDK de cliente, Catania, Studio e runtime limpo |
 | 0b | ✔ | UI própria do Catania e template vanilla |
-| 0c | ✔ | Consola em `/console` |
+| 0c | ✔ | Consola em `/console` (e em "/" no Studio, com `consoleAtRoot`) |
 | 1 | ◐ | Forge na consola do Studio (falta a geração pela API, opcional) |
 | 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta a secção "Clientes" na consola) |
 | 3 | ☐ | Tabuleiros — proposta em `docs/TABULEIROS.md`, para começar depois da Fase 1 (o editor depende dos cartões do Forge) |
+| 4 | ☐ | Plataforma multi-marca — ideia por desenhar, para comercializar o output a outras editoras |
 
 ## Fase 0 — Base ✔
 
@@ -43,6 +44,7 @@ Por etapas:
 ## Fase 0c — Consola ✔
 
 - ✔ Consola em `/console`, protegida por `ADMIN_TOKEN`: painel, jogos com simulação, mesas de aprovação por convite e avisos.
+- ✔ `consoleAtRoot` (2026-09-30): com este sinalizador (só com `ADMIN_TOKEN`), "/" passa a servir a consola e o lobby da marca muda para "/<brand.id>" — a plataforma é a ferramenta; o lobby é um output dela. Ligado só no Studio da Bitnik (`apps/studio/server.js`, arranque direto); `createPlatform()` mantém "/" como o lobby por omissão (nenhum teste nem o runtime cliente o usam).
 - Fora do MVP: deploy público para partilhar o link das mesas de aprovação com clientes (as mesas funcionam localmente).
 
 ## Fase 1 — Forge ◐
@@ -110,3 +112,15 @@ Por fazer, por esta ordem provável:
 - ☐ Decisões em aberto (secção 8 do documento): `legal(state, seat)` no contrato (mudança major), movimento em passos vs. atómico, que regras espaciais entram no motor, cache de distâncias, vocabulário espacial nos cartões Gherkin, ordem de implementação dos tipos, formato do cartão de componente, motor de colisão para quando a colocação livre deixar de estar adiada.
 - ☐ Começa depois da Fase 1 (o editor depende dos cartões do Forge).
 - ☐ Jogo de validação para o tipo Táctico (o mais completo: estado, buffs, slots de material, zonas).
+
+## Fase 4 — Plataforma multi-marca (comercializar a outros publishers) ☐
+
+Ideia (2026-09-30), ainda por desenhar: hoje `createPlatform()` só conhece uma marca por processo (o runtime de cada cliente é um deploy à parte, `examples/clean-runtime`). Para vender o output da plataforma a outras editoras sem um deploy novo por cliente, o mesmo processo do Studio precisaria de servir várias marcas em simultâneo — `/<brand.id>` para cada uma, todas geridas a partir da mesma consola em "/".
+
+Isto é bem maior do que o `consoleAtRoot` da Fase 0c: hoje as mesas, o `storage` e os jogos instalados são um único estado por processo; multi-marca implica isolar esse estado por marca (mesas, protótipos, aparência, storage), e decidir o que se partilha entre marcas (ex.: os jogos aprovados) e o que não (ex.: mesas, tokens de aparência). Por fazer, ainda sem ordem:
+
+- ☐ Desenhar o modelo de dados: o que é por-marca vs. partilhado.
+- ☐ Consola: gerir várias marcas (criar, listar, apagar), não só os jogos de uma.
+- ☐ Isolar `storage` por marca (hoje é um `fileStorage`/`memoryStorage` só).
+- ☐ Decidir como uma marca nova ganha jogos: todos os aprovados por omissão, ou por marca?
+- ☐ Faturação/limites, se isto vier a ser vendido como serviço.

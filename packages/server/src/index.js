@@ -104,6 +104,7 @@ export function createPlatform({
   gamesDir = null,     // Studio: pasta games/ do repositório, onde "Publicar" grava o jogo 1.0.0
   logger = console,
   adminToken = process.env.ADMIN_TOKEN, // sem token, as rotas /admin não existem
+  consoleAtRoot = false, // a consola fica em "/" e o lobby da marca passa para "/<brand.id>" (só com adminToken)
 } = {}) {
   // ─── Jogos ──────────────────────────────────────────────────
   const G = new Map();
@@ -137,7 +138,8 @@ export function createPlatform({
         hash.update(readFileSync(join(fileURLToPath(g.root), rel)));
       }
     }
-    return { version: hash.digest('hex').slice(0, 12), precache: ['/', '/manifest.webmanifest', ...files] };
+    const home = adminToken && consoleAtRoot ? `/${brand.id}` : '/';
+    return { version: hash.digest('hex').slice(0, 12), precache: [home, '/manifest.webmanifest', ...files] };
   })();
 
   // ─── Estado em memória ──────────────────────────────────────
@@ -1039,16 +1041,24 @@ export function createPlatform({
   const http = createServer((req, res) => {
     const url = new URL(req.url, 'http://x').pathname;
     if (adminToken && url.startsWith('/admin/')) return admin(req, res, url);
-    if (adminToken && (url === '/console' || url === '/console/')) {
+    // Normalmente "/" é o lobby da marca e "/console" é a consola. Com
+    // consoleAtRoot (só faz sentido com adminToken), trocam: "/" passa a ser
+    // a consola — a ferramenta — e o lobby, o "produto" dela, muda para
+    // "/<brand.id>". "/console" continua a funcionar como atalho.
+    const consoleAtHome = !!(adminToken && consoleAtRoot);
+    const home = consoleAtHome ? `/${brand.id}` : '/';
+    const consolePaths = consoleAtHome ? ['/console', '/console/', '/', '/index.html'] : ['/console', '/console/'];
+    const homePaths = consoleAtHome ? [home, `${home}/`, `${home}/index.html`] : ['/', '/index.html'];
+    if (adminToken && consolePaths.includes(url)) {
       return serveFile(res, join(PUBLIC_DIR, 'console.html'), MIME['.html'], (html) => html
         .replaceAll('{{BRAND_NAME}}', brand.name).replace('{{BRAND_HEAD}}', brandHead())
-        .replace('{{LANG}}', brand.lang || 'pt'));
+        .replace('{{LANG}}', brand.lang || 'pt').replace('{{HOME}}', home));
     }
     if (url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, brand: brand.id, games: [...G.keys()], rooms: rooms.size }));
     }
-    if (url === '/' || url === '/index.html') {
+    if (homePaths.includes(url)) {
       return serveFile(res, join(PUBLIC_DIR, 'app.html'), MIME['.html'], (html) => html
         .replaceAll('{{BRAND_NAME}}', brand.name).replace('{{BRAND_HEAD}}', brandHead())
         .replace('{{LANG}}', brand.lang || 'pt'));
@@ -1058,10 +1068,11 @@ export function createPlatform({
         .replace('{{VERSION}}', sw.version).replace('{{PRECACHE}}', JSON.stringify(sw.precache)));
     }
     if (url === '/manifest.webmanifest') {
+      const homeSlash = consoleAtHome ? `${home}/` : home;
       res.writeHead(200, { 'Content-Type': MIME['.webmanifest'] });
       return res.end(JSON.stringify({
-        id: '/', scope: '/', lang: brand.lang || 'pt',
-        name: brand.name, short_name: brand.name, start_url: '/', display: 'standalone',
+        id: homeSlash, scope: homeSlash, lang: brand.lang || 'pt',
+        name: brand.name, short_name: brand.name, start_url: homeSlash, display: 'standalone',
         background_color: brand.tokens?.['--color-cream'] || '#fbf3e4',
         theme_color: brand.tokens?.['--color-brick'] || '#b8461f',
         icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],

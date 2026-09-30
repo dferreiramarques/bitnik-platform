@@ -352,6 +352,42 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   await s.stop();
 });
 
+test('consoleAtRoot: "/" passa a ser a consola e o lobby muda para "/<brand.id>"', async () => {
+  // Sem o flag, tudo como sempre.
+  const off = await boot(makeStudio, { adminToken: 'segredo' });
+  assert.match(await (await fetch(`http://localhost:${off.port}/`)).text(), /"@bitnik\/engine": "\/engine\/index\.js"/, 'lobby continua em "/"');
+  await off.stop();
+
+  // Sem adminToken, o flag sozinho não faz nada (a consola não existe).
+  const noToken = await boot(makeStudio, { consoleAtRoot: true });
+  assert.match(await (await fetch(`http://localhost:${noToken.port}/`)).text(), /"@bitnik\/engine": "\/engine\/index\.js"/, 'sem token, "/" continua o lobby');
+  await noToken.stop();
+
+  const s = await boot(makeStudio, { adminToken: 'segredo', consoleAtRoot: true });
+  const base = `http://localhost:${s.port}`;
+  const root = await fetch(`${base}/`);
+  assert.equal(root.status, 200);
+  const rootHtml = await root.text();
+  assert.match(rootHtml, /<title>Consola · Bitnik<\/title>/, '"/" passa a servir a consola');
+  assert.match(rootHtml, /href="\/bitnik"/, 'o link de volta ao lobby segue a marca');
+  assert.doesNotMatch(rootHtml, /\{\{/, 'sem marcadores por preencher');
+
+  const stillConsole = await fetch(`${base}/console`);
+  assert.match(await stillConsole.text(), /<title>Consola · Bitnik<\/title>/, '"/console" continua a funcionar');
+
+  const lobby = await fetch(`${base}/bitnik`);
+  assert.equal(lobby.status, 200);
+  assert.match(await lobby.text(), /"@bitnik\/engine": "\/engine\/index\.js"/, 'o lobby da marca fica em "/<brand.id>"');
+
+  const manifest = await (await fetch(`${base}/manifest.webmanifest`)).json();
+  assert.equal(manifest.start_url, '/bitnik/');
+  assert.equal(manifest.scope, '/bitnik/');
+
+  assert.ok(s.platform.serviceWorker.precache.includes('/bitnik'), 'o service worker guarda o lobby, não a consola');
+  assert.ok(!s.platform.serviceWorker.precache.includes('/'), 'nunca a consola em cache offline');
+  await s.stop();
+});
+
 test('consola: simulação por HTTP devolve vitórias por lugar para cada número de jogadores', async () => {
   const s = await boot(makeStudio, { adminToken: 'segredo' });
   const r = await fetch(`http://localhost:${s.port}/admin/games/catania/simulate`, {
