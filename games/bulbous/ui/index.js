@@ -52,7 +52,7 @@ let view = null;
 let ctx = null;
 let msg = null;
 let resizeObs = null;
-const fresh = () => ({ logOpen: false, selected: new Set(), declareOrder: [], prevKey: null, lastLogSeq: 0 });
+const fresh = () => ({ logOpen: false, selected: new Set(), declareOrder: [], declareRonda: null, prevKey: null, lastLogSeq: 0 });
 let ui = fresh();
 
 export function mount(el, context) {
@@ -80,10 +80,15 @@ export function unmount() {
 export function update(next) {
   msg = next;
   const v = msg.view;
-  // Muda de fase (ou de vaza): a seleção de cartas e a sequência em
-  // construção deixam de fazer sentido, limpa para a próxima ação.
+  // Muda de fase (ou de vaza): a seleção de cartas deixa de fazer sentido,
+  // limpa para a próxima ação.
   const key = `${v.fase}-${v.vazaNum}-${v.ronda}`;
-  if (ui.prevKey !== key) { ui.selected = new Set(); ui.declareOrder = []; ui.prevKey = key; }
+  if (ui.prevKey !== key) { ui.selected = new Set(); ui.prevKey = key; }
+  // A sequência em construção só é limpa quando muda de ronda (nova sequência
+  // por declarar) — nunca por causa de uma atualização qualquer entretanto
+  // (ex.: outro jogador a ficar "away"), senão perdia-se o que já estava
+  // escolhido antes de chegar a Confirmar.
+  if (ui.declareRonda !== v.ronda) { ui.declareOrder = []; ui.declareRonda = v.ronda; }
   // Entradas do registo marcadas com { announce } (ex.: sequência declarada,
   // última ronda) viram mensagem da mesa — a UI genérica faz isto sozinha,
   // mas a UI própria tem de a chamar (ADR-014).

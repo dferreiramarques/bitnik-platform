@@ -1,5 +1,16 @@
 # Bulbous — histórico de regras
 
+## 1.1.11 — Números da sequência já não desapareciam a meio (2026-09-30)
+
+No telemóvel, ao declarar a sequência, escolher a 2ª Baelfungious podia
+apagar o número da 1ª (o Governante perdia o que já tinha escolhido a
+meio da declaração). Causa: uma reconexão de rede breve (comum em
+mobile — ecrã bloqueia, muda de wifi para dados) marca o jogador
+"away" e volta no instante a seguir, o que manda um novo estado a
+todos; a sequência em construção estava a ser limpa nessa atualização,
+mesmo sem ter mudado de ronda. Agora só é limpa quando muda mesmo de
+ronda (quando há mesmo uma sequência nova para declarar).
+
 ## 1.1.10 — Sequência declarada, visível na mesa (2026-09-30)
 
 A UI própria do Bulbous (desde a 1.1.0) nunca ligou as entradas do
