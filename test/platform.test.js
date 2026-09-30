@@ -454,6 +454,27 @@ test('UI própria: o servidor serve a UI e as regras do pacote, nunca os testes'
   await s.stop();
 });
 
+test('documentação: "/documentation" serve a página, sem token e independente do consoleAtRoot', async () => {
+  const s = await boot(makeStudio);
+  const base = `http://localhost:${s.port}`;
+  for (const path of ['/documentation', '/documentation/', '/documentation/index.html']) {
+    const res = await fetch(`${base}${path}`);
+    assert.equal(res.status, 200, path);
+    const html = await res.text();
+    assert.match(html, /<title>Documentação · Bitnik<\/title>/, path);
+    assert.doesNotMatch(html, /\{\{/, `${path}: sem marcadores por preencher`);
+  }
+  assert.equal((await fetch(`${base}/documentation.css`)).status, 200);
+  assert.equal((await fetch(`${base}/documentation.js`)).status, 200);
+  await s.stop();
+
+  // Com consoleAtRoot, continua no mesmo sítio (não é a marca nem a consola).
+  const withConsole = await boot(makeStudio, { adminToken: 'segredo', consoleAtRoot: true });
+  const html = await (await fetch(`http://localhost:${withConsole.port}/documentation`)).text();
+  assert.match(html, /<title>Documentação · Bitnik<\/title>/);
+  await withConsole.stop();
+});
+
 test('aparência: catálogo com skin e temas; afinações validadas, enviadas aos ligados e guardadas', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
   const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });

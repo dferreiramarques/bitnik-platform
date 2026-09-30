@@ -12,7 +12,7 @@ Atualizado a 2026-09-30.
 |---|---|---|
 | 0 | ✔ | Motor, servidor, SDK de cliente, Catania, Studio e runtime limpo |
 | 0b | ✔ | UI própria do Catania e template vanilla |
-| 0c | ✔ | Consola em `/console` (e em "/" no Studio, com `consoleAtRoot`) |
+| 0c | ✔ | Consola em `/console` (e em "/" no Studio, com `consoleAtRoot`); documentação em `/documentation` |
 | 1 | ◐ | Forge na consola do Studio (falta a geração pela API, opcional) |
 | 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta a secção "Clientes" na consola) |
 | 3 | ☐ | Tabuleiros — proposta em `docs/TABULEIROS.md`, para começar depois da Fase 1 (o editor depende dos cartões do Forge) |
@@ -45,6 +45,7 @@ Por etapas:
 
 - ✔ Consola em `/console`, protegida por `ADMIN_TOKEN`: painel, jogos com simulação, mesas de aprovação por convite e avisos.
 - ✔ `consoleAtRoot` (2026-09-30): com este sinalizador (só com `ADMIN_TOKEN`), "/" passa a servir a consola e o lobby da marca muda para "/<brand.id>" — a plataforma é a ferramenta; o lobby é um output dela. Ligado só no Studio da Bitnik (`apps/studio/server.js`, arranque direto); `createPlatform()` mantém "/" como o lobby por omissão (nenhum teste nem o runtime cliente o usam).
+- ✔ Documentação em `/documentation` (2026-09-30): página de referência do sistema de design (ao estilo shadcn/ui) — tokens (cores, tipografia, forma), os componentes do `bitnikgames-design-system` (botão, badge, cartão), as três camadas de customização (ADR-008) e os padrões de UI da mesa nascidos nos jogos migrados (vidro, cartão de jogador, controlo preso ao canto, modal de regras, faixa com fade, capa do lobby). Pública, sem `ADMIN_TOKEN`, independente do `consoleAtRoot`. `packages/server/public/documentation.{html,css,js}`.
 - Fora do MVP: deploy público para partilhar o link das mesas de aprovação com clientes (as mesas funcionam localmente).
 
 ## Fase 1 — Forge ◐

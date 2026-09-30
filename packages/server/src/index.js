@@ -1078,6 +1078,11 @@ export function createPlatform({
         icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
       }));
     }
+    if (url === '/documentation' || url === '/documentation/' || url === '/documentation/index.html') {
+      return serveFile(res, join(PUBLIC_DIR, 'documentation.html'), MIME['.html'], (html) => html
+        .replaceAll('{{BRAND_NAME}}', brand.name).replace('{{BRAND_HEAD}}', brandHead())
+        .replace('{{LANG}}', brand.lang || 'pt').replace('{{HOME}}', home));
+    }
     if (url === '/sdk/client.js') return serveFile(res, CLIENT_FILE, MIME['.js']);
     const gf = url.match(/^\/games\/([\w-]+)\/(.+)$/);
     if (gf) {
@@ -1088,7 +1093,7 @@ export function createPlatform({
     }
     const eng = url.match(/^\/engine\/([a-z0-9]+\.js)$/);
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
-    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js)$/);
+    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });

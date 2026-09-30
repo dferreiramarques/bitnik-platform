@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentação · {{BRAND_NAME}}</title>
+<link rel="icon" href="/icon.svg">
+<meta name="description" content="Tokens, componentes base e padrões de UI reutilizáveis da plataforma Bitnik.">
+{{BRAND_HEAD}}
+<link rel="stylesheet" href="/documentation.css">
+</head>
+<body>
+<header class="doc-top">
+  <a class="doc-brand" href="{{HOME}}">{{BRAND_NAME}}</a>
+  <span class="doc-tag">Documentação</span>
+  <button class="doc-nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+</header>
+<div class="doc-body">
+  <nav class="doc-nav" id="nav">
+    <a href="#intro" class="active">Introdução</a>
+    <div class="doc-nav-group">Tokens</div>
+    <a href="#cores">Cores</a>
+    <a href="#tipografia">Tipografia</a>
+    <a href="#forma">Forma e sombra</a>
+    <div class="doc-nav-group">Componentes</div>
+    <a href="#botao">Botão</a>
+    <a href="#badge">Badge</a>
+    <a href="#cartao">Cartão</a>
+    <a href="#layout">Layout</a>
+    <div class="doc-nav-group">Customização</div>
+    <a href="#camadas">As três camadas</a>
+    <a href="#skin">skin.json de um jogo</a>
+    <div class="doc-nav-group">Padrões da mesa</div>
+    <a href="#vidro">Painel de vidro</a>
+    <a href="#jogador">Cartão de jogador</a>
+    <a href="#canto">Controlo preso ao canto</a>
+    <a href="#regras">Modal de regras</a>
+    <a href="#faixa">Faixa com fade</a>
+    <a href="#capa">Capa do lobby</a>
+  </nav>
+
+  <main class="doc-main" id="main">
+
+    <section class="doc-section" id="intro">
+      <h1>Documentação</h1>
+      <p class="doc-lede">
+        O sistema de design da Bitnik tem três camadas: o <b>design system</b> (bitnikgames-design-system,
+        com versão fixa), a <b>marca</b> de cada deploy (moldura, editável na consola) e o <b>jogo</b>
+        (a mesa, definida no <code>skin.json</code> de cada pacote). Esta página mostra os tokens e
+        componentes da primeira camada, como afinar as outras duas, e os padrões de UI que já se repetem
+        entre os jogos migrados — para o próximo jogo não os reinventar.
+      </p>
+      <p class="doc-lede">
+        Decisões completas: <code>docs/DECISOES.md</code> — ADR-006 (UI de um jogo vive no pacote),
+        ADR-008 (aparência em camadas) e ADR-014 (mesa em ecrã inteiro, painéis de vidro).
+      </p>
+    </section>
+
+    <section class="doc-section" id="cores">
+      <div class="doc-sub">
+        <h2>Cores</h2>
+        <p>Paleta de marca e neutros funcionais, de <code>tokens.css</code>. Trocar só estes valores
+          já muda botões, badges e cartões — nada mais no sistema usa cor fixa.</p>
+        <div class="doc-swatches">
+          <div class="doc-swatch"><i style="background:#e8a93b"></i><span><b>Amarelo</b><code>--color-yellow #e8a93b</code></span></div>
+          <div class="doc-swatch"><i style="background:#c4841f"></i><span><b>Amarelo escuro</b><code>--color-yellow-deep #c4841f</code></span></div>
+          <div class="doc-swatch"><i style="background:#ea7c2e"></i><span><b>Laranja</b><code>--color-orange #ea7c2e</code></span></div>
+          <div class="doc-swatch"><i style="background:#c85f1d"></i><span><b>Laranja escuro</b><code>--color-orange-deep #c85f1d</code></span></div>
+          <div class="doc-swatch"><i style="background:#b8461f"></i><span><b>Tijolo</b><code>--color-brick #b8461f</code></span></div>
+          <div class="doc-swatch"><i style="background:#8f3417"></i><span><b>Tijolo escuro</b><code>--color-brick-deep #8f3417</code></span></div>
+          <div class="doc-swatch"><i style="background:#fbf3e4;border-bottom:1px solid #ecd6ac"></i><span><b>Creme</b><code>--color-cream #fbf3e4</code></span></div>
+          <div class="doc-swatch"><i style="background:#f3e4cb"></i><span><b>Creme suave</b><code>--color-cream-soft #f3e4cb</code></span></div>
+          <div class="doc-swatch"><i style="background:#ecd6ac"></i><span><b>Creme forte</b><code>--color-cream-strong #ecd6ac</code></span></div>
+          <div class="doc-swatch"><i style="background:#2b1b12"></i><span style="background:#2b1b12;color:#fbf3e4"><b>Tinta</b><code style="color:#c9b8a8">--color-ink #2b1b12</code></span></div>
+          <div class="doc-swatch"><i style="background:#5b4636"></i><span style="background:#5b4636;color:#fbf3e4"><b>Tinta suave</b><code style="color:#d8cabb">--color-ink-soft #5b4636</code></span></div>
+          <div class="doc-swatch"><i style="background:#fffaf1;border-bottom:1px solid #ecd6ac"></i><span><b>Branco</b><code>--color-white #fffaf1</code></span></div>
+        </div>
+        <h3>Tokens semânticos</h3>
+        <p>O resto do sistema nunca lê <code>--color-*</code> diretamente — só estes, para uma mudança de
+          paleta se propagar sozinha.</p>
+        <table class="doc-table">
+          <tr><th>Token</th><th>Vem de</th><th>Uso</th></tr>
+          <tr><td><code>--bg</code> / <code>--bg-alt</code></td><td><code>--color-cream</code> / <code>-soft</code></td><td>fundo da página e de secções alternadas</td></tr>
+          <tr><td><code>--text</code> / <code>--text-muted</code></td><td><code>--color-ink</code> / <code>-soft</code></td><td>texto principal e secundário</td></tr>
+          <tr><td><code>--border</code></td><td><code>--color-cream-strong</code></td><td>linhas e contornos discretos</td></tr>
+          <tr><td><code>--brand-primary</code> (<code>-hover</code>)</td><td><code>--color-brick</code> (<code>-deep</code>)</td><td>ação principal</td></tr>
+          <tr><td><code>--brand-secondary</code></td><td><code>--color-orange</code></td><td>ação secundária</td></tr>
+          <tr><td><code>--brand-accent</code></td><td><code>--color-yellow</code></td><td>destaque, etiquetas</td></tr>
+        </table>
+        <h3>Da mesa (<code>--game-*</code>)</h3>
+        <p>Um jogo com UI própria não usa nada disto — usa os tokens da mesa, no <code>skin.json</code>
+          do pacote. Ver <a href="#camadas">Customização</a>.</p>
+        <table class="doc-table">
+          <tr><th>Token</th><th>Omissão (vanilla)</th><th>Uso</th></tr>
+          <tr><td><code>--table-bg</code></td><td>gradiente verde-escuro</td><td>fundo da mesa, ecrã inteiro</td></tr>
+          <tr><td><code>--game-glass</code> / <code>-line</code> / <code>-blur</code></td><td>preto 35% / creme 35% / 8px</td><td>painéis de vidro por cima da mesa</td></tr>
+          <tr><td><code>--game-on-table</code> / <code>-muted</code> / <code>-accent</code> / <code>-warn</code></td><td>creme / creme 75% / pêssego / laranja claro</td><td>texto flutuante sem fundo (registo, controlos)</td></tr>
+          <tr><td><code>--game-panel</code> / <code>-2</code></td><td>creme / creme-forte</td><td>modais e painéis sólidos (fora da mesa em si)</td></tr>
+          <tr><td><code>--game-text</code> / <code>-muted</code> / <code>-accent</code> / <code>-accent-strong</code></td><td>tinta / tinta-suave / tijolo / tijolo-escuro</td><td>texto e destaque sobre <code>--game-panel</code></td></tr>
+          <tr><td><code>--game-color-1..4</code></td><td>vermelho, azul, verde, dourado</td><td>cor de cada jogador (pontos, peças)</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="tipografia">
+      <div class="doc-sub">
+        <h2>Tipografia</h2>
+        <p>Duas letras: uma de exibição para títulos, uma de texto para o resto. Os jogos com UI própria
+          têm os mesmos dois papéis (<code>--game-font-display</code> / <code>--game-font-body</code>),
+          por vezes com outra letra (o Catania usa uma serifada, por exemplo).</p>
+        <div class="doc-example">
+          <div class="doc-preview doc-col">
+            <div style="font-family:var(--font-display,'Baloo 2',sans-serif);font-weight:800;font-size:28px;">Baloo 2 — títulos</div>
+            <div style="font-family:var(--font-body,Inter,sans-serif);font-size:15px;max-width:52ch;">Inter — texto corrido. Serve para parágrafos, formulários e qualquer coisa que se leia em linha, dos lobbies ao registo do jogo.</div>
+          </div>
+          <pre class="doc-code">--font-display: "Baloo 2", "Fredoka", system-ui, sans-serif;
+--font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="forma">
+      <div class="doc-sub">
+        <h2>Forma e sombra</h2>
+        <p>Quatro arredondamentos, uma sombra de cartão (clara e em hover). A cor da sombra segue
+          <code>--shadow-color-rgb</code>, para poder mudar com a paleta sem reescrever a sombra.</p>
+        <div class="doc-example">
+          <div class="doc-preview">
+            <div style="width:64px;height:64px;background:var(--brand-accent,#e8a93b);border-radius:8px;display:grid;place-items:center;font-size:11px;">sm 8px</div>
+            <div style="width:64px;height:64px;background:var(--brand-accent,#e8a93b);border-radius:14px;display:grid;place-items:center;font-size:11px;">md 14px</div>
+            <div style="width:64px;height:64px;background:var(--brand-accent,#e8a93b);border-radius:24px;display:grid;place-items:center;font-size:11px;">lg 24px</div>
+            <div style="width:64px;height:64px;background:var(--brand-accent,#e8a93b);border-radius:999px;display:grid;place-items:center;font-size:11px;">pill</div>
+          </div>
+          <pre class="doc-code">--radius-sm: 8px;  --radius-md: 14px;  --radius-lg: 24px;  --radius-pill: 999px;
+--shadow-card: 0 6px 20px -8px rgba(var(--shadow-color-rgb), .25);
+--shadow-card-hover: 0 12px 28px -10px rgba(var(--shadow-color-rgb), .32);</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="botao">
+      <div class="doc-sub">
+        <h2>Botão</h2>
+        <p>Cinco variantes sobre a mesma base <code>.btn</code>. A plataforma (fora da mesa) usa uma
+          versão mais simples destas mesmas classes, com os tokens <code>--ui-*</code> — ver
+          <code>packages/server/public/app.css</code>.</p>
+        <div class="doc-example">
+          <div class="doc-preview">
+            <button class="btn btn-primary">Primário</button>
+            <button class="btn btn-secondary">Secundário</button>
+            <button class="btn btn-outline">Contorno</button>
+            <button class="btn btn-ghost">Fantasma</button>
+          </div>
+          <pre class="doc-code">&lt;button class="btn btn-primary"&gt;Primário&lt;/button&gt;
+&lt;button class="btn btn-secondary"&gt;Secundário&lt;/button&gt;
+&lt;button class="btn btn-outline"&gt;Contorno&lt;/button&gt;
+&lt;button class="btn btn-ghost"&gt;Fantasma&lt;/button&gt;
+&lt;button class="btn btn-primary btn-block"&gt;Ocupa a linha toda&lt;/button&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="badge">
+      <div class="doc-sub">
+        <h2>Badge</h2>
+        <p>Etiquetas pequenas — estado, categoria, contagem.</p>
+        <div class="doc-example">
+          <div class="doc-preview">
+            <span class="badge badge-primary">Primário</span>
+            <span class="badge badge-secondary">Secundário</span>
+            <span class="badge badge-accent">Destaque</span>
+            <span class="badge badge-outline">Contorno</span>
+            <span class="badge badge-ink">Tinta</span>
+          </div>
+          <pre class="doc-code">&lt;span class="badge badge-primary"&gt;Primário&lt;/span&gt;
+&lt;span class="badge badge-accent"&gt;Destaque&lt;/span&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="cartao">
+      <div class="doc-sub">
+        <h2>Cartão</h2>
+        <p>Para catálogos e listagens — a moldura do lobby de jogos usa a mesma ideia (ver
+          <a href="#capa">Capa do lobby</a> para a variante em cima da mesa).</p>
+        <div class="doc-example">
+          <div class="doc-preview">
+            <div class="doc-cards">
+              <div class="card">
+                <div class="card-media">Catania</div>
+                <div class="card-body">
+                  <div class="card-meta"><span>2–4 jogadores</span><span>Estratégia</span></div>
+                  <h3 class="card-title">Catania</h3>
+                  <p class="card-excerpt">Funda aldeias e gere os recursos da ilha.</p>
+                  <div class="card-footer"><span class="badge badge-outline">v5</span><button class="btn btn-primary">Jogar</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <pre class="doc-code">&lt;div class="card"&gt;
+  &lt;div class="card-media"&gt;Catania&lt;/div&gt;
+  &lt;div class="card-body"&gt;
+    &lt;div class="card-meta"&gt;&lt;span&gt;2–4 jogadores&lt;/span&gt;&lt;/div&gt;
+    &lt;h3 class="card-title"&gt;Catania&lt;/h3&gt;
+    &lt;p class="card-excerpt"&gt;Funda aldeias…&lt;/p&gt;
+    &lt;div class="card-footer"&gt;…&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="layout">
+      <div class="doc-sub">
+        <h2>Layout</h2>
+        <p><code>.container</code> centra e limita a largura (1120px); <code>.grid-3</code>/<code>.grid-4</code>
+          quebram para 2 colunas aos 900px e 1 aos 620px, sem escrever uma media query nova.</p>
+        <pre class="doc-code">&lt;div class="container"&gt;
+  &lt;div class="grid grid-3"&gt;…&lt;/div&gt;
+&lt;/div&gt;</pre>
+      </div>
+    </section>
+
+    <section class="doc-section" id="camadas">
+      <h1>Customização</h1>
+      <p class="doc-lede">Três camadas, dois níveis de afinação (ADR-008). Nenhum jogo com UI própria
+        escreve uma cor fixa no código — só tokens, para as duas vias funcionarem.</p>
+      <div class="doc-layers">
+        <div class="doc-layer"><b>Design system</b><span>Quem define: Bitnik</span><span>Onde vive: repo próprio, versão fixa (<code>@v1.0.0</code>)</span></div>
+        <div class="doc-layer"><b>Marca (moldura)</b><span>Quem define: o publisher</span><span>Onde vive: config do deploy, editável na consola</span></div>
+        <div class="doc-layer"><b>Jogo (mesa)</b><span>Quem define: Bitnik por omissão; o publisher pode sobrepor</span><span>Onde vive: <code>ui/skin.json</code> do pacote + afinações na consola</span></div>
+      </div>
+      <div class="doc-sub">
+        <h3>Aparência (afinar tokens)</h3>
+        <p>Na consola, cada jogo mostra os seus tokens com pré-visualização ao vivo sobre o cenário do
+          tutorial; as afinações guardam-se no <em>storage</em> do deploy e chegam a quem está ligado sem
+          recarregar. Aviso automático se o contraste ficar abaixo de AA.</p>
+        <h3>Design à medida (tema completo)</h3>
+        <p>Para ir além dos tokens: um tema com CSS e assets próprios (arte do tabuleiro, cartas,
+          texturas, fontes) em <code>ui/themes/&lt;nome&gt;/</code>. O CSS do tema fica limitado à área
+          da mesa — nunca esconde avisos nem controlos da plataforma. Escolhe-se um tema por deploy; os
+          tokens continuam afináveis por cima.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="skin">
+      <div class="doc-sub">
+        <h2><code>skin.json</code> de um jogo</h2>
+        <p>Cada token tem um valor por omissão, um tipo (para o editor validar) e uma etiqueta bilingue.
+          A mesa lê sempre pelo nome do token — nunca um valor fixo.</p>
+        <pre class="doc-code">{
+  "--table-bg": {
+    "value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #1f3328 100%)",
+    "type": "background",
+    "label": { "pt": "Mesa (fundo)", "en": "Table (background)" }
+  },
+  "--game-accent": {
+    "value": "#b8461f",
+    "type": "color",
+    "label": { "pt": "Destaque", "en": "Accent" }
+  }
+}</pre>
+      </div>
+    </section>
+
+    <section class="doc-section" id="vidro">
+      <h1>Padrões da mesa</h1>
+      <p class="doc-lede">A mesa ocupa o ecrã inteiro (ADR-014); tudo o resto é um painel flutuante por
+        cima, numa de duas famílias: <b>vidro</b> (fundo, para conteúdo que se lê melhor com contraste
+        próprio) ou <b>flutuante sem fundo</b> (só sombra no texto, para não tapar o tabuleiro).</p>
+      <div class="doc-sub">
+        <h2>Painel de vidro</h2>
+        <p>Fundo semitransparente + desfoque + contorno subtil. Usado nos cartões de jogador, na barra
+          de ações e na minha área. Nunca cor fixa — sempre estes três tokens.</p>
+        <div class="doc-example">
+          <div class="doc-preview doc-mesa">
+            <div class="doc-glass doc-player">
+              <div class="doc-pname"><i class="doc-dot"></i><span>Jogador 1</span><b class="doc-score">12</b></div>
+              <div class="doc-pstate">a jogar</div>
+            </div>
+          </div>
+          <pre class="doc-code">.player {
+  background: var(--game-glass);
+  border: 1px solid var(--game-glass-line);
+  backdrop-filter: blur(var(--game-glass-blur));
+}</pre>
+        </div>
+      </div>
+      <div class="doc-sub" id="jogador">
+        <h2>Cartão de jogador</h2>
+        <p>Nome + cor + pontuação na mesma linha, estado por baixo. A cor do jogador
+          (<code>--game-color-1..4</code>) vai no ponto, nunca no fundo do cartão inteiro.</p>
+        <div class="doc-example">
+          <div class="doc-preview doc-mesa">
+            <div class="doc-glass doc-player" style="border-color:#fffaf1;">
+              <div class="doc-pname"><i class="doc-dot" style="background:#1a5276"></i><span>A jogar agora</span><b class="doc-score">7</b></div>
+              <div class="doc-pstate">à espera</div>
+            </div>
+          </div>
+          <pre class="doc-code">&lt;div class="player cur"&gt;
+  &lt;div class="pname"&gt;&lt;i class="dot" style="background:var(--game-color-2)"&gt;&lt;/i&gt;&lt;span&gt;Nome&lt;/span&gt;&lt;b class="score"&gt;7&lt;/b&gt;&lt;/div&gt;
+  &lt;div class="pstate"&gt;à espera&lt;/div&gt;
+&lt;/div&gt;</pre>
+        </div>
+      </div>
+      <div class="doc-sub" id="canto">
+        <h2>Controlo preso ao canto</h2>
+        <p>Zoom, pan e outros controlos flutuantes ficam sempre presos ao canto inferior direito da
+          <em>mesa</em> (não do tabuleiro) — <code>position: fixed</code> funciona porque a mesa tem
+          <code>container-type: size</code>, que a torna o "containing block" do fixed. Assim nunca
+          saltam quando o resto do layout muda de altura. A barra de ações reserva-lhes espaço
+          (<code>margin-right</code>) para nunca ficarem sobrepostos.</p>
+        <div class="doc-example">
+          <div class="doc-preview doc-mesa doc-corner-demo">
+            <div class="doc-glass doc-bar doc-bar-demo">Barra de ações</div>
+            <div class="doc-zoom" style="position:absolute;"><span class="doc-zb">+</span><span class="doc-zb">−</span><span class="doc-zb">⤢</span></div>
+          </div>
+          <pre class="doc-code">.zoombar { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.bar { margin-right: 328px; } /* liberta o canto sem encolher o resto */</pre>
+        </div>
+      </div>
+      <div class="doc-sub" id="regras">
+        <h2>Modal de regras</h2>
+        <p>O botão "?" durante o jogo abre uma modal com as regras, sem sair da mesa (ao contrário do
+          tutorial). O jogo só declara <code>rules: { pt: [...], en: [...] }</code> no contrato — o
+          resto (botão, modal, tradução) é da plataforma. Experimenta:</p>
+        <div class="doc-example">
+          <div class="doc-preview doc-mesa doc-rules-demo">
+            <button class="mesa-btn" id="rulesDemoOpen" style="background:rgb(255 255 255/.15);">? Como se joga</button>
+            <div class="rules-modal" id="rulesDemoModal" hidden>
+              <div class="rules-box">
+                <div class="rules-head"><h2>Catania · Como se joga</h2><button class="mesa-btn" id="rulesDemoClose">✕</button></div>
+                <div class="rules-body">
+                  <h3>Objetivo</h3>
+                  <p>Sê o primeiro a colocar garrafas em todas as 6 casas da tua banca.</p>
+                  <div class="rules-visual"><span class="rules-chip">🌾 Cereais</span><span class="rules-chip">🍇 Vinho</span><span class="rules-chip">🐟 Peixe</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <pre class="doc-code">// jogo/index.js
+export default defineGame({
+  rules: { pt: [{ title: 'Objetivo', body: ['...'], visual: '&lt;div class="rules-visual"&gt;...' }] },
+});</pre>
+        </div>
+      </div>
+      <div class="doc-sub" id="faixa">
+        <h2>Faixa com fade</h2>
+        <p>Quando os jogadores não cabem todos (até 6 nalguns jogos), um <code>mask-image</code> nas
+          pontas sugere que há mais para ver com scroll — sem seta nem sombra à parte.</p>
+        <div class="doc-example">
+          <div class="doc-preview doc-mesa">
+            <div class="doc-strip-demo">
+              <div class="doc-glass doc-player"><div class="doc-pname"><i class="doc-dot" style="background:#b03a2e"></i><span>Jogador 1</span></div></div>
+              <div class="doc-glass doc-player"><div class="doc-pname"><i class="doc-dot" style="background:#1a5276"></i><span>Jogador 2</span></div></div>
+              <div class="doc-glass doc-player"><div class="doc-pname"><i class="doc-dot" style="background:#1d6a27"></i><span>Jogador 3</span></div></div>
+              <div class="doc-glass doc-player"><div class="doc-pname"><i class="doc-dot" style="background:#7d6608"></i><span>Jogador 4</span></div></div>
+            </div>
+          </div>
+          <pre class="doc-code">.players { mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent); }</pre>
+        </div>
+      </div>
+      <div class="doc-sub" id="capa">
+        <h2>Capa do lobby</h2>
+        <p>No lobby, a imagem do jogo (campo <code>cover</code> do contrato) fica como fundo escurecido,
+          com sombra no texto por cima — sem <code>cover</code>, gradiente da marca.</p>
+        <div class="doc-example">
+          <div class="doc-preview">
+            <div class="doc-cover-demo"><strong>Bulbous</strong></div>
+          </div>
+          <pre class="doc-code">cover: './ui/cover.jpg', // no contrato do jogo
+background: linear-gradient(rgb(0 0 0/.55), rgb(0 0 0/.7)), var(--lob-cover) center / cover;
+text-shadow: 0 2px 8px rgb(0 0 0/.7), 0 0 20px rgb(0 0 0/.4);</pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="/documentation.js"></script>
+</body>
+</html>
