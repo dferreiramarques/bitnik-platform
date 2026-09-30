@@ -248,7 +248,7 @@ function renderChips(v) {
   </div>`;
 }
 
-function baelfCard(b, v, { clickable = false, choose = null, order = null, target = false, contested = false, selected = false } = {}) {
+function baelfCard(b, v, { clickable = false, choose = null, order = null, target = false, contested = false, selected = false, badge = null } = {}) {
   const cls = ['bulbous-baelf'];
   if (clickable) cls.push('clickable');
   if (target) cls.push('target');
@@ -268,6 +268,7 @@ function baelfCard(b, v, { clickable = false, choose = null, order = null, targe
     <img class="bulbous-art bulbous-baelf-img" src="${baelfImg(b.cor, b.espacos)}" alt="">
     <span class="bulbous-baelf-art bulbous-emoji-fallback">${BAELF_EMOJI[b.espacos]}</span>
     ${dots}
+    ${badge ? `<span class="bulbous-baelf-badge">${badge}</span>` : ''}
   </div>`;
 }
 
@@ -286,10 +287,7 @@ function renderCenter(v) {
     const badge = seqIndex(jogador, posicao);
     return `<div class="bulbous-baelf-slot">
       <span class="bulbous-owner">${esc(ctx.seatName(jogador))}</span>
-      <div style="position:relative">
-        ${baelfCard(baelf, v, { clickable: orderable, order: orderable ? `${jogador},${posicao}` : null, target: isTarget, contested: isContested })}
-        ${badge ? `<span class="bulbous-baelf-badge">${badge}</span>` : ''}
-      </div>
+      ${baelfCard(baelf, v, { clickable: orderable, order: orderable ? `${jogador},${posicao}` : null, target: isTarget, contested: isContested, badge })}
     </div>`;
   }).join('');
 

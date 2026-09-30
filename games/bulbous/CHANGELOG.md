@@ -1,5 +1,15 @@
 # Bulbous — histórico de regras
 
+## 1.1.12 — Crachá da sequência dentro do próprio cartão (2026-09-30)
+
+Sem mudanças de jogo. O número (1, 2, 3, 4) sobre cada Baelfungious
+ativa vivia num `<span>` irmão do cartão, dentro de um wrapper só para
+isso — sem z-index próprio, dependia da ordem no HTML para ficar por
+cima. Passa a ser filho direto do cartão, com z-index acima da arte e
+dos bolbos: não pode ficar escondido por um cartão vizinho, seja qual
+for o estado de transform/:hover de qualquer um (o suspeito mais
+provável do que ainda se via no telemóvel depois da correção 1.1.11).
+
 ## 1.1.11 — Números da sequência já não desapareciam a meio (2026-09-30)
 
 No telemóvel, ao declarar a sequência, escolher a 2ª Baelfungious podia

@@ -105,8 +105,11 @@
   position: absolute; z-index: 2; width: 15%; aspect-ratio: 1; border-radius: 50%;
   transform: translate(-50%, -50%); box-shadow: 0 0 5px currentColor, inset 0 0 3px rgb(0 0 0 / .45);
 }
+/* Dentro do próprio cartão (não num wrapper à parte): z-index explícito,
+   sempre acima da arte (1) e dos bolbos (2) — nunca fica escondido por um
+   cartão vizinho, seja qual for o estado de :hover/transform de qualquer um. */
 .bulbous-baelf-badge {
-  position: absolute; top: 6px; right: 6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box;
+  position: absolute; top: 6px; right: 6px; z-index: 3; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box;
   background: var(--bulb-accent, #c084fc); color: var(--bulb-on-accent, #0d0d1a); font-family: var(--game-font-display); font-weight: 800; font-size: 13px;
   border-radius: 999px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center;
 }
