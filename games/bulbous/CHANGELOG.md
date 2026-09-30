@@ -1,5 +1,14 @@
 # Bulbous — histórico de regras
 
+## 1.1.8 — Barra de ações já não tapa a mão (2026-09-30)
+
+Sem mudanças de jogo. Desde que a mão deixou de quebrar linha (1.1.7),
+a barra de ações (Apostar/Trocar/Passar) — que flutuava por cima da
+mão para não gastar espaço — passou a tapar a maior parte de todos os
+cartões, em vez de só os de uma eventual 2ª linha. Passa a ter linha
+própria, por baixo da mão (continua a colapsar a zero quando não há
+ações).
+
 ## 1.1.7 — Mão nunca quebra linha (2026-09-30)
 
 Sem mudanças de jogo. As cartas da mão passam a sobrepor-se (em vez de

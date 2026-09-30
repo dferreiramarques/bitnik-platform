@@ -27,9 +27,10 @@
 .bulbous-layout {
   position: absolute; inset: 0;
   display: grid; grid-template-columns: minmax(0, 1fr);
-  /* A barra de ações fica na mesma linha da mão, por cima (ver .bulbous-bar):
-     não gasta linha própria. */
-  grid-template-rows: auto minmax(0, 1fr) auto auto; row-gap: 10px;
+  /* A barra de ações tem linha própria, por baixo da mão (nunca por cima:
+     tapava-lhe os cartões desde que a mão deixou de quebrar linha, ver
+     CHANGELOG) — quando não há ações, :empty colapsa a linha a 0. */
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto; row-gap: 10px;
   padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
 }
 .bulbous-lbl {
@@ -140,10 +141,10 @@
 /* A arte a sério (recuo: o cartão a CSS por baixo, texto+cor, sempre presente). */
 .bulbous-card-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
 
-/* Flutua por cima da mão (mesma linha da grelha, ambos "end"): não gasta
-   espaço próprio — só quando há ações mesmo (:empty esconde-a). */
+/* Linha própria, por baixo da mão — só quando há ações mesmo (:empty
+   colapsa a linha, não gasta espaço nenhum nas outras fases). */
 .bulbous-bar {
-  grid-row: 4; grid-column: 1; align-self: end; justify-self: center; margin-bottom: 6px; z-index: 2;
+  grid-row: 5; grid-column: 1; justify-self: center;
   max-width: 100%; box-sizing: border-box;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
   padding: 8px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .35);
