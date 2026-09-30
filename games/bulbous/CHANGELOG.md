@@ -1,5 +1,15 @@
 # Bulbous — histórico de regras
 
+## 1.1.9 — Jogadores mais compactos na horizontal (2026-09-30)
+
+Sem mudanças de jogo. No layout horizontal (telemóvel deitado), a
+coluna dos jogadores podia ficar mais alta do que o espaço disponível
+com os 4 jogadores — precisava de scroll e escondia os últimos. Os
+cartões dos jogadores ficam mais compactos (menos preenchimento, letra
+mais pequena) para caberem sempre os 4 inteiros, mesmo no telemóvel
+mais baixo (~300px de altura) e com o máximo de Baelfungious por
+jogador.
+
 ## 1.1.8 — Barra de ações já não tapa a mão (2026-09-30)
 
 Sem mudanças de jogo. Desde que a mão deixou de quebrar linha (1.1.7),

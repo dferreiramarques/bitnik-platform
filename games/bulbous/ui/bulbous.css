@@ -206,10 +206,20 @@
   .bulbous-topline { display: contents; }
   .bulbous-players {
     grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start;
-    overflow-y: auto; scrollbar-width: none; gap: 6px; width: auto;
+    overflow-y: auto; scrollbar-width: none; gap: 3px; width: auto; height: 100%;
   }
   .bulbous-players::-webkit-scrollbar { display: none; }
-  .bulbous-player { width: auto; padding: 6px 8px; }
+  /* Compactos ao máximo: a coluna tem de caber os 4 jogadores inteiros, sem
+     scroll nem dados escondidos, mesmo no telemóvel mais baixo (~300px). */
+  .bulbous-player { width: auto; padding: 3px 6px; gap: 2px; }
+  .bulbous-pname { font-size: 10.5px; gap: 4px; }
+  .bulbous-dot { width: 7px; height: 7px; }
+  .bulbous-pstate { font-size: 9.5px; height: 11px; }
+  .bulbous-pcards { font-size: 9.5px; }
+  .bulbous-minis { gap: 2px; margin-top: 0; }
+  .bulbous-mini { padding: 1px 4px; gap: 2px; }
+  .bulbous-mini-dots { gap: 1px; }
+  .bulbous-mini-dot { width: 5px; height: 5px; }
   .bulbous-chips { grid-area: chips; align-self: start; }
   .bulbous-center { grid-area: center; gap: 6px; }
   .bulbous-center .bulbous-baelf { width: 64px; }
