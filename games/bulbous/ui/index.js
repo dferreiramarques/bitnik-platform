@@ -185,7 +185,8 @@ function renderPlayers(v) {
       estado = esc(ctx.t('ui.thinking'));
     }
     return `<div class="bulbous-player${i === me ? ' me' : ''}${active.has(i) ? ' active' : ''}${v.governante === i ? ' governor' : ''}">
-      <div class="bulbous-pname"><i class="bulbous-dot" style="background:var(--bulb-${j.cor});color:var(--bulb-${j.cor})"></i><span>${esc(ctx.seatName(i))}</span>${v.governante === i ? '<i class="bulbous-gov" title="' + esc(ctx.t('ui.governor')) + '">👑</i>' : ''}</div>
+      ${v.governante === i ? '<i class="bulbous-gov" title="' + esc(ctx.t('ui.governor')) + '">👑</i>' : ''}
+      <div class="bulbous-pname"><i class="bulbous-dot" style="background:var(--bulb-${j.cor});color:var(--bulb-${j.cor})"></i><span>${esc(ctx.seatName(i))}</span></div>
       <div class="bulbous-pcards">${esc(ctx.t('ui.hand'))}: ${j.mao ? j.mao.length : j.cartas}</div>
       <div class="bulbous-pstate">${estado}</div>
       ${renderMinis(j)}

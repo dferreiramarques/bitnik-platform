@@ -43,7 +43,7 @@
 .bulbous-topline { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .bulbous-players { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; width: 100%; }
 .bulbous-player {
-  box-sizing: border-box; width: 168px; padding: 8px 10px; border-radius: var(--bulb-radius, 12px); display: grid; gap: 5px; align-content: start;
+  position: relative; box-sizing: border-box; width: 168px; padding: 8px 10px; border-radius: var(--bulb-radius, 12px); display: grid; gap: 5px; align-content: start;
   box-shadow: 0 8px 24px rgb(0 0 0 / .4);
 }
 .bulbous-player.active { border-color: var(--bulb-accent, #c084fc); border-width: 2px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--bulb-accent, #c084fc) 45%, transparent), 0 8px 24px rgb(0 0 0 / .4); animation: bulbous-pulse 1s ease infinite alternate; }
@@ -51,7 +51,9 @@
 .bulbous-player.governor { border-color: var(--bulb-yellow, #f4c430); }
 .bulbous-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
 .bulbous-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bulbous-gov { flex: none; font-size: 12px; }
+/* Coroa do governante: crachá no canto do cartão, fora da linha do nome —
+   nunca lhe tira espaço nem lhe fica por cima, seja qual for a largura. */
+.bulbous-gov { position: absolute; top: -6px; right: -6px; font-size: 15px; filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6)); }
 .bulbous-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: 0 0 6px currentColor, 0 0 0 1px rgb(0 0 0 / .35); }
 .bulbous-pstate { font-size: 11px; color: var(--otm); height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bulbous-pcards { font-size: 11px; color: var(--otm); }
@@ -188,9 +190,11 @@
    jogo à direita, mão e barra de ações em baixo. ── */
 @container (orientation: landscape) and (max-height: 500px) {
   .bulbous-layout {
-    grid-template-columns: 160px minmax(0, 1fr);
+    /* 3ª coluna, à direita: as ações do turno numa coluna vertical, em vez
+       de flutuarem por cima da mão (há largura de sobra na horizontal). */
+    grid-template-columns: 160px minmax(0, 1fr) auto;
     grid-template-rows: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: "players chips" "players center" "players bottom" "players hand";
+    grid-template-areas: "players chips chips" "players center bar" "players bottom bar" "players hand bar";
     column-gap: 10px; row-gap: 6px;
     padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
   }
@@ -212,5 +216,9 @@
   .bulbous-mybaelfs { grid-column: 1; max-width: none; }
   .bulbous-hand { grid-area: hand; align-self: end; padding: 0; }
   .bulbous-card { width: 44px; height: 62px; }
-  .bulbous-bar { grid-area: hand; align-self: end; margin-bottom: 4px; }
+  .bulbous-bar {
+    grid-area: bar; align-self: stretch; justify-self: end; margin: 0;
+    width: 104px; box-sizing: border-box; flex-direction: column; flex-wrap: nowrap; justify-content: center;
+  }
+  .bulbous-move { width: 100%; padding: 6px 8px; font-size: 11.5px; white-space: normal; text-align: center; }
 }

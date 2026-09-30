@@ -1,5 +1,17 @@
 # Bulbous — histórico de regras
 
+## 1.1.6 — Ações numa coluna na horizontal; coroa como crachá (2026-09-30)
+
+Sem mudanças de jogo. No layout horizontal (telemóvel/tablet deitado),
+os botões de ação passam de uma barra flutuante por cima da mão para
+uma coluna à direita — há largura de sobra nesse layout e a mão fica
+livre. No layout vertical mantém-se a barra flutuante (feita na versão
+anterior).
+
+A coroa do governante deixa de ir dentro da linha do nome (podia
+sobrepor-se-lhe em nomes compridos ou cartões estreitos) — passa a um
+crachá no canto do cartão, sem tirar espaço a mais nada.
+
 ## 1.1.5 — Jogadores sempre visíveis; ações sem texto; barra flutuante (2026-09-30)
 
 Sem mudanças de jogo. No telemóvel na vertical, os cartões dos
