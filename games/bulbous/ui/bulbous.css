@@ -157,14 +157,55 @@
 
 @container (max-width: 760px) {
   .bulbous-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
-  .bulbous-players { display: grid; grid-template-columns: repeat(2, 1fr); }
-  .bulbous-player { width: auto; padding: 6px 8px; }
+  /* Jogadores numa faixa com scroll horizontal (swipe para os restantes), como as Capivaras. */
+  .bulbous-players {
+    flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding: 0 8px; scrollbar-width: none;
+    margin: 0 -8px; padding: 0 8px; width: auto;
+  }
+  .bulbous-players::-webkit-scrollbar { display: none; }
+  .bulbous-player { width: 148px; flex-shrink: 0; padding: 6px 8px; scroll-snap-align: start; }
   .bulbous-chips { align-self: stretch; justify-content: center; }
   .bulbous-baelf { width: 72px; }
-  .bulbous-center .bulbous-baelf { width: 84px; }
-  .bulbous-owner { max-width: 72px; font-size: 10px; }
+  /* As Baelfungious ativas (até 4) numa só linha: gap e tamanho pequenos o
+     suficiente para caberem sempre sem quebrar (o "escolher", com
+     flex-basis:100%, continua a passar para a linha de baixo). */
+  .bulbous-center { gap: 6px; }
+  .bulbous-center .bulbous-baelf { width: 68px; }
+  .bulbous-owner { max-width: 64px; font-size: 10px; }
   .bulbous-bottom { grid-template-columns: minmax(0, 1fr); }
   .bulbous-bottom > .bulbous-log { display: none; }
   .bulbous-mybaelfs { grid-column: 1; }
   .bulbous-card { width: 50px; height: 70px; }
+}
+
+/* ── Telemóvel na horizontal: jogadores à esquerda, como o Catania — área de
+   jogo à direita, mão e barra de ações em baixo. ── */
+@container (orientation: landscape) and (max-height: 500px) {
+  .bulbous-layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "players chips" "players center" "players bottom" "players hand" "players bar";
+    column-gap: 10px; row-gap: 6px;
+    padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
+  }
+  /* .bulbous-topline só existe para agrupar jogadores+fichas no layout
+     vertical; aqui "desaparece" para os dois ficarem em áreas diferentes. */
+  .bulbous-topline { display: contents; }
+  .bulbous-players {
+    grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start;
+    overflow-y: auto; scrollbar-width: none; gap: 6px; width: auto;
+  }
+  .bulbous-players::-webkit-scrollbar { display: none; }
+  .bulbous-player { width: auto; padding: 6px 8px; }
+  .bulbous-chips { grid-area: chips; align-self: start; }
+  .bulbous-center { grid-area: center; gap: 6px; }
+  .bulbous-center .bulbous-baelf { width: 64px; }
+  .bulbous-owner { max-width: 60px; font-size: 10px; }
+  .bulbous-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
+  .bulbous-bottom > .bulbous-log { display: none; }
+  .bulbous-mybaelfs { grid-column: 1; max-width: none; }
+  .bulbous-hand { grid-area: hand; padding: 0; }
+  .bulbous-card { width: 44px; height: 62px; }
+  .bulbous-bar { grid-area: bar; justify-self: stretch; }
 }

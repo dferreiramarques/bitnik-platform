@@ -1,5 +1,15 @@
 # Bulbous — histórico de regras
 
+## 1.1.4 — Jogadores em faixa; mesa numa linha; layout horizontal (2026-09-30)
+
+Sem mudanças de jogo. No telemóvel na vertical: os jogadores passam a
+uma faixa com scroll horizontal, como as Capivaras (antes eram uma
+grelha 2×2). As Baelfungious ativas (até 4, a "mesa") encolhem o
+suficiente para caberem sempre numa só linha, sem quebrar. Acrescenta
+um layout horizontal (telemóvel/tablet deitado), como o Catania:
+jogadores à esquerda, área de jogo à direita, mão e barra de ações em
+baixo — não existia nenhum até aqui.
+
 ## 1.1.3 — Imagem do lobby (2026-09-29)
 
 Sem mudanças de jogo: acrescenta `cover` ao contrato (uma das artes das
