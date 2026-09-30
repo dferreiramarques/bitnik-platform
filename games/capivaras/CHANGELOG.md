@@ -1,5 +1,11 @@
 # Capivaras — histórico de regras
 
+## 2.0.5 — Modal das regras ao estilo do jogo (2026-09-30)
+
+Sem mudanças de jogo: a modal "Como se joga" usava as cores genéricas da
+plataforma. Passa a usar a moldura clara e o texto das cartas do próprio
+jogo, com os títulos a dourado — como as cartas de capivaras na mesa.
+
 ## 2.0.4 — Regras numa modal; barra de apostas simplificada; fade nos jogadores (2026-09-30)
 
 Ganha o botão "?" com as regras do jogo numa modal (`ui/rules-text.js`, PT

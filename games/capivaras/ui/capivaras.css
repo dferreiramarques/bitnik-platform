@@ -149,6 +149,15 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
 /* Mensagem da mesa: da plataforma (.mesa-msg em app.css). O "gold" (pássaro) é só do Capivaras. */
 [data-game="capivaras"] .mesa-msg.gold b { color: var(--capi-gold); }
 
+/* Modal "Como se joga" (rules-box, da plataforma): moldura clara das
+   cartas, texto das cartas e destaque a dourado, em vez das cores
+   genéricas da plataforma. */
+[data-game="capivaras"] .rules-box { background: var(--capi-card); color: var(--capi-card-text); border: 2px solid var(--capi-gold); border-radius: var(--capi-radius); }
+[data-game="capivaras"] .rules-head { border-bottom-color: color-mix(in srgb, var(--capi-card-text) 20%, transparent); }
+[data-game="capivaras"] .rules-head h2 { font-family: var(--capi-font-display); color: color-mix(in srgb, var(--capi-gold) 70%, var(--capi-card-text)); }
+[data-game="capivaras"] .rules-body h3 { font-family: var(--capi-font-display); color: color-mix(in srgb, var(--capi-gold) 70%, var(--capi-card-text)); }
+[data-game="capivaras"] .rules-chip { background: color-mix(in srgb, var(--capi-card-text) 8%, transparent); border-color: color-mix(in srgb, var(--capi-card-text) 20%, transparent); }
+
 /* ── Telemóvel na vertical ── */
 @container (max-width: 760px) {
   .capi-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
