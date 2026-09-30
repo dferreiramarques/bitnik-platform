@@ -313,28 +313,25 @@ function renderBar(v) {
 
   if (v.fase === 'ESCOLHER') {
     const meuTurno = (msg.legal || []).some((m) => m.type === 'ESCOLHER');
-    return `<p class="${meuTurno ? 'bulbous-hint' : 'bulbous-wait'}">${esc(ctx.t(meuTurno ? 'ui.chooseBaelf' : 'ui.waitingYou'))}</p>`;
+    return meuTurno ? '' : `<p class="bulbous-wait">${esc(ctx.t('ui.waitingYou'))}</p>`;
   }
   if (v.fase === 'SEQUENCIA') {
     if (v.governante !== me) return `<p class="bulbous-wait">${esc(ctx.t('ui.waitSequence'))}</p>`;
     const at = ativasList(v);
     const done = ui.declareOrder.length === at.length && at.length > 0;
-    return `<p class="bulbous-hint">${esc(ctx.t('ui.declareSequence'))}</p>
-      <button class="bulbous-move" data-act="reset-order" type="button">${esc(ctx.t('ui.resetSequence'))}</button>
+    return `<button class="bulbous-move" data-act="reset-order" type="button">${esc(ctx.t('ui.resetSequence'))}</button>
       <button class="bulbous-move confirm" data-act="confirm-order" type="button" ${done ? '' : 'disabled'}>${esc(ctx.t('ui.confirmSequence'))}</button>`;
   }
   if (v.fase === 'ACOES' && v.vaza) {
     if (v.vaza.aDescartar === me) {
       const ok = ui.selected.size === v.vaza.excesso;
-      return `<p class="bulbous-hint">${esc(ctx.t('ui.discardHint', { n: v.vaza.excesso }))}</p>
-        <button class="bulbous-move confirm" data-act="discard" type="button" ${ok ? '' : 'disabled'}>${esc(ctx.t('ui.discardAction'))} (${ui.selected.size}/${v.vaza.excesso})</button>`;
+      return `<button class="bulbous-move confirm" data-act="discard" type="button" ${ok ? '' : 'disabled'}>${esc(ctx.t('ui.discardAction'))} (${ui.selected.size}/${v.vaza.excesso})</button>`;
     }
     if (v.vaza.ordem[v.vaza.atual] !== me) return `<p class="bulbous-wait">${esc(ctx.t('ui.turnOf', { nome: ctx.seatName(v.vaza.ordem[v.vaza.atual]) }))}</p>`;
     const jogaveis = new Set((msg.legal || []).filter((m) => m.type === 'APOSTAR').flatMap((m) => m.payload.cartas));
     const podeApostar = ui.selected.size > 0 && [...ui.selected].every((id) => jogaveis.has(id));
     const podeTrocar = ui.selected.size >= 1 && ui.selected.size <= 2;
-    return `<p class="bulbous-hint">${esc(ctx.t('ui.betHint'))}</p>
-      <button class="bulbous-move bet" data-act="bet" type="button" ${podeApostar ? '' : 'disabled'}>${esc(ctx.t('ui.betAction'))}</button>
+    return `<button class="bulbous-move bet" data-act="bet" type="button" ${podeApostar ? '' : 'disabled'}>${esc(ctx.t('ui.betAction'))}</button>
       <button class="bulbous-move swap" data-act="swap" type="button" ${podeTrocar ? '' : 'disabled'}>${esc(ctx.t('ui.swapAction'))}</button>
       <button class="bulbous-move pass" data-act="pass" type="button">${esc(ctx.t('ui.passAction'))}</button>`;
   }
@@ -343,8 +340,7 @@ function renderBar(v) {
     const b = ativasList(v).find((a) => a.jogador === v.vaza.alvoJogador && a.posicao === v.vaza.alvoPosicao)?.baelf;
     const mao = v.minhaMao || [];
     const jogaveis = mao.filter((c) => b && c.cor === b.cor);
-    return `<p class="bulbous-hint">${esc(ctx.t('ui.tieBreakHint', { cor: b ? ctx.t(`cor.${b.cor}`) : '' }))}</p>
-      ${jogaveis.map((c) => { const vis = cardVisual(c); return `<button class="bulbous-move" data-tie="${c.id}" type="button" style="background:var(${vis.colorVar});color:#fff">${vis.mid}</button>`; }).join('')}
+    return `${jogaveis.map((c) => { const vis = cardVisual(c); return `<button class="bulbous-move" data-tie="${c.id}" type="button" style="background:var(${vis.colorVar});color:#fff">${vis.mid}</button>`; }).join('')}
       <button class="bulbous-move cancel" data-tie="none" type="button">${esc(ctx.t('ui.tieBreakNone'))}</button>`;
   }
   return '';

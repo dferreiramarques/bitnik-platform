@@ -27,7 +27,9 @@
 .bulbous-layout {
   position: absolute; inset: 0;
   display: grid; grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto; row-gap: 10px;
+  /* A barra de ações fica na mesma linha da mão, por cima (ver .bulbous-bar):
+     não gasta linha própria. */
+  grid-template-rows: auto minmax(0, 1fr) auto auto; row-gap: 10px;
   padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
 }
 .bulbous-lbl {
@@ -116,7 +118,7 @@
 .bulbous-mybaelfs { grid-column: 2; justify-self: center; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 60vw; }
 
 /* ── Ações: mão e barra ── */
-.bulbous-hand { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 4px 0; }
+.bulbous-hand { grid-row: 4; grid-column: 1; align-self: end; display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 4px 0; }
 .bulbous-card {
   width: 58px; height: 82px; flex: none; box-sizing: border-box; border-radius: 9px; border: 2px solid var(--cc, var(--bulb-accent));
   background: color-mix(in srgb, var(--cc, var(--bulb-accent)) 20%, #16162a);
@@ -134,8 +136,11 @@
 /* A arte a sério (recuo: o cartão a CSS por baixo, texto+cor, sempre presente). */
 .bulbous-card-img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
 
+/* Flutua por cima da mão (mesma linha da grelha, ambos "end"): não gasta
+   espaço próprio — só quando há ações mesmo (:empty esconde-a). */
 .bulbous-bar {
-  justify-self: center; max-width: 100%; box-sizing: border-box;
+  grid-row: 4; grid-column: 1; align-self: end; justify-self: center; margin-bottom: 6px; z-index: 2;
+  max-width: 100%; box-sizing: border-box;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
   padding: 8px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .35);
 }
@@ -150,21 +155,21 @@
 .bulbous-move.pass { background: var(--g); color: var(--ot); border: 1px solid var(--gl); }
 .bulbous-move.confirm { background: var(--bulb-accent, #c084fc); color: var(--bulb-on-accent, #0d0d1a); }
 .bulbous-move.cancel { background: transparent; color: var(--otm); border: 1px solid var(--gl); }
-.bulbous-hint, .bulbous-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--otm); font-style: italic; }
+.bulbous-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--otm); font-style: italic; }
 
 /* ── Emoji de recuo, quando falta uma imagem (Baelfungious) ── */
 .bulbous-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
 
 @container (max-width: 760px) {
   .bulbous-layout { row-gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
-  /* Jogadores numa faixa com scroll horizontal (swipe para os restantes), como as Capivaras. */
-  .bulbous-players {
-    flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory; scroll-padding: 0 8px; scrollbar-width: none;
-    margin: 0 -8px; padding: 0 8px; width: auto;
-  }
-  .bulbous-players::-webkit-scrollbar { display: none; }
-  .bulbous-player { width: 148px; flex-shrink: 0; padding: 6px 8px; scroll-snap-align: start; }
+  /* Jogadores (só 2 ou 4): cada um ocupa uma fatia igual da linha — a 2, o
+     dobro da largura de a 4 — sem scroll, todos sempre visíveis. */
+  .bulbous-players { flex-wrap: nowrap; width: auto; gap: 6px; }
+  .bulbous-player { width: auto; flex: 1 1 0; min-width: 0; padding: 5px 7px; gap: 3px; }
+  .bulbous-pname { font-size: 10.5px; gap: 4px; }
+  .bulbous-pstate, .bulbous-pcards { font-size: 10px; }
+  .bulbous-minis { gap: 3px; }
+  .bulbous-mini { padding: 1px 4px; font-size: 10px; }
   .bulbous-chips { align-self: stretch; justify-content: center; }
   .bulbous-baelf { width: 72px; }
   /* As Baelfungious ativas (até 4) numa só linha: gap e tamanho pequenos o
@@ -184,8 +189,8 @@
 @container (orientation: landscape) and (max-height: 500px) {
   .bulbous-layout {
     grid-template-columns: 160px minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-    grid-template-areas: "players chips" "players center" "players bottom" "players hand" "players bar";
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "players chips" "players center" "players bottom" "players hand";
     column-gap: 10px; row-gap: 6px;
     padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
   }
@@ -205,7 +210,7 @@
   .bulbous-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
   .bulbous-bottom > .bulbous-log { display: none; }
   .bulbous-mybaelfs { grid-column: 1; max-width: none; }
-  .bulbous-hand { grid-area: hand; padding: 0; }
+  .bulbous-hand { grid-area: hand; align-self: end; padding: 0; }
   .bulbous-card { width: 44px; height: 62px; }
-  .bulbous-bar { grid-area: bar; justify-self: stretch; }
+  .bulbous-bar { grid-area: hand; align-self: end; margin-bottom: 4px; }
 }

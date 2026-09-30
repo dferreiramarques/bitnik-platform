@@ -1,5 +1,18 @@
 # Bulbous — histórico de regras
 
+## 1.1.5 — Jogadores sempre visíveis; ações sem texto; barra flutuante (2026-09-30)
+
+Sem mudanças de jogo. No telemóvel na vertical, os cartões dos
+jogadores deixam de ter largura fixa: dividem a linha em partes iguais
+(a 2 jogadores, o dobro da largura de a 4) e ficam sempre todos
+visíveis, sem scroll — só 2 ou 4 jogadores, por isso cabem sempre.
+
+Os botões de ação deixam de ter texto explicativo por cima (ex.:
+"Escolhe cartas da mesma cor…") — só a ação em si. A barra de ações
+passa a flutuar por cima da mão, em vez de ocupar uma linha própria
+(tal como os controlos de zoom de outros jogos), tanto no layout
+vertical como no horizontal.
+
 ## 1.1.4 — Jogadores em faixa; mesa numa linha; layout horizontal (2026-09-30)
 
 Sem mudanças de jogo. No telemóvel na vertical: os jogadores passam a
