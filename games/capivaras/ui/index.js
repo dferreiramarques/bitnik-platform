@@ -231,7 +231,6 @@ function renderLog() {
 }
 
 function renderBar(v) {
-  const me = mySeat();
   const total = v.jogadores.length;
   if (v.fase === 'REVELACAO') {
     return `<div class="capi-info"><b>${esc(ctx.t('ui.reveal'))}</b><small>${esc(ctx.t('ui.nextRound'))}</small></div>
@@ -239,13 +238,7 @@ function renderBar(v) {
   }
   if (v.fase !== 'APOSTAS') return '';
   const done = (v.apostas || []).filter(Boolean).length;
-  if (me == null) return `<p class="capi-wait">${esc(ctx.t('ui.watching', { n: done, total }))}</p>`;
-  const mine = v.apostas?.[me];
-  if (typeof mine === 'string') {
-    return `<div class="capi-info"><b>${esc(ctx.t('ui.waiting', { carta: mine }))}</b><small>${esc(ctx.t('ui.waitingSub', { n: done, total }))}</small></div>`;
-  }
-  return `<div class="capi-info pick"><b>${esc(ctx.t('ui.pick'))}</b><small>${esc(ctx.t('ui.pickSub'))}</small></div>
-    <span class="capi-count">${done}/${total}</span>`;
+  return `<div class="capi-info"><b>${esc(ctx.t('ui.betsCount', { n: done, total }))}</b></div>`;
 }
 
 /** Cartas o maior possível no espaço livre ao centro, em linhas equilibradas. */

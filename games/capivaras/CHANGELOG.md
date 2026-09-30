@@ -1,5 +1,19 @@
 # Capivaras — histórico de regras
 
+## 2.0.4 — Regras numa modal; barra de apostas simplificada; fade nos jogadores (2026-09-30)
+
+Ganha o botão "?" com as regras do jogo numa modal (`ui/rules-text.js`, PT
+e EN), como o Catania.
+
+Sem mudanças de jogo, no resto: a barra de estado, durante as apostas,
+passa a dizer sempre só "Apostas X / Y" — antes tinha 3 textos diferentes
+consoante o estado (a ver, à espera, a escolher), com alturas diferentes,
+que faziam a interface subir e descer; agora usa o mesmo formato e altura
+da barra de revelação. No layout horizontal (telemóvel/tablet deitado),
+os cartões dos jogadores ganham um fade nas pontas de cima e de baixo, a
+sugerir que há mais para ver com scroll — com o máximo de jogadores só
+davam para ver os primeiros 3.
+
 ## 2.0.3 — Cor do registo volta ao texto da mesa (2026-09-29)
 
 Sem mudanças de jogo: o registo deixa de ser branco fixo e volta a usar

@@ -2,6 +2,7 @@ import { defineGame } from '@bitnik/engine';
 import pt from './i18n/pt.js';
 import en from './i18n/en.js';
 import { CORES, criarBaralho, baralhar, porNaMesa, resolver, pontuar, vencedores, coresDe } from './rules.js';
+import rulesText from './ui/rules-text.js';
 
 function log(ctx, chave, params) {
   if (ctx && typeof ctx.log === 'function') ctx.log(chave, params || {});
@@ -22,7 +23,7 @@ function terminar(state, ctx) {
 
 export default defineGame({
   id: 'capivaras',
-  version: '2.0.3',
+  version: '2.0.4',
   players: { min: 2, max: 6 },
   author: 'David Marques',
   defaultLang: 'pt',
@@ -31,6 +32,9 @@ export default defineGame({
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
   skin: './ui/skin.json',
+  // Modal "Como se joga" (botão ? durante a partida, plataforma): condensado
+  // do REGRAS.md, nas duas línguas — não é lido pelas regras.
+  rules: rulesText,
   preview: { players: 4 }, // pré-visualização na consola (Aparência)
 
   setup(ctx) {
