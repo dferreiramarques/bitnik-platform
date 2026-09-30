@@ -421,12 +421,12 @@ export function createPlatform({
     return out;
   }
 
-  /** Tema e tokens de um jogo, validados contra o skin.json do pacote. */
+  /** Tema, tokens e capa do lobby de um jogo, validados contra o skin.json. */
   async function cleanGameConfig(gameId, cfg = {}) {
     const g = G.get(gameId);
     if (!g) throw new Error(`${gameId}: jogo não instalado`);
     const skin = await readPkgJson(g, g.skin);
-    const out = { theme: null, tokens: {} };
+    const out = { theme: null, tokens: {}, cover: null };
     if (cfg?.theme) {
       if (!g.themes?.[cfg.theme]) throw new Error(`${gameId}: tema ${cfg.theme} não existe`);
       out.theme = cfg.theme;
@@ -437,6 +437,9 @@ export function createPlatform({
       const c = cleanToken(k, def.type, v);
       if (c) out.tokens[k] = c;
     }
+    // Não é um token do skin.json (não há CSS por trás) — mesma validação de
+    // url() que --table-bg e afins, para aceitar só imagens seguras.
+    if (cfg?.cover != null) out.cover = cleanToken(gameId, 'image', cfg.cover);
     return out;
   }
 
@@ -445,7 +448,7 @@ export function createPlatform({
     const next = { brand: { tokens: cleanBrandTokens(input.brand?.tokens) }, games: {} };
     for (const [gameId, cfg] of Object.entries(input.games || {})) {
       const out = await cleanGameConfig(gameId, cfg);
-      if (out.theme || Object.keys(out.tokens).length) next.games[gameId] = out;
+      if (out.theme || Object.keys(out.tokens).length || out.cover) next.games[gameId] = out;
     }
     appearance = next;
     storage.saveAppearance?.(appearance);
@@ -507,7 +510,9 @@ export function createPlatform({
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),
-          cover: gameFileUrl(g, g.cover),
+          // A consola pode sobrepor a capa do pacote (Aparência); em qualquer
+          // dos casos, chega já pronta a usar num custom property CSS.
+          cover: appearance.games?.[g.id]?.cover || (g.cover ? `url('${gameFileUrl(g, g.cover)}')` : null),
           rules: g.rules || null,
           themes: Object.fromEntries(Object.entries(g.themes || {}).map(([k, rel]) => [k, gameFileUrl(g, rel)])),
         })),

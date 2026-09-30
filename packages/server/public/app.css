@@ -452,6 +452,12 @@ body.is-home { background: var(--brand-primary, #b8461f); }
   background: linear-gradient(135deg, var(--cover), color-mix(in srgb, var(--cover) 62%, #000));
 }
 .home-cover span { font: 800 24px/1 var(--ui-display); }
+/* Com imagem de capa (Aparência ou defineGame({ cover })): a foto em vez do
+   gradiente, escurecida da mesma forma que o lobby (.lob.has-cover). */
+.home-card.has-cover .home-cover {
+  background: linear-gradient(rgb(0 0 0 / .35), rgb(0 0 0 / .55)), var(--home-cover-img) center / cover no-repeat;
+}
+.home-card.has-cover .home-cover span { text-shadow: 0 2px 8px rgb(0 0 0 / .7), 0 0 20px rgb(0 0 0 / .4); }
 .home-info { padding: 12px; display: grid; gap: 4px; }
 .home-info small { font-size: 11px; opacity: .85; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .home-mname { display: none; }

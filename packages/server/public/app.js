@@ -205,7 +205,7 @@ function renderLobby(only = null) {
   const earlier = solos.slice(0, 6);
   const others = [...mine.filter((r) => r.kind === 'invite'), ...app.rooms.public.filter((r) => r.gameId === g.id)];
   const bots = (n) => (n - 1 === 1 ? u('oneBot') : u('nBots', { n: n - 1 }));
-  return `<section class="home lob${g.cover ? ' has-cover' : ''}"${g.cover ? ` style="--lob-cover:url('${esc(g.cover)}')"` : ''}>
+  return `<section class="home lob${g.cover ? ' has-cover' : ''}"${g.cover ? ` style="--lob-cover:${esc(g.cover)}"` : ''}>
     ${renderRulesModal(g)}
     ${renderBrandTop(g.id)}
     <div class="lob-main">
@@ -266,7 +266,8 @@ function renderHome() {
           <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}"></label>
       </div>
       <div class="home-grid" style="--cols:${Math.min(Math.max(games.length, 1), 5)}">${games.map((g, i) => {
-        return `<a class="home-card" href="#/j/${esc(g.id)}" style="--cover:${COVERS[i % COVERS.length]}">
+        const coverStyle = `--cover:${COVERS[i % COVERS.length]}${g.cover ? `;--home-cover-img:${esc(g.cover)}` : ''}`;
+        return `<a class="home-card${g.cover ? ' has-cover' : ''}" href="#/j/${esc(g.id)}" style="${coverStyle}">
           <div class="home-cover"><span>${esc(t('game.name', {}, g.id))}</span></div>
           <div class="home-info"><b class="home-mname">${esc(t('game.name', {}, g.id))}</b>
             <small>${playersText(g.players)}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</small></div>

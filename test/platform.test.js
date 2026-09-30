@@ -522,6 +522,38 @@ test('aparência: catálogo com skin e temas; afinações validadas, enviadas ao
   await s2.stop();
 });
 
+test('aparência: capa do lobby por jogo (nova, ou a sobrepor a do pacote)', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/appearance`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const put = (body) => fetch(url, { method: 'PUT', headers: auth, body: JSON.stringify(body) });
+
+  // Recusas: só imagens seguras (mesma validação dos tokens de imagem/fundo).
+  assert.equal((await put({ games: { catania: { cover: 'url(javascript:alert(1))' } } })).status, 400);
+  assert.equal((await put({ games: { catania: { cover: 'red;}body{display:none' } } })).status, 400);
+
+  const c1 = await s.client();
+  assert.equal(c1.welcome.games.find((g) => g.id === 'catania').cover, null, 'catania não tem capa no pacote');
+  assert.match(c1.welcome.games.find((g) => g.id === 'bulbous').cover, /^url\('\/games\/bulbous\/ui\/cards\/baelf_red_4\.webp'\)$/, 'bulbous usa a capa do pacote');
+
+  const cover = 'url("data:image/png;base64,iVBORw0KGgo=")';
+  const ok = await put({ games: { catania: { cover }, bulbous: { cover } } });
+  assert.equal(ok.status, 200);
+  const { appearance } = await ok.json();
+  assert.equal(appearance.games.catania.cover, cover);
+
+  const c2 = await s.client();
+  assert.equal(c2.welcome.games.find((g) => g.id === 'catania').cover, cover, 'a consola dá capa a um jogo que não tinha');
+  assert.equal(c2.welcome.games.find((g) => g.id === 'bulbous').cover, cover, 'a consola sobrepõe-se à capa do pacote');
+
+  // Apagar a capa (string vazia) volta à do pacote (ou nenhuma).
+  await put({ games: { catania: { cover: '' }, bulbous: { cover: '' } } });
+  const c3 = await s.client();
+  assert.equal(c3.welcome.games.find((g) => g.id === 'catania').cover, null);
+  assert.match(c3.welcome.games.find((g) => g.id === 'bulbous').cover, /baelf_red_4\.webp/);
+  await s.stop();
+});
+
 test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência certa', async () => {
   const { exportAll, defaultsFor } = await import('../tools/figma.js');
   const { designTokensToAppearance, readDesignTokens, isDesignTokens } = await import('../packages/server/public/design-tokens.js');
