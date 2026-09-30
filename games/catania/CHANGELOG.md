@@ -2,6 +2,12 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.8 — Imagem do lobby, mais discreta
+
+A imagem de capa (5.0.7) passa do mosaico de hexágonos ao próprio
+gradiente e padrão de ondas do fundo da mesa (`--table-bg` no
+skin.json) — mais sóbria, sem repetir o tabuleiro em ecrã pequeno.
+
 ## 5.0.7 — Imagem do lobby
 
 Sem mudanças de jogo: acrescenta `cover` ao contrato (a ilha de

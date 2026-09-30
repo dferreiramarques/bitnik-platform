@@ -8,7 +8,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'catania',
-  version: '5.0.7',
+  version: '5.0.8',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'CC-BY-4.0',
@@ -24,7 +24,7 @@ export default defineGame({
   // Aparência (ADR-008): tokens por omissão e temas de design à medida.
   skin: './ui/skin.json',
   themes: { dia: './ui/themes/dia/theme.json' },
-  cover: './ui/cover.svg', // ilha de hexágonos (fundo escurecido do lobby)
+  cover: './ui/cover.svg', // mar e gradiente da mesa (fundo escurecido do lobby)
   preview: { scenario: 'tutorial-meio', players: 4 }, // cenário da pré-visualização na consola
 
   setup: rules.setup,
