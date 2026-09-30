@@ -52,7 +52,6 @@ export default {
   'ui.log': 'Log',
   'ui.myHand': 'My hand',
   'ui.handEmpty': '(no cards)',
-  'ui.reserve': 'Reserve: {n}',
   'ui.opponentHand': 'Hand: {n}',
   'ui.hintBlind': 'Pick a face-down card from the opponent’s hand.',
   'ui.hintDiscard': 'Click a card’s X to discard it.',

@@ -164,14 +164,10 @@ function renderBanca(j) {
 function renderPlayers(v, me) {
   const active = activeSeat(v);
   return `<div class="nof-players">${v.jogadores.map((j, i) => {
-    const score = j.banca.filter((x) => x === 2).length;
     return `<div class="nof-player${i === me ? ' me' : ''}${i === active ? ' active' : ''}">
-      <div class="nof-pname"><i class="nof-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span><b class="nof-score">${score}/6</b></div>
+      <div class="nof-pname"><i class="nof-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span></div>
       ${renderBanca(j)}
-      <div class="nof-pmeta">
-        <span>🧴 ${esc(ctx.t('ui.reserve', { n: j.reserva }))}</span>
-        ${i === me ? '' : `<span>🂠 ${esc(ctx.t('ui.opponentHand', { n: j.cartas }))}</span>`}
-      </div>
+      ${i === me ? '' : `<div class="nof-pmeta"><span>🂠 ${esc(ctx.t('ui.opponentHand', { n: j.cartas }))}</span></div>`}
     </div>`;
   }).join('')}</div>`;
 }

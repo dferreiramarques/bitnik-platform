@@ -52,7 +52,6 @@ export default {
   'ui.log': 'Registo',
   'ui.myHand': 'A minha mão',
   'ui.handEmpty': '(sem cartas)',
-  'ui.reserve': 'Reserva: {n}',
   'ui.opponentHand': 'Mão: {n}',
   'ui.hintBlind': 'Escolhe uma carta virada para baixo da mão do adversário.',
   'ui.hintDiscard': 'Clica no X de uma carta para a descartar.',

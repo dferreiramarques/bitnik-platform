@@ -41,7 +41,6 @@
 .nof-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
 .nof-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nof-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
-.nof-score { font-family: var(--game-font-display); font-weight: 800; font-size: 14px; line-height: 1; color: var(--game-on-table-accent, #ffd9c2); }
 .nof-banca { display: flex; gap: 5px; }
 .nof-slot {
   width: 28px; height: 28px; border-radius: 6px; box-sizing: border-box; flex: none;
@@ -100,7 +99,7 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 /* ── X de descarte, no canto da carta ── */
 .nof-card-wrap { position: relative; display: inline-block; }
 .nof-x-btn {
-  position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; min-height: 0; padding: 0;
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; min-height: 0; padding: 0;
   border-radius: 50%; border: 2px solid var(--game-panel, #fffaf1); background: var(--game-danger, #b3261e); color: #fff;
   font-size: 15px; font-weight: 800; line-height: 1; display: grid; place-items: center; cursor: pointer;
   box-shadow: 0 2px 6px rgb(0 0 0 / .4);
@@ -161,8 +160,37 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 @container (max-width: 760px) {
   .nof-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
   .nof-player { width: 160px; padding: 7px 8px; }
-  .nof-slot { width: 22px; height: 22px; }
+  /* 6 caixas numa só linha: nunca partir (nowrap) e encolher o suficiente
+     para caberem nos 144px de conteúdo do cartão (160 - padding). */
+  .nof-banca { flex-wrap: nowrap; gap: 4px; }
+  .nof-slot { width: 20px; height: 20px; font-size: 12px; }
   .nof-bottom { grid-template-columns: minmax(0, 1fr); }
   .nof-bottom > .nof-log { display: none; }
   .nof-hand { justify-self: center; justify-items: center; }
+}
+
+/* ── Telemóvel na horizontal: jogadores à esquerda, tal como as Capivaras ── */
+@container (orientation: landscape) and (max-height: 500px) {
+  .nof-layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: "players center" "players bottom" "players bar";
+    column-gap: 10px; row-gap: 6px;
+    padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
+  }
+  .nof-players {
+    grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start;
+    overflow-y: auto; scrollbar-width: none; gap: 6px;
+  }
+  .nof-players::-webkit-scrollbar { display: none; }
+  .nof-player { width: auto; padding: 6px 8px; }
+  .nof-banca { flex-wrap: nowrap; gap: 4px; }
+  .nof-slot { width: 20px; height: 20px; font-size: 12px; }
+  .nof-center { grid-area: center; gap: 6px; }
+  .nof-die { width: 28px; height: 28px; }
+  .nof-card.big { width: 76px; height: 102px; font-size: 36px; }
+  .nof-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
+  .nof-bottom > .nof-log { display: none; }
+  .nof-hand { justify-self: center; justify-items: center; }
+  .nof-bar { grid-area: bar; justify-self: stretch; }
 }

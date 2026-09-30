@@ -1,5 +1,18 @@
 # Nine Oils — histórico de regras
 
+## 1.1.11 — Regras numa modal; banca numa só linha; X do descarte dentro da carta (2026-09-30)
+
+Ganha o botão "?" com as regras do jogo numa modal (`ui/rules-text.js`, PT
+e EN), como o Catania — não existia nenhum atalho de regras até aqui.
+
+Sem mudanças de jogo, no resto: as 6 casas da banca deixam de partir em
+2 linhas no telemóvel (encolhem o suficiente para caberem sempre numa só).
+Removidos "{pontos}/6" e "Reserva: {n}" do cartão do jogador — informação
+repetida com as próprias casas da banca. O X de descarte passa para
+dentro dos limites da carta (estava a sair pelo canto). Acrescenta um
+layout horizontal (telemóvel/tablet deitado) com os jogadores à esquerda,
+como as Capivaras.
+
 ## 1.1.10 — Cor do registo volta ao texto da mesa (2026-09-29)
 
 Sem mudanças de jogo: o registo deixa de ser branco fixo e volta a usar
