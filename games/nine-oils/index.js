@@ -9,7 +9,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'nine-oils',
-  version: '1.1.21',
+  version: '1.1.22',
   players: { min: 2, max: 2 },
   author: 'David Marques',
   license: 'UNLICENSED',

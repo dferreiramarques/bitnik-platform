@@ -27,6 +27,10 @@
 import { conjuntos, describeMove } from '../rules.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+// Igual ao MSG_MS do app.js (fila da mensagem da mesa) — não há forma de
+// perguntar à plataforma quando a fila esvazia, por isso simula-se aqui a
+// mesma fila (só este jogo manda mensagens para esta mesa).
+const MSG_MS = 2600;
 const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
@@ -86,9 +90,17 @@ const fresh = () => ({
   logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null,
   selected: [], diceSel: [], diceGroups: [], comboOpen: false, wasMine: false, wasDescarte: false, wasBlind: false,
   reveal: null, revealTimer: null, revealHold: false,
-  diceAnimatedKey: null, rollShown: false,
+  diceAnimatedKey: null, rollShown: false, queueEta: 0,
 });
 let ui = fresh();
+
+/** Manda a mensagem para a mesa e guarda quando a fila (simulada) fica
+ * livre — para a zona de lançar não aparecer por cima de mensagens ainda
+ * a mostrar (ver renderCenter). */
+function announce(key, params, variant) {
+  ui.queueEta = Math.max(ui.queueEta, Date.now()) + MSG_MS;
+  ctx.announce(ctx.t(key, params), '', variant);
+}
 
 function onKeydown(e) {
   if (e.key === 'Escape' && ui.cardInfo) { ui.cardInfo = null; render(); }
@@ -201,7 +213,7 @@ export function update(next) {
   const me = mySeat();
   for (const l of msg.log || []) {
     if ((l.seq ?? 0) <= ui.lastLogSeq) continue;
-    if (l.announce != null) ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
+    if (l.announce != null) announce(l.announce.key, l.announce.params, l.announce.variant);
     // A carta jogada pelo adversário é informação pública (vai para o descarte):
     // mostra-se a arte uns segundos, como prova do que ele jogou — mas se
     // levar a uma defesa (Rapaz) ou escolha às cegas (2 Valentões), mantém-se
@@ -219,13 +231,13 @@ export function update(next) {
   }
   // "É a tua vez": só quando passa a sê-lo (não em cada atualização do mesmo turno).
   const mine = me != null && !!msg.active?.includes(me) && !msg.result;
-  if (mine && !ui.wasMine) { ctx.announce(ctx.t('ui.yourTurn')); ui.rollShown = false; }
+  if (mine && !ui.wasMine) { announce('ui.yourTurn'); ui.rollShown = false; }
   ui.wasMine = mine;
   const descarte = mine && msg.view.fase === 'DESCARTE';
-  if (descarte && !ui.wasDescarte) ctx.announce(ctx.t('ui.hintDiscard'));
+  if (descarte && !ui.wasDescarte) announce('ui.hintDiscard');
   ui.wasDescarte = descarte;
   const blind = mine && msg.view.fase === 'ESCOLHA_CEGA';
-  if (blind && !ui.wasBlind) ctx.announce(ctx.t('ui.hintBlind'));
+  if (blind && !ui.wasBlind) announce('ui.hintBlind');
   ui.wasBlind = blind;
   if (msg.view.fase !== 'CARTAS' && msg.view.fase !== 'DEFESA') ui.selected = [];
   if (msg.view.fase !== 'COMBO') { ui.diceSel = []; ui.diceGroups = []; ui.comboOpen = false; }
@@ -381,10 +393,14 @@ function renderCenter(v, me) {
   if (v.fase === 'CARTAS') {
     const canRoll = (msg.legal || []).some((m) => m.type === 'LANCAR');
     if (!canRoll) return ''; // vez do adversário: nada aqui (ver "é a tua vez" e as mensagens da mesa)
-    // Só aparece (com fade) depois da mensagem "é a tua vez" (ver rollShown).
+    // Só aparece (com fade) depois de a fila de mensagens da mesa esvaziar —
+    // com várias mensagens seguidas, isso pode demorar mais do que uma (ver
+    // queueEta/announce), por isso o atraso calcula-se, não é fixo.
     const justAppeared = !ui.rollShown;
     ui.rollShown = true;
-    return `<button class="nof-rollzone${justAppeared ? ' appear' : ''}" type="button" data-act="roll" aria-label="${esc(ctx.t('move.LANCAR'))}">${heading}</button>`;
+    const delay = justAppeared ? Math.max(0, ui.queueEta - Date.now()) : 0;
+    const style = justAppeared ? ` style="animation-delay:${delay}ms"` : '';
+    return `<button class="nof-rollzone${justAppeared ? ' appear' : ''}" type="button" data-act="roll" aria-label="${esc(ctx.t('move.LANCAR'))}"${style}>${heading}</button>`;
   }
   if (v.fase === 'DEFESA') {
     const canDefend = (msg.legal || []).some((m) => m.type === 'DEFENDER');

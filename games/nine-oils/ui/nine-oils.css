@@ -64,7 +64,9 @@
 /* ── Centro: fase e dados ── */
 .nof-center { min-height: 0; display: grid; align-content: center; justify-items: center; gap: 10px; }
 .nof-phase { font-family: var(--game-font-display); font-weight: 800; font-size: clamp(1.1rem, 3vw, 1.6rem); text-align: center; text-shadow: 0 1px 3px rgb(0 0 0 / .6); }
-.nof-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
+/* Espaço suficiente para o contorno de grupo (3px + 3px de offset) de dois
+   dados vizinhos não se tocar/cortar um ao outro. */
+.nof-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; max-width: min(95%, 520px); }
 /* ── Dado: "flipbook" pelas 6 faces fotografadas (uma a cada ~2 frames, a
    12fps) com desfoque e um leve sobe-desce, até assentar na face lançada —
    mais simples e mais nítido do que rodar um cubo em 3D. Cada [data-face]
@@ -150,14 +152,16 @@
 @media (prefers-reduced-motion: reduce) { .nof-die { animation: none !important; } }
 /* ── Zona dos dados: em CARTAS, é o próprio botão de lançar (só existe
    quando é a minha vez — ver renderCenter). Aparece com fade só da primeira
-   vez (.appear), depois de a mensagem "é a tua vez" terminar (MSG_MS no
-   app.js); voltar a desenhar (selecionar cartas) não repete o fade. ── */
+   vez (.appear), depois de a fila de mensagens da mesa esvaziar — o atraso
+   vem calculado inline (style, ver renderCenter/queueEta no index.js), já
+   que pode haver mais do que uma mensagem antes de "é a tua vez"; voltar a
+   desenhar (selecionar cartas) não repete o fade. ── */
 .nof-rollzone {
   background: none; border: 2px dashed var(--gl); border-radius: var(--game-radius, 14px);
   padding: 18px 28px; color: inherit; font: inherit; cursor: pointer;
   transition: background-color .15s ease, transform .15s ease;
 }
-.nof-rollzone.appear { opacity: 0; animation: nof-fade-in .5s ease-out 2.6s forwards; }
+.nof-rollzone.appear { opacity: 0; animation: nof-fade-in .5s ease-out 0s forwards; }
 @keyframes nof-fade-in { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .nof-rollzone.appear { opacity: 1; animation: none; } }
 .nof-rollzone:hover, .nof-rollzone:focus-visible { background-color: rgb(255 255 255 / .08); transform: scale(1.03); }

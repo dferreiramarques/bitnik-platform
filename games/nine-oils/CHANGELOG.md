@@ -1,5 +1,18 @@
 # Nine Oils — histórico de regras
 
+## 1.1.22 — Atraso do fade calculado, não fixo; mais espaço entre dados (2026-10-01)
+
+Sem mudanças de jogo:
+
+- A zona "Lançar os dados" podia aparecer (com fade) ainda com
+  mensagens da mesa por mostrar, quando havia mais do que uma em fila
+  (ex.: o combo do adversário + "é a tua vez"). O atraso de 2,6s fixo
+  passa a calculado: o jogo simula a mesma fila da mensagem da mesa
+  (não há forma de perguntar à plataforma quando esvazia) e só mostra
+  a zona depois de a última mensagem mandada por ele acabar.
+- Mais espaço entre os dados (8px → 16px): o contorno das partes já
+  atribuídas (fase COMBO) estava a tocar/cortar o do dado vizinho.
+
 ## 1.1.21 — Combinações com várias partes: atribuir cada parte aos dados (2026-10-01)
 
 Sem mudanças de jogo: corrige um caso em que um lançamento com uma
