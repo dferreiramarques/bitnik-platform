@@ -1,5 +1,13 @@
 # Bulbous — histórico de regras
 
+## 1.1.13 — Capa do lobby uniformizada com os outros jogos (2026-10-01)
+
+Sem mudanças de jogo. A capa do lobby deixa de ser a foto de uma carta
+(baelf_red_4.webp) e passa a ser o mesmo gradiente e textura do fundo
+da mesa em jogo (`--table-bg` do skin.json) — como o Catania, a Praia
+das Percebes, o Nine Oils e as Capivaras, para os lobbies terem todos
+o mesmo tipo de fundo (uma cor/textura discreta, não uma foto).
+
 ## 1.1.12 — Crachá da sequência dentro do próprio cartão (2026-09-30)
 
 Sem mudanças de jogo. O número (1, 2, 3, 4) sobre cada Baelfungious

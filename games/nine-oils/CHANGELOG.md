@@ -1,5 +1,12 @@
 # Nine Oils — histórico de regras
 
+## 1.1.12 — Imagem do lobby (2026-10-01)
+
+Sem mudanças de jogo: acrescenta `cover` ao contrato — o mesmo
+gradiente do fundo da mesa em jogo (`--table-bg` do skin.json), usado
+como fundo escurecido do lobby na plataforma e miniatura na página da
+marca, como o Catania já tinha.
+
 ## 1.1.11 — Regras numa modal; banca numa só linha; X do descarte dentro da carta (2026-09-30)
 
 Ganha o botão "?" com as regras do jogo numa modal (`ui/rules-text.js`, PT

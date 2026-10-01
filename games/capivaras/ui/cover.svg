@@ -1,0 +1,6 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+  <defs><radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0%" stop-color="#3f8f7f"/><stop offset="55%" stop-color="#256558"/><stop offset="100%" stop-color="#163f37"/></radialGradient>
+    <pattern id="dots" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1" fill="#fffaf1" opacity="0.12"/></pattern></defs>
+  <rect x="0" y="0" width="900" height="600" fill="url(#bg)"/>
+  <rect x="0" y="0" width="900" height="600" fill="url(#dots)"/>
+</svg>

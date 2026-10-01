@@ -8,7 +8,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'bulbous',
-  version: '1.1.12',
+  version: '1.1.13',
   // 2 jogadores, ou 4 (individual; em equipas com options.equipas). A 3 não se joga.
   players: { min: 2, max: 4, counts: [2, 4] },
   author: 'David Marques',
@@ -18,7 +18,7 @@ export default defineGame({
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
   skin: './ui/skin.json',
-  cover: './ui/cards/baelf_red_4.webp',
+  cover: './ui/cover.svg', // gradiente e textura da mesa (fundo escurecido do lobby)
 
   setup: rules.setup,
   moves: rules.moves,

@@ -1,5 +1,12 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.18 — Imagem do lobby (2026-10-01)
+
+Sem mudanças de jogo: acrescenta `cover` ao contrato — o mesmo
+gradiente do fundo da mesa em jogo (`--table-bg` do skin.json), usado
+como fundo escurecido do lobby na plataforma e miniatura na página da
+marca, como o Catania já tinha.
+
 ## 2.0.17 — Cor do registo volta ao texto da mesa; objetivos colapsam no telemóvel (2026-09-29)
 
 Sem mudanças de jogo:

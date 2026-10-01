@@ -533,8 +533,8 @@ test('aparência: capa do lobby por jogo (nova, ou a sobrepor a do pacote)', asy
   assert.equal((await put({ games: { catania: { cover: 'red;}body{display:none' } } })).status, 400);
 
   const c1 = await s.client();
-  assert.equal(c1.welcome.games.find((g) => g.id === 'catania').cover, null, 'catania não tem capa no pacote');
-  assert.match(c1.welcome.games.find((g) => g.id === 'bulbous').cover, /^url\('\/games\/bulbous\/ui\/cards\/baelf_red_4\.webp'\)$/, 'bulbous usa a capa do pacote');
+  assert.match(c1.welcome.games.find((g) => g.id === 'catania').cover, /^url\('\/games\/catania\/ui\/cover\.svg'\)$/, 'catania usa a capa do pacote');
+  assert.match(c1.welcome.games.find((g) => g.id === 'bulbous').cover, /^url\('\/games\/bulbous\/ui\/cover\.svg'\)$/, 'bulbous usa a capa do pacote');
 
   const cover = 'url("data:image/png;base64,iVBORw0KGgo=")';
   const ok = await put({ games: { catania: { cover }, bulbous: { cover } } });
@@ -546,11 +546,11 @@ test('aparência: capa do lobby por jogo (nova, ou a sobrepor a do pacote)', asy
   assert.equal(c2.welcome.games.find((g) => g.id === 'catania').cover, cover, 'a consola dá capa a um jogo que não tinha');
   assert.equal(c2.welcome.games.find((g) => g.id === 'bulbous').cover, cover, 'a consola sobrepõe-se à capa do pacote');
 
-  // Apagar a capa (string vazia) volta à do pacote (ou nenhuma).
+  // Apagar a capa (string vazia) volta à do pacote.
   await put({ games: { catania: { cover: '' }, bulbous: { cover: '' } } });
   const c3 = await s.client();
-  assert.equal(c3.welcome.games.find((g) => g.id === 'catania').cover, null);
-  assert.match(c3.welcome.games.find((g) => g.id === 'bulbous').cover, /baelf_red_4\.webp/);
+  assert.match(c3.welcome.games.find((g) => g.id === 'catania').cover, /cover\.svg/);
+  assert.match(c3.welcome.games.find((g) => g.id === 'bulbous').cover, /cover\.svg/);
   await s.stop();
 });
 

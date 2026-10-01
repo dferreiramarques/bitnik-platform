@@ -1,5 +1,12 @@
 # Capivaras — histórico de regras
 
+## 2.0.6 — Imagem do lobby (2026-10-01)
+
+Sem mudanças de jogo: acrescenta `cover` ao contrato — o mesmo
+gradiente do fundo da mesa em jogo (`--table-bg` do skin.json), usado
+como fundo escurecido do lobby na plataforma e miniatura na página da
+marca, como o Catania já tinha.
+
 ## 2.0.5 — Modal das regras ao estilo do jogo (2026-09-30)
 
 Sem mudanças de jogo: a modal "Como se joga" usava as cores genéricas da
