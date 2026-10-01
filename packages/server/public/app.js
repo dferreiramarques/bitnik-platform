@@ -440,10 +440,14 @@ function usesFullMesa(msg) {
 function renderTableTop(gameId, meta, extra = '') {
   const brand = W()?.brand?.name || $('#brand').textContent;
   const offline = app.status === 'closed' ? `<span class="mesa-chip warn" role="status">${esc(u('closed'))}</span>` : '';
+  // Quem entra direto por um link de convite nunca passa pelo lobby (onde
+  // normalmente se escolhe o nome) — sem este campo, ficava preso ao nome
+  // por omissão.
+  const nameInput = `<input class="home-name-sm" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}">`;
   return `<header class="mesa-top">
     <div class="mesa-id"><strong class="mesa-brand">${esc(brand)}</strong><span class="mesa-sep">·</span>
       <strong class="mesa-game">${esc(t('game.name', {}, gameId))}</strong><span class="mesa-meta">${meta}</span></div>
-    <div class="mesa-actions">${offline}<span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}
+    <div class="mesa-actions">${nameInput}${offline}<span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}
       <button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
   </header>`;
