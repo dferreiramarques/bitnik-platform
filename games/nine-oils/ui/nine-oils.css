@@ -73,7 +73,8 @@
   --d: 64px; width: var(--d); height: var(--d); box-sizing: border-box; border-radius: 18%;
   background-size: cover; background-position: center; background-repeat: no-repeat;
   box-shadow: 0 4px 10px rgb(0 0 0 / .45);
-  animation-duration: .9s; animation-timing-function: steps(1, jump-end); animation-fill-mode: both;
+  animation-duration: .45s; animation-timing-function: steps(1, jump-end); animation-fill-mode: both;
+  border: 0; padding: 0; display: block; -webkit-appearance: none; appearance: none;
 }
 .nof-die[data-face="1"] { background-image: url('./dados/1.png'); animation-name: nof-roll-1; }
 .nof-die[data-face="2"] { background-image: url('./dados/2.png'); animation-name: nof-roll-2; }
@@ -137,21 +138,20 @@
   70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
   84%, 100% { background-image: url('./dados/6.png'); filter: blur(0); transform: translateY(0); }
 }
-.nof-die:nth-child(9n+1) { animation-delay: .02s; } .nof-die:nth-child(9n+2) { animation-delay: .06s; }
-.nof-die:nth-child(9n+3) { animation-delay: .1s; } .nof-die:nth-child(9n+4) { animation-delay: .14s; }
-.nof-die:nth-child(9n+5) { animation-delay: .18s; } .nof-die:nth-child(9n+6) { animation-delay: .22s; }
-.nof-die:nth-child(9n+7) { animation-delay: .26s; } .nof-die:nth-child(9n+8) { animation-delay: .3s; }
-.nof-die:nth-child(9n+9) { animation-delay: .34s; }
+.nof-die:nth-child(9n+1) { animation-delay: .01s; } .nof-die:nth-child(9n+2) { animation-delay: .03s; }
+.nof-die:nth-child(9n+3) { animation-delay: .05s; } .nof-die:nth-child(9n+4) { animation-delay: .07s; }
+.nof-die:nth-child(9n+5) { animation-delay: .09s; } .nof-die:nth-child(9n+6) { animation-delay: .11s; }
+.nof-die:nth-child(9n+7) { animation-delay: .13s; } .nof-die:nth-child(9n+8) { animation-delay: .15s; }
+.nof-die:nth-child(9n+9) { animation-delay: .17s; }
 @media (prefers-reduced-motion: reduce) { .nof-die { animation: none !important; } }
-/* ── Zona dos dados: em CARTAS, é o próprio botão de lançar ── */
+/* ── Zona dos dados: em CARTAS, é o próprio botão de lançar (só existe
+   quando é a minha vez — ver renderCenter). ── */
 .nof-rollzone {
   background: none; border: 2px dashed var(--gl); border-radius: var(--game-radius, 14px);
   padding: 18px 28px; color: inherit; font: inherit; cursor: pointer;
   transition: background-color .15s ease, transform .15s ease;
 }
-.nof-rollzone[data-act] { cursor: pointer; }
-.nof-rollzone[data-act]:hover, .nof-rollzone[data-act]:focus-visible { background-color: rgb(255 255 255 / .08); transform: scale(1.03); }
-.nof-rollzone:disabled { border-style: solid; cursor: default; opacity: .7; }
+.nof-rollzone:hover, .nof-rollzone:focus-visible { background-color: rgb(255 255 255 / .08); transform: scale(1.03); }
 .nof-rollzone .nof-phase { text-shadow: none; }
 .nof-blind { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
 
@@ -167,6 +167,23 @@
   box-shadow: 0 8px 20px rgb(0 0 0 / .35);
 }
 .nof-combo-chip:hover, .nof-combo-chip:focus-visible { background: color-mix(in srgb, var(--game-accent, #b8461f) 55%, var(--g)); }
+.nof-combo-chip:disabled { opacity: .45; cursor: default; }
+.nof-combo-chip:disabled:hover { background: var(--g); }
+
+/* ── Dados clicáveis (fase COMBO): a seleção não mexe no transform/filter
+   (já usados pela animação do lançamento) — só um contorno. ── */
+.nof-dice.choosing .nof-die { cursor: pointer; }
+.nof-die.selected { outline: 3px solid var(--game-accent, #b8461f); outline-offset: 3px; box-shadow: 0 4px 10px rgb(0 0 0 / .45), 0 0 0 3px rgb(184 70 31 / .35); }
+
+/* ── Painel das combinações disponíveis: informativo (como a pilha de
+   valores do Catania), nunca botões — flutua à direita, sem mexer no resto
+   do ecrã. ── */
+.nof-combo-info {
+  position: absolute; right: 24px; top: 50%; transform: translateY(-50%); z-index: 4;
+  display: grid; gap: 4px; justify-items: end; max-width: 42%; pointer-events: none;
+  color: var(--ot); text-shadow: 0 1px 3px rgb(0 0 0 / .6), 0 0 10px rgb(0 0 0 / .4);
+}
+.nof-combo-info-row { font-size: 12px; font-weight: 700; text-align: right; }
 
 /* ── Cartas (mão e cartas viradas para baixo) ── */
 .nof-card {
@@ -191,8 +208,11 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 
 /* ── Carta jogada pelo adversário, revelada uns segundos (ver update() no
    index.js) — sobreposta, sem ocupar espaço no layout. ── */
+/* Mais abaixo do que o centro do ecrã: a mensagem da mesa (ctx.announce)
+   aparece a meio (top: 50%) e não pode ficar tapada pela carta. */
 .nof-reveal {
-  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; gap: 8px;
+  position: absolute; left: 50%; top: 72%; transform: translate(-50%, -50%);
+  z-index: 5; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
   pointer-events: none;
 }
 .nof-reveal .nof-card.face {
@@ -258,18 +278,14 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 .nof-log b { font-weight: 500; }
 .nof-log-head { pointer-events: auto; background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
 
-/* ── Barra de jogadas ── */
+/* ── Barra: só para espectadores (as jogadas têm interação própria no
+   centro/mão — rollzone, combinações, defesa, descarte, escolha às cegas). ── */
 .nof-bar {
   justify-self: center; max-width: 100%; box-sizing: border-box; overflow: hidden auto; max-height: min(40vh, 260px);
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
   padding: 8px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
 .nof-bar:empty { display: none; }
-.nof-move {
-  min-height: 44px; padding: 8px 14px; border-radius: var(--ui-r-pill, 999px); box-sizing: border-box;
-  background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); border: 0; font-weight: 700; font-size: 13px; cursor: pointer;
-}
-.nof-move:hover, .nof-move:focus-visible { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); }
 .nof-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; color: var(--otm); font-style: italic; }
 
 @container (max-width: 760px) {
@@ -284,6 +300,8 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-card.face.selected { transform: translateY(-24px) scale(1.05); }
   /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
   .nof-log { display: none; }
+  .nof-combo-info { right: 8px; max-width: 34%; }
+  .nof-combo-info-row { font-size: 10px; }
 }
 
 /* ── Telemóvel na horizontal: jogadores à esquerda, tal como as Capivaras ── */
@@ -310,4 +328,6 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-bottom { grid-area: bottom; }
   .nof-bar { grid-area: bar; justify-self: stretch; }
   .nof-log { display: none; }
+  .nof-combo-info { right: 6px; max-width: 30%; }
+  .nof-combo-info-row { font-size: 9px; }
 }

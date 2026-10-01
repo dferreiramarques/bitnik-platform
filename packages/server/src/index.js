@@ -97,7 +97,7 @@ export function createPlatform({
   brand = { id: 'default', name: 'Bitnik' },
   games = [],
   storage = memoryStorage(),
-  botDelayMs = [700, 1400],
+  botDelayMs = null, // sem valor explícito, cada jogo pode ter o seu (game.botDelayMs); por omissão, [700, 1400]
   graceMs = 60_000,
   studio = false,
   prototypeDir = null, // Studio: pasta onde a Forge instala os protótipos 0.x (etapa 5)
@@ -306,7 +306,7 @@ export function createPlatform({
     const game = gameFor(room);
     const seat = activeSeats(game, room.match).find((s) => botControls(room, s));
     if (seat == null) return;
-    const [a, b] = botDelayMs;
+    const [a, b] = botDelayMs || game.botDelayMs || [700, 1400];
     botTimers.set(room.id, setTimeout(() => {
       const mv = botMove(game, room.match, seat, room.level);
       if (!mv) return logger.warn(`[bot] ${room.id} lugar ${seat} sem jogada`);

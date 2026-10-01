@@ -38,6 +38,7 @@ export default defineGame({
   themes: { dia: './ui/themes/dia/theme.json' },  // temas de design à medida
   preview: { scenario: 'tutorial-meio', players: 4 }, // pré-visualização na consola
   hidden: true,                                   // instalado e jogável por link direto, mas fora da página da marca (ex.: demonstração do template)
+  botDelayMs: [3000, 3000],                       // segundos entre jogadas do bot, se o turno for vários passos seguidos; por omissão, [700, 1400]
 });
 ```
 

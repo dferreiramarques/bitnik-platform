@@ -9,7 +9,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'nine-oils',
-  version: '1.1.18',
+  version: '1.1.19',
   players: { min: 2, max: 2 },
   author: 'David Marques',
   license: 'UNLICENSED',
@@ -30,4 +30,7 @@ export default defineGame({
   result: rules.result,
   describeMove: rules.describeMove,
   bots: { default: defaultBot },
+  // Um turno do bot pode ser várias jogadas seguidas (lança, escolhe combo,
+  // descarta); 3s entre cada uma dá tempo a ler os dados e as mensagens.
+  botDelayMs: [3000, 3000],
 });

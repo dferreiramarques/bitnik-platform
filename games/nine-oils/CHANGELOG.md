@@ -1,5 +1,31 @@
 # Nine Oils — histórico de regras
 
+## 1.1.19 — Defesa e combinação pelos próprios componentes; bot mais devagar (2026-10-01)
+
+Sem mudanças de jogo:
+
+- Animação do dado ao dobro da velocidade (0,9s → 0,45s).
+- Fase CARTAS: a zona "Lançar os dados" desaparece por completo na vez
+  do adversário (antes ficava visível, só desativada). A carta
+  revelada do adversário já não se sobrepõe ao texto da mensagem da
+  mesa (desce para debaixo do centro do ecrã).
+- Fase DEFESA: sem botões "Bloquear com N Valentão(ões)" — seleciona-se
+  os Valentões da mão (até ao número de Rapazes a bloquear) e confirma-se
+  com um botão "Continuar", como nas combinações.
+- Fase COMBO: em vez de uma lista de botões, clica-se nos próprios
+  dados lançados para formar a combinação; "Continuar" só acende
+  quando a seleção corresponde a uma das opções. As combinações
+  disponíveis ficam visíveis aos dois jogadores num painel informativo
+  (como a pilha de valores do Catania), nunca como botões. No Joker (7
+  iguais), sem um grupo de dados literal para "Triplo + Duplo", mantém-se
+  a lista de botões.
+- Modal "Como se joga": imagens dos dados e das cartas a ilustrar as
+  combinações e as cartas de personagem.
+- O bot espera 3 segundos entre jogadas (antes, 0,7–1,4s, tempo a mais
+  quando um turno é vários passos seguidos: lançar, escolher combo,
+  descartar). Acrescenta `botDelayMs` ao contrato de um jogo (opcional;
+  por omissão continua [700, 1400] para os outros).
+
 ## 1.1.18 — Dado em "flipbook"; combinações junto aos dados; sem mensagens que empurrem o ecrã (2026-10-01)
 
 Sem mudanças de jogo:

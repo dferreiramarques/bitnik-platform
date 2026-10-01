@@ -10,6 +10,17 @@
 // Fase CARTAS: um clique numa carta da mão seleciona-a (fica destacada, como
 // a ir na direção dos dados) ou tira a seleção; dois cliques abrem os
 // detalhes; tocar na zona dos dados lança com as cartas selecionadas.
+//
+// Fase DEFESA: mesma lógica, mas só os Valentões são selecionáveis (até ao
+// número de Rapazes a bloquear); "Continuar" bloqueia com os que estiverem
+// selecionados (0 ou mais).
+//
+// Fase COMBO: clicar nos próprios dados lançados forma a combinação (ver
+// matchedOpcao); "Continuar" acende quando a seleção bate certo com uma das
+// opções. No Joker (7 iguais) isto não chega (não há um grupo de dados
+// literal para "Triplo + Duplo"), por isso aí volta-se à lista de botões.
+
+import { conjuntos, describeMove } from '../rules.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
@@ -17,8 +28,25 @@ const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
 /** Dado: a face é só CSS (ver [data-face] em nine-oils.css) — a animação
  * mostra as 6 faces em sequência (um "flipbook", com desfoque e um leve
- * sobe-desce) antes de assentar na face lançada. */
-const dieFace = (d) => `<i class="nof-die" data-face="${d}"></i>`;
+ * sobe-desce) antes de assentar na face lançada. Em COMBO, um botão de
+ * verdade (data-die), para escolher a combinação pelos próprios dados sem
+ * perder o teclado/leitor de ecrã; fora disso, é só decorativo. */
+const dieFace = (d, i, selected) => i != null
+  ? `<button class="nof-die${selected ? ' selected' : ''}" type="button" data-face="${d}" data-die="${i}" aria-pressed="${selected}" aria-label="${d}"></button>`
+  : `<i class="nof-die" data-face="${d}"></i>`;
+
+/** Quantos dados cada combinação consome, para ligar uma seleção de dados a
+ * uma das opções (ver matchedOpcao). */
+const COMBO_DICE = { DOUBLE: 2, QUAD: 4, TRIPLE_DOUBLE: 5, SIX_OF_KIND: 6, PENTA: 5 };
+const comboKey = (b) => [...b].sort().join('|');
+
+/** Dados selecionados → índice em v.opcoes, ou -1 se ainda não formam
+ * nenhuma das combinações disponíveis (ou sobram/faltam dados). */
+function matchedOpcao(v, selVals) {
+  if (!selVals.length) return -1;
+  const candidates = new Set(conjuntos(selVals).filter((b) => b.reduce((n, c) => n + (COMBO_DICE[c] || 0), 0) === selVals.length).map(comboKey));
+  return (v.opcoes || []).findIndex((o) => candidates.has(comboKey(o)));
+}
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;
@@ -33,7 +61,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [], wasMine: false, wasDescarte: false, wasBlind: false, reveal: null, revealTimer: null });
+const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [], diceSel: [], wasMine: false, wasDescarte: false, wasBlind: false, reveal: null, revealTimer: null });
 let ui = fresh();
 
 function onKeydown(e) {
@@ -48,8 +76,17 @@ function lancarMove(mao) {
 }
 
 function toggleCard(i) {
-  if (msg.view.fase !== 'CARTAS') return;
-  ui.selected = ui.selected.includes(i) ? ui.selected.filter((x) => x !== i) : [...ui.selected, i];
+  const v = msg.view;
+  const mao = v.minhaMao || [];
+  if (v.fase === 'CARTAS') {
+    ui.selected = ui.selected.includes(i) ? ui.selected.filter((x) => x !== i) : [...ui.selected, i];
+  } else if (v.fase === 'DEFESA') {
+    // Só Valentões, e nunca mais do que Rapazes a bloquear.
+    if (mao[i] !== 'BULLY') return;
+    if (ui.selected.includes(i)) ui.selected = ui.selected.filter((x) => x !== i);
+    else if (ui.selected.length < (v.rapazes || 0)) ui.selected = [...ui.selected, i];
+    else return;
+  } else return;
   render();
 }
 
@@ -57,6 +94,33 @@ function doRoll() {
   if (msg.view.fase !== 'CARTAS') return;
   const mv = lancarMove(msg.view.minhaMao || []);
   if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.selected = []; }
+}
+
+/** DEFESA: "Continuar" bloqueia com os Valentões selecionados (0 ou mais). */
+function doDefend() {
+  if (msg.view.fase !== 'DEFESA') return;
+  const mv = (msg.legal || []).find((m) => m.type === 'DEFENDER' && m.payload.valentoes === ui.selected.length);
+  if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.selected = []; }
+}
+
+/** COMBO: clicar num dado seleciona-o/tira a seleção (a combinação formada
+ * pelos dados escolhidos é o que se vai jogar, ver matchedOpcao). */
+function toggleDie(i) {
+  const v = msg.view;
+  if (v.fase !== 'COMBO' || !(msg.legal || []).some((m) => m.type === 'ESCOLHER_COMBO')) return;
+  ui.diceSel = ui.diceSel.includes(i) ? ui.diceSel.filter((x) => x !== i) : [...ui.diceSel, i];
+  render();
+}
+
+/** COMBO: "Continuar" joga a combinação formada pelos dados selecionados. */
+function doChooseCombo() {
+  const v = msg.view;
+  if (v.fase !== 'COMBO') return;
+  const sorted = [...v.dados].sort((a, b) => a - b);
+  const idx = matchedOpcao(v, ui.diceSel.map((i) => sorted[i]));
+  if (idx < 0) return;
+  const mv = (msg.legal || []).find((m) => m.type === 'ESCOLHER_COMBO' && m.payload.opcao === idx);
+  if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.diceSel = []; }
 }
 
 /** Uma <img data-fallback="TIPO"> que falhe a carregar vira o emoji da carta. */
@@ -115,7 +179,8 @@ export function update(next) {
   const blind = mine && msg.view.fase === 'ESCOLHA_CEGA';
   if (blind && !ui.wasBlind) ctx.announce(ctx.t('ui.hintBlind'));
   ui.wasBlind = blind;
-  if (msg.view.fase !== 'CARTAS') ui.selected = [];
+  if (msg.view.fase !== 'CARTAS' && msg.view.fase !== 'DEFESA') ui.selected = [];
+  if (msg.view.fase !== 'COMBO') ui.diceSel = [];
   render();
   autoContinue();
 }
@@ -141,6 +206,10 @@ function onClick(e) {
   }
   if (e.target.closest('[data-close-info]')) { ui.cardInfo = null; render(); return; }
   if (e.target.closest('[data-act="roll"]')) { doRoll(); return; }
+  if (e.target.closest('[data-act="defend"]')) { doDefend(); return; }
+  if (e.target.closest('[data-act="choose-combo"]')) { doChooseCombo(); return; }
+  const die = e.target.closest('[data-die]');
+  if (die) { toggleDie(Number(die.dataset.die)); return; }
   const card = e.target.closest('[data-card]');
   if (card) { if (e.detail > 1) return; toggleCard(Number(card.dataset.card)); return; }
   const bar = e.target.closest('[data-idx]');
@@ -162,6 +231,7 @@ function render() {
   view.innerHTML = `
     ${renderPlayers(v, me)}
     <div class="nof-center">${renderCenter(v, me)}</div>
+    ${renderComboInfo(v)}
     <div class="nof-bottom">${renderHand(v, me)}</div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
     ${ui.reveal ? renderReveal() : ''}
@@ -228,8 +298,13 @@ function renderCenter(v, me) {
   if (v.fase === 'FIM') return '';
   const heading = PHASE_MOVE[v.fase] ? `<div class="nof-phase">${esc(ctx.t(PHASE_MOVE[v.fase]))}</div>` : '';
   const showDice = (v.fase === 'PAUSA' || v.fase === 'COMBO') && v.dados?.some(Boolean);
+  // No Joker (7 iguais), a opção Triplo+Duplo não corresponde a um grupo de
+  // dados literal (usa a mesma face do 7 de um tipo) — aí mantém-se a lista
+  // de botões; no resto, a combinação forma-se ao escolher os dados.
+  const canChoose = v.fase === 'COMBO' && !v.joker && (msg.legal || []).some((m) => m.type === 'ESCOLHER_COMBO');
+  const sortedDados = showDice ? [...v.dados].sort((a, b) => a - b) : [];
   const dice = showDice
-    ? `<div class="nof-dice">${[...v.dados].sort((a, b) => a - b).map(dieFace).join('')}</div>`
+    ? `<div class="nof-dice${canChoose ? ' choosing' : ''}">${sortedDados.map((d, i) => dieFace(d, canChoose ? i : null, canChoose && ui.diceSel.includes(i))).join('')}</div>`
     : '';
   if (v.fase === 'ESCOLHA_CEGA') {
     const opp = me != null ? v.jogadores[1 - me] : null;
@@ -238,17 +313,42 @@ function renderCenter(v, me) {
   }
   if (v.fase === 'CARTAS') {
     const canRoll = (msg.legal || []).some((m) => m.type === 'LANCAR');
-    return `<button class="nof-rollzone" type="button" ${canRoll ? 'data-act="roll"' : 'disabled'} aria-label="${esc(ctx.t('move.LANCAR'))}">${heading}</button>`;
+    if (!canRoll) return ''; // vez do adversário: nada aqui (ver "é a tua vez" e as mensagens da mesa)
+    return `<button class="nof-rollzone" type="button" data-act="roll" aria-label="${esc(ctx.t('move.LANCAR'))}">${heading}</button>`;
   }
-  const combo = v.fase === 'COMBO' ? renderCombo() : '';
-  return `${heading}${dice}${combo}`;
+  if (v.fase === 'DEFESA') {
+    const canDefend = (msg.legal || []).some((m) => m.type === 'DEFENDER');
+    if (!canDefend) return '';
+    // Seleciona os Valentões na mão (abaixo) e confirma aqui, como nas combinações.
+    return `${heading}<div class="nof-combo"><button class="nof-combo-chip" type="button" data-act="defend">${esc(ctx.t('move.CONTINUAR'))}</button></div>`;
+  }
+  if (v.fase === 'COMBO') return `${heading}${dice}${renderComboConfirm(v)}`;
+  return `${heading}${dice}`;
 }
 
-/** Logo a seguir aos dados (dentro do .nof-center), nunca numa linha à parte. */
-function renderCombo() {
-  return `<div class="nof-combo">${(msg.legal || []).map((mv, i) => `
-    <button class="nof-combo-chip" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>
-  `).join('')}</div>`;
+/** Logo a seguir aos dados: no Joker, a lista de combinações (botões); no
+ * resto, confirma a combinação que os dados selecionados já formam. */
+function renderComboConfirm(v) {
+  if (!(msg.legal || []).some((m) => m.type === 'ESCOLHER_COMBO')) return '';
+  if (v.joker) {
+    return `<div class="nof-combo">${(msg.legal || []).map((mv, i) => `
+      <button class="nof-combo-chip" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>
+    `).join('')}</div>`;
+  }
+  const sorted = [...v.dados].sort((a, b) => a - b);
+  const ready = matchedOpcao(v, ui.diceSel.map((i) => sorted[i])) >= 0;
+  return `<div class="nof-combo"><button class="nof-combo-chip" type="button" data-act="choose-combo" ${ready ? '' : 'disabled'}>${esc(ctx.t('move.CONTINUAR'))}</button></div>`;
+}
+
+/** Painel informativo (como a pilha de valores do Catania): as combinações
+ * disponíveis neste lançamento, visíveis aos dois — nunca botões aqui. */
+function renderComboInfo(v) {
+  if (v.fase !== 'COMBO' || !v.opcoes?.length) return '';
+  const rows = v.opcoes.map((o, i) => {
+    const label = describeMove({ type: 'ESCOLHER_COMBO', payload: { opcao: i } }, v);
+    return `<div class="nof-combo-info-row">${esc(ctx.t(label.key, label.params))}</div>`;
+  });
+  return `<aside class="nof-combo-info"><div class="nof-lbl">${esc(ctx.t('ui.comboOptions'))}</div>${rows.join('')}</aside>`;
 }
 
 /** Carta(s) jogada(s) pelo adversário, reveladas uns segundos (ver update()). */
@@ -262,15 +362,19 @@ function renderHand(v, me) {
   if (me == null) return '<div></div>';
   const mao = v.minhaMao || [];
   const canDiscard = v.fase === 'DESCARTE' && !!(msg.legal || []).length;
-  const canSelect = v.fase === 'CARTAS';
-  // Um clique seleciona/retira a carta da jogada (CARTAS); dois cliques abrem
-  // os detalhes; no descarte, o X no canto é que descarta.
-  const cards = mao.map((c, i) => `<span class="nof-card-wrap">
-    <button class="nof-card face big${canSelect && ui.selected.includes(i) ? ' selected' : ''}" type="button" data-card="${i}" aria-label="${esc(ctx.t(`carta.${c}`))}">
+  const canDefend = v.fase === 'DEFESA' && (msg.legal || []).some((m) => m.type === 'DEFENDER');
+  // Um clique seleciona/retira a carta da jogada (CARTAS) ou um Valentão para
+  // a defesa (DEFESA); dois cliques abrem os detalhes; no descarte, o X no
+  // canto é que descarta.
+  const cards = mao.map((c, i) => {
+    const selectable = v.fase === 'CARTAS' || (canDefend && c === 'BULLY');
+    return `<span class="nof-card-wrap">
+    <button class="nof-card face big${selectable && ui.selected.includes(i) ? ' selected' : ''}" type="button" data-card="${i}" aria-label="${esc(ctx.t(`carta.${c}`))}">
       <img src="${esc(CARD_ART[c])}" data-fallback="${esc(c)}" alt="">
     </button>
     ${canDiscard ? `<button class="nof-x-btn" type="button" data-discard="${esc(c)}" title="${esc(ctx.t('move.DESCARTAR'))}" aria-label="${esc(ctx.t('moveLabel.DESCARTAR', { carta: ctx.t(`carta.${c}`) }))}">✕</button>` : ''}
-  </span>`).join('');
+  </span>`;
+  }).join('');
   return `<div class="nof-hand">
     <div class="nof-lbl">${esc(ctx.t('ui.myHand'))}</div>
     <div class="nof-hand-cards">${cards || `<span class="nof-note">${esc(ctx.t('ui.handEmpty'))}</span>`}</div>
@@ -285,12 +389,10 @@ function renderLog() {
   </aside>`;
 }
 
+// Todas as fases têm agora interação própria no centro/mão (rollzone,
+// combinações, defesa, descarte, escolha às cegas); a barra só serve os
+// espectadores — vez do adversário mostra-se com os dados e as mensagens da
+// mesa (ver update()), nunca com um status genérico aqui.
 function renderBar(v, me) {
-  const legal = msg.legal || [];
-  if (me == null) return `<p class="nof-wait">${esc(ctx.t('ui.spectating'))}</p>`;
-  // Vez do adversário: não há status genérico aqui — mostra-se com os dados
-  // (o combo que fez, ou "sem combinação"), a carta revelada, e "é a tua
-  // vez" quando o turno passa (ver update()).
-  if (v.fase === 'PAUSA' || v.fase === 'CARTAS' || v.fase === 'COMBO' || v.fase === 'DESCARTE' || v.fase === 'ESCOLHA_CEGA' || !legal.length) return '';
-  return legal.map((mv, i) => `<button class="nof-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
+  return me == null ? `<p class="nof-wait">${esc(ctx.t('ui.spectating'))}</p>` : '';
 }

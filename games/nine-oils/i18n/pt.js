@@ -60,6 +60,7 @@ export default {
   'ui.handEmpty': '(sem cartas)',
   'ui.opponentHand': 'Mão: {n}',
   'ui.hintBlind': 'Escolhe uma carta virada para baixo da mão do adversário.',
+  'ui.comboOptions': 'Combinações disponíveis',
   'ui.hintDiscard': 'Tens mais que 3 cartas. Descarta.',
   'ui.yourTurn': 'É a tua vez',
   'ui.spectating': 'A ver a partida.',
