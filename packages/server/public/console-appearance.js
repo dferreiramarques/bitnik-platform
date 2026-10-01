@@ -42,7 +42,7 @@ const clone = (x) => JSON.parse(JSON.stringify(x));
 const empty = () => ({ brand: { tokens: {} }, games: {} });
 
 let ctx = null;
-const st = { catalog: null, draft: null, saved: '', target: null, preview: null, handlers: false };
+const st = { catalog: null, draft: null, saved: '', target: null, preview: null, handlers: false, tab: 'components' };
 
 export function init(context) { ctx = context; }
 
@@ -156,6 +156,10 @@ function thumbRow(g) {
   </fieldset>`;
 }
 
+// Grupos de "aspeto do jogo" (identidade: cores base, letra, forma, arte); o
+// resto — mesa incluída — é "aspeto dos componentes" (as peças da mesa).
+const GAME_TAB_GROUPS = new Set(['base', 'type', 'shape', 'art']);
+
 function gameGroups(g) {
   const tokens = g.skin?.tokens || {};
   const cfg = st.draft.games[g.id] || { tokens: {} };
@@ -165,9 +169,17 @@ function gameGroups(g) {
     if (!groups.has(grp)) groups.set(grp, []);
     groups.get(grp).push(row(k, def.type, label(def.label) || k, cfg.tokens?.[k] ?? '', gameDefault(g, k)));
   }
-  // A mesa primeiro (ADR-008) — é o --table-bg que também pinta o lobby.
+  // A mesa primeiro dentro de "componentes" (ADR-008) — é o --table-bg que também pinta o lobby.
   const order = ['table', ...[...groups.keys()].filter((x) => x !== 'table')];
-  return order.filter((x) => groups.has(x)).map((grp) => `<fieldset class="ap-group"><legend>${esc(ctx.u(`grp_${grp}`))}</legend>${groups.get(grp).join('')}</fieldset>`).join('') + thumbRow(g);
+  const tab = st.tab === 'game' ? 'game' : 'components';
+  const fieldsets = order.filter((x) => groups.has(x) && (GAME_TAB_GROUPS.has(x) === (tab === 'game')))
+    .map((grp) => `<fieldset class="ap-group"><legend>${esc(ctx.u(`grp_${grp}`))}</legend>${groups.get(grp).join('')}</fieldset>`).join('');
+  const { u } = ctx;
+  const tabs = `<div class="ap-tabs" role="tablist">
+    <button type="button" class="ap-tab${tab === 'game' ? ' on' : ''}" role="tab" aria-selected="${tab === 'game'}" data-tab="game">${u('apTabGame')}</button>
+    <button type="button" class="ap-tab${tab === 'components' ? ' on' : ''}" role="tab" aria-selected="${tab === 'components'}" data-tab="components">${u('apTabComponents')}</button>
+  </div>`;
+  return tabs + (tab === 'game' ? fieldsets + thumbRow(g) : fieldsets);
 }
 
 function presetsHtml() {
@@ -349,6 +361,8 @@ export function after(root) {
     const { u } = ctx;
     const reset = e.target.closest('[data-reset]')?.dataset.reset;
     if (reset) { setToken(reset, ''); ctx.rerender(); return; }
+    const tab = e.target.closest('button[data-tab]')?.dataset.tab;
+    if (tab) { st.tab = tab; ctx.rerender(); return; }
     const act = e.target.closest('button[data-ap]')?.dataset.ap;
     if (!act) return;
     const g = game();
