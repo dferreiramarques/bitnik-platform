@@ -386,9 +386,11 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-bar { grid-area: bar; justify-self: stretch; }
   .nof-log { display: none; }
   /* .nof-players fica numa coluna estreita à esquerda: a ficha fica no fluxo,
-     encostada por baixo dos cartões dos jogadores, e abre para a direita
-     (sobre o centro) em vez de para baixo — não há espaço nessa coluna. */
-  .nof-combo-dock { position: relative; left: auto; top: auto; transform: none; justify-items: start; margin-top: 0; }
-  .nof-combo-info { position: absolute; left: 100%; top: 0; margin-left: 8px; min-width: 140px; max-width: 46vw; }
+     encostada por baixo dos cartões dos jogadores (com a mesma largura), e
+     abre para cima e para a direita (sobre o centro) — a ficha fica perto do
+     fundo da coluna, sem espaço por baixo para a tooltip abrir nesse sentido. */
+  .nof-combo-dock { position: relative; left: auto; top: auto; transform: none; margin-top: 0; }
+  .nof-combo-pill { width: 100%; box-sizing: border-box; }
+  .nof-combo-info { position: absolute; left: 100%; bottom: 0; top: auto; margin-left: 8px; min-width: 140px; max-width: 46vw; }
   .nof-combo-info-row { font-size: 9px; }
 }

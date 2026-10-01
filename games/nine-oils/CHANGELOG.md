@@ -1,5 +1,13 @@
 # Nine Oils — histórico de regras
 
+## 1.1.24 — Ficha com a largura do cartão; tooltip a abrir para cima (2026-10-01)
+
+Sem mudanças de jogo: no telemóvel na horizontal, a ficha das
+combinações passa a ter a mesma largura dos cartões dos jogadores
+(antes só a largura do texto); a tooltip, ao abrir, alinha-se pelo
+fundo da ficha e cresce para cima — a ficha fica perto do fundo dessa
+coluna, sem espaço por baixo para abrir nesse sentido.
+
 ## 1.1.23 — Ficha das combinações sempre visível; fim de jogo em vidro (2026-10-01)
 
 Sem mudanças de jogo:
