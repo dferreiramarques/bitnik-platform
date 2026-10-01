@@ -292,10 +292,9 @@ function render() {
   const me = mySeat();
   view.innerHTML = `
     ${renderPlayers(v, me)}
-    <div class="nof-center">${renderCenter(v, me)}</div>
+    <div class="nof-center">${renderCenter(v, me)}${ui.reveal ? renderReveal() : ''}</div>
     <div class="nof-bottom">${renderHand(v, me)}</div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
-    ${ui.reveal ? renderReveal() : ''}
     ${renderLog()}
     <div class="nof-modal-host"></div>`;
   syncCardInfo();

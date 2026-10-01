@@ -1,5 +1,13 @@
 # Nine Oils — histórico de regras
 
+## 1.1.25 — Carta(s) reveladas do adversário já não tapam a minha mão (2026-10-02)
+
+Sem mudanças de jogo: quando o adversário jogava mais do que uma
+carta, as cartas reveladas (prova do que jogou) ficavam fixas a 72%
+do ecrã e, empilhadas, chegavam a tapar a minha própria mão, em baixo.
+Passam a aparecer dentro do centro, onde costumam estar os dados —
+por baixo dos cartões dos jogadores, nunca sobre a minha mão.
+
 ## 1.1.24 — Ficha com a largura do cartão; tooltip a abrir para cima (2026-10-01)
 
 Sem mudanças de jogo: no telemóvel na horizontal, a ficha das

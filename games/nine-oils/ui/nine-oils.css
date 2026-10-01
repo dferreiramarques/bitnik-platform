@@ -248,14 +248,13 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   background-image: repeating-linear-gradient(45deg, rgb(255 250 241 / .08) 0 6px, transparent 6px 12px), var(--g);
 }
 
-/* ── Carta jogada pelo adversário, revelada uns segundos (ver update() no
-   index.js) — sobreposta, sem ocupar espaço no layout. ── */
-/* Mais abaixo do que o centro do ecrã: a mensagem da mesa (ctx.announce)
-   aparece a meio (top: 50%) e não pode ficar tapada pela carta. */
+/* ── Carta(s) jogada(s) pelo adversário, revelada(s) uns segundos (ver
+   update() no index.js) — dentro do .nof-center, onde costumam estar os
+   dados (não sobreposta ao ecrã todo): com mais do que uma carta, ficar fixa
+   a meio do ecrã (como antes) chegava a tapar a minha própria mão, em baixo. ── */
 .nof-reveal {
-  position: absolute; left: 50%; top: 72%; transform: translate(-50%, -50%);
-  z-index: 5; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
-  pointer-events: none;
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+  max-width: min(95%, 520px); pointer-events: none;
 }
 .nof-reveal .nof-card.face {
   animation: nof-reveal-in .4s cubic-bezier(.2, 1.6, .4, 1) backwards;
