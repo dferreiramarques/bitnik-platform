@@ -120,6 +120,13 @@ app.cachedWelcome = (() => { try { return JSON.parse(localStorage.getItem(WELCOM
 const W = () => app.welcome || app.cachedWelcome;
 const gameMeta = (id) => W()?.games.find((g) => g.id === id);
 
+/** Pede a skin de todos os jogos assim que há lista (cache ou ligação), em
+ * vez de só quando se entra num lobby/mesa: sem isto, --table-bg (o fundo do
+ * lobby) só chegava depois de um pedido à parte, com o gradiente da marca
+ * visível por um instante a cada jogo novo. */
+function prefetchSkins(games) { for (const g of games || []) skinFor(g.id); }
+if (app.cachedWelcome) prefetchSkins(app.cachedWelcome.games);
+
 /** Traduz chaves do jogo, do motor ou da plataforma. */
 function t(key, params, gameId) {
   const g = gameMeta(gameId);
@@ -1001,6 +1008,7 @@ client.on('welcome', (w) => {
   } catch { /* sem storage */ }
   app.appearance = w.appearance;
   applyOverrides(w.appearance);
+  prefetchSkins(w.games);
   setNotices(w.notices, w.now);
   $('#name').value = w.name;
   if (!localStorage.getItem('bitnik.lang')) app.lang = w.brand.lang;

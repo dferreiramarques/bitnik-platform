@@ -492,11 +492,12 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 /* position:absolute (não fixed): basta à caixa cobrir .lob; sem "fixed" no
    fundo (a mesa em jogo também não o tem). z-index:-1 garante-lhe sempre o
    fundo, com isolation acima a conter esse -1 dentro de .lob. Enquanto a
-   skin do jogo ainda não carregou (lobby aberto antes de se ter entrado
-   numa mesa), --table-bg ainda não existe — fica o gradiente da marca. */
+   skin do jogo ainda não carregou (app.js pede-a assim que há lista de
+   jogos, mas a rede pode demorar), --table-bg ainda não existe — cinzento
+   neutro em vez do gradiente da marca, que destoava muito mais por um instante. */
 .lob::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(rgb(0 0 0 / .55), rgb(0 0 0 / .7)), var(--table-bg, transparent);
+  background: linear-gradient(rgb(0 0 0 / .55), rgb(0 0 0 / .7)), var(--table-bg, #121212);
 }
 /* O fundo da mesa pode ter áreas claras onde o texto branco, sozinho, se
    perderia — sombra para garantir leitura com qualquer --table-bg. */
