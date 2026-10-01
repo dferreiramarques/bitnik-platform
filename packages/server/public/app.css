@@ -479,9 +479,18 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 /* ── Lobby de um jogo (quadro "Lobby" do template), sobre o fundo da marca —
    ou, se o jogo tiver uma imagem de capa (defineGame({ cover })), essa
    imagem escurecida em vez do gradiente da marca. ── */
-.lob.has-cover { position: relative; }
+/* isolation:isolate faz de .lob o próprio "chão" do z-index do ::before —
+   sem isto, um elemento posicionado com z-index:auto pinta sempre por cima
+   de conteúdo normal (mesmo vindo antes no HTML), ficando por cima de
+   ".lob-list li" (sem stacking context próprio) mas por baixo de ".lob-card"
+   (tem, por causa do backdrop-filter) — inconsistente consoante o cartão. */
+.lob.has-cover { position: relative; isolation: isolate; }
+/* position:absolute (não fixed): a imagem já fica presa à janela pelo
+   próprio "fixed" do background-attachment, sem precisar que a caixa
+   também seja position:fixed. z-index:-1 garante-lhe sempre o fundo,
+   com isolation acima a conter esse -1 dentro de .lob. */
 .lob.has-cover::before {
-  content: ""; position: fixed; inset: 0; pointer-events: none;
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(rgb(0 0 0 / .55), rgb(0 0 0 / .7)), var(--lob-cover) 50% 15% / auto 145% no-repeat fixed;
 }
 /* A capa é uma foto qualquer: pode ter áreas claras onde o texto branco,
