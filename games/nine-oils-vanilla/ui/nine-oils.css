@@ -1,0 +1,196 @@
+/* Nine Oils — UI própria (ADR-006, ADR-014), no template vanilla: só usa
+   tokens --game-*, tal e qual o skin.json (cópia de design/vanilla/skin.json),
+   para mostrar o aspeto de base da plataforma a clientes. */
+
+.nof {
+  --g: var(--game-glass, rgb(20 32 26 / .35));
+  --gl: var(--game-glass-line, rgb(255 250 241 / .35));
+  --ot: var(--game-on-table, #fffaf1);
+  --otm: var(--game-on-table-muted, rgb(255 250 241 / .75));
+  position: absolute; inset: 0; overflow: hidden;
+  container-type: size;
+  color: var(--ot);
+  font-family: var(--game-font-body, Inter, system-ui, sans-serif);
+  -webkit-user-select: none; user-select: none;
+}
+.nof button { font-family: inherit; line-height: 1.25; }
+.nof :focus-visible { outline: 3px solid var(--game-on-table-accent, #ffd9c2); outline-offset: 2px; }
+
+.nof-player, .nof-bar, .nof-die, .nof-card.back {
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+}
+
+.nof-layout {
+  position: absolute; inset: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto; row-gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+}
+.nof-lbl {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--otm);
+  display: flex; align-items: center; gap: 8px;
+}
+.nof-note { font-size: 12px; color: var(--otm); }
+
+/* ── Jogadores ── */
+.nof-players { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.nof-player { width: 230px; box-sizing: border-box; border-radius: var(--game-radius, 14px); padding: 10px; display: grid; gap: 8px; align-content: start; }
+.nof-player.me { border-color: var(--ot); }
+.nof-player.active { box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 65%, transparent); }
+.nof-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
+.nof-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nof-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
+.nof-banca { display: flex; gap: 5px; }
+.nof-slot {
+  width: 28px; height: 28px; border-radius: 6px; box-sizing: border-box; flex: none;
+  display: grid; place-items: center; font-size: 14px; font-style: normal;
+}
+.nof-slot.blocked { box-shadow: inset 0 0 0 2px var(--game-danger, #b3261e); color: var(--game-danger, #b3261e); font-weight: 800; }
+.nof-slot.free { box-shadow: inset 0 0 0 1px var(--gl); }
+.nof-slot.filled { background: color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 30%, transparent); box-shadow: inset 0 0 0 2px var(--game-on-table-accent, #ffd9c2); }
+.nof-pmeta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--otm); }
+
+/* ── Centro: fase e dados ── */
+.nof-center { min-height: 0; display: grid; align-content: center; justify-items: center; gap: 10px; }
+.nof-phase { font-family: var(--game-font-display); font-weight: 800; font-size: clamp(1.1rem, 3vw, 1.6rem); text-align: center; text-shadow: 0 1px 3px rgb(0 0 0 / .6); }
+.nof-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: min(90%, 420px); }
+.nof-die {
+  --dc: var(--game-panel, #fffaf1);
+  width: 34px; height: 34px; border-radius: 9px; box-sizing: border-box; padding: 4px;
+  background: var(--dc); box-shadow: 0 3px 8px rgb(0 0 0 / .35), inset 0 0 0 1px rgb(0 0 0 / .08);
+  animation: nof-die-in .38s cubic-bezier(.2, 1.6, .4, 1) backwards;
+}
+.nof-die:nth-child(4n+1) { --dc: color-mix(in srgb, var(--game-accent, #b8461f) 22%, var(--game-panel, #fffaf1)); }
+.nof-die:nth-child(4n+2) { --dc: color-mix(in srgb, var(--game-color-2, #1a5276) 20%, var(--game-panel, #fffaf1)); }
+.nof-die:nth-child(4n+3) { --dc: var(--game-panel-2, #f3e4cb); }
+.nof-die:nth-child(4n+4) { --dc: color-mix(in srgb, #1d6a27 22%, var(--game-panel, #fffaf1)); }
+.nof-die:nth-child(9n+1) { animation-delay: .02s; } .nof-die:nth-child(9n+2) { animation-delay: .05s; }
+.nof-die:nth-child(9n+3) { animation-delay: .08s; } .nof-die:nth-child(9n+4) { animation-delay: .11s; }
+.nof-die:nth-child(9n+5) { animation-delay: .14s; } .nof-die:nth-child(9n+6) { animation-delay: .17s; }
+.nof-die:nth-child(9n+7) { animation-delay: .2s; } .nof-die:nth-child(9n+8) { animation-delay: .23s; }
+.nof-die:nth-child(9n+9) { animation-delay: .26s; }
+.nof-die-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 100%; height: 100%; }
+.nof-die-grid i { border-radius: 50%; width: 60%; height: 60%; margin: auto; background: transparent; }
+.nof-die-grid i.on { background: var(--game-text, #2b1b12); }
+@keyframes nof-die-in { from { transform: scale(.3) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .nof-die { animation: none; } }
+.nof-blind { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
+
+/* ── Cartas (mão e cartas viradas para baixo) ── */
+.nof-card {
+  width: 46px; height: 62px; min-height: 44px; box-sizing: border-box; padding: 0; border-radius: 8px;
+  display: grid; place-items: center; font-size: 22px; text-align: center; overflow: hidden;
+  border: 0; cursor: default;
+}
+button.nof-card { cursor: pointer; transition: transform .15s ease; }
+button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3px); }
+.nof-card.face { background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); box-shadow: 0 4px 12px rgb(0 0 0 / .3); }
+.nof-card.face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nof-card.big { width: 92px; height: 124px; min-height: 0; font-size: 44px; }
+.nof-card.back {
+  font: 800 15px var(--game-font-display); color: var(--ot);
+  background-image: repeating-linear-gradient(45deg, rgb(255 250 241 / .08) 0 6px, transparent 6px 12px), var(--g);
+}
+
+/* ── Emoji de recuo, quando falta uma imagem (carta, dado, marcador) ── */
+.nof-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
+
+/* ── X de descarte, no canto da carta ── */
+.nof-card-wrap { position: relative; display: inline-block; }
+.nof-x-btn {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; min-height: 0; padding: 0;
+  border-radius: 50%; border: 2px solid var(--game-panel, #fffaf1); background: var(--game-danger, #b3261e); color: #fff;
+  font-size: 15px; font-weight: 800; line-height: 1; display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 2px 6px rgb(0 0 0 / .4);
+}
+.nof-x-btn:hover, .nof-x-btn:focus-visible { background: color-mix(in srgb, var(--game-danger, #b3261e) 80%, black); }
+
+/* ── Modal de detalhes da carta ── */
+.nof-modal-backdrop {
+  position: fixed; inset: 0; z-index: 20; background: rgb(0 0 0 / .55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.nof-modal {
+  position: relative; max-width: 580px; width: 100%; box-sizing: border-box; padding: 18px;
+  border-radius: var(--game-radius, 14px); background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12);
+  box-shadow: 0 20px 50px rgb(0 0 0 / .5);
+}
+.nof-modal-close {
+  position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; min-height: 0; padding: 0;
+  border-radius: 50%; border: 0; background: var(--game-disabled-bg, #f6eedf); color: var(--game-text, #2b1b12); cursor: pointer;
+}
+.nof-modal-body { display: flex; align-items: stretch; gap: 16px; }
+.nof-modal-art {
+  flex: none; width: 200px; align-self: stretch; min-height: 220px; font-size: 64px;
+  border-radius: 8px; background: var(--game-panel-2, #f3e4cb); overflow: hidden;
+}
+.nof-modal-art img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.nof-modal-text { min-width: 0; }
+.nof-modal-name { font-family: var(--game-font-display); font-weight: 800; font-size: 20px; color: var(--game-accent-strong, #8f3417); margin-bottom: 6px; }
+.nof-modal-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--game-muted, #5b4636); margin-top: 8px; }
+.nof-modal-text p { margin: 2px 0 0; font-size: 14px; line-height: 1.5; }
+.nof-modal-flavor { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--game-line, #d9c49a); font-style: italic; color: var(--game-muted, #5b4636); }
+
+/* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
+   pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
+   do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
+.nof-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
+.nof-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.nof-log ol { list-style: none; margin: 0; padding: 0; }
+.nof-log b { font-weight: 500; }
+.nof-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
+.nof-hand { justify-self: end; display: grid; gap: 6px; justify-items: end; }
+.nof-hand-cards { display: flex; gap: 5px; }
+
+/* ── Barra de jogadas ── */
+.nof-bar {
+  justify-self: center; max-width: 100%; box-sizing: border-box; overflow: hidden auto; max-height: min(40vh, 260px);
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
+}
+.nof-bar:empty { display: none; }
+.nof-move {
+  min-height: 44px; padding: 8px 14px; border-radius: var(--ui-r-pill, 999px); box-sizing: border-box;
+  background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); border: 0; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.nof-move:hover, .nof-move:focus-visible { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); }
+.nof-hint, .nof-wait { margin: 0; padding: 2px 10px; min-height: 40px; display: flex; align-items: center; color: var(--otm); font-style: italic; }
+
+@container (max-width: 760px) {
+  .nof-layout { row-gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 34px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  .nof-player { width: 160px; padding: 7px 8px; }
+  /* 6 caixas numa só linha: nunca partir (nowrap) e encolher o suficiente
+     para caberem nos 144px de conteúdo do cartão (160 - padding). */
+  .nof-banca { flex-wrap: nowrap; gap: 4px; }
+  .nof-slot { width: 20px; height: 20px; font-size: 12px; }
+  .nof-bottom { grid-template-columns: minmax(0, 1fr); }
+  .nof-bottom > .nof-log { display: none; }
+  .nof-hand { justify-self: center; justify-items: center; }
+}
+
+/* ── Telemóvel na horizontal: jogadores à esquerda, tal como as Capivaras ── */
+@container (orientation: landscape) and (max-height: 500px) {
+  .nof-layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: "players center" "players bottom" "players bar";
+    column-gap: 10px; row-gap: 6px;
+    padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
+  }
+  .nof-players {
+    grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start;
+    overflow-y: auto; scrollbar-width: none; gap: 6px;
+  }
+  .nof-players::-webkit-scrollbar { display: none; }
+  .nof-player { width: auto; padding: 6px 8px; }
+  .nof-banca { flex-wrap: nowrap; gap: 4px; }
+  .nof-slot { width: 20px; height: 20px; font-size: 12px; }
+  .nof-center { grid-area: center; gap: 6px; }
+  .nof-die { width: 28px; height: 28px; }
+  .nof-card.big { width: 76px; height: 102px; font-size: 36px; }
+  .nof-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
+  .nof-bottom > .nof-log { display: none; }
+  .nof-hand { justify-self: center; justify-items: center; }
+  .nof-bar { grid-area: bar; justify-self: stretch; }
+}

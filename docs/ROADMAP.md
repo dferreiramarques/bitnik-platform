@@ -77,7 +77,8 @@ Migração direta do código antigo, um jogo de cada vez.
 | Bulbous | 1.0.0 ✔ | `games/bulbous` | Motor 0.2.1 com `players.counts`, porque se joga a 2 ou 4 |
 | Capivaras | 2.0.0 ✔ | `games/capivaras` | Feitas pela Forge e publicadas; empate partilha a vitória. A 2.0.0 traz o baralho do jogo (o da arte) e UI própria no template |
 | Praia das Percebes | 2.0.2 ✔ | `games/praia-das-percebes` | Colunas de 4 e 6 para tirar a vantagem do 2.º lugar (ver CHANGELOG); UI própria no template vanilla |
-| Nine Oils | 1.1.2 ✔ | `games/nine-oils` | Só a 2; 2 Rapazes; UI própria no template vanilla |
+| Nine Oils | 1.1.13 ✔ | `games/nine-oils` | Só a 2; 2 Rapazes; UI própria no template vanilla — a partir de 2026-10-01, deixa de ser só a demonstração do vanilla "nu" (ver linha a seguir) e passa a evoluir para um jogo à parte: fundo customizado, melhores componentes e interação |
+| Nine Oils (Vanilla Demo) | 1.0.0 ✔ | `games/nine-oils-vanilla` | Cópia separada do Nine Oils em 1.1.13 (congelada), para continuar a mostrar o template vanilla tal como ficou desenhado no Claude Design — não recebe as mudanças de UX da linha acima |
 
 Por fazer:
 
@@ -103,6 +104,7 @@ Por fazer:
   - ✔ Bulbous (1.1.1): conversão 1:1 do visual do jogo antigo (repositório `bulbous`) — fundo quase-preto, roxo brilhante em destaque, as 4 cores de bolbo, e as 50 imagens do jogo antigo (16 Baelfungious + 34 cartas de charme, `public/cards/*.webp`) trazidas para `ui/cards/`; bolbos colocados desenham-se por cima da arte, na cor de quem os pôs, nas posições medidas no jogo antigo. Emoji de recuo só se uma imagem faltar. Escolher/declarar sequência/apostar/trocar/descartar/desempatar têm interação própria (clique direto ou seleção de cartas + confirmar), sem depender de `msg.legal` para Apostar (exponencial em subconjuntos da mão).
 - ✔ Pontos "para rever" de cada `CHANGELOG.md` e vantagens de lugar de `docs/EQUILIBRIO.md` (2026-09-29): Nine Oils testado por simulação (2ª carta ou 0 cartas para quem começa não resolvem o desequilíbrio — fica simétrico, 1 carta cada) e o resto fechado ou já resolvido em versões anteriores.
 - ☐ Secção "Clientes" na consola, quando houver runtimes em produção.
+- ☐ Nine Oils, visual e interação a sério (2026-10-01): separado em `games/nine-oils-vanilla` o que estava (skin do vanilla "nu", para continuar a mostrar o template a clientes); o pacote `nine-oils` fica livre para um fundo customizado, melhores componentes e melhor UX, por fazer.
 
 ## Fase 3 — Tabuleiros ☐
 
