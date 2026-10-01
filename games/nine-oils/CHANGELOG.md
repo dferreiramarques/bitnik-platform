@@ -1,5 +1,19 @@
 # Nine Oils — histórico de regras
 
+## 1.1.23 — Ficha das combinações sempre visível; fim de jogo em vidro (2026-10-01)
+
+Sem mudanças de jogo:
+
+- A ficha "Combinações" (antes só visível na fase COMBO) fica sempre no
+  ecrã, desativada quando não há nada para mostrar — para os cartões
+  dos jogadores não saltarem de posição a cada fase.
+- No telemóvel na horizontal, a ficha fica encostada por baixo dos
+  cartões dos jogadores (coluna à esquerda) e abre para a direita, em
+  vez de ficar fixa ao ecrã a sobrepor tudo.
+- O ecrã de fim de jogo (gerado pela plataforma) passa a vidro sobre a
+  mesa, como o resto da interface, em vez do pergaminho genérico — já
+  não há tabuleiro por baixo a precisar de um cartão opaco.
+
 ## 1.1.22 — Atraso do fade calculado, não fixo; mais espaço entre dados (2026-10-01)
 
 Sem mudanças de jogo:

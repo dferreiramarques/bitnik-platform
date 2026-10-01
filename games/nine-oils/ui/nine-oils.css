@@ -38,6 +38,9 @@
    cartão, para a banca, o nome e o texto secundário seguirem sem repetir
    regras. ── */
 .nof-players { position: relative; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+/* Fora do telemóvel na horizontal, é só um wrapper transparente (os cartões
+   participam diretamente do flex de .nof-players, como se não existisse). */
+.nof-players-list { display: contents; }
 .nof-player {
   --ot: var(--game-text, #2b1b12); --otm: var(--game-muted, #5b4636); --gl: var(--game-line, #d9c49a);
   --pa: var(--game-accent, #b8461f);
@@ -213,6 +216,8 @@
   cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgb(0 0 0 / .35);
 }
 .nof-combo-pill:hover, .nof-combo-pill:focus-visible { background: color-mix(in srgb, var(--game-accent, #b8461f) 45%, var(--g)); }
+.nof-combo-pill:disabled { opacity: .45; cursor: default; }
+.nof-combo-pill:disabled:hover { background: var(--g); }
 .nof-combo-info {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
@@ -297,6 +302,16 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 .nof-modal-text p { margin: 2px 0 0; font-size: 14px; line-height: 1.5; }
 .nof-modal-flavor { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--game-line, #d9c49a); font-style: italic; color: var(--game-muted, #5b4636); }
 
+/* ── Ecrã de fim de jogo (gerado pela plataforma, .mesa-card): vidro sobre a
+   mesa, como o resto da interface, em vez do pergaminho genérico — aqui já
+   não há tabuleiro por baixo a precisar de um cartão opaco para se destacar. ── */
+.mesa[data-game="nine-oils"] .mesa-card {
+  background: var(--game-glass); border-color: var(--game-glass-line);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+  color: var(--game-on-table);
+}
+.mesa[data-game="nine-oils"] .mesa-card h2 { color: var(--game-on-table-accent); }
+
 .nof-bottom { display: flex; justify-content: center; }
 .nof-hand { width: 100%; display: grid; gap: 6px; justify-items: center; }
 .nof-hand-cards { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
@@ -350,11 +365,16 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
     column-gap: 10px; row-gap: 6px;
     padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
   }
-  .nof-players {
-    grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start;
-    overflow-y: auto; scrollbar-width: none; gap: 6px;
+  .nof-players { grid-area: players; flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+  /* Só os cartões fazem scroll aqui (não a ficha das combinações, a seguir
+     a eles): overflow-y:auto sozinho também corta no eixo X (regra do CSS
+     para pares overflow-x/-y), o que cortava a tooltip da ficha a abrir
+     para a direita se estivesse dentro deste contentor. */
+  .nof-players-list {
+    display: flex; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start;
+    overflow-y: auto; overflow-x: hidden; scrollbar-width: none; gap: 6px; min-height: 0;
   }
-  .nof-players::-webkit-scrollbar { display: none; }
+  .nof-players-list::-webkit-scrollbar { display: none; }
   .nof-player { width: auto; padding: 6px 8px; }
   .nof-banca { flex-wrap: nowrap; gap: 4px; }
   .nof-slot { width: 20px; height: 20px; font-size: 12px; }
@@ -365,9 +385,10 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-bottom { grid-area: bottom; }
   .nof-bar { grid-area: bar; justify-self: stretch; }
   .nof-log { display: none; }
-  /* .nof-players fica numa coluna estreita à esquerda — a ficha não cabia
-     centrada nela; fixa-se antes ao ecrã todo. */
-  .nof-combo-dock { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 40px); transform: translateX(-50%); margin-top: 0; }
-  .nof-combo-info { min-width: 0; max-width: 60vw; }
+  /* .nof-players fica numa coluna estreita à esquerda: a ficha fica no fluxo,
+     encostada por baixo dos cartões dos jogadores, e abre para a direita
+     (sobre o centro) em vez de para baixo — não há espaço nessa coluna. */
+  .nof-combo-dock { position: relative; left: auto; top: auto; transform: none; justify-items: start; margin-top: 0; }
+  .nof-combo-info { position: absolute; left: 100%; top: 0; margin-left: 8px; min-width: 140px; max-width: 46vw; }
   .nof-combo-info-row { font-size: 9px; }
 }

@@ -351,10 +351,14 @@ function renderPlayers(v, me) {
       ${renderBanca(j)}
       ${i === me ? '' : `<div class="nof-pmeta"><span>🂠 ${esc(ctx.t('ui.opponentHand', { n: j.cartas }))}</span></div>`}
     </div>`).join('');
-  // A ficha das combinações (fase COMBO) fica encostada aos cartões dos
-  // jogadores, ao centro — como a pilha de valores do Catania, mas
-  // expansível/colapsável, por cima dos dados (não precisa de espaço próprio).
-  return `<div class="nof-players">${cards}${v.fase === 'COMBO' ? renderComboInfo(v) : ''}</div>`;
+  // A ficha das combinações fica encostada aos cartões dos jogadores, ao
+  // centro — como a pilha de valores do Catania: sempre visível (não só na
+  // fase COMBO), para não saltar de posição; desativada quando não há nada
+  // para mostrar (ver renderComboInfo). Os cartões ficam num wrapper à parte
+  // (.nof-players-list): no telemóvel na horizontal, só eles é que fazem
+  // scroll — a ficha fica fora disso, para a sua tooltip poder abrir para a
+  // direita sem ser cortada pelo "overflow" da lista.
+  return `<div class="nof-players"><div class="nof-players-list">${cards}</div>${renderComboInfo(v)}</div>`;
 }
 
 function renderCenter(v, me) {
@@ -436,12 +440,16 @@ function renderComboConfirm(v) {
 
 /** Ficha expansível/colapsável (como a pilha de valores do Catania): as
  * combinações disponíveis neste lançamento, visíveis aos dois — nunca
- * botões aqui, só informação. Fechada por omissão; com fundo em vidro
- * quando aberta, porque fica por cima dos dados. */
+ * botões aqui, só informação. A ficha em si fica sempre no ecrã (não só na
+ * fase COMBO), desativada quando não há opções para mostrar, para o resto do
+ * layout (cartões dos jogadores) não saltar de posição a cada fase. Fechada
+ * por omissão; com fundo em vidro quando aberta, porque fica por cima dos
+ * dados. */
 function renderComboInfo(v) {
-  if (!v.opcoes?.length) return '';
-  const toggle = `<button class="nof-combo-pill" type="button" data-act="combo-toggle" aria-expanded="${ui.comboOpen}">${esc(ctx.t('ui.comboOptions'))} ${ui.comboOpen ? '▴' : '▾'}</button>`;
-  if (!ui.comboOpen) return `<div class="nof-combo-dock">${toggle}</div>`;
+  const has = !!v.opcoes?.length;
+  const open = has && ui.comboOpen;
+  const toggle = `<button class="nof-combo-pill" type="button" data-act="combo-toggle" aria-expanded="${open}"${has ? '' : ' disabled'}>${esc(ctx.t('ui.comboOptions'))} ${open ? '▴' : '▾'}</button>`;
+  if (!open) return `<div class="nof-combo-dock">${toggle}</div>`;
   const rows = v.opcoes.map((o, i) => {
     const label = describeMove({ type: 'ESCOLHER_COMBO', payload: { opcao: i } }, v);
     return `<div class="nof-combo-info-row">${esc(ctx.t(label.key, label.params))}</div>`;
