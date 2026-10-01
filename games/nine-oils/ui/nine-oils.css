@@ -301,15 +301,16 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 .nof-modal-text p { margin: 2px 0 0; font-size: 14px; line-height: 1.5; }
 .nof-modal-flavor { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--game-line, #d9c49a); font-style: italic; color: var(--game-muted, #5b4636); }
 
-/* ── Ecrã de fim de jogo (gerado pela plataforma, .mesa-card): vidro sobre a
-   mesa, como o resto da interface, em vez do pergaminho genérico — aqui já
-   não há tabuleiro por baixo a precisar de um cartão opaco para se destacar. ── */
+/* ── Ecrã de fim de jogo (gerado pela plataforma, .mesa-card): o mesmo vidro
+   do cartão do lobby deste jogo (.lob-card — receita fixa da plataforma, não
+   os tokens do jogo), para o ecrã final não destoar do lobby de onde se veio
+   — em vez do pergaminho genérico, que não tem nada que ver com o resto. ── */
 .mesa[data-game="nine-oils"] .mesa-card {
-  background: var(--game-glass); border-color: var(--game-glass-line);
-  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
-  color: var(--game-on-table);
+  background: rgb(255 250 241 / .22); border-color: rgb(255 250 241 / .35);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  color: #fff;
 }
-.mesa[data-game="nine-oils"] .mesa-card h2 { color: var(--game-on-table-accent); }
+.mesa[data-game="nine-oils"] .mesa-card h2 { color: #fff; }
 
 .nof-bottom { display: flex; justify-content: center; }
 .nof-hand { width: 100%; display: grid; gap: 6px; justify-items: center; }

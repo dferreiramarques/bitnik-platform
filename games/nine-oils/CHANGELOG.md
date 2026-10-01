@@ -1,5 +1,13 @@
 # Nine Oils — histórico de regras
 
+## 1.1.26 — Ecrã de fim de jogo com o vidro do lobby, não um tom à parte (2026-10-02)
+
+Sem mudanças de jogo: o ecrã de fim de jogo passava a vidro (1.1.22),
+mas com a cor própria do jogo (`--game-glass`, um verde escuro) —
+destoava do cartão do lobby de onde se vem, que usa sempre o mesmo
+vidro cor de creme da plataforma, igual em todos os jogos. Passa a
+usar a mesma receita do lobby, não o token do jogo.
+
 ## 1.1.25 — Carta(s) reveladas do adversário já não tapam a minha mão (2026-10-02)
 
 Sem mudanças de jogo: quando o adversário jogava mais do que uma
