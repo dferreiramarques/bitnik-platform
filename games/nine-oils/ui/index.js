@@ -15,10 +15,14 @@
 // número de Rapazes a bloquear); "Continuar" bloqueia com os que estiverem
 // selecionados (0 ou mais).
 //
-// Fase COMBO: clicar nos próprios dados lançados forma a combinação (ver
-// matchedOpcao); "Continuar" acende quando a seleção bate certo com uma das
-// opções. No Joker (7 iguais) isto não chega (não há um grupo de dados
-// literal para "Triplo + Duplo"), por isso aí volta-se à lista de botões.
+// Fase COMBO: um lançamento pode dar uma combinação com várias partes (ex.:
+// dois Quads, ou Triplo + Duplo) — por isso os dados escolhem-se aos grupos.
+// Seleciona-se os dados de uma parte e "Atribuir" fecha-a (fica marcada, com
+// contorno próprio); repete-se para a parte seguinte; "Continuar" acende
+// quando as partes já atribuídas (mais o que estiver selecionado na hora)
+// batem certo com uma das combinações disponíveis. No Joker (7 iguais) isto
+// não chega (não há um grupo de dados literal para "Triplo + Duplo"), por
+// isso aí volta-se à lista de botões.
 
 import { conjuntos, describeMove } from '../rules.js';
 
@@ -26,15 +30,19 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
+const GROUP_COLORS = 4; // cores de contorno que se repetem, se houver mais partes do que isso (raro)
 /** Dado: a face é só CSS (ver [data-face] em nine-oils.css) — a animação
  * mostra as 6 faces em sequência (um "flipbook", com desfoque e um leve
  * sobe-desce) antes de assentar na face lançada. Em COMBO, um botão de
  * verdade (data-die), para escolher a combinação pelos próprios dados sem
- * perder o teclado/leitor de ecrã; fora disso, é só decorativo. */
-const dieFace = (d, i, selected, animate) => {
-  const cls = `nof-die${selected ? ' selected' : ''}${animate ? '' : ' settled'}`;
+ * perder o teclado/leitor de ecrã; `state` é null (livre), 'pending' (a
+ * escolher, ainda não atribuído) ou o índice do grupo já atribuído. */
+const dieFace = (d, i, state, animate) => {
+  let cls = `nof-die${animate ? '' : ' settled'}`;
+  if (state === 'pending') cls += ' selected';
+  else if (typeof state === 'number') cls += ` grouped group-${state % GROUP_COLORS}`;
   return i != null
-    ? `<button class="${cls}" type="button" data-face="${d}" data-die="${i}" aria-pressed="${selected}" aria-label="${d}"></button>`
+    ? `<button class="${cls}" type="button" data-face="${d}" data-die="${i}" aria-pressed="${state != null}" aria-label="${d}"></button>`
     : `<i class="${cls}" data-face="${d}"></i>`;
 };
 
@@ -43,12 +51,22 @@ const dieFace = (d, i, selected, animate) => {
 const COMBO_DICE = { DOUBLE: 2, QUAD: 4, TRIPLE_DOUBLE: 5, SIX_OF_KIND: 6, PENTA: 5 };
 const comboKey = (b) => [...b].sort().join('|');
 
-/** Dados selecionados → índice em v.opcoes, ou -1 se ainda não formam
- * nenhuma das combinações disponíveis (ou sobram/faltam dados). */
+/** Dados selecionados (de uma ou mais partes já atribuídas) → índice em
+ * v.opcoes, ou -1 se ainda não formam nenhuma das combinações disponíveis
+ * (ou sobram/faltam dados). */
 function matchedOpcao(v, selVals) {
   if (!selVals.length) return -1;
   const candidates = new Set(conjuntos(selVals).filter((b) => b.reduce((n, c) => n + (COMBO_DICE[c] || 0), 0) === selVals.length).map(comboKey));
   return (v.opcoes || []).findIndex((o) => candidates.has(comboKey(o)));
+}
+
+/** Uma parte válida por si só (Duplo, Triplo+Duplo, Quad, Penta ou Seis) —
+ * o que "Atribuir" exige antes de fechar um grupo. Devolve o tipo (ex.:
+ * 'QUAD') ou null. */
+function singleCombo(vals) {
+  if (!vals.length) return null;
+  const hit = conjuntos(vals).find((b) => b.length === 1 && COMBO_DICE[b[0]] === vals.length);
+  return hit ? hit[0] : null;
 }
 
 function ensureCss() {
@@ -66,7 +84,7 @@ let ctx = null;
 let msg = null;
 const fresh = () => ({
   logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null,
-  selected: [], diceSel: [], comboOpen: false, wasMine: false, wasDescarte: false, wasBlind: false,
+  selected: [], diceSel: [], diceGroups: [], comboOpen: false, wasMine: false, wasDescarte: false, wasBlind: false,
   reveal: null, revealTimer: null, revealHold: false,
   diceAnimatedKey: null, rollShown: false,
 });
@@ -111,24 +129,40 @@ function doDefend() {
   if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.selected = []; }
 }
 
-/** COMBO: clicar num dado seleciona-o/tira a seleção (a combinação formada
- * pelos dados escolhidos é o que se vai jogar, ver matchedOpcao). */
+/** COMBO: clicar num dado já atribuído desfaz o grupo todo (para corrigir);
+ * clicar num dado livre seleciona-o/tira a seleção da parte em escolha. */
 function toggleDie(i) {
   const v = msg.view;
   if (v.fase !== 'COMBO' || !(msg.legal || []).some((m) => m.type === 'ESCOLHER_COMBO')) return;
+  const gi = ui.diceGroups.findIndex((g) => g.includes(i));
+  if (gi >= 0) { ui.diceGroups = ui.diceGroups.filter((_, x) => x !== gi); render(); return; }
   ui.diceSel = ui.diceSel.includes(i) ? ui.diceSel.filter((x) => x !== i) : [...ui.diceSel, i];
   render();
 }
 
-/** COMBO: "Continuar" joga a combinação formada pelos dados selecionados. */
+/** COMBO: "Atribuir" fecha a parte selecionada (Duplo, Triplo+Duplo, Quad,
+ * Penta ou Seis) como um grupo à parte, para escolher a próxima. */
+function assignGroup() {
+  const v = msg.view;
+  if (v.fase !== 'COMBO' || !ui.diceSel.length) return;
+  const sorted = [...v.dados].sort((a, b) => a - b);
+  if (!singleCombo(ui.diceSel.map((i) => sorted[i]))) return;
+  ui.diceGroups = [...ui.diceGroups, ui.diceSel];
+  ui.diceSel = [];
+  render();
+}
+
+/** COMBO: "Continuar" joga a combinação formada pelas partes já atribuídas
+ * mais o que estiver selecionado na hora (não é preciso atribuir a última). */
 function doChooseCombo() {
   const v = msg.view;
   if (v.fase !== 'COMBO') return;
   const sorted = [...v.dados].sort((a, b) => a - b);
-  const idx = matchedOpcao(v, ui.diceSel.map((i) => sorted[i]));
+  const idxs = [...ui.diceGroups.flat(), ...ui.diceSel];
+  const idx = matchedOpcao(v, idxs.map((i) => sorted[i]));
   if (idx < 0) return;
   const mv = (msg.legal || []).find((m) => m.type === 'ESCOLHER_COMBO' && m.payload.opcao === idx);
-  if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.diceSel = []; }
+  if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.diceSel = []; ui.diceGroups = []; }
 }
 
 /** Uma <img data-fallback="TIPO"> que falhe a carregar vira o emoji da carta. */
@@ -194,7 +228,7 @@ export function update(next) {
   if (blind && !ui.wasBlind) ctx.announce(ctx.t('ui.hintBlind'));
   ui.wasBlind = blind;
   if (msg.view.fase !== 'CARTAS' && msg.view.fase !== 'DEFESA') ui.selected = [];
-  if (msg.view.fase !== 'COMBO') { ui.diceSel = []; ui.comboOpen = false; }
+  if (msg.view.fase !== 'COMBO') { ui.diceSel = []; ui.diceGroups = []; ui.comboOpen = false; }
   render();
   autoContinue();
 }
@@ -222,6 +256,7 @@ function onClick(e) {
   if (e.target.closest('[data-act="roll"]')) { doRoll(); return; }
   if (e.target.closest('[data-act="defend"]')) { doDefend(); return; }
   if (e.target.closest('[data-act="choose-combo"]')) { doChooseCombo(); return; }
+  if (e.target.closest('[data-act="assign-dice"]')) { assignGroup(); return; }
   if (e.target.closest('[data-act="combo-toggle"]')) { ui.comboOpen = !ui.comboOpen; render(); return; }
   const die = e.target.closest('[data-die]');
   if (die) { toggleDie(Number(die.dataset.die)); return; }
@@ -329,7 +364,14 @@ function renderCenter(v, me) {
     if (diceIsNew) ui.diceAnimatedKey = key;
   }
   const dice = showDice
-    ? `<div class="nof-dice${canChoose ? ' choosing' : ''}">${sortedDados.map((d, i) => dieFace(d, canChoose ? i : null, canChoose && ui.diceSel.includes(i), diceIsNew)).join('')}</div>`
+    ? `<div class="nof-dice${canChoose ? ' choosing' : ''}">${sortedDados.map((d, i) => {
+        let state = null;
+        if (canChoose) {
+          const gi = ui.diceGroups.findIndex((g) => g.includes(i));
+          state = gi >= 0 ? gi : (ui.diceSel.includes(i) ? 'pending' : null);
+        }
+        return dieFace(d, canChoose ? i : null, state, diceIsNew);
+      }).join('')}</div>`
     : '';
   if (v.fase === 'ESCOLHA_CEGA') {
     const opp = me != null ? v.jogadores[1 - me] : null;
@@ -364,8 +406,16 @@ function renderComboConfirm(v) {
     `).join('')}</div>`;
   }
   const sorted = [...v.dados].sort((a, b) => a - b);
-  const ready = matchedOpcao(v, ui.diceSel.map((i) => sorted[i])) >= 0;
-  return `<div class="nof-combo"><button class="nof-combo-chip" type="button" data-act="choose-combo" ${ready ? '' : 'disabled'}>${esc(ctx.t('move.CONTINUAR'))}</button></div>`;
+  const canAssign = ui.diceSel.length > 0 && singleCombo(ui.diceSel.map((i) => sorted[i])) != null;
+  const idxs = [...ui.diceGroups.flat(), ...ui.diceSel];
+  const ready = matchedOpcao(v, idxs.map((i) => sorted[i])) >= 0;
+  // "Atribuir" só interessa quando há mais do que uma parte em jogo (ex.: dois
+  // Quads) — com uma seleção só, "Continuar" já chega.
+  const showAssign = ui.diceGroups.length > 0 || canAssign;
+  return `<div class="nof-combo">
+    ${showAssign ? `<button class="nof-combo-chip" type="button" data-act="assign-dice" ${canAssign ? '' : 'disabled'}>${esc(ctx.t('ui.assignGroup'))}</button>` : ''}
+    <button class="nof-combo-chip" type="button" data-act="choose-combo" ${ready ? '' : 'disabled'}>${esc(ctx.t('move.CONTINUAR'))}</button>
+  </div>`;
 }
 
 /** Ficha expansível/colapsável (como a pilha de valores do Catania): as

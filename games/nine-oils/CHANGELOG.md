@@ -1,5 +1,22 @@
 # Nine Oils — histórico de regras
 
+## 1.1.21 — Combinações com várias partes: atribuir cada parte aos dados (2026-10-01)
+
+Sem mudanças de jogo: corrige um caso em que um lançamento com uma
+combinação de várias partes (ex.: dois Quads, ou Triplo + Duplo) só
+contava uma — selecionar todos os dados de uma vez tornava fácil
+perder a conta de quais já estavam escolhidos, com dados iguais lado a
+lado.
+
+Agora escolhe-se aos grupos: seleciona-se os dados de uma parte (ex.:
+os 4 de um Quad) e "Atribuir" fecha-a — fica com um contorno próprio
+(uma cor por parte), distinto da seleção ainda por atribuir. Repete-se
+para a parte seguinte; "Continuar" acende quando as partes já
+atribuídas, mais o que estiver selecionado na hora, batem certo com
+uma das combinações disponíveis (não é preciso atribuir a última
+parte). Clicar outra vez num dado já atribuído desfaz essa parte, para
+corrigir.
+
 ## 1.1.20 — Animações só uma vez; carta revelada até decidir; ficha das combinações (2026-10-01)
 
 Sem mudanças de jogo:

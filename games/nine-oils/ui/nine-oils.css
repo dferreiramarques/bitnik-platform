@@ -180,9 +180,17 @@
 .nof-combo-chip:disabled:hover { background: var(--g); }
 
 /* ── Dados clicáveis (fase COMBO): a seleção não mexe no transform/filter
-   (já usados pela animação do lançamento) — só um contorno. ── */
+   (já usados pela animação do lançamento) — só um contorno. A combinação
+   pode ter várias partes (dois Quads, Triplo + Duplo): cada parte já
+   atribuída ("Atribuir") fica com a sua própria cor, distinta da que ainda
+   está só selecionada (.selected, por atribuir). ── */
 .nof-dice.choosing .nof-die { cursor: pointer; }
 .nof-die.selected { outline: 3px solid var(--game-accent, #b8461f); outline-offset: 3px; box-shadow: 0 4px 10px rgb(0 0 0 / .45), 0 0 0 3px rgb(184 70 31 / .35); }
+.nof-die.grouped { outline: 3px solid var(--gc); outline-offset: 3px; box-shadow: 0 4px 10px rgb(0 0 0 / .45), 0 0 0 3px color-mix(in srgb, var(--gc) 35%, transparent); }
+.nof-die.group-0 { --gc: #2f7d46; }
+.nof-die.group-1 { --gc: #2e86c1; }
+.nof-die.group-2 { --gc: #8e44ad; }
+.nof-die.group-3 { --gc: #b8461f; }
 
 /* ── Ficha das combinações disponíveis (fase COMBO): como a pilha de
    valores do Catania, mas expansível/colapsável — encostada aos cartões dos
