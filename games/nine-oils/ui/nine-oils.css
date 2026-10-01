@@ -37,7 +37,7 @@
    contraste — redefine as variáveis partilhadas (--ot/--otm/--gl) dentro do
    cartão, para a banca, o nome e o texto secundário seguirem sem repetir
    regras. ── */
-.nof-players { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.nof-players { position: relative; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .nof-player {
   --ot: var(--game-text, #2b1b12); --otm: var(--game-muted, #5b4636); --gl: var(--game-line, #d9c49a);
   --pa: var(--game-accent, #b8461f);
@@ -143,14 +143,23 @@
 .nof-die:nth-child(9n+5) { animation-delay: .09s; } .nof-die:nth-child(9n+6) { animation-delay: .11s; }
 .nof-die:nth-child(9n+7) { animation-delay: .13s; } .nof-die:nth-child(9n+8) { animation-delay: .15s; }
 .nof-die:nth-child(9n+9) { animation-delay: .17s; }
+/* Só anima a primeira vez que um lançamento aparece (ver diceAnimatedKey no
+   index.js) — redesenhar os mesmos dados (clicar noutro, abrir o registo)
+   não repete a animação. */
+.nof-die.settled { animation: none; }
 @media (prefers-reduced-motion: reduce) { .nof-die { animation: none !important; } }
 /* ── Zona dos dados: em CARTAS, é o próprio botão de lançar (só existe
-   quando é a minha vez — ver renderCenter). ── */
+   quando é a minha vez — ver renderCenter). Aparece com fade só da primeira
+   vez (.appear), depois de a mensagem "é a tua vez" terminar (MSG_MS no
+   app.js); voltar a desenhar (selecionar cartas) não repete o fade. ── */
 .nof-rollzone {
   background: none; border: 2px dashed var(--gl); border-radius: var(--game-radius, 14px);
   padding: 18px 28px; color: inherit; font: inherit; cursor: pointer;
   transition: background-color .15s ease, transform .15s ease;
 }
+.nof-rollzone.appear { opacity: 0; animation: nof-fade-in .5s ease-out 2.6s forwards; }
+@keyframes nof-fade-in { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .nof-rollzone.appear { opacity: 1; animation: none; } }
 .nof-rollzone:hover, .nof-rollzone:focus-visible { background-color: rgb(255 255 255 / .08); transform: scale(1.03); }
 .nof-rollzone .nof-phase { text-shadow: none; }
 .nof-blind { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
@@ -175,15 +184,31 @@
 .nof-dice.choosing .nof-die { cursor: pointer; }
 .nof-die.selected { outline: 3px solid var(--game-accent, #b8461f); outline-offset: 3px; box-shadow: 0 4px 10px rgb(0 0 0 / .45), 0 0 0 3px rgb(184 70 31 / .35); }
 
-/* ── Painel das combinações disponíveis: informativo (como a pilha de
-   valores do Catania), nunca botões — flutua à direita, sem mexer no resto
-   do ecrã. ── */
-.nof-combo-info {
-  position: absolute; right: 24px; top: 50%; transform: translateY(-50%); z-index: 4;
-  display: grid; gap: 4px; justify-items: end; max-width: 42%; pointer-events: none;
-  color: var(--ot); text-shadow: 0 1px 3px rgb(0 0 0 / .6), 0 0 10px rgb(0 0 0 / .4);
+/* ── Ficha das combinações disponíveis (fase COMBO): como a pilha de
+   valores do Catania, mas expansível/colapsável — encostada aos cartões dos
+   jogadores, ao centro, por cima dos dados quando aberta (por isso o fundo
+   em vidro, para não se confundir com eles). Nunca botões aqui, só
+   informação; a jogada faz-se nos próprios dados. ── */
+.nof-combo-dock {
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 8px; z-index: 6;
+  display: grid; justify-items: center; gap: 6px;
 }
-.nof-combo-info-row { font-size: 12px; font-weight: 700; text-align: right; }
+.nof-combo-pill {
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+  border-radius: var(--ui-r-pill, 999px); padding: 6px 16px; box-sizing: border-box;
+  color: var(--ot); font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
+  cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgb(0 0 0 / .35);
+}
+.nof-combo-pill:hover, .nof-combo-pill:focus-visible { background: color-mix(in srgb, var(--game-accent, #b8461f) 45%, var(--g)); }
+.nof-combo-info {
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+  border-radius: var(--game-radius, 14px); padding: 8px 16px; box-sizing: border-box;
+  display: grid; gap: 4px; justify-items: center; min-width: 220px; max-width: 80vw;
+  box-shadow: 0 10px 28px rgb(0 0 0 / .4);
+}
+.nof-combo-info-row { font-size: 12px; font-weight: 700; color: var(--ot); text-align: center; }
 
 /* ── Cartas (mão e cartas viradas para baixo) ── */
 .nof-card {
@@ -300,7 +325,7 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-card.face.selected { transform: translateY(-24px) scale(1.05); }
   /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
   .nof-log { display: none; }
-  .nof-combo-info { right: 8px; max-width: 34%; }
+  .nof-combo-info { min-width: 0; max-width: 92vw; }
   .nof-combo-info-row { font-size: 10px; }
 }
 
@@ -328,6 +353,9 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-bottom { grid-area: bottom; }
   .nof-bar { grid-area: bar; justify-self: stretch; }
   .nof-log { display: none; }
-  .nof-combo-info { right: 6px; max-width: 30%; }
+  /* .nof-players fica numa coluna estreita à esquerda — a ficha não cabia
+     centrada nela; fixa-se antes ao ecrã todo. */
+  .nof-combo-dock { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 40px); transform: translateX(-50%); margin-top: 0; }
+  .nof-combo-info { min-width: 0; max-width: 60vw; }
   .nof-combo-info-row { font-size: 9px; }
 }

@@ -387,6 +387,11 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
   .mesa-players::-webkit-scrollbar { display: none; }
   .mesa-player { width: 148px; flex: 0 0 148px; }
   .mesa-log { width: min(220px, 50vw); }
+  /* No telemóvel, o texto da mensagem da mesa ficava grande a mais —
+     sobretudo frases longas (ex.: avisos de descarte), que de resto só
+     tinham o título "b", sem "small". */
+  .mesa-msg { padding: 0 12px; }
+  .mesa-msg b { font-size: clamp(20px, 7vw, 30px); }
 }
 
 /* ── Início: marca com vários jogos (ADR-014, quadro "Início" do template) ──

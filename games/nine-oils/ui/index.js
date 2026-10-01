@@ -31,9 +31,12 @@ const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./car
  * sobe-desce) antes de assentar na face lançada. Em COMBO, um botão de
  * verdade (data-die), para escolher a combinação pelos próprios dados sem
  * perder o teclado/leitor de ecrã; fora disso, é só decorativo. */
-const dieFace = (d, i, selected) => i != null
-  ? `<button class="nof-die${selected ? ' selected' : ''}" type="button" data-face="${d}" data-die="${i}" aria-pressed="${selected}" aria-label="${d}"></button>`
-  : `<i class="nof-die" data-face="${d}"></i>`;
+const dieFace = (d, i, selected, animate) => {
+  const cls = `nof-die${selected ? ' selected' : ''}${animate ? '' : ' settled'}`;
+  return i != null
+    ? `<button class="${cls}" type="button" data-face="${d}" data-die="${i}" aria-pressed="${selected}" aria-label="${d}"></button>`
+    : `<i class="${cls}" data-face="${d}"></i>`;
+};
 
 /** Quantos dados cada combinação consome, para ligar uma seleção de dados a
  * uma das opções (ver matchedOpcao). */
@@ -61,7 +64,12 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [], diceSel: [], wasMine: false, wasDescarte: false, wasBlind: false, reveal: null, revealTimer: null });
+const fresh = () => ({
+  logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null,
+  selected: [], diceSel: [], comboOpen: false, wasMine: false, wasDescarte: false, wasBlind: false,
+  reveal: null, revealTimer: null, revealHold: false,
+  diceAnimatedKey: null, rollShown: false,
+});
 let ui = fresh();
 
 function onKeydown(e) {
@@ -161,17 +169,23 @@ export function update(next) {
     if ((l.seq ?? 0) <= ui.lastLogSeq) continue;
     if (l.announce != null) ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
     // A carta jogada pelo adversário é informação pública (vai para o descarte):
-    // mostra-se a arte uns segundos, como prova do que ele jogou.
+    // mostra-se a arte uns segundos, como prova do que ele jogou — mas se
+    // levar a uma defesa (Rapaz) ou escolha às cegas (2 Valentões), mantém-se
+    // visível até essa fase acabar (a seguir abaixo), em vez de 5s fixos.
     if (l.key === 'log.CARTAS' && l.seat !== me && l.params?.cartas?.length) {
-      clearTimeout(ui.revealTimer);
+      clearTimeout(ui.revealTimer); ui.revealTimer = null;
       ui.reveal = l.params.cartas;
-      ui.revealTimer = setTimeout(() => { ui.reveal = null; render(); }, 5000);
+      ui.revealHold = msg.view.fase === 'DEFESA' || msg.view.fase === 'ESCOLHA_CEGA';
+      if (!ui.revealHold) ui.revealTimer = setTimeout(() => { ui.reveal = null; render(); }, 5000);
     }
   }
   ui.lastLogSeq = Math.max(ui.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
+  if (ui.revealHold && msg.view.fase !== 'DEFESA' && msg.view.fase !== 'ESCOLHA_CEGA') {
+    ui.reveal = null; ui.revealHold = false;
+  }
   // "É a tua vez": só quando passa a sê-lo (não em cada atualização do mesmo turno).
   const mine = me != null && !!msg.active?.includes(me) && !msg.result;
-  if (mine && !ui.wasMine) ctx.announce(ctx.t('ui.yourTurn'));
+  if (mine && !ui.wasMine) { ctx.announce(ctx.t('ui.yourTurn')); ui.rollShown = false; }
   ui.wasMine = mine;
   const descarte = mine && msg.view.fase === 'DESCARTE';
   if (descarte && !ui.wasDescarte) ctx.announce(ctx.t('ui.hintDiscard'));
@@ -180,7 +194,7 @@ export function update(next) {
   if (blind && !ui.wasBlind) ctx.announce(ctx.t('ui.hintBlind'));
   ui.wasBlind = blind;
   if (msg.view.fase !== 'CARTAS' && msg.view.fase !== 'DEFESA') ui.selected = [];
-  if (msg.view.fase !== 'COMBO') ui.diceSel = [];
+  if (msg.view.fase !== 'COMBO') { ui.diceSel = []; ui.comboOpen = false; }
   render();
   autoContinue();
 }
@@ -208,6 +222,7 @@ function onClick(e) {
   if (e.target.closest('[data-act="roll"]')) { doRoll(); return; }
   if (e.target.closest('[data-act="defend"]')) { doDefend(); return; }
   if (e.target.closest('[data-act="choose-combo"]')) { doChooseCombo(); return; }
+  if (e.target.closest('[data-act="combo-toggle"]')) { ui.comboOpen = !ui.comboOpen; render(); return; }
   const die = e.target.closest('[data-die]');
   if (die) { toggleDie(Number(die.dataset.die)); return; }
   const card = e.target.closest('[data-card]');
@@ -231,7 +246,6 @@ function render() {
   view.innerHTML = `
     ${renderPlayers(v, me)}
     <div class="nof-center">${renderCenter(v, me)}</div>
-    ${renderComboInfo(v)}
     <div class="nof-bottom">${renderHand(v, me)}</div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
     ${ui.reveal ? renderReveal() : ''}
@@ -285,13 +299,15 @@ function renderBanca(j) {
 
 function renderPlayers(v, me) {
   const active = activeSeat(v);
-  return `<div class="nof-players">${v.jogadores.map((j, i) => {
-    return `<div class="nof-player${i === me ? ' me' : ''}${i === active ? ' active' : ''}">
+  const cards = v.jogadores.map((j, i) => `<div class="nof-player${i === me ? ' me' : ''}${i === active ? ' active' : ''}">
       <div class="nof-pname"><i class="nof-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span></div>
       ${renderBanca(j)}
       ${i === me ? '' : `<div class="nof-pmeta"><span>🂠 ${esc(ctx.t('ui.opponentHand', { n: j.cartas }))}</span></div>`}
-    </div>`;
-  }).join('')}</div>`;
+    </div>`).join('');
+  // A ficha das combinações (fase COMBO) fica encostada aos cartões dos
+  // jogadores, ao centro — como a pilha de valores do Catania, mas
+  // expansível/colapsável, por cima dos dados (não precisa de espaço próprio).
+  return `<div class="nof-players">${cards}${v.fase === 'COMBO' ? renderComboInfo(v) : ''}</div>`;
 }
 
 function renderCenter(v, me) {
@@ -303,8 +319,17 @@ function renderCenter(v, me) {
   // de botões; no resto, a combinação forma-se ao escolher os dados.
   const canChoose = v.fase === 'COMBO' && !v.joker && (msg.legal || []).some((m) => m.type === 'ESCOLHER_COMBO');
   const sortedDados = showDice ? [...v.dados].sort((a, b) => a - b) : [];
+  // O lançamento só anima a primeira vez que aparece (ver diceAnimatedKey);
+  // voltar a desenhar os mesmos dados (clicar noutro, abrir o registo, etc.)
+  // não repete a animação.
+  let diceIsNew = false;
+  if (showDice) {
+    const key = sortedDados.join(',');
+    diceIsNew = ui.diceAnimatedKey !== key;
+    if (diceIsNew) ui.diceAnimatedKey = key;
+  }
   const dice = showDice
-    ? `<div class="nof-dice${canChoose ? ' choosing' : ''}">${sortedDados.map((d, i) => dieFace(d, canChoose ? i : null, canChoose && ui.diceSel.includes(i))).join('')}</div>`
+    ? `<div class="nof-dice${canChoose ? ' choosing' : ''}">${sortedDados.map((d, i) => dieFace(d, canChoose ? i : null, canChoose && ui.diceSel.includes(i), diceIsNew)).join('')}</div>`
     : '';
   if (v.fase === 'ESCOLHA_CEGA') {
     const opp = me != null ? v.jogadores[1 - me] : null;
@@ -314,7 +339,10 @@ function renderCenter(v, me) {
   if (v.fase === 'CARTAS') {
     const canRoll = (msg.legal || []).some((m) => m.type === 'LANCAR');
     if (!canRoll) return ''; // vez do adversário: nada aqui (ver "é a tua vez" e as mensagens da mesa)
-    return `<button class="nof-rollzone" type="button" data-act="roll" aria-label="${esc(ctx.t('move.LANCAR'))}">${heading}</button>`;
+    // Só aparece (com fade) depois da mensagem "é a tua vez" (ver rollShown).
+    const justAppeared = !ui.rollShown;
+    ui.rollShown = true;
+    return `<button class="nof-rollzone${justAppeared ? ' appear' : ''}" type="button" data-act="roll" aria-label="${esc(ctx.t('move.LANCAR'))}">${heading}</button>`;
   }
   if (v.fase === 'DEFESA') {
     const canDefend = (msg.legal || []).some((m) => m.type === 'DEFENDER');
@@ -340,15 +368,19 @@ function renderComboConfirm(v) {
   return `<div class="nof-combo"><button class="nof-combo-chip" type="button" data-act="choose-combo" ${ready ? '' : 'disabled'}>${esc(ctx.t('move.CONTINUAR'))}</button></div>`;
 }
 
-/** Painel informativo (como a pilha de valores do Catania): as combinações
- * disponíveis neste lançamento, visíveis aos dois — nunca botões aqui. */
+/** Ficha expansível/colapsável (como a pilha de valores do Catania): as
+ * combinações disponíveis neste lançamento, visíveis aos dois — nunca
+ * botões aqui, só informação. Fechada por omissão; com fundo em vidro
+ * quando aberta, porque fica por cima dos dados. */
 function renderComboInfo(v) {
-  if (v.fase !== 'COMBO' || !v.opcoes?.length) return '';
+  if (!v.opcoes?.length) return '';
+  const toggle = `<button class="nof-combo-pill" type="button" data-act="combo-toggle" aria-expanded="${ui.comboOpen}">${esc(ctx.t('ui.comboOptions'))} ${ui.comboOpen ? '▴' : '▾'}</button>`;
+  if (!ui.comboOpen) return `<div class="nof-combo-dock">${toggle}</div>`;
   const rows = v.opcoes.map((o, i) => {
     const label = describeMove({ type: 'ESCOLHER_COMBO', payload: { opcao: i } }, v);
     return `<div class="nof-combo-info-row">${esc(ctx.t(label.key, label.params))}</div>`;
   });
-  return `<aside class="nof-combo-info"><div class="nof-lbl">${esc(ctx.t('ui.comboOptions'))}</div>${rows.join('')}</aside>`;
+  return `<div class="nof-combo-dock">${toggle}<div class="nof-combo-info">${rows.join('')}</div></div>`;
 }
 
 /** Carta(s) jogada(s) pelo adversário, reveladas uns segundos (ver update()). */

@@ -1,5 +1,24 @@
 # Nine Oils — histórico de regras
 
+## 1.1.20 — Animações só uma vez; carta revelada até decidir; ficha das combinações (2026-10-01)
+
+Sem mudanças de jogo:
+
+- O lançamento dos dados só anima a primeira vez que aparece — voltar a
+  desenhar os mesmos dados (clicar noutro para escolher a combinação,
+  abrir o registo) já não repetia a animação sem razão.
+- A zona "Lançar os dados" só aparece (com um fade) depois de a
+  mensagem "é a tua vez" acabar, em vez de ao mesmo tempo.
+- A carta revelada do adversário (quando joga um Rapaz ou 2 Valentões)
+  deixa de desaparecer ao fim de 5 segundos fixos nesses casos — fica
+  visível até a fase de defesa ou de escolha às cegas acabar.
+- As combinações disponíveis (fase COMBO) deixam de flutuar à direita
+  dos dados; passam a uma ficha expansível/colapsável encostada aos
+  cartões dos jogadores, ao centro, como a pilha de valores do Catania
+  — com fundo em vidro quando aberta, já que fica por cima dos dados.
+- Texto das mensagens da mesa mais pequeno no telemóvel (ajuste na
+  plataforma, `app.css`: afeta todos os jogos, não só o Nine Oils).
+
 ## 1.1.19 — Defesa e combinação pelos próprios componentes; bot mais devagar (2026-10-01)
 
 Sem mudanças de jogo:
