@@ -1,5 +1,21 @@
 # Bulbous — histórico de regras
 
+## 1.1.14 — Fundo do lobby e miniatura, finalmente separados (2026-10-01)
+
+O campo `cover` (1.1.13) tentava servir dois fins ao mesmo tempo: fundo
+do lobby e miniatura na página da marca. Problema: o fundo do lobby
+devia ser sempre a mesa a sério (`--table-bg`, com as afinações da
+consola já aplicadas), não uma imagem estática no contrato. Separa os
+dois:
+
+- O fundo do lobby deixa de depender de um campo — é sempre o
+  `--table-bg` do jogo, escurecido (app.css), o mesmo que pinta a mesa
+  em jogo.
+- `cover` passa a `thumbnail`: só a miniatura da página da marca, sem
+  nenhuma ligação ao lobby. Volta a ser a foto da carta
+  (baelf_red_4.webp, como antes da 1.1.13), que resulta melhor como
+  miniatura do que como fundo.
+
 ## 1.1.13 — Capa do lobby uniformizada com os outros jogos (2026-10-01)
 
 Sem mudanças de jogo. A capa do lobby deixa de ser a foto de uma carta

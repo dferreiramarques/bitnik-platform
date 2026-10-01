@@ -1,4 +1,0 @@
-<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="bg" x1="32.9%" y1="3.0%" x2="67.1%" y2="97.0%"><stop offset="0%" stop-color="#caf0f8"/><stop offset="45%" stop-color="#90e0ef"/><stop offset="100%" stop-color="#f5deb3"/></linearGradient></defs>
-  <rect x="0" y="0" width="900" height="600" fill="url(#bg)"/>
-</svg>

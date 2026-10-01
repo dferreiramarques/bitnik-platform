@@ -2,6 +2,21 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.9 — Fundo do lobby e miniatura, finalmente separados
+
+O campo `cover` (5.0.7/5.0.8) tentava servir dois fins ao mesmo tempo:
+fundo do lobby e miniatura na página da marca. Problema: o fundo do
+lobby devia ser sempre a mesa a sério (`--table-bg`, com as afinações
+da consola já aplicadas, como num jogo "customizado" na Capivaras) —
+uma imagem estática no contrato nunca acompanha isso. Separa os dois:
+
+- O fundo do lobby deixa de depender de um campo — é sempre o
+  `--table-bg` do jogo, escurecido (app.css), o mesmo que pinta a mesa
+  em jogo (defaults do skin.json, tema e afinações da consola).
+- `cover` passa a `thumbnail`: só a miniatura da página da marca, sem
+  nenhuma ligação ao lobby. Volta a ser a ilha de hexágonos (5.0.7),
+  que resulta melhor como miniatura do que como fundo.
+
 ## 5.0.8 — Imagem do lobby, mais discreta
 
 A imagem de capa (5.0.7) passa do mosaico de hexágonos ao próprio

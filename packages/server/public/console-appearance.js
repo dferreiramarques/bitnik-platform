@@ -7,9 +7,11 @@ import { isDesignTokens, designTokensToAppearance } from '/design-tokens.js';
 
 const MAX_IMAGE_KB = 300;
 // Sentinela para reutilizar a fiação de input/upload/reset dos tokens (data-tok
-// etc.) num campo que não é um token CSS: a capa do lobby vive em
-// draft.games[id].cover, não em .tokens (setToken trata este caso à parte).
-const COVER_KEY = '__cover';
+// etc.) num campo que não é um token CSS: a miniatura do jogo (página da
+// marca) vive em draft.games[id].thumbnail, não em .tokens (setToken trata
+// este caso à parte). O fundo do lobby não tem campo nenhum — é sempre o
+// --table-bg do próprio jogo, escurecido (app.css).
+const THUMB_KEY = '__thumbnail';
 const BRAND_LABELS = {
   '--brand-primary': 'Primária', '--brand-secondary': 'Secundária', '--brand-accent': 'Acento',
   '--bg': 'Fundo', '--bg-alt': 'Fundo alternativo', '--text': 'Texto', '--text-muted': 'Texto secundário',
@@ -59,7 +61,7 @@ export function leave() {
 }
 
 const game = () => st.catalog.games.find((g) => g.id === st.target) || null;
-const gameCfg = (id) => { st.draft.games[id] ??= { theme: null, tokens: {}, cover: null }; return st.draft.games[id]; };
+const gameCfg = (id) => { st.draft.games[id] ??= { theme: null, tokens: {}, thumbnail: null }; return st.draft.games[id]; };
 const lang = () => ctx.lang();
 const label = (l) => (typeof l === 'string' ? l : l?.[lang()] ?? l?.pt ?? '');
 const dirty = () => JSON.stringify(st.draft) !== st.saved;
@@ -135,18 +137,20 @@ function row(k, type, lbl, value, def) {
   </div>`;
 }
 
-/** Capa do lobby: não é um token do skin.json, mas reutiliza a mesma fiação
- * (data-tok/data-upload/data-reset) através do sentinela COVER_KEY. */
-function coverRow(g) {
+/** Miniatura do jogo na página da marca: não é um token do skin.json, mas
+ * reutiliza a mesma fiação (data-tok/data-upload/data-reset) através do
+ * sentinela THUMB_KEY. O fundo do lobby não tem campo — é sempre o
+ * --table-bg do próprio jogo (tokens da mesa, acima), escurecido. */
+function thumbRow(g) {
   const { u } = ctx;
-  const value = st.draft.games[g.id]?.cover || '';
-  return `<fieldset class="ap-group"><legend>${esc(u('grp_lobby'))}</legend>
+  const value = st.draft.games[g.id]?.thumbnail || '';
+  return `<fieldset class="ap-group"><legend>${esc(u('grp_thumb'))}</legend>
     <div class="ap-row${value ? ' set' : ''}">
-      <label for="apCover">${esc(u('apCover'))}<small>${esc(u('apCoverHint'))}</small></label>
+      <label for="apThumb">${esc(u('apThumb'))}<small>${esc(u('apThumbHint'))}</small></label>
       <div class="ap-input">
-        <textarea id="apCover" data-tok="${COVER_KEY}" data-type="image" rows="2" placeholder="url(&quot;/games/${esc(g.id)}/ui/cover.jpg&quot;)">${esc(value)}</textarea>
-        <label class="btn btn-ghost ap-file">${u('apUpload')}<input type="file" accept="image/*" data-upload="${COVER_KEY}" data-type="image" hidden></label>
-        <button class="btn btn-ghost" data-reset="${COVER_KEY}" ${value ? '' : 'hidden'}>${u('apReset')}</button>
+        <textarea id="apThumb" data-tok="${THUMB_KEY}" data-type="image" rows="2" placeholder="url(&quot;/games/${esc(g.id)}/ui/thumbnail.jpg&quot;)">${esc(value)}</textarea>
+        <label class="btn btn-ghost ap-file">${u('apUpload')}<input type="file" accept="image/*" data-upload="${THUMB_KEY}" data-type="image" hidden></label>
+        <button class="btn btn-ghost" data-reset="${THUMB_KEY}" ${value ? '' : 'hidden'}>${u('apReset')}</button>
       </div>
     </div>
   </fieldset>`;
@@ -161,9 +165,9 @@ function gameGroups(g) {
     if (!groups.has(grp)) groups.set(grp, []);
     groups.get(grp).push(row(k, def.type, label(def.label) || k, cfg.tokens?.[k] ?? '', gameDefault(g, k)));
   }
-  // A mesa primeiro (ADR-008).
+  // A mesa primeiro (ADR-008) — é o --table-bg que também pinta o lobby.
   const order = ['table', ...[...groups.keys()].filter((x) => x !== 'table')];
-  return coverRow(g) + order.filter((x) => groups.has(x)).map((grp) => `<fieldset class="ap-group"><legend>${esc(ctx.u(`grp_${grp}`))}</legend>${groups.get(grp).join('')}</fieldset>`).join('');
+  return order.filter((x) => groups.has(x)).map((grp) => `<fieldset class="ap-group"><legend>${esc(ctx.u(`grp_${grp}`))}</legend>${groups.get(grp).join('')}</fieldset>`).join('') + thumbRow(g);
 }
 
 function presetsHtml() {
@@ -261,7 +265,7 @@ function refresh(root) {
 
 function setToken(k, v) {
   const g = game();
-  if (k === COVER_KEY) { if (g) gameCfg(g.id).cover = v || null; return; }
+  if (k === THUMB_KEY) { if (g) gameCfg(g.id).thumbnail = v || null; return; }
   const tokens = g ? gameCfg(g.id).tokens : st.draft.brand.tokens;
   if (v) tokens[k] = v; else delete tokens[k];
 }

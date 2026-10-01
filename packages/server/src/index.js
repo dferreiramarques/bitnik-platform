@@ -421,12 +421,12 @@ export function createPlatform({
     return out;
   }
 
-  /** Tema, tokens e capa do lobby de um jogo, validados contra o skin.json. */
+  /** Tema, tokens e miniatura de um jogo, validados contra o skin.json. */
   async function cleanGameConfig(gameId, cfg = {}) {
     const g = G.get(gameId);
     if (!g) throw new Error(`${gameId}: jogo não instalado`);
     const skin = await readPkgJson(g, g.skin);
-    const out = { theme: null, tokens: {}, cover: null };
+    const out = { theme: null, tokens: {}, thumbnail: null };
     if (cfg?.theme) {
       if (!g.themes?.[cfg.theme]) throw new Error(`${gameId}: tema ${cfg.theme} não existe`);
       out.theme = cfg.theme;
@@ -438,8 +438,10 @@ export function createPlatform({
       if (c) out.tokens[k] = c;
     }
     // Não é um token do skin.json (não há CSS por trás) — mesma validação de
-    // url() que --table-bg e afins, para aceitar só imagens seguras.
-    if (cfg?.cover != null) out.cover = cleanToken(gameId, 'image', cfg.cover);
+    // url() que --table-bg e afins, para aceitar só imagens seguras. Só a
+    // miniatura da página da marca: o fundo do lobby é sempre o --table-bg
+    // (escurecido, app.css), não depende de nada aqui.
+    if (cfg?.thumbnail != null) out.thumbnail = cleanToken(gameId, 'image', cfg.thumbnail);
     return out;
   }
 
@@ -448,7 +450,7 @@ export function createPlatform({
     const next = { brand: { tokens: cleanBrandTokens(input.brand?.tokens) }, games: {} };
     for (const [gameId, cfg] of Object.entries(input.games || {})) {
       const out = await cleanGameConfig(gameId, cfg);
-      if (out.theme || Object.keys(out.tokens).length || out.cover) next.games[gameId] = out;
+      if (out.theme || Object.keys(out.tokens).length || out.thumbnail) next.games[gameId] = out;
     }
     appearance = next;
     storage.saveAppearance?.(appearance);
@@ -510,9 +512,9 @@ export function createPlatform({
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),
-          // A consola pode sobrepor a capa do pacote (Aparência); em qualquer
-          // dos casos, chega já pronta a usar num custom property CSS.
-          cover: appearance.games?.[g.id]?.cover || (g.cover ? `url('${gameFileUrl(g, g.cover)}')` : null),
+          // Miniatura na página da marca (não o fundo do lobby, que é sempre
+          // o --table-bg); a consola pode sobrepor a do pacote (Aparência).
+          thumbnail: appearance.games?.[g.id]?.thumbnail || (g.thumbnail ? `url('${gameFileUrl(g, g.thumbnail)}')` : null),
           rules: g.rules || null,
           themes: Object.fromEntries(Object.entries(g.themes || {}).map(([k, rel]) => [k, gameFileUrl(g, rel)])),
         })),

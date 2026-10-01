@@ -37,7 +37,7 @@ Por etapas:
 1. ✔ Infraestrutura da UI no pacote.
 2. ✔ Tabuleiro do Catania.
 3. ✔ Tutorial com o motor verdadeiro e cenários no pacote.
-4. ✔ "Aparência" na consola (tokens, temas, pré-visualização). Desde 2026-09-30, também a imagem de capa do lobby por jogo (campo `cover`, fora do skin.json — sobrepõe-se à do pacote, chega já pronta no WELCOME).
+4. ✔ "Aparência" na consola (tokens, temas, pré-visualização). Desde 2026-10-01, o fundo do lobby é sempre o `--table-bg` do jogo (escurecido, nenhum campo) e a miniatura na página da marca é um campo à parte (`thumbnail`, fora do skin.json — sobrepõe-se à do pacote, chega já pronta no WELCOME).
 5. ✔ Template vanilla: preparação (`design/vanilla/skin.json`, `npm run figma`) e desenho montado no Claude Design, no canvas "Bitnik — Template vanilla" (<https://claude.ai/artifact/9yZPAYkg1bMhpgzWKrLgpX>): tokens, componentes, mesa no computador e no telemóvel, Início, Marca-produto, Lobby, Entrada, Fim e Relatório. Guião em `design/figma/TEMPLATE.md`; a mesa em ecrã inteiro ficou na ADR-014.
 6. ✔ Service worker (PWA).
 

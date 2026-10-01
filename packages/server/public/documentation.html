@@ -361,15 +361,22 @@ export default defineGame({
         </div>
       </div>
       <div class="doc-sub" id="capa">
-        <h2>Capa do lobby</h2>
-        <p>No lobby, a imagem do jogo (campo <code>cover</code> do contrato) fica como fundo escurecido,
-          com sombra no texto por cima — sem <code>cover</code>, gradiente da marca.</p>
+        <h2>Fundo do lobby e miniatura</h2>
+        <p>No lobby, o fundo é sempre o <code>--table-bg</code> do próprio jogo (ADR-008: defaults do
+          skin.json, tema e afinações da consola — a mesma camada que pinta a mesa em jogo), escurecido
+          e com sombra no texto por cima. Não há campo nenhum para isto: muda o <code>--table-bg</code>
+          (na consola ou no skin.json) e o lobby segue sozinho.</p>
+        <p>A miniatura na página da marca é outra coisa — uma imagem à parte (campo
+          <code>thumbnail</code> do contrato, ou a mesma afinação na consola), porque o fundo da mesa
+          raramente dá uma boa miniatura. Sem <code>thumbnail</code>, fica uma cor lisa.</p>
         <div class="doc-example">
           <div class="doc-preview">
-            <div class="doc-cover-demo"><strong>Bulbous</strong></div>
+            <div class="doc-cover-demo"><strong>Catania</strong></div>
           </div>
-          <pre class="doc-code">cover: './ui/cover.jpg', // no contrato do jogo
-background: linear-gradient(rgb(0 0 0/.55), rgb(0 0 0/.7)), var(--lob-cover) center / cover;
+          <pre class="doc-code">thumbnail: './ui/thumbnail.svg', // no contrato do jogo — só a miniatura
+
+/* fundo do lobby, app.css — sem campo, automático para todos os jogos */
+background: linear-gradient(rgb(0 0 0/.55), rgb(0 0 0/.7)), var(--table-bg);
 text-shadow: 0 2px 8px rgb(0 0 0/.7), 0 0 20px rgb(0 0 0/.4);</pre>
         </div>
       </div>

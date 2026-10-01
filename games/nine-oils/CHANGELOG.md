@@ -1,5 +1,12 @@
 # Nine Oils — histórico de regras
 
+## 1.1.13 — Fundo do lobby sem precisar de campo (2026-10-01)
+
+Sem mudanças de jogo: o `cover` da 1.1.12 era uma imagem estática a
+tentar imitar o fundo da mesa — sai do contrato outra vez. O fundo do
+lobby passa a ser sempre o `--table-bg` do jogo, escurecido (igual ao
+Catania e aos outros jogos), automaticamente, sem nenhum campo.
+
 ## 1.1.12 — Imagem do lobby (2026-10-01)
 
 Sem mudanças de jogo: acrescenta `cover` ao contrato — o mesmo

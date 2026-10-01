@@ -476,28 +476,32 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 }
 @media (prefers-reduced-motion: reduce) { .home-card { transition: none; } .home-card:hover { transform: none; } }
 
-/* ── Lobby de um jogo (quadro "Lobby" do template), sobre o fundo da marca —
-   ou, se o jogo tiver uma imagem de capa (defineGame({ cover })), essa
-   imagem escurecida em vez do gradiente da marca. ── */
+/* ── Lobby de um jogo (quadro "Lobby" do template): o --table-bg do próprio
+   jogo (ADR-008 — defaults do skin.json, tema e afinações da consola, a
+   mesma camada que pinta a mesa em jogo), escurecido, em vez do gradiente
+   genérico da marca. Regra única para todos os jogos: não depende de um
+   campo "cover" à parte — e seja o fundo "custom" que for (tema, afinação
+   da consola), aparece logo aqui, sem precisar de nada manual. ── */
 /* isolation:isolate faz de .lob o próprio "chão" do z-index do ::before —
    sem isto, um elemento posicionado com z-index:auto pinta sempre por cima
    de conteúdo normal (mesmo vindo antes no HTML), ficando por cima de
    ".lob-list li" (sem stacking context próprio) mas por baixo de ".lob-card"
    (tem, por causa do backdrop-filter) — inconsistente consoante o cartão. */
-.lob.has-cover { position: relative; isolation: isolate; }
-/* position:absolute (não fixed): a imagem já fica presa à janela pelo
-   próprio "fixed" do background-attachment, sem precisar que a caixa
-   também seja position:fixed. z-index:-1 garante-lhe sempre o fundo,
-   com isolation acima a conter esse -1 dentro de .lob. */
-.lob.has-cover::before {
+.lob { position: relative; isolation: isolate; }
+/* position:absolute (não fixed): basta à caixa cobrir .lob; sem "fixed" no
+   fundo (a mesa em jogo também não o tem). z-index:-1 garante-lhe sempre o
+   fundo, com isolation acima a conter esse -1 dentro de .lob. Enquanto a
+   skin do jogo ainda não carregou (lobby aberto antes de se ter entrado
+   numa mesa), --table-bg ainda não existe — fica o gradiente da marca. */
+.lob::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(rgb(0 0 0 / .55), rgb(0 0 0 / .7)), var(--lob-cover) 50% 15% / auto 145% no-repeat fixed;
+  background: linear-gradient(rgb(0 0 0 / .55), rgb(0 0 0 / .7)), var(--table-bg, transparent);
 }
-/* A capa é uma foto qualquer: pode ter áreas claras onde o texto branco,
-   sozinho, se perderia — sombra para garantir leitura em qualquer imagem. */
-.lob.has-cover .lob-title h1,
-.lob.has-cover .lob-title p,
-.lob.has-cover .lob-lbl { text-shadow: 0 2px 8px rgb(0 0 0 / .7), 0 0 20px rgb(0 0 0 / .4); }
+/* O fundo da mesa pode ter áreas claras onde o texto branco, sozinho, se
+   perderia — sombra para garantir leitura com qualquer --table-bg. */
+.lob .lob-title h1,
+.lob .lob-title p,
+.lob .lob-lbl { text-shadow: 0 2px 8px rgb(0 0 0 / .7), 0 0 20px rgb(0 0 0 / .4); }
 .lob-main { justify-self: center; width: min(856px, 100%); box-sizing: border-box; padding: 40px 16px 48px; display: grid; gap: 12px; align-content: start; }
 .lob-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .lob-title { flex: 1; display: grid; gap: 4px; min-width: 0; }

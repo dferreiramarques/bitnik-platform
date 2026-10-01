@@ -9,7 +9,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'nine-oils',
-  version: '1.1.12',
+  version: '1.1.13',
   players: { min: 2, max: 2 },
   author: 'David Marques',
   license: 'UNLICENSED',
@@ -18,7 +18,6 @@ export default defineGame({
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
   skin: './ui/skin.json',
-  cover: './ui/cover.svg', // gradiente da mesa (fundo escurecido do lobby)
   // Modal "Como se joga" (botão ? durante a partida, plataforma): condensado
   // do REGRAS.md, nas duas línguas — não é lido pelas regras.
   rules: rulesText,

@@ -1,5 +1,14 @@
 # Capivaras — histórico de regras
 
+## 2.0.7 — Fundo do lobby sem precisar de campo (2026-10-01)
+
+Sem mudanças de jogo: o `cover` da 2.0.6 era uma imagem estática a
+tentar imitar o fundo da mesa — sai do contrato outra vez. O fundo do
+lobby passa a ser sempre o `--table-bg` do jogo, escurecido (igual ao
+Catania e aos outros jogos), automaticamente, sem nenhum campo — o que
+inclui afinações da consola (ex.: um fundo "customizado" desta mesa),
+ao contrário de uma imagem estática do pacote.
+
 ## 2.0.6 — Imagem do lobby (2026-10-01)
 
 Sem mudanças de jogo: acrescenta `cover` ao contrato — o mesmo

@@ -31,7 +31,7 @@ const UI = {
     apTarget: 'Editar', apBrand: 'Marca (moldura)', apTheme: 'Tema', apThemeDefault: 'Por omissão (skin do pacote)',
     apSave: 'Guardar', apDiscard: 'Descartar alterações', apResetAll: 'Repor tudo', apExport: 'Exportar JSON', apImport: 'Importar JSON',
     apReset: 'Repor', apDefault: 'por omissão: {v}', apUpload: 'Carregar imagem', apTooBig: 'Imagem demasiado grande (máx. {kb} KB).',
-    apCover: 'Imagem de capa do lobby', apCoverHint: 'Fundo escurecido do lobby do jogo e miniatura na página da marca.',
+    apThumb: 'Miniatura do jogo', apThumbHint: 'Imagem na página da marca (não o fundo do lobby, que é sempre a mesa do jogo).',
     apPreview: 'Pré-visualização', apPreviewNote: 'Cenário do tutorial, a correr no browser. Podes jogar.',
     apContrast: 'Contraste', apContrastOk: 'Contraste suficiente em todos os pares (AA).', apContrastLow: '{a} sobre {b}: {r}:1 (mínimo 4.5:1)',
     apUnsaved: 'Há alterações por guardar.', apSaved: 'Aparência guardada: já chegou aos jogadores ligados.', apImported: 'JSON importado. Revê e guarda.',
@@ -41,7 +41,7 @@ const UI = {
     apPresetSaved: 'Skin "{name}" guardada.', apPresetApplied: 'Skin "{name}" aplicada. Falta guardar.',
     apPresetDeleteConfirm: 'Apagar a skin "{name}"? Não dá para desfazer.', apPresetDeleted: 'Skin apagada.',
     grp_table: 'Mesa', grp_base: 'Base', grp_resources: 'Recursos', grp_players: 'Jogadores', grp_type: 'Letra', grp_shape: 'Forma', grp_art: 'Arte', grp_brand: 'Marca',
-    grp_cards: 'Cartas', grp_lilies: 'Nenúfares', grp_dice: 'Dados', grp_tokens: 'Marcadores', grp_lobby: 'Lobby',
+    grp_cards: 'Cartas', grp_lilies: 'Nenúfares', grp_dice: 'Dados', grp_tokens: 'Marcadores', grp_thumb: 'Miniatura',
   },
   en: {
     console: 'Console', lobby: 'Open the lobby', lang: 'PT', logout: 'Sign out',
@@ -71,7 +71,7 @@ const UI = {
     apTarget: 'Edit', apBrand: 'Brand (frame)', apTheme: 'Theme', apThemeDefault: 'Default (package skin)',
     apSave: 'Save', apDiscard: 'Discard changes', apResetAll: 'Reset all', apExport: 'Export JSON', apImport: 'Import JSON',
     apReset: 'Reset', apDefault: 'default: {v}', apUpload: 'Upload image', apTooBig: 'Image too large (max {kb} KB).',
-    apCover: 'Lobby cover image', apCoverHint: 'Darkened background of the game lobby and thumbnail on the brand page.',
+    apThumb: 'Game thumbnail', apThumbHint: 'Image on the brand page (not the lobby background, which is always the game table).',
     apPreview: 'Preview', apPreviewNote: 'Tutorial scenario, running in the browser. You can play.',
     apContrast: 'Contrast', apContrastOk: 'Enough contrast on every pair (AA).', apContrastLow: '{a} on {b}: {r}:1 (minimum 4.5:1)',
     apUnsaved: 'There are unsaved changes.', apSaved: 'Appearance saved: connected players already have it.', apImported: 'JSON imported. Review and save.',
@@ -81,7 +81,7 @@ const UI = {
     apPresetSaved: 'Skin "{name}" saved.', apPresetApplied: 'Skin "{name}" applied. Remember to save.',
     apPresetDeleteConfirm: 'Delete skin "{name}"? This cannot be undone.', apPresetDeleted: 'Skin deleted.',
     grp_table: 'Table', grp_base: 'Base', grp_resources: 'Resources', grp_players: 'Players', grp_type: 'Type', grp_shape: 'Shape', grp_art: 'Art', grp_brand: 'Brand',
-    grp_cards: 'Cards', grp_lilies: 'Lilies', grp_dice: 'Dice', grp_tokens: 'Tokens', grp_lobby: 'Lobby',
+    grp_cards: 'Cards', grp_lilies: 'Lilies', grp_dice: 'Dice', grp_tokens: 'Tokens', grp_thumb: 'Thumbnail',
   },
 };
 

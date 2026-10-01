@@ -522,35 +522,35 @@ test('aparência: catálogo com skin e temas; afinações validadas, enviadas ao
   await s2.stop();
 });
 
-test('aparência: capa do lobby por jogo (nova, ou a sobrepor a do pacote)', async () => {
+test('aparência: miniatura do jogo (nova, ou a sobrepor a do pacote) — nunca o fundo do lobby', async () => {
   const s = await boot(makeStudio, { adminToken: 'segredo' });
   const url = `http://localhost:${s.port}/admin/appearance`;
   const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
   const put = (body) => fetch(url, { method: 'PUT', headers: auth, body: JSON.stringify(body) });
 
   // Recusas: só imagens seguras (mesma validação dos tokens de imagem/fundo).
-  assert.equal((await put({ games: { catania: { cover: 'url(javascript:alert(1))' } } })).status, 400);
-  assert.equal((await put({ games: { catania: { cover: 'red;}body{display:none' } } })).status, 400);
+  assert.equal((await put({ games: { catania: { thumbnail: 'url(javascript:alert(1))' } } })).status, 400);
+  assert.equal((await put({ games: { catania: { thumbnail: 'red;}body{display:none' } } })).status, 400);
 
   const c1 = await s.client();
-  assert.match(c1.welcome.games.find((g) => g.id === 'catania').cover, /^url\('\/games\/catania\/ui\/cover\.svg'\)$/, 'catania usa a capa do pacote');
-  assert.match(c1.welcome.games.find((g) => g.id === 'bulbous').cover, /^url\('\/games\/bulbous\/ui\/cover\.svg'\)$/, 'bulbous usa a capa do pacote');
+  assert.equal(c1.welcome.games.find((g) => g.id === 'praia-das-percebes').thumbnail, null, 'praia não tem miniatura no pacote');
+  assert.match(c1.welcome.games.find((g) => g.id === 'catania').thumbnail, /^url\('\/games\/catania\/ui\/thumbnail\.svg'\)$/, 'catania usa a miniatura do pacote');
 
-  const cover = 'url("data:image/png;base64,iVBORw0KGgo=")';
-  const ok = await put({ games: { catania: { cover }, bulbous: { cover } } });
+  const thumbnail = 'url("data:image/png;base64,iVBORw0KGgo=")';
+  const ok = await put({ games: { 'praia-das-percebes': { thumbnail }, catania: { thumbnail } } });
   assert.equal(ok.status, 200);
   const { appearance } = await ok.json();
-  assert.equal(appearance.games.catania.cover, cover);
+  assert.equal(appearance.games['praia-das-percebes'].thumbnail, thumbnail);
 
   const c2 = await s.client();
-  assert.equal(c2.welcome.games.find((g) => g.id === 'catania').cover, cover, 'a consola dá capa a um jogo que não tinha');
-  assert.equal(c2.welcome.games.find((g) => g.id === 'bulbous').cover, cover, 'a consola sobrepõe-se à capa do pacote');
+  assert.equal(c2.welcome.games.find((g) => g.id === 'praia-das-percebes').thumbnail, thumbnail, 'a consola dá miniatura a um jogo que não tinha');
+  assert.equal(c2.welcome.games.find((g) => g.id === 'catania').thumbnail, thumbnail, 'a consola sobrepõe-se à miniatura do pacote');
 
-  // Apagar a capa (string vazia) volta à do pacote.
-  await put({ games: { catania: { cover: '' }, bulbous: { cover: '' } } });
+  // Apagar a miniatura (string vazia) volta à do pacote (ou nenhuma).
+  await put({ games: { 'praia-das-percebes': { thumbnail: '' }, catania: { thumbnail: '' } } });
   const c3 = await s.client();
-  assert.match(c3.welcome.games.find((g) => g.id === 'catania').cover, /cover\.svg/);
-  assert.match(c3.welcome.games.find((g) => g.id === 'bulbous').cover, /cover\.svg/);
+  assert.equal(c3.welcome.games.find((g) => g.id === 'praia-das-percebes').thumbnail, null);
+  assert.match(c3.welcome.games.find((g) => g.id === 'catania').thumbnail, /thumbnail\.svg/);
   await s.stop();
 });
 
