@@ -509,6 +509,9 @@ export function createPlatform({
         games: [...G.values()].map((g) => ({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
           prototype: !!g.prototype,
+          // Instalado e jogável por link direto, mas fora da lista pública
+          // (página da marca) — ex.: uma demonstração do template vanilla.
+          hidden: !!g.hidden,
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),

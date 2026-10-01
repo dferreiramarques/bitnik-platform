@@ -143,7 +143,10 @@ function toast(text) {
 const routeRoom = () => (location.hash.match(/^#\/r\/(.+)$/) || [])[1] || null;
 const routeTutorial = () => (location.hash.match(/^#\/tutorial\/([\w-]+)$/) || [])[1] || null;
 const routeGame = () => (location.hash.match(/^#\/j\/([\w-]+)$/) || [])[1] || null;
-const manyGames = () => (W()?.games.length || 0) > 1;
+// Jogos "hidden" (ex.: demonstração do vanilla) não contam para decidir se
+// há "vários jogos" — só os da página da marca, que é o que esta pergunta
+// está sempre a decidir (mostrar a grelha, ou ir direto ao único jogo).
+const manyGames = () => (W()?.games.filter((g) => !g.hidden).length || 0) > 1;
 
 function go(roomId) {
   location.hash = roomId ? `#/r/${roomId}` : '#/';
@@ -256,7 +259,9 @@ function playersText(p) {
 
 function renderHome() {
   const brand = W()?.brand?.name || $('#brand').textContent;
-  const games = W()?.games || [];
+  // "hidden": instalado e jogável por link direto, mas fora da lista pública
+  // (ex.: uma demonstração do template vanilla, ao lado do jogo a sério).
+  const games = (W()?.games || []).filter((g) => !g.hidden);
   return `<section class="home">
     ${renderBrandTop()}
     <div class="home-main">

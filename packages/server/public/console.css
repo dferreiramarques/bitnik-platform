@@ -27,7 +27,8 @@
 .tbl th { text-align: left; font-size: .85rem; color: var(--ui-muted); font-weight: 600; padding: 8px; border-bottom: 2px solid var(--ui-line); }
 .tbl td { padding: 10px 8px; border-bottom: 1px solid var(--ui-line); vertical-align: top; }
 .tbl small { display: block; color: var(--ui-muted); }
-.tbl .actions { white-space: nowrap; text-align: right; }
+.tbl .actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; white-space: nowrap; }
+.tbl .actions .btn { text-decoration: none; display: inline-flex; align-items: center; }
 
 .pill { display: inline-block; font-size: .8rem; padding: 2px 10px; border-radius: var(--ui-r-pill); background: var(--ui-alt); }
 .pill-ok { background: color-mix(in srgb, #3b7d3a 16%, var(--ui-card)); color: #2c5e2b; }

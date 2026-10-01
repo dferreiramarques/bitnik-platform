@@ -13,7 +13,7 @@ const UI = {
     games: 'Jogos', rooms: 'Mesas', playing: 'a decorrer', waiting: 'à espera', expired: 'expiradas', over: 'acabadas', online: 'Jogadores ligados',
     jogosLead: 'Pacotes instalados neste servidor. A simulação joga partidas só com bots, sem bloquear as mesas.',
     game: 'Jogo', prototype: 'protótipo', version: 'Versão', players: 'Jogadores', langs: 'Línguas', contract: 'Contrato', live: 'A decorrer',
-    ok: 'ok', simulate: 'Simular', matches: 'Partidas', idle: 'Tempo esgotado (%)', run: 'Correr', running: 'A simular…',
+    ok: 'ok', simulate: 'Simular', open: 'Abrir', matches: 'Partidas', idle: 'Tempo esgotado (%)', run: 'Correr', running: 'A simular…',
     finished: 'Acabadas', failures: 'Falhas', avgMoves: 'Jogadas (média)', winBySeat: 'Vitórias por lugar', seat: 'Lugar {n}',
     nPlayers: '{n} jogadores', timers: '{n} timers',
     mesasLead: 'Mesas privadas: só entra quem tem o link. Joga-se como numa mesa pública; os lugares vazios passam a bots.',
@@ -54,7 +54,7 @@ const UI = {
     games: 'Games', rooms: 'Tables', playing: 'in progress', waiting: 'waiting', expired: 'expired', over: 'finished', online: 'Players online',
     jogosLead: 'Packages installed on this server. Simulation plays bot-only games without blocking live tables.',
     game: 'Game', prototype: 'prototype', version: 'Version', players: 'Players', langs: 'Languages', contract: 'Contract', live: 'Live',
-    ok: 'ok', simulate: 'Simulate', matches: 'Games', idle: 'Timeouts (%)', run: 'Run', running: 'Simulating…',
+    ok: 'ok', simulate: 'Simulate', open: 'Open', matches: 'Games', idle: 'Timeouts (%)', run: 'Run', running: 'Simulating…',
     finished: 'Finished', failures: 'Failures', avgMoves: 'Moves (avg)', winBySeat: 'Wins by seat', seat: 'Seat {n}',
     nPlayers: '{n} players', timers: '{n} timers',
     mesasLead: 'Private tables: only people with the link can join. Played like a public table; empty seats become bots.',
@@ -182,6 +182,9 @@ function viewPainel() {
 }
 
 function gamesTable(withSim) {
+  // {{HOME}} já resolvido no href de #toLobby (lobby da marca) — junta o
+  // jogo diretamente pela rota do cliente, sem precisar do id da marca aqui.
+  const home = document.getElementById('toLobby')?.getAttribute('href') || '/';
   return `<div class="tbl-wrap"><table class="tbl">
     <thead><tr><th>${u('game')}</th><th>${u('version')}</th><th>${u('players')}</th><th>${u('langs')}</th><th>${u('contract')}</th><th>${u('live')}</th>${withSim ? '<th></th>' : ''}</tr></thead>
     <tbody>${app.games.map((g) => `<tr>
@@ -191,7 +194,10 @@ function gamesTable(withSim) {
       <td>${g.langs.map(esc).join(', ')}</td>
       <td>${g.problems.length ? `<span class="pill pill-bad" title="${esc(g.problems.join('; '))}">${g.problems.length}</span>` : `<span class="pill pill-ok">${u('ok')}</span>`}</td>
       <td>${g.rooms.playing}</td>
-      ${withSim ? `<td class="actions"><button class="btn btn-outline" data-sim-open="${esc(g.id)}">${u('simulate')}</button></td>` : ''}
+      ${withSim ? `<td class="actions">
+        <button class="btn btn-outline" data-sim-open="${esc(g.id)}">${u('simulate')}</button>
+        <a class="btn btn-primary" href="${esc(home)}#/j/${esc(g.id)}" target="_blank" rel="noopener">${u('open')}</a>
+      </td>` : ''}
     </tr>${withSim && app.sims[g.id] ? `<tr><td colspan="7">${simPanel(g)}</td></tr>` : ''}`).join('')}</tbody>
   </table></div>`;
 }

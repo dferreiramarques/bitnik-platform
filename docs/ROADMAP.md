@@ -78,7 +78,7 @@ Migração direta do código antigo, um jogo de cada vez.
 | Capivaras | 2.0.0 ✔ | `games/capivaras` | Feitas pela Forge e publicadas; empate partilha a vitória. A 2.0.0 traz o baralho do jogo (o da arte) e UI própria no template |
 | Praia das Percebes | 2.0.2 ✔ | `games/praia-das-percebes` | Colunas de 4 e 6 para tirar a vantagem do 2.º lugar (ver CHANGELOG); UI própria no template vanilla |
 | Nine Oils | 1.1.13 ✔ | `games/nine-oils` | Só a 2; 2 Rapazes; UI própria no template vanilla — a partir de 2026-10-01, deixa de ser só a demonstração do vanilla "nu" (ver linha a seguir) e passa a evoluir para um jogo à parte: fundo customizado, melhores componentes e interação |
-| Nine Oils (Vanilla Demo) | 1.0.0 ✔ | `games/nine-oils-vanilla` | Cópia separada do Nine Oils em 1.1.13 (congelada), para continuar a mostrar o template vanilla tal como ficou desenhado no Claude Design — não recebe as mudanças de UX da linha acima |
+| Nine Oils (Vanilla Demo) | 1.0.1 ✔ | `games/nine-oils-vanilla` | Cópia separada do Nine Oils em 1.1.13 (congelada), para continuar a mostrar o template vanilla tal como ficou desenhado no Claude Design — não recebe as mudanças de UX da linha acima. `hidden: true`: fora da página da marca, só por link direto (consola → Jogos → Abrir) |
 
 Por fazer:
 

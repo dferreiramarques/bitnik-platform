@@ -1,5 +1,13 @@
 # Nine Oils (Vanilla Demo) — histórico de regras
 
+## 1.0.1 — Fora da página da marca (2026-10-01)
+
+Sem mudanças de jogo: acrescenta `hidden: true` ao contrato — deixa de
+aparecer na lista pública de jogos (página da marca), para não
+duplicar o Nine Oils a sério. Continua instalado e acessível por link
+direto (consola → Jogos → Abrir), com a sua própria mesa local e
+mesas online.
+
 ## 1.0.0 — Pacote separado, congelado no nine-oils 1.1.13 (2026-10-01)
 
 Cópia do pacote `nine-oils` tal como estava na versão 1.1.13 (sem

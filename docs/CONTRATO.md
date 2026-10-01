@@ -37,6 +37,7 @@ export default defineGame({
   rules: { pt: [{ title, body: [...], visual }], en: [...] }, // "Como se joga": regras numa modal (sem tutorial); `visual` é HTML de confiança do pacote, opcional
   themes: { dia: './ui/themes/dia/theme.json' },  // temas de design à medida
   preview: { scenario: 'tutorial-meio', players: 4 }, // pré-visualização na consola
+  hidden: true,                                   // instalado e jogável por link direto, mas fora da página da marca (ex.: demonstração do template)
 });
 ```
 
