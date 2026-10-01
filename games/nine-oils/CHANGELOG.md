@@ -1,5 +1,20 @@
 # Nine Oils — histórico de regras
 
+## 1.1.18 — Dado em "flipbook"; combinações junto aos dados; sem mensagens que empurrem o ecrã (2026-10-01)
+
+Sem mudanças de jogo:
+
+- O dado deixa de ser um cubo em 3D (dava só 1 face legível) e passa a
+  um "flipbook": percorre as 6 faces fotografadas, uma a cada passo,
+  com desfoque de movimento (mais forte a meio, a limpar no fim) e um
+  leve sobe-desce de 3px, até assentar na face lançada.
+- As combinações (fase COMBO) saem da linha própria e passam para
+  dentro do centro, logo a seguir aos dados — não há espaço vazio nem
+  outra "zona" a meio do ecrã.
+- A última mensagem que ainda empurrava o ecrã ao aparecer (o aviso de
+  "escolhe às cegas", na fase ESCOLHA_CEGA) passa à mesa, como as
+  outras — nenhuma mensagem nesta UI mexe mais em componentes do ecrã.
+
 ## 1.1.17 — Registo flutuante a sério; dado com 3 faces e desfoque; descarte por mensagem (2026-10-01)
 
 Sem mudanças de jogo:
