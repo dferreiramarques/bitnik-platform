@@ -1,6 +1,6 @@
-/* Nine Oils — UI própria (ADR-006, ADR-014), no template vanilla: só usa
-   tokens --game-*, tal e qual o skin.json (cópia de design/vanilla/skin.json),
-   para mostrar o aspeto de base da plataforma a clientes. */
+/* Nine Oils — UI própria (ADR-006, ADR-014), ainda nos componentes do
+   template vanilla, mas já com fundo da mesa, dados e cartão de jogador
+   (pergaminho) próprios. */
 
 .nof {
   --g: var(--game-glass, rgb(20 32 26 / .35));
@@ -16,7 +16,7 @@
 .nof button { font-family: inherit; line-height: 1.25; }
 .nof :focus-visible { outline: 3px solid var(--game-on-table-accent, #ffd9c2); outline-offset: 2px; }
 
-.nof-player, .nof-bar, .nof-die, .nof-card.back {
+.nof-bar, .nof-die, .nof-card.back {
   background: var(--g); border: 1px solid var(--gl);
   -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
 }
@@ -24,7 +24,7 @@
 .nof-layout {
   position: absolute; inset: 0;
   display: grid; grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto auto; row-gap: 12px;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto; row-gap: 12px;
   padding: calc(env(safe-area-inset-top, 0px) + 44px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
 }
 .nof-lbl {
@@ -33,11 +33,21 @@
 }
 .nof-note { font-size: 12px; color: var(--otm); }
 
-/* ── Jogadores ── */
+/* ── Jogadores: cartão em pergaminho (design do David), texto escuro para
+   contraste — redefine as variáveis partilhadas (--ot/--otm/--gl) dentro do
+   cartão, para a banca, o nome e o texto secundário seguirem sem repetir
+   regras. ── */
 .nof-players { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-.nof-player { width: 230px; box-sizing: border-box; border-radius: var(--game-radius, 14px); padding: 10px; display: grid; gap: 8px; align-content: start; }
-.nof-player.me { border-color: var(--ot); }
-.nof-player.active { box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 65%, transparent); }
+.nof-player {
+  --ot: var(--game-text, #2b1b12); --otm: var(--game-muted, #5b4636); --gl: var(--game-line, #d9c49a);
+  --pa: var(--game-accent, #b8461f);
+  width: 230px; box-sizing: border-box; border-radius: var(--game-radius, 14px); padding: 10px;
+  display: grid; gap: 8px; align-content: start; color: var(--ot);
+  background: linear-gradient(rgb(255 251 240 / .3), rgb(255 251 240 / .3)), url('./player-bg.webp') center / cover no-repeat;
+  border: 1px solid rgb(0 0 0 / .18); box-shadow: 0 4px 14px rgb(0 0 0 / .35);
+}
+.nof-player.me { border-color: var(--pa); }
+.nof-player.active { box-shadow: 0 0 0 2px color-mix(in srgb, var(--pa) 65%, transparent); }
 .nof-pname { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; min-width: 0; }
 .nof-pname span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nof-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
@@ -48,18 +58,28 @@
 }
 .nof-slot.blocked { box-shadow: inset 0 0 0 2px var(--game-danger, #b3261e); color: var(--game-danger, #b3261e); font-weight: 800; }
 .nof-slot.free { box-shadow: inset 0 0 0 1px var(--gl); }
-.nof-slot.filled { background: color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 30%, transparent); box-shadow: inset 0 0 0 2px var(--game-on-table-accent, #ffd9c2); }
+.nof-slot.filled { background: color-mix(in srgb, var(--pa, #b8461f) 30%, transparent); box-shadow: inset 0 0 0 2px var(--pa, #b8461f); }
 .nof-pmeta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--otm); }
 
 /* ── Centro: fase e dados ── */
 .nof-center { min-height: 0; display: grid; align-content: center; justify-items: center; gap: 10px; }
 .nof-phase { font-family: var(--game-font-display); font-weight: 800; font-size: clamp(1.1rem, 3vw, 1.6rem); text-align: center; text-shadow: 0 1px 3px rgb(0 0 0 / .6); }
-.nof-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: min(90%, 420px); }
+.nof-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
 .nof-die {
-  width: 40px; height: 40px; box-sizing: border-box;
+  width: 64px; height: 64px; box-sizing: border-box;
   filter: drop-shadow(0 3px 6px rgb(0 0 0 / .45));
   animation: nof-die-in .38s cubic-bezier(.2, 1.6, .4, 1) backwards;
 }
+/* ── Zona dos dados: em CARTAS, é o próprio botão de lançar ── */
+.nof-rollzone {
+  background: none; border: 2px dashed var(--gl); border-radius: var(--game-radius, 14px);
+  padding: 18px 28px; color: inherit; font: inherit; cursor: pointer;
+  transition: background-color .15s ease, transform .15s ease;
+}
+.nof-rollzone[data-act] { cursor: pointer; }
+.nof-rollzone[data-act]:hover, .nof-rollzone[data-act]:focus-visible { background-color: rgb(255 255 255 / .08); transform: scale(1.03); }
+.nof-rollzone:disabled { border-style: solid; cursor: default; opacity: .7; }
+.nof-rollzone .nof-phase { text-shadow: none; }
 .nof-die-img { width: 100%; height: 100%; object-fit: contain; }
 .nof-die:nth-child(9n+1) { animation-delay: .02s; } .nof-die:nth-child(9n+2) { animation-delay: .05s; }
 .nof-die:nth-child(9n+3) { animation-delay: .08s; } .nof-die:nth-child(9n+4) { animation-delay: .11s; }
@@ -70,17 +90,36 @@
 @media (prefers-reduced-motion: reduce) { .nof-die { animation: none; } }
 .nof-blind { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(95%, 520px); }
 
+/* ── Combinações: painel flutuante em vidro, entre os dados e a mão ── */
+.nof-combo {
+  justify-self: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  max-width: min(95%, 560px); padding: 10px 14px; border-radius: var(--game-radius, 14px);
+  background: var(--g); border: 1px solid var(--gl);
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+  box-shadow: 0 10px 28px rgb(0 0 0 / .4);
+}
+.nof-combo-chip {
+  min-height: 40px; padding: 8px 14px; border-radius: var(--ui-r-pill, 999px); box-sizing: border-box;
+  background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); border: 0; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.nof-combo-chip:hover, .nof-combo-chip:focus-visible { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fffaf1); }
+
 /* ── Cartas (mão e cartas viradas para baixo) ── */
 .nof-card {
+  position: relative;
   width: 46px; height: 62px; min-height: 44px; box-sizing: border-box; padding: 0; border-radius: 8px;
   display: grid; place-items: center; font-size: 22px; text-align: center; overflow: hidden;
   border: 0; cursor: default;
 }
-button.nof-card { cursor: pointer; transition: transform .15s ease; }
+button.nof-card { cursor: pointer; transition: transform .22s cubic-bezier(.22, .85, .3, 1.2), box-shadow .22s ease; }
 button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3px); }
 .nof-card.face { background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); box-shadow: 0 4px 12px rgb(0 0 0 / .3); }
 .nof-card.face img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.nof-card.big { width: 92px; height: 124px; min-height: 0; font-size: 44px; }
+.nof-card.big { width: 130px; height: 176px; min-height: 0; font-size: 44px; }
+.nof-card.face.selected {
+  outline: 3px solid var(--game-accent, #b8461f); outline-offset: 2px;
+  transform: translateY(-34px) scale(1.06); box-shadow: 0 16px 30px rgb(0 0 0 / .5); z-index: 2;
+}
 .nof-card.back {
   font: 800 15px var(--game-font-display); color: var(--ot);
   background-image: repeating-linear-gradient(45deg, rgb(255 250 241 / .08) 0 6px, transparent 6px 12px), var(--g);
@@ -128,13 +167,13 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 /* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
    pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
    do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
-.nof-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.nof-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.nof-bottom { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.nof-log { align-self: flex-start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
 .nof-log ol { list-style: none; margin: 0; padding: 0; }
 .nof-log b { font-weight: 500; }
 .nof-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
-.nof-hand { justify-self: end; display: grid; gap: 6px; justify-items: end; }
-.nof-hand-cards { display: flex; gap: 5px; }
+.nof-hand { width: 100%; display: grid; gap: 6px; justify-items: center; }
+.nof-hand-cards { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 
 /* ── Barra de jogadas ── */
 .nof-bar {
@@ -157,17 +196,18 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
      para caberem nos 144px de conteúdo do cartão (160 - padding). */
   .nof-banca { flex-wrap: nowrap; gap: 4px; }
   .nof-slot { width: 20px; height: 20px; font-size: 12px; }
-  .nof-bottom { grid-template-columns: minmax(0, 1fr); }
+  .nof-die { width: 48px; height: 48px; }
   .nof-bottom > .nof-log { display: none; }
-  .nof-hand { justify-self: center; justify-items: center; }
+  .nof-card.big { width: 104px; height: 140px; }
+  .nof-card.face.selected { transform: translateY(-24px) scale(1.05); }
 }
 
 /* ── Telemóvel na horizontal: jogadores à esquerda, tal como as Capivaras ── */
 @container (orientation: landscape) and (max-height: 500px) {
   .nof-layout {
     grid-template-columns: 160px minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto auto;
-    grid-template-areas: "players center" "players bottom" "players bar";
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "players center" "players combo" "players bottom" "players bar";
     column-gap: 10px; row-gap: 6px;
     padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
   }
@@ -180,10 +220,11 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-banca { flex-wrap: nowrap; gap: 4px; }
   .nof-slot { width: 20px; height: 20px; font-size: 12px; }
   .nof-center { grid-area: center; gap: 6px; }
-  .nof-die { width: 28px; height: 28px; }
-  .nof-card.big { width: 76px; height: 102px; font-size: 36px; }
-  .nof-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
+  .nof-die { width: 40px; height: 40px; }
+  .nof-card.big { width: 86px; height: 116px; font-size: 36px; }
+  .nof-card.face.selected { transform: translateY(-20px) scale(1.05); }
+  .nof-combo { grid-area: combo; }
+  .nof-bottom { grid-area: bottom; }
   .nof-bottom > .nof-log { display: none; }
-  .nof-hand { justify-self: center; justify-items: center; }
   .nof-bar { grid-area: bar; justify-self: stretch; }
 }

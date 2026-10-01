@@ -1,5 +1,23 @@
 # Nine Oils — histórico de regras
 
+## 1.1.15 — Jogar cartas por seleção; cartão do jogador em pergaminho (2026-10-01)
+
+Sem mudanças de jogo:
+
+- Fase de lançar: em vez de uma barra com um botão por combinação de
+  cartas, toca-se nas cartas da mão para as selecionar (ficam destacadas
+  e sobem, como a ir na direção dos dados) e toca-se na zona dos dados
+  para lançar com o que estiver selecionado. Dois cliques numa carta
+  abrem sempre os detalhes (antes bastava um clique).
+- As combinações da fase de escolha (COMBO) deixam de aparecer na barra
+  de baixo e passam a um painel flutuante em vidro, entre os dados e a
+  mão.
+- Dados maiores (64px) e cartas da mão maiores (130×176), a ocupar a
+  zona toda por baixo dos dados.
+- Cartão do jogador com fundo em pergaminho (design do David) em vez do
+  vidro escuro; texto e contornos passam às cores de texto escuro
+  (--game-text/--game-muted/--game-line) para manter o contraste.
+
 ## 1.1.14 — Fundo da mesa e dados próprios (2026-10-01)
 
 Sem mudanças de jogo: primeiro passo do visual a sério deste pacote

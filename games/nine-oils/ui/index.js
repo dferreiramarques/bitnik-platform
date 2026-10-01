@@ -4,8 +4,12 @@
 // `msg.legal`.
 //
 // Disposição: os dois jogadores em vidro no topo (banca de 6 casas, reserva,
-// mão do adversário), o centro com os dados e a jogada pendente, o registo e
-// a minha mão em baixo, e a barra de jogadas.
+// mão do adversário), o centro com os dados, o registo e a minha mão em
+// baixo, e a barra de jogadas (fases sem interação própria no centro/mão).
+//
+// Fase CARTAS: um clique numa carta da mão seleciona-a (fica destacada, como
+// a ir na direção dos dados) ou tira a seleção; dois cliques abrem os
+// detalhes; tocar na zona dos dados lança com as cartas selecionadas.
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
@@ -27,11 +31,30 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null });
+const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [] });
 let ui = fresh();
 
 function onKeydown(e) {
   if (e.key === 'Escape' && ui.cardInfo) { ui.cardInfo = null; render(); }
+}
+
+/** Jogadas de LANCAR por valor das cartas (não por índice: cartas iguais são
+ * intercambiáveis), para encontrar a jogada certa para o que está selecionado. */
+function lancarMove(mao) {
+  const wanted = ui.selected.map((i) => mao[i]).sort().join('|');
+  return (msg.legal || []).find((m) => m.type === 'LANCAR' && [...m.payload.cartas].map((i) => mao[i]).sort().join('|') === wanted);
+}
+
+function toggleCard(i) {
+  if (msg.view.fase !== 'CARTAS') return;
+  ui.selected = ui.selected.includes(i) ? ui.selected.filter((x) => x !== i) : [...ui.selected, i];
+  render();
+}
+
+function doRoll() {
+  if (msg.view.fase !== 'CARTAS') return;
+  const mv = lancarMove(msg.view.minhaMao || []);
+  if (mv) { ctx.move({ type: mv.type, payload: mv.payload }); ui.selected = []; }
 }
 
 /** Uma <img data-fallback="TIPO"> que falhe a carregar vira o emoji da carta. */
@@ -51,6 +74,7 @@ export function mount(el, context) {
   root.append(view);
   el.append(root);
   root.addEventListener('click', onClick);
+  root.addEventListener('dblclick', onDblClick);
   root.addEventListener('error', onImgError, true);
   document.addEventListener('keydown', onKeydown);
 }
@@ -70,6 +94,7 @@ export function update(next) {
     ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
   }
   ui.lastLogSeq = Math.max(ui.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
+  if (msg.view.fase !== 'CARTAS') ui.selected = [];
   render();
   autoContinue();
 }
@@ -93,12 +118,20 @@ function onClick(e) {
     if (mv) ctx.move({ type: mv.type, payload: mv.payload });
     return;
   }
-  const info = e.target.closest('[data-info]');
-  if (info) { ui.cardInfo = info.dataset.info; render(); return; }
   if (e.target.closest('[data-close-info]')) { ui.cardInfo = null; render(); return; }
+  if (e.target.closest('[data-act="roll"]')) { doRoll(); return; }
+  const card = e.target.closest('[data-card]');
+  if (card) { if (e.detail > 1) return; toggleCard(Number(card.dataset.card)); return; }
   const bar = e.target.closest('[data-idx]');
   if (bar) { const mv = msg.legal?.[Number(bar.dataset.idx)]; if (mv) ctx.move({ type: mv.type, payload: mv.payload }); return; }
   if (e.target.closest('[data-act="logfold"]')) { ui.logOpen = !ui.logOpen; render(); }
+}
+
+function onDblClick(e) {
+  const card = e.target.closest('[data-card]');
+  if (card) ui.cardInfo = (msg.view.minhaMao || [])[Number(card.dataset.card)];
+  else return;
+  render();
 }
 
 function render() {
@@ -108,6 +141,7 @@ function render() {
   view.innerHTML = `
     ${renderPlayers(v, me)}
     <div class="nof-center">${renderCenter(v, me)}</div>
+    ${v.fase === 'COMBO' ? renderCombo(v) : ''}
     <div class="nof-bottom">
       ${renderLog()}
       ${renderHand(v, me)}
@@ -183,16 +217,28 @@ function renderCenter(v, me) {
     const cards = (msg.legal || []).map((mv, i) => `<button class="nof-card back" type="button" data-idx="${i}" title="${esc(ctx.t(mv.label.key, mv.label.params))}">${i + 1}</button>`).join('');
     return `${heading}<div class="nof-blind">${cards || `<span class="nof-note">${esc(ctx.t('ui.opponentHand', { n: opp?.cartas ?? 0 }))}</span>`}</div>`;
   }
+  if (v.fase === 'CARTAS') {
+    const canRoll = (msg.legal || []).some((m) => m.type === 'LANCAR');
+    return `<button class="nof-rollzone" type="button" ${canRoll ? 'data-act="roll"' : 'disabled'} aria-label="${esc(ctx.t('move.LANCAR'))}">${heading}</button>`;
+  }
   return `${heading}${dice}`;
+}
+
+function renderCombo(v) {
+  return `<div class="nof-combo">${(msg.legal || []).map((mv, i) => `
+    <button class="nof-combo-chip" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>
+  `).join('')}</div>`;
 }
 
 function renderHand(v, me) {
   if (me == null) return '<div></div>';
   const mao = v.minhaMao || [];
   const canDiscard = v.fase === 'DESCARTE' && !!(msg.legal || []).length;
-  // A carta abre sempre os detalhes; no descarte, o X no canto é que descarta.
-  const cards = mao.map((c) => `<span class="nof-card-wrap">
-    <button class="nof-card face big" type="button" data-info="${esc(c)}" aria-label="${esc(ctx.t('ui.cardDetails'))} — ${esc(ctx.t(`carta.${c}`))}">
+  const canSelect = v.fase === 'CARTAS';
+  // Um clique seleciona/retira a carta da jogada (CARTAS); dois cliques abrem
+  // os detalhes; no descarte, o X no canto é que descarta.
+  const cards = mao.map((c, i) => `<span class="nof-card-wrap">
+    <button class="nof-card face big${canSelect && ui.selected.includes(i) ? ' selected' : ''}" type="button" data-card="${i}" aria-label="${esc(ctx.t(`carta.${c}`))}">
       <img src="${esc(CARD_ART[c])}" data-fallback="${esc(c)}" alt="">
     </button>
     ${canDiscard ? `<button class="nof-x-btn" type="button" data-discard="${esc(c)}" title="${esc(ctx.t('move.DESCARTAR'))}" aria-label="${esc(ctx.t('moveLabel.DESCARTAR', { carta: ctx.t(`carta.${c}`) }))}">✕</button>` : ''}
@@ -213,7 +259,7 @@ function renderLog() {
 
 function renderBar(v, me) {
   const legal = msg.legal || [];
-  if (v.fase === 'PAUSA') return '';
+  if (v.fase === 'PAUSA' || v.fase === 'CARTAS' || v.fase === 'COMBO') return '';
   if (v.fase === 'ESCOLHA_CEGA') return `<p class="nof-hint">${esc(ctx.t('ui.hintBlind'))}</p>`;
   if (v.fase === 'DESCARTE' && legal.length) return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
   if (!legal.length) return `<p class="nof-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.waitingTurn'))}</p>`;
