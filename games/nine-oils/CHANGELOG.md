@@ -1,5 +1,30 @@
 # Nine Oils — histórico de regras
 
+## 1.1.17 — Registo flutuante a sério; dado com 3 faces e desfoque; descarte por mensagem (2026-10-01)
+
+Sem mudanças de jogo:
+
+- O registo estava dentro da linha de baixo e, ao abrir, empurrava a
+  mão — não flutuava a sério, apesar de já estar documentado assim no
+  `design/figma/TEMPLATE.md` (corrigido e propagado a todos os
+  templates: Bulbous, Capivaras, Catania, Praia das Percebes e também
+  ao template vanilla, já que é uma correção da base, não do Nine
+  Oils). Passa a sobrepor-se (canto inferior esquerdo) sem afetar o
+  resto do ecrã; no telemóvel continua sem aparecer, como já era em
+  todos os jogos.
+- O dado em 3D só mostrava a face lançada direita de frente (1 face
+  visível) — ganha uma inclinação fixa para se verem sempre 3 faces,
+  como um dado a sério, e um desfoque de movimento durante a rotação.
+  De caminho, corrige um efeito secundário: sem um transform estático
+  igual ao fim da animação, o dado "saltava" de volta à face 1 assim
+  que a animação acabava (ou com as animações desligadas).
+- A casa da banca com garrafa ficava com a cor de destaque (laranja/
+  vermelho, a mesma de "bloqueada") — fica verde, mais clara enquanto
+  estado positivo.
+- Fase de descarte: sem o aviso "Clica no X..." numa caixa por baixo —
+  a mensagem passa à mesa, como as outras ("Tens mais que 3 cartas.
+  Descarta."), só quando se entra na fase (não a cada atualização).
+
 ## 1.1.16 — Dados em 3D; mensagens na mesa; sem status genérico (2026-10-01)
 
 Sem mudanças de jogo:

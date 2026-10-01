@@ -1,5 +1,12 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.20 — Registo flutuante a sério (2026-10-01)
+
+Sem mudanças de jogo: o registo estava dentro da linha de baixo e, ao
+abrir, empurrava a peça/mão — não flutuava a sério, apesar de já estar
+documentado assim no `design/figma/TEMPLATE.md`. Passa a sobrepor-se
+(canto inferior esquerdo) sem afetar o resto do ecrã.
+
 ## 2.0.19 — Fundo do lobby sem precisar de campo (2026-10-01)
 
 Sem mudanças de jogo: o `cover` da 2.0.18 era uma imagem estática a

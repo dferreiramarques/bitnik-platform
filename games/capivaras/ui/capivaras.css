@@ -116,15 +116,21 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
 .capi-bettors { position: absolute; right: 8px; top: 32px; display: flex; gap: 3px; }
 .capi-bettors i { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 2px var(--capi-card); }
 
-/* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
-   pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
-   do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
 .capi-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.capi-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
+
+/* ── Registo: flutua por cima de tudo, no canto inferior esquerdo — nunca
+   afeta o resto do ecrã (ADR-014). Sem fundo nem sombra — texto branco,
+   fino e pequeno, como um log discreto. Cresce com o conteúdo até 50% da
+   altura do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
+.capi-log {
+  position: absolute; z-index: 10; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  max-width: min(300px, calc(100% - 24px)); max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6;
+  pointer-events: none;
+}
 .capi-log ol { list-style: none; margin: 0; padding: 0; }
 .capi-log b { font-weight: 500; }
-.capi-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
-.capi-me { border-radius: 10px; padding: 8px 12px; display: flex; gap: 14px; max-width: 100%; box-sizing: border-box; }
+.capi-log-head { pointer-events: auto; background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
+.capi-me { grid-column: 2; border-radius: 10px; padding: 8px 12px; display: flex; gap: 14px; max-width: 100%; box-sizing: border-box; }
 .capi-me-grp { display: grid; gap: 6px; align-content: start; min-width: 0; }
 .capi-vsep { width: 1px; background: var(--gl); }
 .capi-minis { display: flex; gap: 4px; min-height: 50px; align-items: center; overflow-x: auto; scrollbar-width: thin; max-width: 420px; }
@@ -173,8 +179,8 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
   .capi-chip { min-height: 26px; font-size: 11px; }
   .capi-chip-sub { display: none; }
   .capi-bottom { grid-template-columns: minmax(0, 1fr); }
-  .capi-bottom > div:empty, .capi-log { display: none; }
-  .capi-me { padding: 6px 8px; gap: 10px; }
+  .capi-bottom > div:empty { display: none; }
+  .capi-me { grid-column: 1; padding: 6px 8px; gap: 10px; }
   .capi-minis { max-width: 150px; min-height: 42px; }
   .capi-mini { width: 30px; height: 42px; }
   .capi-lilyset { grid-template-columns: repeat(2, auto); gap: 2px 8px; font-size: 10px; }
@@ -183,6 +189,8 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
   .capi-who { right: 4px; top: 5px; height: 20px; padding: 0 6px; font-size: 10px; max-width: calc(100% - 38px); }
   .capi-letter { left: 4px; top: 4px; }
   .capi-info { font-size: 12px; }
+  /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
+  .capi-log { display: none; }
 }
 @container (max-width: 400px) {
   .capi-lilyname { font-size: 0; gap: 0; }
@@ -210,12 +218,13 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
   .capi-chips { grid-area: chips; }
   .capi-center { grid-area: center; }
   .capi-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
-  .capi-bottom > div:empty, .capi-log { display: none; }
-  .capi-me { padding: 4px 8px; }
+  .capi-bottom > div:empty { display: none; }
+  .capi-me { grid-column: 1; padding: 4px 8px; }
   .capi-me .capi-vsep, .capi-me .capi-me-grp:not(.capi-me-cards) { display: none; }
   .capi-minis { min-height: 36px; max-width: 200px; }
   .capi-mini { width: 26px; height: 36px; }
   .capi-bar { grid-area: bar; justify-self: stretch; }
+  .capi-log { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

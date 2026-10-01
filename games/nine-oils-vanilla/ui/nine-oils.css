@@ -132,16 +132,22 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 .nof-modal-text p { margin: 2px 0 0; font-size: 14px; line-height: 1.5; }
 .nof-modal-flavor { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--game-line, #d9c49a); font-style: italic; color: var(--game-muted, #5b4636); }
 
-/* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
-   pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
-   do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
 .nof-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.nof-log { justify-self: start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.nof-hand { grid-column: 2; justify-self: end; display: grid; gap: 6px; justify-items: end; }
+.nof-hand-cards { display: flex; gap: 5px; }
+
+/* ── Registo: flutua por cima de tudo, no canto inferior esquerdo — nunca
+   afeta o resto do ecrã (ADR-014). Sem fundo nem sombra — texto branco,
+   fino e pequeno, como um log discreto. Cresce com o conteúdo até 50% da
+   altura do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
+.nof-log {
+  position: absolute; z-index: 10; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  max-width: min(300px, calc(100% - 24px)); max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6;
+  pointer-events: none;
+}
 .nof-log ol { list-style: none; margin: 0; padding: 0; }
 .nof-log b { font-weight: 500; }
-.nof-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
-.nof-hand { justify-self: end; display: grid; gap: 6px; justify-items: end; }
-.nof-hand-cards { display: flex; gap: 5px; }
+.nof-log-head { pointer-events: auto; background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
 
 /* ── Barra de jogadas ── */
 .nof-bar {
@@ -165,8 +171,9 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-banca { flex-wrap: nowrap; gap: 4px; }
   .nof-slot { width: 20px; height: 20px; font-size: 12px; }
   .nof-bottom { grid-template-columns: minmax(0, 1fr); }
-  .nof-bottom > .nof-log { display: none; }
-  .nof-hand { justify-self: center; justify-items: center; }
+  .nof-hand { grid-column: 1; justify-self: center; justify-items: center; }
+  /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
+  .nof-log { display: none; }
 }
 
 /* ── Telemóvel na horizontal: jogadores à esquerda, tal como as Capivaras ── */
@@ -190,7 +197,7 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-die { width: 28px; height: 28px; }
   .nof-card.big { width: 76px; height: 102px; font-size: 36px; }
   .nof-bottom { grid-area: bottom; grid-template-columns: minmax(0, 1fr); }
-  .nof-bottom > .nof-log { display: none; }
-  .nof-hand { justify-self: center; justify-items: center; }
+  .nof-hand { grid-column: 1; justify-self: center; justify-items: center; }
   .nof-bar { grid-area: bar; justify-self: stretch; }
+  .nof-log { display: none; }
 }

@@ -181,11 +181,11 @@ function render() {
     </div>
     <div class="bulbous-center">${renderCenter(v)}</div>
     <div class="bulbous-bottom">
-      ${renderLog()}
       ${renderMyBaelfs(v)}
     </div>
     ${renderHand(v)}
-    ${msg.result ? '' : `<div class="bulbous-bar">${renderBar(v)}</div>`}`;
+    ${msg.result ? '' : `<div class="bulbous-bar">${renderBar(v)}</div>`}
+    ${renderLog()}`;
   fitHand();
 }
 

@@ -145,10 +145,10 @@ function render() {
       </div>
     </div>
     <div class="praia-bottom">
-      ${renderLog()}
       ${renderPiece(v, me)}
     </div>
-    ${msg.result ? '' : `<div class="praia-bar">${renderBar(v, me)}</div>`}`;
+    ${msg.result ? '' : `<div class="praia-bar">${renderBar(v, me)}</div>`}
+    ${renderLog()}`;
   applyZoom();
 }
 

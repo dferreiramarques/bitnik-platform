@@ -12,7 +12,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'nine-oils-vanilla',
-  version: '1.0.1',
+  version: '1.0.2',
   // Instalado e acessível por link direto (consola → Jogos → Abrir); não
   // aparece na página da marca (a lista pública de jogos) para não duplicar
   // o Nine Oils a sério aos olhos de quem só vê essa página.

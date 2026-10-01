@@ -159,16 +159,22 @@
 /* ── Emoji de recuo, quando falta uma imagem (peça, carta, marcador) ── */
 .praia-emoji-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: inherit; }
 
-/* ── Registo: flutuante, sem fundo nem sombra, fino e pequeno, como um log
-   discreto — mas com a mesma cor do resto do texto sobre a mesa (aqui a
-   mesa é clara, texto branco não se leria). Cresce com o conteúdo até 50%
-   da altura do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
 .praia-bottom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.praia-log { justify-self: start; max-width: 280px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
+.praia-piece { grid-column: 2; justify-self: center; display: grid; justify-items: center; gap: 4px; }
+
+/* ── Registo: flutua por cima de tudo, no canto inferior esquerdo — nunca
+   afeta o resto do ecrã (ADR-014). Sem fundo nem sombra, fino e pequeno,
+   como um log discreto — mas com a mesma cor do resto do texto sobre a mesa
+   (aqui a mesa é clara, texto branco não se leria). Cresce com o conteúdo
+   até 50% da altura do ecrã e a partir daí corta (sem scroll). ── */
+.praia-log {
+  position: absolute; z-index: 10; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  max-width: min(280px, calc(100% - 24px)); max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6;
+  pointer-events: none;
+}
 .praia-log ol { list-style: none; margin: 0; padding: 0; }
 .praia-log b { font-weight: 500; }
-.praia-log-head { background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
-.praia-piece { grid-column: 2; justify-self: center; display: grid; justify-items: center; gap: 4px; }
+.praia-log-head { pointer-events: auto; background: none; border: 0; padding: 0; min-height: 24px; color: var(--otm); cursor: pointer; }
 
 /* ── Barra de jogadas ── */
 .praia-bar {
@@ -204,6 +210,7 @@
   .praia-obj-text span { font-size: 10px; }
   .praia-note { font-size: 10px; }
   .praia-bottom { grid-template-columns: minmax(0, 1fr); }
-  .praia-bottom > .praia-log { display: none; }
   .praia-piece { grid-column: 1; }
+  /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
+  .praia-log { display: none; }
 }

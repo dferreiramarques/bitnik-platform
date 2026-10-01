@@ -60,7 +60,7 @@ export default {
   'ui.handEmpty': '(no cards)',
   'ui.opponentHand': 'Hand: {n}',
   'ui.hintBlind': 'Pick a face-down card from the opponent’s hand.',
-  'ui.hintDiscard': 'Click a card’s X to discard it.',
+  'ui.hintDiscard': 'You have more than 3 cards. Discard.',
   'ui.yourTurn': 'Your turn',
   'ui.spectating': 'Watching the game.',
   'ui.slot.blocked': 'Blocked slot',

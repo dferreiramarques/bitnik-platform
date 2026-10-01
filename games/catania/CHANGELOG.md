@@ -2,6 +2,14 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+## 5.0.10 — Registo flutuante a sério (2026-10-01)
+
+Sem mudanças de jogo: o registo estava dentro da linha de baixo e, ao
+abrir, empurrava a minha área — não flutuava a sério, apesar de já
+estar documentado assim no `design/figma/TEMPLATE.md`. Passa a
+sobrepor-se (canto inferior esquerdo) sem afetar o resto do ecrã; no
+telemóvel continua sem aparecer, como já era.
+
 ## 5.0.9 — Fundo do lobby e miniatura, finalmente separados
 
 O campo `cover` (5.0.7/5.0.8) tentava servir dois fins ao mesmo tempo:

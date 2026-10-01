@@ -8,7 +8,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'catania',
-  version: '5.0.9',
+  version: '5.0.10',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'CC-BY-4.0',

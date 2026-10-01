@@ -16,10 +16,12 @@ const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' }
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
 const DIE_ART = Object.fromEntries([1, 2, 3, 4, 5, 6].map((n) => [n, asset(`./dados/${n}.png`)]));
-/** Dado em 3D (cubo com as 6 faces), a rodar até à face lançada (nine-oils.css). */
-const dieFace = (d) => `<i class="nof-die"><span class="nof-die-cube" data-face="${d}">
+/** Dado em 3D (cubo com as 6 faces), a rodar até à face lançada, com uma
+ * inclinação fixa para se verem sempre 3 faces, como um dado a sério
+ * (nine-oils.css). */
+const dieFace = (d) => `<i class="nof-die"><span class="nof-die-tilt"><span class="nof-die-cube" data-face="${d}">
   ${[1, 2, 3, 4, 5, 6].map((f) => `<span class="nof-die-f nof-die-f${f}"><img src="${DIE_ART[f]}" alt="${f}" draggable="false"></span>`).join('')}
-</span></i>`;
+</span></span></i>`;
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;
@@ -34,7 +36,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [], wasMine: false, reveal: null, revealTimer: null });
+const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [], wasMine: false, wasDescarte: false, reveal: null, revealTimer: null });
 let ui = fresh();
 
 function onKeydown(e) {
@@ -110,6 +112,9 @@ export function update(next) {
   const mine = me != null && !!msg.active?.includes(me) && !msg.result;
   if (mine && !ui.wasMine) ctx.announce(ctx.t('ui.yourTurn'));
   ui.wasMine = mine;
+  const descarte = mine && msg.view.fase === 'DESCARTE';
+  if (descarte && !ui.wasDescarte) ctx.announce(ctx.t('ui.hintDiscard'));
+  ui.wasDescarte = descarte;
   if (msg.view.fase !== 'CARTAS') ui.selected = [];
   render();
   autoContinue();
@@ -158,12 +163,10 @@ function render() {
     ${renderPlayers(v, me)}
     <div class="nof-center">${renderCenter(v, me)}</div>
     ${v.fase === 'COMBO' ? renderCombo(v) : ''}
-    <div class="nof-bottom">
-      ${renderLog()}
-      ${renderHand(v, me)}
-    </div>
+    <div class="nof-bottom">${renderHand(v, me)}</div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
     ${ui.reveal ? renderReveal() : ''}
+    ${renderLog()}
     <div class="nof-modal-host"></div>`;
   syncCardInfo();
 }
@@ -287,8 +290,7 @@ function renderBar(v, me) {
   // Vez do adversário: não há status genérico aqui — mostra-se com os dados
   // (o combo que fez, ou "sem combinação"), a carta revelada, e "é a tua
   // vez" quando o turno passa (ver update()).
-  if (v.fase === 'PAUSA' || v.fase === 'CARTAS' || v.fase === 'COMBO' || !legal.length) return '';
+  if (v.fase === 'PAUSA' || v.fase === 'CARTAS' || v.fase === 'COMBO' || v.fase === 'DESCARTE' || !legal.length) return '';
   if (v.fase === 'ESCOLHA_CEGA') return `<p class="nof-hint">${esc(ctx.t('ui.hintBlind'))}</p>`;
-  if (v.fase === 'DESCARTE') return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
   return legal.map((mv, i) => `<button class="nof-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
 }

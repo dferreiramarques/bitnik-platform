@@ -1,5 +1,14 @@
 # Nine Oils (Vanilla Demo) — histórico de regras
 
+## 1.0.2 — Registo flutuante a sério (2026-10-01)
+
+Correção do template vanilla (não é conteúdo da demonstração): o
+registo estava dentro da linha de baixo e, ao abrir, empurrava a mão —
+não flutuava a sério, apesar de já estar documentado assim no
+`design/figma/TEMPLATE.md`. Passa a sobrepor-se (canto inferior
+esquerdo) sem afetar o resto do ecrã; no telemóvel continua sem
+aparecer, como já era.
+
 ## 1.0.1 — Fora da página da marca (2026-10-01)
 
 Sem mudanças de jogo: acrescenta `hidden: true` ao contrato — deixa de

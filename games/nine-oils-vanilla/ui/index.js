@@ -110,10 +110,10 @@ function render() {
     ${renderPlayers(v, me)}
     <div class="nof-center">${renderCenter(v, me)}</div>
     <div class="nof-bottom">
-      ${renderLog()}
       ${renderHand(v, me)}
     </div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
+    ${renderLog()}
     <div class="nof-modal-host"></div>`;
   syncCardInfo();
 }

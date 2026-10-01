@@ -1,5 +1,13 @@
 # Bulbous — histórico de regras
 
+## 1.1.15 — Registo flutuante a sério (2026-10-01)
+
+Sem mudanças de jogo: o registo estava dentro da linha de baixo e, ao
+abrir, empurrava a minha zona de Baelfungious — não flutuava a sério,
+apesar de já estar documentado assim no `design/figma/TEMPLATE.md`.
+Passa a sobrepor-se (canto inferior esquerdo) sem afetar o resto do
+ecrã.
+
 ## 1.1.14 — Fundo do lobby e miniatura, finalmente separados (2026-10-01)
 
 O campo `cover` (1.1.13) tentava servir dois fins ao mesmo tempo: fundo

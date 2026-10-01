@@ -58,7 +58,7 @@
 }
 .nof-slot.blocked { box-shadow: inset 0 0 0 2px var(--game-danger, #b3261e); color: var(--game-danger, #b3261e); font-weight: 800; }
 .nof-slot.free { box-shadow: inset 0 0 0 2px var(--otm); }
-.nof-slot.filled { background: color-mix(in srgb, var(--pa, #b8461f) 30%, transparent); box-shadow: inset 0 0 0 2px var(--pa, #b8461f); }
+.nof-slot.filled { --pf: #2f7d46; background: color-mix(in srgb, var(--pf) 30%, transparent); box-shadow: inset 0 0 0 2px var(--pf); }
 .nof-pmeta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--otm); }
 
 /* ── Centro: fase e dados ── */
@@ -71,10 +71,17 @@
    aqui disparada ao entrar no ecrã, já que o resto da mesa também se
    redesenha de uma vez, em vez de alternar uma classe num dado persistente). ── */
 .nof-die { --d: 64px; width: var(--d); height: var(--d); box-sizing: border-box; perspective: calc(var(--d) * 4); }
+/* Inclinação fixa (não anima): mostra sempre a face lançada mais duas
+   vizinhas, como um dado a sério visto de lado, em vez de direito de frente
+   (onde só se via 1 face). */
+.nof-die-tilt {
+  position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d;
+  transform: rotateX(-18deg) rotateY(28deg);
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / .5));
+}
 .nof-die-cube {
   position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d;
-  filter: drop-shadow(0 4px 8px rgb(0 0 0 / .5));
-  animation-duration: .7s; animation-timing-function: cubic-bezier(.22, .85, .25, 1.05); animation-fill-mode: backwards;
+  animation-duration: .7s; animation-timing-function: cubic-bezier(.22, .85, .25, 1.05); animation-fill-mode: both;
 }
 .nof-die-f { position: absolute; inset: 0; border-radius: 18%; overflow: hidden; backface-visibility: hidden; }
 .nof-die-f img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -84,18 +91,21 @@
 .nof-die-f4 { transform: rotateY(-90deg) translateZ(calc(var(--d) / 2)); }
 .nof-die-f5 { transform: rotateX(-90deg) translateZ(calc(var(--d) / 2)); }
 .nof-die-f6 { transform: rotateX(90deg) translateZ(calc(var(--d) / 2)); }
-.nof-die-cube[data-face="1"] { animation-name: nof-roll-1; }
-.nof-die-cube[data-face="2"] { animation-name: nof-roll-2; }
-.nof-die-cube[data-face="3"] { animation-name: nof-roll-3; }
-.nof-die-cube[data-face="4"] { animation-name: nof-roll-4; }
-.nof-die-cube[data-face="5"] { animation-name: nof-roll-5; }
-.nof-die-cube[data-face="6"] { animation-name: nof-roll-6; }
-@keyframes nof-roll-1 { from { transform: rotateX(450deg) rotateY(380deg) rotateZ(35deg); } to { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); } }
-@keyframes nof-roll-2 { from { transform: rotateX(420deg) rotateY(-340deg) rotateZ(-30deg); } to { transform: rotateX(180deg) rotateY(0deg) rotateZ(0deg); } }
-@keyframes nof-roll-3 { from { transform: rotateX(380deg) rotateY(420deg) rotateZ(25deg); } to { transform: rotateX(0deg) rotateY(-90deg) rotateZ(0deg); } }
-@keyframes nof-roll-4 { from { transform: rotateX(-400deg) rotateY(-390deg) rotateZ(-20deg); } to { transform: rotateX(0deg) rotateY(90deg) rotateZ(0deg); } }
-@keyframes nof-roll-5 { from { transform: rotateX(-430deg) rotateY(360deg) rotateZ(30deg); } to { transform: rotateX(-90deg) rotateY(0deg) rotateZ(0deg); } }
-@keyframes nof-roll-6 { from { transform: rotateX(460deg) rotateY(-350deg) rotateZ(-25deg); } to { transform: rotateX(90deg) rotateY(0deg) rotateZ(0deg); } }
+/* O transform estático é a mesma pose final da keyframe: sem ele, desligar
+   as animações (reduced-motion) mostrava sempre a face 1. */
+.nof-die-cube[data-face="1"] { animation-name: nof-roll-1; transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+.nof-die-cube[data-face="2"] { animation-name: nof-roll-2; transform: rotateX(180deg) rotateY(0deg) rotateZ(0deg); }
+.nof-die-cube[data-face="3"] { animation-name: nof-roll-3; transform: rotateX(0deg) rotateY(-90deg) rotateZ(0deg); }
+.nof-die-cube[data-face="4"] { animation-name: nof-roll-4; transform: rotateX(0deg) rotateY(90deg) rotateZ(0deg); }
+.nof-die-cube[data-face="5"] { animation-name: nof-roll-5; transform: rotateX(-90deg) rotateY(0deg) rotateZ(0deg); }
+.nof-die-cube[data-face="6"] { animation-name: nof-roll-6; transform: rotateX(90deg) rotateY(0deg) rotateZ(0deg); }
+/* Desfoque de movimento: sobe a meio da rotação e limpa ao assentar na face certa. */
+@keyframes nof-roll-1 { 0% { transform: rotateX(450deg) rotateY(380deg) rotateZ(35deg); filter: blur(0); } 15% { filter: blur(7px); } 65% { filter: blur(3px); } 100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); filter: blur(0); } }
+@keyframes nof-roll-2 { 0% { transform: rotateX(420deg) rotateY(-340deg) rotateZ(-30deg); filter: blur(0); } 15% { filter: blur(7px); } 65% { filter: blur(3px); } 100% { transform: rotateX(180deg) rotateY(0deg) rotateZ(0deg); filter: blur(0); } }
+@keyframes nof-roll-3 { 0% { transform: rotateX(380deg) rotateY(420deg) rotateZ(25deg); filter: blur(0); } 15% { filter: blur(7px); } 65% { filter: blur(3px); } 100% { transform: rotateX(0deg) rotateY(-90deg) rotateZ(0deg); filter: blur(0); } }
+@keyframes nof-roll-4 { 0% { transform: rotateX(-400deg) rotateY(-390deg) rotateZ(-20deg); filter: blur(0); } 15% { filter: blur(7px); } 65% { filter: blur(3px); } 100% { transform: rotateX(0deg) rotateY(90deg) rotateZ(0deg); filter: blur(0); } }
+@keyframes nof-roll-5 { 0% { transform: rotateX(-430deg) rotateY(360deg) rotateZ(30deg); filter: blur(0); } 15% { filter: blur(7px); } 65% { filter: blur(3px); } 100% { transform: rotateX(-90deg) rotateY(0deg) rotateZ(0deg); filter: blur(0); } }
+@keyframes nof-roll-6 { 0% { transform: rotateX(460deg) rotateY(-350deg) rotateZ(-25deg); filter: blur(0); } 15% { filter: blur(7px); } 65% { filter: blur(3px); } 100% { transform: rotateX(90deg) rotateY(0deg) rotateZ(0deg); filter: blur(0); } }
 .nof-die:nth-child(9n+1) .nof-die-cube { animation-delay: .02s; } .nof-die:nth-child(9n+2) .nof-die-cube { animation-delay: .06s; }
 .nof-die:nth-child(9n+3) .nof-die-cube { animation-delay: .1s; } .nof-die:nth-child(9n+4) .nof-die-cube { animation-delay: .14s; }
 .nof-die:nth-child(9n+5) .nof-die-cube { animation-delay: .18s; } .nof-die:nth-child(9n+6) .nof-die-cube { animation-delay: .22s; }
@@ -198,16 +208,23 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
 .nof-modal-text p { margin: 2px 0 0; font-size: 14px; line-height: 1.5; }
 .nof-modal-flavor { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--game-line, #d9c49a); font-style: italic; color: var(--game-muted, #5b4636); }
 
-/* ── Registo: flutuante, sem fundo nem sombra — texto branco, fino e
-   pequeno, como um log discreto. Cresce com o conteúdo até 50% da altura
-   do ecrã e a partir daí corta (sem scroll: não dá para ver mais). ── */
-.nof-bottom { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.nof-log { align-self: flex-start; max-width: 300px; max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6; }
-.nof-log ol { list-style: none; margin: 0; padding: 0; }
-.nof-log b { font-weight: 500; }
-.nof-log-head { background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
+.nof-bottom { display: flex; justify-content: center; }
 .nof-hand { width: 100%; display: grid; gap: 6px; justify-items: center; }
 .nof-hand-cards { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── Registo: flutua por cima de tudo, no canto inferior esquerdo — nunca
+   afeta o resto do ecrã (ADR-014, propagado a todos os templates). Sem
+   fundo nem sombra — texto branco, fino e pequeno, como um log discreto.
+   Cresce com o conteúdo até 50% da altura do ecrã e a partir daí corta
+   (sem scroll: não dá para ver mais). ── */
+.nof-log {
+  position: absolute; z-index: 10; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  max-width: min(300px, calc(100% - 24px)); max-height: 50vh; overflow: hidden; color: var(--otm); font-weight: 300; font-size: 10px; line-height: 1.6;
+  pointer-events: none;
+}
+.nof-log ol { list-style: none; margin: 0; padding: 0; }
+.nof-log b { font-weight: 500; }
+.nof-log-head { pointer-events: auto; background: none; border: 0; padding: 0; min-height: 28px; color: var(--otm); cursor: pointer; }
 
 /* ── Barra de jogadas ── */
 .nof-bar {
@@ -231,9 +248,10 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-banca { flex-wrap: nowrap; gap: 4px; }
   .nof-slot { width: 20px; height: 20px; font-size: 12px; }
   .nof-die { --d: 48px; }
-  .nof-bottom > .nof-log { display: none; }
   .nof-card.big { width: 104px; height: 140px; }
   .nof-card.face.selected { transform: translateY(-24px) scale(1.05); }
+  /* O registo não aparece no telemóvel (nem em pop-up): sem espaço para o ler bem. */
+  .nof-log { display: none; }
 }
 
 /* ── Telemóvel na horizontal: jogadores à esquerda, tal como as Capivaras ── */
@@ -259,6 +277,6 @@ button.nof-card:hover, button.nof-card:focus-visible { transform: translateY(-3p
   .nof-card.face.selected { transform: translateY(-20px) scale(1.05); }
   .nof-combo { grid-area: combo; }
   .nof-bottom { grid-area: bottom; }
-  .nof-bottom > .nof-log { display: none; }
   .nof-bar { grid-area: bar; justify-self: stretch; }
+  .nof-log { display: none; }
 }

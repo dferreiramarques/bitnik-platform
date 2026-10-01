@@ -145,11 +145,11 @@ function render() {
       </div>
     </div>
     <div class="cat-bottom">
-      ${renderLog()}
       ${v.me != null ? renderMe(v) : '<div></div>'}
       <div></div>
     </div>
     ${msg.result ? '' : `<div class="cat-bar" data-tut="actions">${renderActions(v)}</div>`}
+    ${renderLog()}
     ${ui.modal === 'found' ? renderFoundModal(v) : ''}
     ${ui.modal === 'pass' ? renderPassModal() : ''}`;
   applyZoom();

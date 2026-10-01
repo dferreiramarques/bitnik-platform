@@ -107,11 +107,11 @@ function render() {
     ${renderChips(v)}
     <div class="capi-center">${renderTable(v)}</div>
     <div class="capi-bottom">
-      ${renderLog()}
       ${mySeat() != null ? renderMe(v) : '<div></div>'}
       <div></div>
     </div>
-    ${msg.result ? '' : `<div class="capi-bar">${renderBar(v)}</div>`}`;
+    ${msg.result ? '' : `<div class="capi-bar">${renderBar(v)}</div>`}
+    ${renderLog()}`;
   fitCards();
   keepStrip(stripX);
   ctx.afterRender?.(root);
