@@ -1,7 +1,7 @@
-// Nine Oils — UI própria (ADR-006, ADR-014), no template vanilla: mostra a
-// clientes o aspeto de base da plataforma, por isso não define tokens
-// próprios (usa só os --game-* do skin.json, cópia do vanilla). Não repete
-// regras: cada clique corresponde sempre a uma jogada de `msg.legal`.
+// Nine Oils — UI própria (ADR-006, ADR-014), ainda no template vanilla para
+// os componentes, mas já com fundo da mesa e dados próprios (design do
+// David). Não repete regras: cada clique corresponde sempre a uma jogada de
+// `msg.legal`.
 //
 // Disposição: os dois jogadores em vidro no topo (banca de 6 casas, reserva,
 // mão do adversário), o centro com os dados e a jogada pendente, o registo e
@@ -11,9 +11,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
-/** Padrão de pintas de um dado a 6 faces, numa grelha 3×3 (índices 0-8). */
-const DOTS = { 1: [4], 2: [2, 6], 3: [2, 4, 6], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-const dieFace = (d) => `<i class="nof-die"><span class="nof-die-grid">${Array.from({ length: 9 }, (_, i) => `<i${(DOTS[d] || []).includes(i) ? ' class="on"' : ''}></i>`).join('')}</span></i>`;
+const DIE_ART = Object.fromEntries([1, 2, 3, 4, 5, 6].map((n) => [n, asset(`./dados/${n}.png`)]));
+const dieFace = (d) => `<i class="nof-die"><img class="nof-die-img" src="${DIE_ART[d]}" alt="${d}" draggable="false"></i>`;
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;

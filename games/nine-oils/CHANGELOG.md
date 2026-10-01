@@ -1,5 +1,14 @@
 # Nine Oils — histórico de regras
 
+## 1.1.14 — Fundo da mesa e dados próprios (2026-10-01)
+
+Sem mudanças de jogo: primeiro passo do visual a sério deste pacote
+(agora separado da demonstração do template em `nine-oils-vanilla`).
+`--table-bg` passa a ser uma imagem própria (`ui/table-bg.webp`), em
+vez do gradiente verde do vanilla. Os dados deixam de ser pintas CSS
+numa grelha 3×3 e passam a mostrar a face fotografada de um dado a
+sério (`ui/dados/1.png` a `6.png`).
+
 ## 1.1.13 — Fundo do lobby sem precisar de campo (2026-10-01)
 
 Sem mudanças de jogo: o `cover` da 1.1.12 era uma imagem estática a

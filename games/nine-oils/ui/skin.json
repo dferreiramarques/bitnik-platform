@@ -1,9 +1,9 @@
 {
-  "name": "Vanilla",
-  "description": "Sem skin própria: usa tal e qual os tokens do template vanilla (design/vanilla/skin.json, ADR-014), para mostrar a clientes o aspeto de base da plataforma.",
+  "name": "Nine Oils",
+  "description": "Tokens do template vanilla (design/vanilla/skin.json, ADR-014), com fundo da mesa próprio (ui/table-bg.webp).",
   "tokens": {
     "--table-bg": {
-      "value": "radial-gradient(ellipse at 50% 40%, #3f6b52 0%, #2e4a3a 60%, #1f3328 100%)",
+      "value": "linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)), url('/games/nine-oils/ui/table-bg.webp') center / cover no-repeat, #161108",
       "type": "background",
       "group": "table",
       "label": { "pt": "Mesa (fundo)", "en": "Table (background)" }
