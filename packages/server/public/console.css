@@ -15,6 +15,8 @@
 .con-main h1 { font-size: 1.8rem; }
 .con-main h2 { font-size: 1.2rem; margin-bottom: 10px; }
 .con-lead { color: var(--ui-muted); margin: 4px 0 0; }
+.con-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.con-row h2 { margin-bottom: 0; }
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 .tile { background: var(--ui-card); border: 2px solid var(--ui-line); border-radius: var(--ui-r-md); padding: 12px 14px; }

@@ -78,6 +78,59 @@ test('as mesas solo são só do dono', async () => {
   await s.stop();
 });
 
+test('mesas solo esquecidas: a limpeza automática apaga-as sozinha (ADR-015)', async () => {
+  const s = await boot(makeStudio, { reapIntervalMs: 50, soloIdleMs: 100, soloOverMs: 100 });
+  const c = await s.client();
+  const first = c.next('room');
+  c.createSolo('catania', 3);
+  const roomId = (await first).room.id;
+
+  // Ainda não passou o tempo: continua lá mesmo já tendo passado uma ronda da limpeza.
+  await new Promise((r) => setTimeout(r, 120));
+  assert.ok(s.platform.rooms.has(roomId), 'ainda dentro do prazo');
+
+  // "Envelhece-a" e desliga-se (enquanto o dono está ligado, nunca se apaga).
+  s.platform.rooms.get(roomId).updatedAt = Date.now() - 1000;
+  c.close();
+  await new Promise((r) => setTimeout(r, 200));
+  assert.ok(!s.platform.rooms.has(roomId), 'a limpeza automática apagou-a sozinha');
+  await s.stop();
+});
+
+test('mesas solo: a consola lista, apaga à mão e o "limpar agora" ignora quem está ligado', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo', soloIdleMs: 500, soloOverMs: 500 });
+  const auth = { Authorization: 'Bearer segredo' };
+  const base = `http://localhost:${s.port}`;
+
+  const a = await s.client();
+  const createdA = a.next('room');
+  a.createSolo('catania', 2);
+  const roomA = (await createdA).room.id;
+  const b = await s.client();
+  const createdB = b.next('room');
+  b.createSolo('catania', 2);
+  const roomB = (await createdB).room.id;
+
+  const listed = await (await fetch(`${base}/admin/solo-rooms`, { headers: auth })).json();
+  assert.ok(listed.rooms.some((r) => r.id === roomA) && listed.rooms.some((r) => r.id === roomB));
+
+  // Envelhece as duas, mas só B desliga-se: A fica por quem ainda está ligado.
+  s.platform.rooms.get(roomA).updatedAt = Date.now() - 1000;
+  s.platform.rooms.get(roomB).updatedAt = Date.now() - 1000;
+  b.close();
+  await new Promise((r) => setTimeout(r, 50));
+
+  const { reaped } = await (await fetch(`${base}/admin/solo-rooms/reap`, { method: 'POST', headers: auth })).json();
+  assert.ok(reaped.some((r) => r.id === roomB));
+  assert.ok(!reaped.some((r) => r.id === roomA), 'não apaga quem ainda está ligado');
+  assert.ok(s.platform.rooms.has(roomA));
+  assert.ok(!s.platform.rooms.has(roomB));
+
+  assert.equal((await fetch(`${base}/admin/solo-rooms/${roomA}`, { method: 'DELETE', headers: auth })).status, 204);
+  assert.ok(!s.platform.rooms.has(roomA));
+  await s.stop();
+});
+
 test('identidade: o mesmo token volta a ser o mesmo utilizador', async () => {
   const s = await boot(makeStudio);
   const store = memStore();

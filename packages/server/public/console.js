@@ -20,6 +20,9 @@ const UI = {
     newTable: 'Nova mesa', name: 'Nome (opcional)', create: 'Criar mesa', noTables: 'Ainda não há mesas de aprovação.',
     table: 'Mesa', state: 'Estado', seats: 'Lugares', link: 'Link', copy: 'Copiar', remove: 'Apagar', confirmRemove: 'Apagar esta mesa? Quem lá está é expulso.',
     free: 'livre', bot: 'bot', winners: 'Ganhou: {names}', created: 'criada {when}',
+    soloTitle: 'Mesas solo', soloLead: 'De cada jogador, contra bots — apagam-se sozinhas (ADR-015): acabadas há mais de 7 dias, ou sem jogadas há mais de 30, exceto as expiradas (ficam para retomar).',
+    reapNow: 'Limpar inativas agora', reaped: '{n} mesa(s) apagada(s).', noSolo: 'Não há mesas solo.',
+    lastMove: 'Última jogada', idleAgo: 'há {when}', confirmRemoveSolo: 'Apagar esta mesa solo?',
     avisosLead: 'Chegam a todos os jogadores ligados a este servidor e a quem se ligar depois, até expirarem.',
     newNotice: 'Novo aviso', kind: 'Tipo', kindUpdate: 'Atualização marcada', kindText: 'Texto livre',
     when: 'Hora da atualização', textPt: 'Texto (PT)', textEn: 'Texto (EN)', level: 'Nível', info: 'Informação', warn: 'Alerta',
@@ -61,6 +64,9 @@ const UI = {
     newTable: 'New table', name: 'Name (optional)', create: 'Create table', noTables: 'No review tables yet.',
     table: 'Table', state: 'State', seats: 'Seats', link: 'Link', copy: 'Copy', remove: 'Delete', confirmRemove: 'Delete this table? Anyone seated is removed.',
     free: 'free', bot: 'bot', winners: 'Won: {names}', created: 'created {when}',
+    soloTitle: 'Solo tables', soloLead: "Each player's own, against bots — these clean themselves up (ADR-015): finished more than 7 days ago, or untouched for more than 30, except expired ones (kept to resume).",
+    reapNow: 'Clean up idle now', reaped: '{n} table(s) deleted.', noSolo: 'No solo tables.',
+    lastMove: 'Last move', idleAgo: '{when} ago', confirmRemoveSolo: 'Delete this solo table?',
     avisosLead: 'Shown to every player connected to this server, and to anyone who connects later, until they expire.',
     newNotice: 'New notice', kind: 'Type', kindUpdate: 'Scheduled update', kindText: 'Free text',
     when: 'Update time', textPt: 'Text (PT)', textEn: 'Text (EN)', level: 'Level', info: 'Info', warn: 'Warning',
@@ -109,7 +115,7 @@ const prefs = {
 const app = {
   lang: prefs.get('bitnik.lang') || document.documentElement.lang || 'pt',
   token: store.get('bitnik.admin'),
-  status: null, games: [], tables: [], notices: [], sims: {},
+  status: null, games: [], tables: [], soloRooms: [], notices: [], sims: {},
 };
 const u = (key, params) => fill((UI[app.lang] || UI.pt)[key] ?? key, params);
 
@@ -253,7 +259,17 @@ function viewMesas() {
           <td><div class="linkbox"><code>${esc(url)}</code><button class="btn btn-outline" data-copy="${esc(url)}">${u('copy')}</button></div></td>
           <td class="actions"><button class="btn btn-ghost" data-del-table="${esc(t.id)}">${u('remove')}</button></td>
         </tr>`;
-      }).join('')}</tbody></table></div>` : `<p class="empty">${u('noTables')}</p>`}</div>`;
+      }).join('')}</tbody></table></div>` : `<p class="empty">${u('noTables')}</p>`}</div>
+    <div class="panel"><div class="con-row"><h2>${u('soloTitle')}</h2><button class="btn btn-outline" data-reap-solo>${u('reapNow')}</button></div>
+      <p class="con-lead">${u('soloLead')}</p>
+      ${app.soloRooms.length ? `<div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>${u('game')}</th><th>${u('state')}</th><th>${u('lastMove')}</th><th></th></tr></thead>
+      <tbody>${app.soloRooms.map((r) => `<tr>
+          <td>${esc(gameName(r.gameId))}</td>
+          <td>${esc(u(r.status === 'over' ? 'over' : r.status))}</td>
+          <td>${esc(u('idleAgo', { when: fmtUptime(Date.now() - r.updatedAt) }))}</td>
+          <td class="actions"><button class="btn btn-ghost" data-del-solo="${esc(r.id)}">${u('remove')}</button></td>
+        </tr>`).join('')}</tbody></table></div>` : `<p class="empty">${u('noSolo')}</p>`}</div>`;
 }
 
 function viewAvisos() {
@@ -324,7 +340,10 @@ async function load() {
     const cur = section();
     const [status, games] = await Promise.all([api('status'), api('games')]);
     app.status = status; app.games = games.games;
-    if (cur === 'mesas') app.tables = (await api('tables')).tables;
+    if (cur === 'mesas') {
+      const [tables, solo] = await Promise.all([api('tables'), api('solo-rooms')]);
+      app.tables = tables.tables; app.soloRooms = solo.rooms;
+    }
     if (cur === 'avisos') app.notices = (await api('notices')).notices;
     if (cur === 'aparencia') await appearanceUi.load();
     if (cur === 'forge') await forgeUi.load();
@@ -435,6 +454,14 @@ $('#view').addEventListener('click', async (e) => {
       load();
     } else if (d.delNotice) {
       await api(`notices/${d.delNotice}`, { method: 'DELETE' });
+      load();
+    } else if (d.delSolo) {
+      if (!confirm(u('confirmRemoveSolo'))) return;
+      await api(`solo-rooms/${d.delSolo}`, { method: 'DELETE' });
+      load();
+    } else if ('reapSolo' in d) {
+      const { reaped } = await api('solo-rooms/reap', { method: 'POST' });
+      toast(u('reaped', { n: reaped.length }));
       load();
     }
   } catch (err) {

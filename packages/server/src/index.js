@@ -105,6 +105,13 @@ export function createPlatform({
   logger = console,
   adminToken = process.env.ADMIN_TOKEN, // sem token, as rotas /admin não existem
   consoleAtRoot = false, // a consola fica em "/" e o lobby da marca passa para "/<brand.id>" (só com adminToken)
+  // Mesas solo esquecidas (ADR-015): ninguém as fecha (não há mesa pública
+  // para libertar nem convite para o publisher apagar), por isso limpam-se
+  // sozinhas. Acabada (status "over", nada para retomar) ou nunca mais
+  // tocada, qualquer que seja o estado: por omissão, 7 e 30 dias.
+  soloOverMs = 7 * 24 * 3600_000,
+  soloIdleMs = 30 * 24 * 3600_000,
+  reapIntervalMs = 3600_000, // de quanto em quanto tempo a limpeza automática verifica
 } = {}) {
   // ─── Jogos ──────────────────────────────────────────────────
   const G = new Map();
@@ -789,6 +796,29 @@ export function createPlatform({
     broadcastLobby();
   }
 
+  function soloRoomInfo(r) {
+    return { id: r.id, gameId: r.gameId, status: r.status, owner: r.owner, createdAt: r.createdAt, updatedAt: r.updatedAt };
+  }
+
+  // Só mesas solo: as públicas libertam-se sozinhas quando ficam vazias
+  // (resetPublicIfEmpty) e as de convite são o publisher a apagar, à mão, na
+  // consola. Nunca apaga quem está ligado agora — só o dono vê a mesa solo,
+  // por isso basta essa verificação (ver onClose/markAway). Nem uma expirada
+  // (ADR-004): fica guardada para replay até o dono decidir, sem prazo.
+  function reapableSolo(room) {
+    if (room.kind !== 'solo' || room.status === 'expired' || isOnline(room.owner)) return false;
+    const idleMs = now() - room.updatedAt;
+    return (room.status === 'over' && idleMs > soloOverMs) || idleMs > soloIdleMs;
+  }
+
+  function reapIdleRooms() {
+    const targets = [...rooms.values()].filter(reapableSolo);
+    const reaped = targets.map(soloRoomInfo);
+    for (const room of targets) deleteRoom(room);
+    if (reaped.length) logger.log(`[reap] ${reaped.length} mesa(s) solo esquecida(s) apagada(s)`);
+    return reaped;
+  }
+
   // ─── Forge: projetos guardados no storage do Studio ─────────
   const FORGE_MAX = 2_000_000; // um projeto grande (fluxo, cartões, regras e histórico) cabe à vontade
   function uniqueSlug(name) {
@@ -1036,6 +1066,22 @@ export function createPlatform({
         deleteRoom(room);
         return json(res, 204);
       }
+      // ─── Mesas solo (ADR-015): limpeza automática por inatividade; a
+      // consola lista, apaga uma à mão ou manda limpar já. ───────
+      if (url === '/admin/solo-rooms' && req.method === 'GET') {
+        const list = [...rooms.values()].filter((r) => r.kind === 'solo').sort((a, b) => a.updatedAt - b.updatedAt).map(soloRoomInfo);
+        return json(res, 200, { rooms: list });
+      }
+      if (url === '/admin/solo-rooms/reap' && req.method === 'POST') {
+        return json(res, 200, { reaped: reapIdleRooms() });
+      }
+      const solo = url.match(/^\/admin\/solo-rooms\/([\w-]+)$/);
+      if (solo && req.method === 'DELETE') {
+        const room = rooms.get(solo[1]);
+        if (!room || room.kind !== 'solo') return json(res, 404, { error: 'mesa não encontrada' });
+        deleteRoom(room);
+        return json(res, 204);
+      }
     } catch (e) {
       return json(res, 400, { error: e.message });
     }
@@ -1159,7 +1205,10 @@ export function createPlatform({
       for (const r of publicRoomsFor(game)) if (!rooms.has(r.id)) { rooms.set(r.id, r); persist(r); }
     }
     for (const room of rooms.values()) { syncTimers(room); scheduleBots(room); }
+    reapIdleRooms(); // apanha logo o que ficou à espera enquanto o servidor esteve parado
   })();
+  const reapTimer = setInterval(reapIdleRooms, reapIntervalMs);
+  reapTimer.unref?.();
 
   return {
     http,
@@ -1178,6 +1227,7 @@ export function createPlatform({
     },
     async close() {
       closing = true;
+      clearInterval(reapTimer);
       for (const t of [...botTimers.values(), ...graceTimers.values()]) clearTimeout(t);
       for (const m of gameTimers.values()) for (const t of m.values()) clearTimeout(t);
       for (const ws of wss.clients) ws.terminate();

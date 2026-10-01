@@ -369,3 +369,29 @@ O template vanilla foi afinado no Claude Design (canvas "Bitnik — Template van
 - Pontos por origem no fim e momentos decisivos para o relatório: adiado (2026-09-28). Não passa a ser uma peça do contrato para todos os jogos; só se um jogo concreto precisar (ex.: Bulbous) faz-se à parte, nesse jogo.
 - Antes de implementar, resolver os pendentes da secção 5 do TEMPLATE: contraste do vidro e alvos de toque de 44 px. Se o vidro passar a escuro, mudam os valores de `--game-glass` e `--game-glass-line`, não os nomes.
 - O teste de encaixe com o Catania (quadros no canvas) mostrou que o desenho serve um jogo real, mas faltam ao vanilla componentes com ícone, o alvo no tabuleiro, a barra de ações com passo e motivo, o modal de escolha e um grupo de tokens de recursos (secção 5 do TEMPLATE).
+
+---
+
+## ADR-015: Mesas solo esquecidas apagam-se sozinhas
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+Uma mesa solo (`CREATE_SOLO`) é privada, só o dono a vê, e fica para sempre: ao contrário de uma mesa pública (liberta-se sozinha quando fica vazia, `resetPublicIfEmpty`) ou de uma de convite (o publisher apaga à mão na consola, `/admin/tables`), nada a fecha. A única saída é um botão "apagar" em "as minhas mesas" que quase ninguém usa — ao experimentar um jogo várias vezes (ex.: mudar de nome, voltar a "Começar") ficam-se mesas acabadas ou a meio, todas por tempo indefinido; com `fileStorage`, cada uma é também um ficheiro que nunca mais sai do disco.
+
+Alternativas consideradas: só o botão existente (não resolve — ninguém o usa) e um limite por número de mesas por utilizador (mais complexo, não ataca a causa: mesas velhas de quem já nem volta).
+
+### Decisão
+
+- Uma mesa solo apaga-se sozinha quando: está `over` (acabada, nada para retomar) há mais de `soloOverMs` (por omissão, 7 dias); ou não é tocada (`updatedAt`) há mais de `soloIdleMs` (por omissão, 30 dias), em qualquer estado.
+- Nunca apaga uma `expired` (ADR-004): fica guardada para replay até o dono decidir, sem prazo — é um estado deliberado, não abandono.
+- Nunca apaga quem está ligado agora (`isOnline(room.owner)`), mesmo que `updatedAt` seja antigo — só o dono vê a mesa solo, por isso basta essa verificação.
+- Uma verificação (`reapIdleRooms`) corre ao arrancar (apanha o que ficou à espera enquanto o servidor esteve parado) e depois a cada `reapIntervalMs` (por omissão, 1 hora). Os três são opções de `createPlatform`, para um deploy afinar ou desligar (prazos muito grandes).
+- A consola lista as mesas solo (`GET /admin/solo-rooms`), apaga uma à mão (`DELETE /admin/solo-rooms/:id`) ou manda limpar já (`POST /admin/solo-rooms/reap`, devolve as apagadas) — para o publisher ver o que há e não precisar de esperar pela rotina.
+
+### Consequências
+
+- ✔ Resolve a causa relatada (mesas a acumularem-se, sobretudo ao experimentar um jogo várias vezes) sem depender de o jogador alguma vez clicar em "apagar".
+- Prazos generosos (dias, não horas): o risco de apagar uma mesa a meio que alguém ainda quer retomar é baixo, mas existe — aceite, por ser rara e o jogador poder sempre começar outra.
+- Mesas públicas e de convite não entram nesta limpeza: as primeiras já se resolvem sozinhas; as segundas são geridas pelo publisher de propósito (uma mesa de aprovação pode ficar meses à espera de ser jogada).
