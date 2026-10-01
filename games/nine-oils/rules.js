@@ -122,11 +122,11 @@ function aplicar(s, combos, ctx) {
   }
   if (combos.includes('DOUBLE_QUAD')) {
     for (let i = 0; i < 2; i++) { const k = p.banca.indexOf(0); if (k >= 0) p.banca[k] = 1; }
-    ctx.log('log.OITO');
+    ctx.log('log.OITO', {}, { announce: { key: 'msg.OITO' } });
   }
   if (combos.includes('SIX_OF_KIND')) {
     for (let i = 0; i < 3; i++) { const c = comprar(s, ctx); if (c) p.mao.push(c); }
-    ctx.log('log.SEIS');
+    ctx.log('log.SEIS', {}, { announce: { key: 'msg.SEIS' } });
   }
   for (let i = combos.filter((x) => x === 'DOUBLE').length; i > 0; i--) {
     const carta = comprar(s, ctx);
@@ -137,7 +137,7 @@ function aplicar(s, combos, ctx) {
   if (combos.includes('QUAD')) {
     const k = p.banca.indexOf(0);
     if (k >= 0) p.banca[k] = 1;
-    ctx.log(k >= 0 ? 'log.QUAD' : 'log.QUAD_NADA');
+    ctx.log(k >= 0 ? 'log.QUAD' : 'log.QUAD_NADA', {}, k >= 0 ? { announce: { key: 'msg.QUAD' } } : undefined);
   }
   if (combos.includes('TRIPLE_DOUBLE')) {
     let postas = 0;
@@ -145,7 +145,7 @@ function aplicar(s, combos, ctx) {
       const k = p.banca.indexOf(1);
       if (k >= 0 && p.reserva > 0) { p.banca[k] = 2; p.reserva--; postas++; }
     }
-    ctx.log('log.GARRAFAS', { n: postas });
+    ctx.log('log.GARRAFAS', { n: postas }, postas ? { announce: { key: 'msg.GARRAFAS', params: { n: postas } } } : undefined);
   }
   s.sedutoras = 0;
   if (combos.includes('PENTA')) {
@@ -153,7 +153,7 @@ function aplicar(s, combos, ctx) {
     opp.mao = [];
     ctx.log('log.PENTA', {}, { announce: { variant: 'warn', key: 'msg.PENTA' } });
   }
-  if (!combos.length) ctx.log('log.NADA');
+  if (!combos.length) ctx.log('log.NADA', {}, { announce: { key: 'msg.NADA' } });
   if (p.banca.every((x) => x === 2)) return fim(s, s.vez);
   if (p.mao.length > LIMITE_MAO) { s.fase = 'DESCARTE'; return undefined; }
   return passarVez(s);
@@ -188,7 +188,7 @@ export const moves = {
     const n = (t) => jogadas.filter((c) => c === t).length;
     s.sedutoras = n('TEMPTRESS');
     s.descarte.push(...jogadas);
-    if (jogadas.length) ctx.log('log.CARTAS', { n: jogadas.length });
+    if (jogadas.length) ctx.log('log.CARTAS', { n: jogadas.length, cartas: jogadas }, { announce: { key: 'msg.CARTAS', params: { n: jogadas.length } } });
     // 2 Valentões sem Rapazes: tira às cegas 1 carta da mão do adversário.
     if (n('BULLY') >= 2 && n('BOY') === 0) {
       if (opp.mao.length) { s.fase = 'ESCOLHA_CEGA'; return undefined; }

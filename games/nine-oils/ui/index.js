@@ -16,7 +16,10 @@ const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' }
 const asset = (rel) => new URL(rel, import.meta.url).href;
 const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
 const DIE_ART = Object.fromEntries([1, 2, 3, 4, 5, 6].map((n) => [n, asset(`./dados/${n}.png`)]));
-const dieFace = (d) => `<i class="nof-die"><img class="nof-die-img" src="${DIE_ART[d]}" alt="${d}" draggable="false"></i>`;
+/** Dado em 3D (cubo com as 6 faces), a rodar até à face lançada (nine-oils.css). */
+const dieFace = (d) => `<i class="nof-die"><span class="nof-die-cube" data-face="${d}">
+  ${[1, 2, 3, 4, 5, 6].map((f) => `<span class="nof-die-f nof-die-f${f}"><img src="${DIE_ART[f]}" alt="${f}" draggable="false"></span>`).join('')}
+</span></i>`;
 
 function ensureCss() {
   const href = new URL('./nine-oils.css', import.meta.url).href;
@@ -31,7 +34,7 @@ let root = null;
 let view = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [] });
+const fresh = () => ({ logOpen: false, lastLogSeq: 0, cardInfo: null, pauseTimer: null, selected: [], wasMine: false, reveal: null, revealTimer: null });
 let ui = fresh();
 
 function onKeydown(e) {
@@ -82,6 +85,7 @@ export function mount(el, context) {
 export function unmount() {
   document.removeEventListener('keydown', onKeydown);
   clearTimeout(ui.pauseTimer);
+  clearTimeout(ui.revealTimer);
   root?.remove();
   root = null; view = null; msg = null;
   ui = fresh();
@@ -89,11 +93,23 @@ export function unmount() {
 
 export function update(next) {
   msg = next;
+  const me = mySeat();
   for (const l of msg.log || []) {
-    if (l.announce == null || (l.seq ?? 0) <= ui.lastLogSeq) continue;
-    ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
+    if ((l.seq ?? 0) <= ui.lastLogSeq) continue;
+    if (l.announce != null) ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
+    // A carta jogada pelo adversário é informação pública (vai para o descarte):
+    // mostra-se a arte uns segundos, como prova do que ele jogou.
+    if (l.key === 'log.CARTAS' && l.seat !== me && l.params?.cartas?.length) {
+      clearTimeout(ui.revealTimer);
+      ui.reveal = l.params.cartas;
+      ui.revealTimer = setTimeout(() => { ui.reveal = null; render(); }, 5000);
+    }
   }
   ui.lastLogSeq = Math.max(ui.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
+  // "É a tua vez": só quando passa a sê-lo (não em cada atualização do mesmo turno).
+  const mine = me != null && !!msg.active?.includes(me) && !msg.result;
+  if (mine && !ui.wasMine) ctx.announce(ctx.t('ui.yourTurn'));
+  ui.wasMine = mine;
   if (msg.view.fase !== 'CARTAS') ui.selected = [];
   render();
   autoContinue();
@@ -147,6 +163,7 @@ function render() {
       ${renderHand(v, me)}
     </div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
+    ${ui.reveal ? renderReveal() : ''}
     <div class="nof-modal-host"></div>`;
   syncCardInfo();
 }
@@ -230,6 +247,13 @@ function renderCombo(v) {
   `).join('')}</div>`;
 }
 
+/** Carta(s) jogada(s) pelo adversário, reveladas uns segundos (ver update()). */
+function renderReveal() {
+  return `<div class="nof-reveal">${ui.reveal.map((c) => `
+    <span class="nof-card face big"><img src="${esc(CARD_ART[c])}" data-fallback="${esc(c)}" alt="${esc(ctx.t(`carta.${c}`))}"></span>
+  `).join('')}</div>`;
+}
+
 function renderHand(v, me) {
   if (me == null) return '<div></div>';
   const mao = v.minhaMao || [];
@@ -259,9 +283,12 @@ function renderLog() {
 
 function renderBar(v, me) {
   const legal = msg.legal || [];
-  if (v.fase === 'PAUSA' || v.fase === 'CARTAS' || v.fase === 'COMBO') return '';
+  if (me == null) return `<p class="nof-wait">${esc(ctx.t('ui.spectating'))}</p>`;
+  // Vez do adversário: não há status genérico aqui — mostra-se com os dados
+  // (o combo que fez, ou "sem combinação"), a carta revelada, e "é a tua
+  // vez" quando o turno passa (ver update()).
+  if (v.fase === 'PAUSA' || v.fase === 'CARTAS' || v.fase === 'COMBO' || !legal.length) return '';
   if (v.fase === 'ESCOLHA_CEGA') return `<p class="nof-hint">${esc(ctx.t('ui.hintBlind'))}</p>`;
-  if (v.fase === 'DESCARTE' && legal.length) return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
-  if (!legal.length) return `<p class="nof-wait">${esc(ctx.t(me == null ? 'ui.spectating' : 'ui.waitingTurn'))}</p>`;
+  if (v.fase === 'DESCARTE') return `<p class="nof-hint">${esc(ctx.t('ui.hintDiscard'))}</p>`;
   return legal.map((mv, i) => `<button class="nof-move" type="button" data-idx="${i}">${esc(ctx.t(mv.label.key, mv.label.params))}</button>`).join('');
 }

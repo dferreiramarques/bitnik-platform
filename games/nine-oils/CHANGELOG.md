@@ -1,5 +1,26 @@
 # Nine Oils — histórico de regras
 
+## 1.1.16 — Dados em 3D; mensagens na mesa; sem status genérico (2026-10-01)
+
+Sem mudanças de jogo:
+
+- Os dados passam a um cubo em 3D com as 6 faces fotografadas, a rodar
+  até à face lançada (antes eram a imagem plana, sem rotação).
+- Combinações: cada botão passa a ter o próprio preenchimento em vidro
+  (sem painel por baixo).
+- Casas livres da banca com mais contraste (linha castanha em vez de
+  quase branca sobre o pergaminho).
+- Mensagens na mesa (como o Penta já tinha): o combo que saiu no
+  lançamento do adversário (ou "sem combinação"), quantas cartas jogou,
+  e "é a tua vez" quando o turno passa para ti. A carta que o
+  adversário jogou (informação pública, vai para o descarte) aparece
+  em grande por 5 segundos.
+- Sai o aviso genérico "Vez do adversário…" a meio do ecrã: a vez do
+  adversário mostra-se com os dados e as mensagens acima, não com um
+  status fixo em baixo (incluindo um caso em que esse aviso aparecia
+  por engano a pedir para escolher às cegas uma carta que não era tua
+  para escolher).
+
 ## 1.1.15 — Jogar cartas por seleção; cartão do jogador em pergaminho (2026-10-01)
 
 Sem mudanças de jogo:
