@@ -487,13 +487,13 @@ function renderTableTop(gameId, meta, extra = '') {
 }
 
 /**
- * Botão "?" durante a partida: se o jogo tiver conteúdo de regras, abre a
- * modal "Como se joga" sem sair da mesa; senão (jogos mais antigos, sem
- * `rules`), mantém o atalho para o tutorial de sempre.
+ * Botão durante a partida: com conteúdo de regras abre a modal "Como se joga"
+ * sem sair da mesa ("?"); sem `rules`, o atalho é o "Tutorial" (play).
  */
 function guideButton(meta) {
   if (meta?.rules) return `<button class="mesa-btn" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>`;
-  if (meta?.tutorial) return `<a class="mesa-btn" href="#/tutorial/${esc(meta.id)}" aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>`;
+  // "Como se joga" são as regras; o wizard é o "Tutorial" (ícone de play, como no lobby).
+  if (meta?.tutorial) return `<a class="mesa-btn" href="#/tutorial/${esc(meta.id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg></a>`;
   return '';
 }
 
@@ -531,8 +531,7 @@ function guideLink(meta, id) {
   // O tutorial interativo tem botão próprio: com regras escritas (modal), deixava de se chegar a ele.
   const tutorial = meta?.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(id)}">${play}${u('tutorial')}</a>` : '';
   if (meta?.rules) return `${tutorial}<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
-  if (meta?.tutorial) return `<a class="lob-btn" href="#/tutorial/${esc(id)}">${icon}${u('howToPlay')}</a>`;
-  return '';
+  return tutorial; // sem regras escritas, só o Tutorial (nunca o wizard com o nome "Como se joga")
 }
 
 const fxClass = (fx) => (fx ? ` fx-${fx}` : '');
@@ -556,7 +555,7 @@ function renderRulesModal(meta) {
   if (!app.rulesOpen || !meta?.rules) return '';
   // No lobby a UI do jogo ainda não foi carregada: importa-a, para que o CSS dela (que
   // também veste esta modal) esteja lá. Cada módulo carrega o seu CSS ao ser importado.
-  if (meta.ui && !uiModules.has(meta.ui)) uiModules.set(meta.ui, import(meta.ui).catch((e) => { uiModules.delete(meta.ui); console.error('[ui]', meta.ui, e); }));
+  if (meta.ui) loadUiModule(meta.ui).catch((e) => console.error('[ui]', meta.ui, e));
   const sections = meta.rules[app.lang] || meta.rules.pt || [];
   return `<div class="rules-modal${fxClass(app.rulesFx)}" role="dialog" aria-modal="true" aria-label="${esc(u('howToPlay'))}">
     <div class="rules-box fx-box">
@@ -796,6 +795,27 @@ function renderTable() {
 // ─── UI própria do jogo (módulo do pacote com mount/update) ──
 const uiModules = new Map(); // url → Promise<módulo>
 
+/** Importa a UI de um jogo (uma vez); o CSS dela entra por um <link> posto pelo próprio módulo. */
+function loadUiModule(url) {
+  if (!uiModules.has(url)) uiModules.set(url, import(url).catch((e) => { uiModules.delete(url); throw e; }));
+  return uiModules.get(url);
+}
+
+/**
+ * Espera pelas folhas de estilo ainda a chegar. Com a cache vazia, a UI de um
+ * jogo montava antes do CSS e as imagens apareciam por instantes grandes e
+ * desalinhadas. O limite evita ficar preso se um ficheiro falhar.
+ */
+function stylesReady(ms = 3000) {
+  const pending = [...document.querySelectorAll('link[rel="stylesheet"]')].filter((l) => !l.sheet);
+  if (!pending.length) return Promise.resolve();
+  const loaded = Promise.all(pending.map((l) => new Promise((done) => {
+    l.addEventListener('load', done, { once: true });
+    l.addEventListener('error', done, { once: true });
+  })));
+  return Promise.race([loaded, new Promise((done) => setTimeout(done, ms))]);
+}
+
 function unmountGameUi() {
   app.ui?.anim?.stop();
   try { app.ui?.mod.unmount?.(); } catch (e) { console.error(e); }
@@ -813,11 +833,12 @@ async function syncGameUi(msg) {
     if (syncGameUi.loading === msg.room.id) return undefined; // já a carregar: o próximo render monta
     syncGameUi.loading = msg.room.id;
     const url = gameMeta(gameId).ui;
-    if (!uiModules.has(url)) uiModules.set(url, import(url));
     let mod;
-    try { [mod] = await Promise.all([uiModules.get(url), skinFor(gameId)]); } catch (e) {
+    try {
+      [mod] = await Promise.all([loadUiModule(url), skinFor(gameId)]);
+      await stylesReady(); // só monta com o CSS do jogo já carregado
+    } catch (e) {
       console.error('[ui]', url, e);
-      uiModules.delete(url);
       app.uiFailed.add(gameId); // cai na UI genérica
       return render();
     } finally { syncGameUi.loading = null; }
@@ -841,6 +862,10 @@ async function syncGameUi(msg) {
       toast,
       announce: (title, sub, variant) => mesaMsg?.api.announce(title, sub, variant),
     });
+    // A maioria dos jogos põe o <link> do CSS dentro do mount(): o elemento ainda
+    // está fora da página, por isso espera-se aqui, antes de o mostrar.
+    await stylesReady();
+    if (app.ui?.el !== el) return undefined; // saiu da mesa entretanto
   }
   const live = document.getElementById('gameHost');
   if (live && live !== app.ui.el) live.replaceWith(app.ui.el);
@@ -921,12 +946,17 @@ async function syncTutorial(gameId) {
   syncTutorial.loading = true;
   const meta = gameMeta(gameId);
   let mod;
-  try { [mod] = meta?.tutorial ? await Promise.all([import(meta.tutorial), skinFor(gameId)]) : []; } catch (e) { console.error('[tutorial]', e); } finally { syncTutorial.loading = false; }
+  try {
+    [mod] = meta?.tutorial ? await Promise.all([import(meta.tutorial), skinFor(gameId)]) : [];
+    if (mod) await stylesReady();
+  } catch (e) { console.error('[tutorial]', e); } finally { syncTutorial.loading = false; }
   if (!mod || routeTutorial() !== gameId) { if (!mod) goGame(gameId); return; }
   unmountGameUi();
   const el = document.createElement('div');
   el.className = 'tut-root';
   app.tut = { gameId, el, stop: null };
+  // Escondido até o CSS do tutorial (posto dentro do start) carregar: sem isso aparecia sem estilo.
+  el.style.visibility = 'hidden';
   document.getElementById('tutHost')?.replaceWith(el);
   app.tut.stop = mod.start(el, {
     gameId,
@@ -939,6 +969,7 @@ async function syncTutorial(gameId) {
     session: (o) => createSession({ ...o, boardCtx: { ...o.boardCtx, toast } }),
     tour: (o) => createTour({ ...o, ui: (key, params) => u(key, params), exit: () => goGame(gameId), playReal: (n) => client.createSolo(gameId, n) }),
   });
+  stylesReady().then(() => { el.style.visibility = ''; }); // depois do start: é lá que o <link> entra
 }
 
 // ─── Render e eventos ────────────────────────────────────────
@@ -1054,7 +1085,14 @@ $('#view').addEventListener('click', (e) => {
     return;
   }
   if ('install' in d) { installApp(); return; }
-  if ('rules' in d) { app.rulesOpen = true; app.rulesFx = 'in'; render(); app.rulesFx = null; return; }
+  if ('rules' in d) {
+    // Abre só com o CSS do jogo carregado: a modal tem imagens que, sem ele, apareciam sem estilo.
+    const ui = gameMeta(app.room?.room.gameId || routeGame())?.ui;
+    (ui ? loadUiModule(ui).then(() => stylesReady(), () => {}) : Promise.resolve()).then(() => {
+      app.rulesOpen = true; app.rulesFx = 'in'; render(); app.rulesFx = null;
+    });
+    return;
+  }
   if ('closerules' in d) {
     if (app.rulesFx) return;
     app.rulesFx = 'out';
