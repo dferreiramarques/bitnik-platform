@@ -17,6 +17,22 @@
   --ui-r-sm: var(--radius-sm, 8px);
   --ui-r-md: var(--radius-md, 14px);
   --ui-r-pill: var(--radius-pill, 999px);
+  --ui-motion: var(--motion-fast, 160ms);
+  --ui-ease: var(--motion-ease, cubic-bezier(0.2, 0.7, 0.3, 1));
+}
+
+/* Entradas e saídas (motion.js): fade rápido; o que tiver .fx-box dentro sobe uns
+   píxeis ao entrar e desce ao sair. A saída bloqueia cliques enquanto esmorece. */
+@keyframes ui-fade-in { from { opacity: 0; } }
+@keyframes ui-fade-out { to { opacity: 0; } }
+@keyframes ui-rise-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes ui-rise-out { to { opacity: 0; transform: translateY(6px); } }
+.fx-in { animation: ui-fade-in var(--ui-motion) var(--ui-ease) both; }
+.fx-out { animation: ui-fade-out var(--ui-motion) var(--ui-ease) both; pointer-events: none; }
+.fx-in > .fx-box { animation: ui-rise-in var(--ui-motion) var(--ui-ease) both; }
+.fx-out > .fx-box { animation: ui-rise-out var(--ui-motion) var(--ui-ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  .fx-in, .fx-out, .fx-in > .fx-box, .fx-out > .fx-box { animation: none; }
 }
 
 * { box-sizing: border-box; }

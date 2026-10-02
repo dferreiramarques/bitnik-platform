@@ -6,6 +6,7 @@ import { BitnikClient } from '/sdk/client.js';
 import { translate } from '/engine/i18n.js';
 import { applyGameSkin, applyOverrides } from '/appearance.js';
 import { createTour, createSession } from '/tour.js';
+import { afterLeave, flash } from '/motion.js';
 
 const UI = {
   pt: {
@@ -107,6 +108,12 @@ const app = {
   resultClosed: null, // `${sala}:${seq}` do fim de jogo que o jogador fechou para ver a mesa
   regOpen: false,     // registo da mesa em ecrã inteiro (UI genérica): aberto ou fechado
   rulesOpen: false,   // modal "Como se joga" (botão ? durante a partida): aberta ou fechada
+  // Movimento (motion.js): 'in' só na renderização que abre, 'out' enquanto fecha; senão null.
+  // Assim um redesenho a meio (cada mensagem do servidor) não repete o fade.
+  rulesFx: null,
+  noticesFx: null,
+  resultSeen: null,   // fim de jogo (key) já mostrado, para só a primeira renderização entrar com fade
+  resultFx: null,     // 'out' enquanto o fim de jogo fecha
 };
 
 /** Skin do jogo (defaults + tema do deploy), antes de montar a mesa ou o tutorial. */
@@ -144,13 +151,7 @@ function t(key, params, gameId) {
   return translate(bundle, app.lang, key, params);
 }
 
-function toast(text) {
-  const el = $('#toast');
-  el.textContent = text;
-  el.hidden = false;
-  clearTimeout(toast.h);
-  toast.h = setTimeout(() => { el.hidden = true; }, 3200);
-}
+const toast = (text) => flash($('#toast'), text);
 
 // ─── Rotas: #/ (início), #/j/<jogo> (lobby do jogo) e #/r/<id> (mesa) ──
 // Com um só jogo não há início (Marca-produto): #/ é o lobby desse jogo.
@@ -533,6 +534,18 @@ function guideLink(meta, id) {
   return '';
 }
 
+const fxClass = (fx) => (fx ? ` fx-${fx}` : '');
+
+/** Ecrã de fim de jogo (vidro sobre a mesa): entra com fade na primeira vez que aparece e sai com fade ao fechar. */
+function renderResult(msg) {
+  const key = `${msg.room.id}:${msg.seq}`;
+  if (!msg.result || app.resultClosed === key) return '';
+  const fx = app.resultFx === 'out' ? 'out' : app.resultSeen !== key ? 'in' : null;
+  app.resultSeen = key;
+  return `<div class="mesa-over${fxClass(fx)}" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="mesa-card fx-box">${renderPalette(msg)}
+        <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>`;
+}
+
 /**
  * Modal "Como se joga": secções do jogo, na língua atual (recua para pt).
  * `s.visual`, quando presente, é HTML de confiança (vem do pacote do jogo,
@@ -544,8 +557,8 @@ function renderRulesModal(meta) {
   // também veste esta modal) esteja lá. Cada módulo carrega o seu CSS ao ser importado.
   if (meta.ui && !uiModules.has(meta.ui)) uiModules.set(meta.ui, import(meta.ui).catch((e) => { uiModules.delete(meta.ui); console.error('[ui]', meta.ui, e); }));
   const sections = meta.rules[app.lang] || meta.rules.pt || [];
-  return `<div class="rules-modal" role="dialog" aria-modal="true" aria-label="${esc(u('howToPlay'))}">
-    <div class="rules-box">
+  return `<div class="rules-modal${fxClass(app.rulesFx)}" role="dialog" aria-modal="true" aria-label="${esc(u('howToPlay'))}">
+    <div class="rules-box fx-box">
       <div class="rules-head"><h2>${esc(t('game.name', {}, meta.id))} · ${esc(u('howToPlay'))}</h2>
         <button class="mesa-btn" data-closerules aria-label="${esc(u('dismiss'))}">✕</button></div>
       <div class="rules-body">${sections.map((s) => `<h3>${esc(s.title)}</h3>${s.body.map((p) => `<p>${esc(p)}</p>`).join('')}${s.visual || ''}`).join('')}</div>
@@ -566,10 +579,7 @@ function renderFullTable(msg) {
     protoAllowed(meta) ? `<button class="mesa-btn" data-proto>${u('protoUi')}</button>` : '',
     canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : '',
   ].join('');
-  const key = `${msg.room.id}:${msg.seq}`;
-  const result = msg.result && app.resultClosed !== key
-    ? `<div class="mesa-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="mesa-card">${renderPalette(msg)}
-        <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
+  const result = renderResult(msg);
   return `<section class="mesa" data-game="${esc(g)}">
     ${renderRulesModal(meta)}
     <div id="gameHost" class="game-host"><p class="mesa-loading">${u('loadingUi')}</p></div>
@@ -701,10 +711,7 @@ function renderGenericMesa(msg) {
     guideButton(meta),
     canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : '',
   ].join('');
-  const key = `${msg.room.id}:${msg.seq}`;
-  const result = msg.result && app.resultClosed !== key
-    ? `<div class="mesa-over" role="dialog" aria-modal="true" aria-label="${esc(u('gameOver'))}"><div class="mesa-card">${renderPalette(msg)}
-        <div class="mesa-card-btns"><button class="btn btn-outline" data-closeresult="${esc(key)}">${u('seeTable')}</button><button class="btn btn-outline" data-lobby>${u('lobby')}</button></div></div></div>` : '';
+  const result = renderResult(msg);
   return `<section class="mesa mesa-generic" data-game="${esc(g)}">
     ${renderRulesModal(meta)}
     <div id="mesaMsgHost"></div>
@@ -850,7 +857,7 @@ function renderNoticeChip() {
   const t0 = Date.now() + app.noticesSkew;
   const maint = list.some((n) => n.maintenance && n.maintenance.from <= t0) || list.some((n) => n.level === 'warn');
   return `<button class="mesa-chip${maint ? ' warn' : ''}" data-notices aria-expanded="${app.noticesOpen}">${u('notices')} · ${list.length}</button>
-    ${app.noticesOpen ? `<div class="mesa-panel" role="region" aria-label="${esc(u('notices'))}">${noticeItems(list)}</div>` : ''}`;
+    ${app.noticesOpen ? `<div class="mesa-panel${fxClass(app.noticesFx)}" role="region" aria-label="${esc(u('notices'))}">${noticeItems(list)}</div>` : ''}`;
 }
 
 function noticeItems(list) {
@@ -1026,12 +1033,31 @@ $('#view').addEventListener('click', (e) => {
     return;
   }
   if (d.bots) { app.botSel = { ...app.botSel, [d.bots]: Number(d.n) }; render(); return; }
-  if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
+  if ('notices' in d) {
+    if (app.noticesFx) return;
+    if (!app.noticesOpen) { app.noticesOpen = true; app.noticesFx = 'in'; renderNotices(); app.noticesFx = null; return; }
+    app.noticesFx = 'out';
+    renderNotices();
+    afterLeave(() => { app.noticesOpen = false; app.noticesFx = null; renderNotices(); });
+    return;
+  }
   if ('reg' in d) { app.regOpen = !app.regOpen; render(); return; }
-  if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
+  if ('closeresult' in d) {
+    if (app.resultFx) return;
+    app.resultFx = 'out';
+    render();
+    afterLeave(() => { app.resultClosed = d.closeresult; app.resultFx = null; render(); });
+    return;
+  }
   if ('install' in d) { installApp(); return; }
-  if ('rules' in d) { app.rulesOpen = true; render(); return; }
-  if ('closerules' in d) { app.rulesOpen = false; render(); return; }
+  if ('rules' in d) { app.rulesOpen = true; app.rulesFx = 'in'; render(); app.rulesFx = null; return; }
+  if ('closerules' in d) {
+    if (app.rulesFx) return;
+    app.rulesFx = 'out';
+    render();
+    afterLeave(() => { app.rulesOpen = false; app.rulesFx = null; render(); });
+    return;
+  }
   const roomId = app.room?.room.id;
   if (d.solo) { if (!client.createSolo(d.solo, Number(d.n))) toast(u('notSent')); }
   else if (d.open) go(d.open);

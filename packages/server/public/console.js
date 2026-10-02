@@ -97,6 +97,7 @@ const UI = {
 
 import * as appearanceUi from '/console-appearance.js';
 import * as forgeUi from '/console-forge.js';
+import { flash } from '/motion.js';
 
 const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'aparencia', 'forge'];
 const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', aparencia: '🎨', forge: '⚒' };
@@ -121,13 +122,7 @@ const app = {
 };
 const u = (key, params) => fill((UI[app.lang] || UI.pt)[key] ?? key, params);
 
-function toast(text) {
-  const el = $('#toast');
-  el.textContent = text;
-  el.hidden = false;
-  clearTimeout(toast.h);
-  toast.h = setTimeout(() => { el.hidden = true; }, 3200);
-}
+const toast = (text) => flash($('#toast'), text);
 
 async function api(path, { method = 'GET', body } = {}) {
   let res;
