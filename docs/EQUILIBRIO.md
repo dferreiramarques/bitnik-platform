@@ -57,7 +57,7 @@ Atualizado a 2026-09-29.
 - **Empates davam a vitória ao lugar mais baixo** (o 1.º lugar tinha 35,5% a 3 jogadores). **Resolvido na 1.0.0**: um empate partilha a vitória.
 - As apostas são simultâneas: não há vantagem de lugar.
 
-## Startup Panic (0.2.1)
+## Startup Panic (1.0.0)
 
 | Jogadores | Vitórias por lugar (1000 partidas, bot do pacote) | Referência do jogo original |
 |---|---|---|
