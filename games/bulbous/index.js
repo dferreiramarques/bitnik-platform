@@ -8,7 +8,7 @@ import en from './i18n/en.js';
 
 export default defineGame({
   id: 'bulbous',
-  version: '1.1.15',
+  version: '1.2.0',
   // 2 jogadores, ou 4 (individual; em equipas com options.equipas). A 3 não se joga.
   players: { min: 2, max: 4, counts: [2, 4] },
   author: 'David Marques',
@@ -17,6 +17,7 @@ export default defineGame({
   i18n: { pt, en },
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
+  tutorial: './ui/tutorial.js',
   skin: './ui/skin.json',
   thumbnail: './ui/cards/baelf_red_4.webp', // miniatura na página da marca
 
