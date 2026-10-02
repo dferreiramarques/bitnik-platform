@@ -270,7 +270,7 @@ export function createPlatform({
       && !room.seats.some((s) => s.userId && isOnline(s.userId))) {
       room.seats = room.seats.map(emptySeat);
       resetPublicIfEmpty(room);
-      touch(room, { lobby: true });
+      if (rooms.has(room.id)) touch(room, { lobby: true }); else broadcastLobby();
     }
   }
 
@@ -333,15 +333,12 @@ export function createPlatform({
         touch(room, { lobby: true });
         continue;
       }
-      // Mesa pública já acabada: quem desliga (sem clicar em "Sair") liberta
-      // o lugar na mesma, para a mesa voltar a ficar livre no lobby (ver
-      // resetPublicIfEmpty) — senão ficava presa até alguém a fechar à mão.
-      // Não se aplica à de convite: essa é o publisher a fechar, na consola,
-      // porque pode querer rever o resultado mais tarde (ADR-004).
-      if (room.kind === 'public' && room.status === 'over' && away) {
+      // Mesa acabada: quem desliga (sem clicar em "Sair") liberta o lugar
+      // na mesma (ver resetPublicIfEmpty) — senão ficava presa.
+      if (shared(room) && room.status === 'over' && away) {
         room.seats[s] = emptySeat();
         resetPublicIfEmpty(room);
-        touch(room, { lobby: true });
+        if (rooms.has(room.id)) touch(room, { lobby: true }); else broadcastLobby();
         continue;
       }
       if (room.seats[s].away !== away) {
@@ -354,11 +351,26 @@ export function createPlatform({
 
   function resetPublicIfEmpty(room) {
     if (!shared(room) || room.seats.some((s) => s.userId)) return;
+    // Mesa de convite acabada e já sem ninguém: é de uso único, apaga-se.
+    if (room.kind === 'invite' && room.status === 'over') return deleteRoom(room);
     clearTimeout(botTimers.get(room.id));
     room.seats = room.seats.map(emptySeat);
     room.match = null;
     room.status = 'waiting';
     syncTimers(room);
+  }
+
+  // Mesa pública acabada: quem sai dela (volta ao lobby, desliga) larga o
+  // lugar. Sem isto, quem ficava ligado no lobby prendia a mesa a "Ver" para
+  // todos — o lugar só se libertava quando o último desligava, e uma mesa
+  // acabada que voltava do disco (reinício) nunca mais era libertada.
+  function releaseFinishedSeat(room, userId) {
+    if (!shared(room) || room.status !== 'over') return;
+    const s = seatOf(room, userId);
+    if (s < 0) return;
+    room.seats[s] = emptySeat();
+    resetPublicIfEmpty(room);
+    if (rooms.has(room.id)) touch(room, { lobby: true }); else broadcastLobby();
   }
 
   // ─── Avisos e janelas de manutenção ─────────────────────────
@@ -583,7 +595,11 @@ export function createPlatform({
       send(ws, roomMessage(room, c.user.userId));
     },
 
-    CLOSE(ws, c) { c.roomId = null; },
+    CLOSE(ws, c) {
+      const room = c.roomId && rooms.get(c.roomId);
+      c.roomId = null;
+      if (room) releaseFinishedSeat(room, c.user.userId);
+    },
 
     JOIN(ws, c, { roomId }) {
       const room = rooms.get(roomId);
@@ -1214,6 +1230,14 @@ export function createPlatform({
     }
     for (const game of G.values()) {
       for (const r of publicRoomsFor(game)) if (!rooms.has(r.id)) { rooms.set(r.id, r); persist(r); }
+    }
+    // Ninguém está ligado ao arrancar: mesas públicas acabadas voltam a ficar livres.
+    for (const room of [...rooms.values()]) {
+      if (shared(room) && room.status === 'over') {
+        room.seats = room.seats.map(emptySeat);
+        resetPublicIfEmpty(room);
+        if (rooms.has(room.id)) persist(room);
+      }
     }
     for (const room of rooms.values()) { syncTimers(room); scheduleBots(room); }
     reapIdleRooms(); // apanha logo o que ficou à espera enquanto o servidor esteve parado

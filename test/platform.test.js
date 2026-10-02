@@ -214,7 +214,7 @@ test('mesa pública acabada: quem desliga sem clicar em "Sair" liberta a mesa', 
   await s.stop();
 });
 
-test('mesa de convite acabada: quem desliga não a liberta (fica para o publisher rever)', async () => {
+test('mesa de convite acabada: quando o último jogador sai, a mesa apaga-se', async () => {
   const s = await boot(makeStudio, { adminToken: 'segredo', graceMs: 50 });
   const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
   const created = await (await fetch(`http://localhost:${s.port}/admin/tables`, { method: 'POST', headers: auth, body: JSON.stringify({ gameId: 'catania', numPlayers: 3 }) })).json();
@@ -229,9 +229,7 @@ test('mesa de convite acabada: quem desliga não a liberta (fica para o publishe
   assert.ok(end.result);
   a.close();
   await new Promise((r) => setTimeout(r, 150));
-  const room = s.platform.rooms.get(created.id);
-  assert.equal(room.status, 'over', 'fica acabada, não volta a "à espera"');
-  assert.ok(room.match, 'o resultado fica guardado para o publisher rever');
+  assert.equal(s.platform.rooms.has(created.id), false, 'a mesa de convite acabada e vazia apaga-se');
   await s.stop();
 });
 
