@@ -57,6 +57,7 @@ export function createTour({ host, steps, t, ui, exit, playReal, players = 2, ex
         ${cur.final ? '' : `<button class="tour-btn" type="button" data-tour="exit">${esc(ui('tour.skip'))}</button>`}</div>
       <h3>${esc(t(`tut.${cur.id}.title`))}</h3>
       <p>${esc(body)}</p>
+      ${cur.done && !cur.next && !cur.final ? `<p class="tour-wait">${esc(ui('tour.act'))}</p>` : ''}
       <div class="tour-btns">
         ${cur.next ? `<button class="tour-btn primary" type="button" data-tour="next">${esc(ui('tour.next'))}</button>` : ''}
         ${cur.final ? `<button class="tour-btn" type="button" data-tour="exit">${esc(ui('tour.exit'))}</button>
