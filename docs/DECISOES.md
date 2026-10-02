@@ -417,3 +417,28 @@ Alternativas consideradas: só o botão existente (não resolve — ninguém o u
 - ✔ Resolve o caso relatado: a mesa pública some do lobby assim que o último jogador desliga, com ou sem clique em "Sair".
 - O `graceMs` (por omissão, 60 s) continua a dar tempo a uma queda de rede breve antes de libertar o lugar — não muda só por o jogo ter acabado.
 - Mesas de convite continuam a precisar de um fecho manual: é um comportamento deliberado (ADR-015), não um esquecimento.
+
+---
+
+## ADR-017: Startup Panic: ordem de turno no estado e jogo novo registado como protótipo
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+O Startup Panic muda a ordem de jogo a cada ronda (joga primeiro quem tem ações na startup mais cara). O contrato já dava a `activePlayers(state)` a liberdade de devolver qualquer lugar, por isso não era claro se o motor precisava de mudar. O jogo traz ainda uma troca de ações entre jogadores que, no servidor original, era unilateral, e a simulação revelou que comprar e vender no Gate no mesmo turno dava lucro sem limite.
+
+### Decisão
+
+- **Ordem de turno:** `state.ordem` (lugares) e `state.pos` (índice da vez); `activePlayers` devolve `ordem[pos]`. A ordem recalcula-se no início de cada ronda, depois do CEO, por `calcularOrdem`. **O motor não muda.**
+- **Troca no Gate:** uma proposta guardada em `state.proposta`; enquanto existe, `activePlayers` devolve só o jogador visado, que aceita ou recusa. É a primeira jogada em que quem responde não é o jogador da vez.
+- **Gate:** não se vende uma startup em que se comprou nesse turno (`state.compradas`).
+- **Estado do jogo no Studio:** o jogo é registado em `apps/studio/server.js` com `prototype: true`, o que lhe dá o selo e o modo protótipo na mesa. Só depois de aprovado e vendido passa para o runtime do cliente (sem a marca).
+
+### Consequências
+
+- ✔ Ordem variável sem tocar no motor, com replay e simulação intactos.
+- ✔ O padrão da proposta com resposta de outro jogador serve a futuros jogos de negociação.
+- Os bots nunca propõem trocas e recusam as que lhes propõem; a simulação não exercita a troca (só os testes).
+- As percentagens de vitória por lugar reproduzem-se de forma aproximada (ver `docs/EQUILIBRIO.md`), não exata, por causa da correção do Gate.
+

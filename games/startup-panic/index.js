@@ -4,16 +4,21 @@ import * as rules from './rules.js';
 import { defaultBot } from './bot.js';
 import pt from './i18n/pt.js';
 import en from './i18n/en.js';
+import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'startup-panic',
-  version: '0.2.0',
+  version: '0.2.1',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',
   defaultLang: 'pt',
   i18n: { pt, en },
   root: new URL('./', import.meta.url).href,
+  ui: './ui/index.js',
+  skin: './ui/skin.json',
+  rules: rulesText,
+  botDelayMs: [600, 1100],
 
   setup: rules.setup,
   moves: rules.moves,
