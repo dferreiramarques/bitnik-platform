@@ -188,5 +188,13 @@ export default {
   'ui.paid': "Salário pago",
   'ui.riskHint': "Não pagar: dado, com 6 fica sem receber, com outro número sai.",
   'ui.salaryDue': "Salário por decidir: {n}M",
+  'ui.chartOpen': "Ver o histórico de preços",
+  'ui.chartTitle': "Preço de {startup}",
+  'ui.chartNow': "Agora",
+  'ui.chartCandle': "Ronda {r}: abertura {o}M, máximo {h}M, mínimo {l}M, fecho {c}M",
+  'ui.chartDead': "Implodiu na ronda {r}: o preço caiu a 0.",
+  'ui.chartHint': "Cada vela é uma ronda: verde se o preço subiu, vermelho se desceu. O pavio mostra o máximo e o mínimo da ronda. As rondas de Gate vêm destacadas.",
+  'ui.chartEmpty': "Ainda sem histórico.",
+  'ui.close': "Fechar",
   ...gerado,
 };

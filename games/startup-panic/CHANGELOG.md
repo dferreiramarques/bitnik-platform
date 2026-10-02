@@ -1,5 +1,13 @@
 # Startup Panic — histórico de regras
 
+## 3.2.0 — Histórico de preços com gráfico de velas (2026-10-02)
+
+Pedido do David: um gráfico no estilo de câmbio (velas verdes e vermelhas) com os valores de cada startup ronda a ronda. Sem mudanças de regras; o estado passa a guardar o histórico (`hist`), por isso as mesas guardadas da 3.1 não têm gráfico (continuam jogáveis).
+
+- **Vela por ronda e por startup:** abertura (preço no início da ronda, antes da penalização da Elizabeth H.), máximo, mínimo e fecho (o preço no fim da ronda; na ronda atual, o preço de agora). A vela acompanha o CEO, o PR e as implosões; uma startup que implode fecha a 0 (💀) e deixa de ter velas.
+- **UI:** o nome de cada startup é um botão com tooltip ("Ver o histórico de preços") e um 📈; abre uma modal com o gráfico de velas: eixo das rondas 1 a 12 com os Gates sombreados e a ronda atual realçada, escala em M à direita, verde se subiu, vermelho se desceu, cinzento se ficou igual. Cada vela tem a descrição completa (ronda, abertura, máximo, mínimo, fecho) para leitores de ecrã e tooltip.
+- Skin: dois tokens novos (`--sp-up` e `--sp-down`) para as cores das velas, editáveis na Aparência.
+
 ## 3.1.0 — Pagar os salários é opcional (2026-10-02)
 
 Pedido do David: pagar deve ser uma escolha, para quem quiser arriscar. Mudança de regras (as mesas guardadas da 3.0 ficam expiradas):

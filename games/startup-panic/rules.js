@@ -65,7 +65,20 @@ export const bonusPr = (s, id) => BONUS_PR * s.jogadores.reduce((a, j) => a + j.
 
 /** Preço = base + valor do setor + PR, no mínimo 1M. */
 export function recalcular(s) {
-  for (const su of s.startups) if (!su.implodida) su.preco = Math.max(1, su.base + s.setores[su.setor] + bonusPr(s, su.id));
+  for (const su of s.startups) {
+    if (su.implodida) continue;
+    su.preco = Math.max(1, su.base + s.setores[su.setor] + bonusPr(s, su.id));
+    const c = s.hist?.[su.id]?.at(-1); // a vela da ronda acompanha o preço: fecho, máximo e mínimo
+    if (c) { c.c = su.preco; c.h = Math.max(c.h, su.preco); c.l = Math.min(c.l, su.preco); }
+  }
+}
+
+/** Abre a vela da ronda de cada startup viva: abertura, máximo, mínimo e fecho. A que implode fecha a 0 (x). */
+function abrirVelas(s) {
+  s.hist ??= {};
+  for (const su of s.startups) {
+    if (!su.implodida) (s.hist[su.id] ??= []).push({ r: s.ronda, o: su.preco, h: su.preco, l: su.preco, c: su.preco });
+  }
 }
 
 function mexer(s, ctx, setor, delta) {
@@ -89,6 +102,8 @@ function implodir(s, ctx) {
   const alvo = topo.length > 1 ? ctx.rng.pick(topo) : topo[0];
   for (const x of vivas) if (protegida(s, x.id) && x.preco >= alvo.preco) ctx.log('log.PROTEGIDA', { startup: `@startup.${x.id}` });
   alvo.implodida = true;
+  const vela = s.hist?.[alvo.id]?.at(-1);
+  if (vela) { vela.c = 0; vela.l = 0; vela.x = true; }
   ctx.log('log.IMPLODE', { startup: `@startup.${alvo.id}` }, { announce: 'warn' });
 }
 
@@ -167,6 +182,7 @@ export function setup(ctx) {
     proposta: null, // troca à espera de resposta
     dividendos: [],
     variacoes: {}, // variação de preço de cada startup causada pelo CEO da ronda
+    hist: {}, // velas de preço por startup e por ronda: { r, o, h, l, c, x? }
     acabou: false,
   };
   ctx.log('log.RONDA', { n: 1 });
@@ -176,6 +192,7 @@ export function setup(ctx) {
 
 function comecarRonda(s, ctx) {
   const antes = Object.fromEntries(s.startups.map((x) => [x.id, x.preco]));
+  abrirVelas(s);
   s.seguro = false;
   s.sobretaxa = 0;
   if (s.penalizacao) {
@@ -567,6 +584,7 @@ export function view(s, seat) {
     setores: s.setores,
     startups: s.startups.map((su) => ({ ...su, protegida: protegida(s, su.id), bonusPr: bonusPr(s, su.id) })),
     variacoes: s.variacoes,
+    historico: s.hist ?? {},
     pool: s.pool,
     pagos: s.pagos,
     compradas: s.compradas,

@@ -23,6 +23,8 @@ Cada jogador é um **Business Angel** a investir em 10 startups, espalhadas por 
 | FusionFail | Energia | 2M |
 | SolarScam | Energia | 3M |
 
+**Histórico:** a UI guarda e mostra o preço de cada startup ronda a ronda num gráfico de velas (abertura, máximo, mínimo e fecho), aberto pelo nome da startup.
+
 **Preço de mercado** = preço base + valor acumulado do setor + 1M por cada PR (de qualquer jogador) na startup, no mínimo 1M. As startups do mesmo setor sobem e descem juntas (o PR é a única diferença).
 
 **Trabalhadores:** pool partilhada com **uma cópia de cada tipo por jogador** (2 jogadores: 8; 3: 12; 4: 16), para ninguém ficar sem tipos.
