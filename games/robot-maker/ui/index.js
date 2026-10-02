@@ -95,6 +95,7 @@ function render() {
     ${msg.result ? '' : renderBar(v)}
     ${renderLog()}
     ${ui.forja ? renderForja(v) : ''}`;
+  ctx.afterRender?.(); // o tutorial volta a pôr o destaque
 }
 
 const activeSeat = (v) => (v.acabou ? null : v.ordem[v.vez]);
@@ -106,7 +107,7 @@ function robotMini(j) {
 function renderPlayers(v) {
   const me = mySeat();
   const act = activeSeat(v);
-  return `<div class="rm-players">${v.jogadores.map((j, i) => {
+  return `<div class="rm-players" data-tut="players">${v.jogadores.map((j, i) => {
     const out = v.fim.rondaExtra && v.fim.gatilho === i && !v.acabou;
     const state = out ? ctx.t('ui.sitsOut', { nome: ctx.seatName(i) })
       : i === act ? (i === me ? ctx.t('ui.yourTurn') : ctx.t('ui.turnOf', { nome: ctx.seatName(i) })) : '';
@@ -129,7 +130,7 @@ function renderChips(v) {
 }
 
 function renderBoard(v) {
-  return `<section class="rm-section"><div class="rm-lbl">${esc(ctx.t('ui.board'))}</div>
+  return `<section class="rm-section" data-tut="board"><div class="rm-lbl">${esc(ctx.t('ui.board'))}</div>
     <div class="rm-board">${TABULEIRO.map((s) => {
     const occ = s.id === 'forja' ? v.tabuleiro.forja : s.id === 'deploy' ? v.tabuleiro.deploy : null;
     const can = s.id === 'forja' ? (msg.legal || []).some((m) => m.type === 'FORJA') : !!legalMove(s.move, {});
@@ -145,7 +146,7 @@ function renderBoard(v) {
 
 function renderCircuits(v) {
   const dono = (id) => v.jogadores.findIndex((j) => j.circuito === id);
-  return `<section class="rm-section"><div class="rm-lbl">${esc(ctx.t('ui.circuits'))}</div>
+  return `<section class="rm-section" data-tut="circuits"><div class="rm-lbl">${esc(ctx.t('ui.circuits'))}</div>
     <div class="rm-circs">${v.circuitos.map(([id, slots]) => {
     const taken = v.esgotados.includes(id);
     const i = dono(id);
@@ -189,8 +190,8 @@ function renderMarket(v) {
     <div class="rm-lvhead"><span class="rm-lbl">${esc(ctx.t('slot.cpu'))} L${n}</span></div>
     <div class="rm-cards">${FAMILIAS.map((f) => pieceCard(v, f + n)).join('')}${n === 3 ? pieceCard(v, 'omni3') : ''}</div>
   </div>`).join('');
-  return `<section class="rm-section"><div class="rm-lbl">${esc(ctx.t('ui.market'))}</div>${levels}</section>
-    <section class="rm-section"><div class="rm-lbl">${esc(ctx.t('ui.cpus'))}</div>${cpus}</section>`;
+  return `<section class="rm-section" data-tut="market"><div class="rm-lbl">${esc(ctx.t('ui.market'))}</div>${levels}</section>
+    <section class="rm-section" data-tut="market"><div class="rm-lbl">${esc(ctx.t('ui.cpus'))}</div>${cpus}</section>`;
 }
 
 function renderMine(v) {
@@ -209,7 +210,7 @@ function renderMine(v) {
   const cpuCell = j.cpu.nivel
     ? `<div class="rm-rslot on"><span class="k">${ICON.cpu} ${esc(ctx.t('slot.cpu'))}</span><span class="v">${esc(ctx.t(`peca.${j.cpu.familia}${j.cpu.nivel}`))}</span><span class="p">${pts.cpu} pts${pts.fator !== 1 ? ` · ×${pts.fator}` : ''}</span></div>`
     : `<div class="rm-rslot"><span class="k">${ICON.cpu} ${esc(ctx.t('slot.cpu'))}</span><span class="v">${esc(ctx.t('ui.empty'))}</span></div>`;
-  return `<div class="rm-mine">
+  return `<div class="rm-mine" data-tut="mine">
     <div class="rm-mine-head">
       <span class="rm-lbl">${esc(ctx.t('ui.myRobot'))}</span>
       <span>🔧 <b>${j.livres}</b>/${j.workers} ${esc(ctx.t('ui.free'))}</span>
@@ -224,17 +225,17 @@ function renderBar(v) {
   const me = mySeat();
   const act = activeSeat(v);
   const legal = msg.legal || [];
-  if (me == null) return `<div class="rm-bar"><span class="rm-hint">${esc(ctx.t('ui.spectating'))}</span></div>`;
-  if (!legal.length) return `<div class="rm-bar"><span class="rm-hint">${esc(ctx.t('ui.waiting', { nome: ctx.seatName(act ?? 0) }))}</span></div>`;
+  if (me == null) return `<div class="rm-bar" data-tut="bar"><span class="rm-hint">${esc(ctx.t('ui.spectating'))}</span></div>`;
+  if (!legal.length) return `<div class="rm-bar" data-tut="bar"><span class="rm-hint">${esc(ctx.t('ui.waiting', { nome: ctx.seatName(act ?? 0) }))}</span></div>`;
   const j = v.jogadores[me];
   if (v.fase === 'trabalho') {
-    return `<div class="rm-bar">
+    return `<div class="rm-bar" data-tut="bar">
     <span class="rm-hint">${esc(ctx.t('ui.phaseWork', { n: j.livres }))}</span>
     ${legalMove('IR_AO_MERCADO', {}) ? `<button class="rm-btn primary" type="button" data-act="market">${esc(ctx.t('ui.goMarket'))}</button>` : ''}
     <button class="rm-btn" type="button" data-act="pass">${esc(ctx.t('ui.pass'))}</button>
   </div>`;
   }
-  return `<div class="rm-bar">
+  return `<div class="rm-bar" data-tut="bar">
     <span class="rm-hint">${esc(ctx.t('ui.phaseMarket'))}</span>
     <button class="rm-btn" type="button" data-act="pass">${esc(ctx.t('ui.endTurn'))}</button>
   </div>`;
