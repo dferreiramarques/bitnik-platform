@@ -736,7 +736,8 @@ test('tutoriais com o guia da plataforma (ctx.tour): cada passo tem texto em PT 
     vistos++;
     const jogo = (await import(new URL(`${nome}/index.js`, dir).href)).default;
     const ui = await readFile(new URL(`${nome}/ui/index.js`, dir), 'utf8');
-    const passos = [...src.matchAll(/\{ id: '([\w-]+)'(?:, target: '([^']*)')?/g)];
+    const bloco = src.match(/const STEPS = \[([\s\S]*?)\n  \];/)?.[1] ?? '';
+    const passos = [...bloco.matchAll(/\{ id: '([\w-]+)'(?:, target: '([^']*)')?/g)];
     assert.ok(passos.length >= 6, `${nome}: poucos passos`);
     for (const [, id, target] of passos) {
       for (const lang of ['pt', 'en']) for (const parte of ['title', 'body']) {
