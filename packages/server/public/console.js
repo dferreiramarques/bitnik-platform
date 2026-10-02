@@ -13,6 +13,7 @@ const UI = {
     games: 'Jogos', rooms: 'Mesas', playing: 'a decorrer', waiting: 'à espera', expired: 'expiradas', over: 'acabadas', online: 'Jogadores ligados',
     jogosLead: 'Pacotes instalados neste servidor. A simulação joga partidas só com bots, sem bloquear as mesas.',
     game: 'Jogo', prototype: 'protótipo', version: 'Versão', players: 'Jogadores', langs: 'Línguas', contract: 'Contrato', live: 'A decorrer',
+    hide: 'Esconder', show: 'Mostrar', visibilityHint: 'Esconder/mostrar na página da marca (o link direto continua a funcionar)',
     ok: 'ok', simulate: 'Simular', open: 'Abrir', matches: 'Partidas', idle: 'Tempo esgotado (%)', run: 'Correr', running: 'A simular…',
     finished: 'Acabadas', failures: 'Falhas', avgMoves: 'Jogadas (média)', winBySeat: 'Vitórias por lugar', seat: 'Lugar {n}',
     nPlayers: '{n} jogadores', timers: '{n} timers',
@@ -57,6 +58,7 @@ const UI = {
     games: 'Games', rooms: 'Tables', playing: 'in progress', waiting: 'waiting', expired: 'expired', over: 'finished', online: 'Players online',
     jogosLead: 'Packages installed on this server. Simulation plays bot-only games without blocking live tables.',
     game: 'Game', prototype: 'prototype', version: 'Version', players: 'Players', langs: 'Languages', contract: 'Contract', live: 'Live',
+    hide: 'Hide', show: 'Show', visibilityHint: 'Hide/show on the brand page (the direct link keeps working)',
     ok: 'ok', simulate: 'Simulate', open: 'Open', matches: 'Games', idle: 'Timeouts (%)', run: 'Run', running: 'Simulating…',
     finished: 'Finished', failures: 'Failures', avgMoves: 'Moves (avg)', winBySeat: 'Wins by seat', seat: 'Seat {n}',
     nPlayers: '{n} players', timers: '{n} timers',
@@ -202,6 +204,7 @@ function gamesTable(withSim) {
       <td>${g.rooms.playing}</td>
       ${withSim ? `<td class="actions">
         <button class="btn btn-outline" data-sim-open="${esc(g.id)}">${u('simulate')}</button>
+        <button class="btn btn-outline" data-vis="${esc(g.id)}" data-hidden="${g.hidden ? 1 : 0}" title="${esc(u('visibilityHint'))}">${u(g.hidden ? 'show' : 'hide')}</button>
         <a class="btn btn-primary" href="${esc(home)}#/j/${esc(g.id)}" target="_blank" rel="noopener">${u('open')}</a>
       </td>` : ''}
     </tr>${withSim && app.sims[g.id] ? `<tr><td colspan="7">${simPanel(g)}</td></tr>` : ''}`).join('')}</tbody>
@@ -442,7 +445,10 @@ $('#view').addEventListener('click', async (e) => {
   if (!b) return;
   const d = b.dataset;
   try {
-    if (d.simOpen) {
+    if (d.vis) {
+      await api(`games/${d.vis}/visibility`, { method: 'PUT', body: { hidden: d.hidden !== '1' } });
+      load();
+    } else if (d.simOpen) {
       app.sims[d.simOpen] = app.sims[d.simOpen] ? null : { games: 200, idle: 0 };
       render();
     } else if (d.copy) {

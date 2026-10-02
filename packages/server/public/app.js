@@ -160,7 +160,9 @@ const routeGame = () => (location.hash.match(/^#\/j\/([\w-]+)$/) || [])[1] || nu
 // Jogos "hidden" (ex.: demonstração do vanilla) não contam para decidir se
 // há "vários jogos" — só os da página da marca, que é o que esta pergunta
 // está sempre a decidir (mostrar a grelha, ou ir direto ao único jogo).
-const manyGames = () => (W()?.games.filter((g) => !g.hidden).length || 0) > 1;
+// A consola pode sobrepor o `hidden` do pacote (appearance.hidden).
+const isHidden = (g) => app.appearance?.hidden?.[g.id] ?? !!g.hidden;
+const manyGames = () => (W()?.games.filter((g) => !isHidden(g)).length || 0) > 1;
 
 function go(roomId) {
   location.hash = roomId ? `#/r/${roomId}` : '#/';
@@ -297,7 +299,7 @@ function renderHome() {
   const brand = W()?.brand?.name || $('#brand').textContent;
   // "hidden": instalado e jogável por link direto, mas fora da lista pública
   // (ex.: uma demonstração do template vanilla, ao lado do jogo a sério).
-  const games = (W()?.games || []).filter((g) => !g.hidden);
+  const games = (W()?.games || []).filter((g) => !isHidden(g));
   return `<section class="home">
     ${renderBrandTop()}
     <div class="home-main">
@@ -1091,6 +1093,7 @@ client.on('appearance', (m) => {
   applyOverrides(m.appearance);
   const id = app.ui?.gameId || app.tut?.gameId;
   if (id) skinFor(id); // o tema pode ter mudado
+  if (!routeRoom() && !routeGame()) render(); // a lista de jogos pode ter mudado
 });
 client.on('rooms', (r) => { app.rooms = r; if (!routeRoom()) render(); });
 client.on('room', (msg) => {

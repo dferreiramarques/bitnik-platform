@@ -568,6 +568,32 @@ test('documentação: "/documentation" serve a página, sem token e independente
   await withConsole.stop();
 });
 
+test('consola: esconder/mostrar um jogo sobrepõe o hidden do pacote, sobrevive a restart e à aparência', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const base = `http://localhost:${s.port}/admin`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const hide = (id, hidden) => fetch(`${base}/games/${id}/visibility`, { method: 'PUT', headers: auth, body: JSON.stringify({ hidden }) });
+  const listed = async () => (await (await fetch(`${base}/games`, { headers: auth })).json()).games.find((g) => g.id === 'catania').hidden;
+
+  assert.equal(await listed(), false);
+  assert.equal((await hide('nao-existe', true)).status, 404);
+  const live = (await s.client()).next('appearance');
+  assert.equal((await hide('catania', true)).status, 200);
+  assert.equal((await live).appearance.hidden.catania, true);
+  assert.equal(await listed(), true);
+  // O editor de aparência não apaga a visibilidade.
+  await fetch(`${base}/appearance`, { method: 'PUT', headers: auth, body: JSON.stringify({ games: {} }) });
+  assert.equal(await listed(), true);
+  await new Promise((r) => setTimeout(r, 50));
+  await s.stop();
+
+  const s2 = await boot(makeStudio, { dataDir: dir });
+  const again = await s2.client();
+  assert.equal(again.welcome.games.find((g) => g.id === 'catania').hidden, true, 'sobrevive a um restart');
+  await s2.stop();
+});
+
 test('aparência: catálogo com skin e temas; afinações validadas, enviadas aos ligados e guardadas', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
   const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
