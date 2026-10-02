@@ -129,25 +129,25 @@
       "label": { "pt": "Desativado (texto)", "en": "Disabled (text)" }
     },
     "--game-color-1": {
-      "value": "#b03a2e",
+      "value": "#e53935",
       "type": "color",
       "group": "players",
       "label": { "pt": "Jogador 1", "en": "Player 1" }
     },
     "--game-color-2": {
-      "value": "#1a5276",
+      "value": "#1e88e5",
       "type": "color",
       "group": "players",
       "label": { "pt": "Jogador 2", "en": "Player 2" }
     },
     "--game-color-3": {
-      "value": "#1d6a27",
+      "value": "#2eb82e",
       "type": "color",
       "group": "players",
       "label": { "pt": "Jogador 3", "en": "Player 3" }
     },
     "--game-color-4": {
-      "value": "#7d6608",
+      "value": "#fb8c00",
       "type": "color",
       "group": "players",
       "label": { "pt": "Jogador 4", "en": "Player 4" }
