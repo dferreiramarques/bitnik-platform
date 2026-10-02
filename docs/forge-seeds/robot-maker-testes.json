@@ -1,0 +1,222 @@
+{
+  "estado": "Estado (JSON), lugares 0..N-1; activePlayers = [ordem[vez]] (vazio quando acabou).\n{\n  rodada: 1,                       // contador de rondas\n  ordem: [0, 1, ...],              // lugares na ordem desta ronda\n  vez: 0,                          // índice em \"ordem\" de quem joga\n  jogadores: [{\n    l1: 0, l2: 0,                  // Bloco L1 e Bloco L2\n    workers: 1,                    // workers permanentes (máx. 3)\n    livres: 1,                     // workers por gastar nesta ronda\n    deploy: 0,                     // pontos acumulados do Deploy\n    robot: { head: 0, chest: 0, arm: 0, port: 0, legs: 0 },   // nível 0..3 (0 = vazio)\n    cpu: { familia: null, nivel: 0 },   // familia: 'bio'|'combat'|'agility'|'shield'|'omni'\n    circuito: null                 // id do circuito recolhido ('central'|'combate'|'mobilidade'|'armas'|'processo')\n  }],\n  tabuleiro: { forja: null, deploy: null },   // lugar que ocupa o slot exclusivo nesta ronda\n  mercado: {\n    stock: { head1: 4, head2: 2, head3: 1, chest1: 4, ..., bio1: 4, bio2: 2, bio3: 1, ..., omni3: 1 },\n    fila:    { 1: ['head','chest','arm','port'], 2: [...], 3: [...] },   // 4 visíveis por nível, da esquerda para a direita\n    baralho: { 1: ['legs'], 2: ['legs'], 3: ['legs'] }                   // escondidas (a primeira é o topo)\n  },\n  adquiridos: { 1: false, 2: false, 3: false },   // alguém adquiriu (compra ou Forja) peças deste nível nesta ronda\n  esgotados: [],                   // circuitos já recolhidos\n  fim: { gatilho: null, rondaExtra: false },\n  acabou: false\n}\nIds de peça: slot+nível ('head1', 'legs3') e CPU família+nível ('bio2', 'omni3'; o Omni só existe em nível 3).\nJogadas: COMPILADOR {}, OPTIMIZADOR {}, FORJA { peca: 'head' } (slot de robot; sempre nível 1), DEPLOY {}, COMPRAR { peca: 'head2' }, PASSAR {} (gasta os workers que restam).\nCada jogada de worker gasta 1 livre. Quando o jogador fica sem livres o turno passa ao seguinte; quando todos jogaram, a ronda fecha: workers regressam (livres = workers), slots livres, mercado roda, ordem roda uma posição, rodada++. Na ronda extra (fim.rondaExtra) quem fez o gatilho não joga.\nErros: err.SEM_WORKERS, err.SLOT_OCUPADO, err.RECURSOS, err.SEM_STOCK, err.NAO_VISIVEL, err.NIVEL (progressão), err.PECA_INVALIDA.\nresult: { scores: [pontos por lugar], winners: [lugares] }.",
+  "auxiliares": "const novo = (n = 2, seed = 'rm') => createMatch(game, { numPlayers: n, seed });\nconst R = (o = {}) => ({ head: 0, chest: 0, arm: 0, port: 0, legs: 0, ...o });\nconst com = (m, lugar, p) => tweak(m, (s) => Object.assign(s.jogadores[lugar], p));\nconst vez = (m) => m.state.ordem[m.state.vez];\nconst jog = (m, lugar) => m.state.jogadores[lugar];\nconst jogar = (m, lugar, type, payload = {}) => {\n  const r = applyMove(game, m, lugar, { type, payload });\n  assert.ok(r.ok, type + ' recusada: ' + JSON.stringify(r.error));\n  return r.match;\n};\nconst recusa = (m, lugar, type, payload, codigo) => {\n  const r = applyMove(game, m, lugar, { type, payload });\n  assert.equal(r.ok, false, type + ' devia ser recusada');\n  assert.equal(r.error.code, codigo);\n};\nconst fixo = (m) => tweak(m, (s) => {\n  s.mercado.fila = { 1: ['head', 'chest', 'arm', 'port'], 2: ['head', 'chest', 'arm', 'port'], 3: ['head', 'chest', 'arm', 'port'] };\n  s.mercado.baralho = { 1: ['legs'], 2: ['legs'], 3: ['legs'] };\n});\nconst todas = (m) => tweak(m, (s) => {\n  for (const l of [1, 2, 3]) { s.mercado.fila[l] = ['head', 'chest', 'arm', 'port', 'legs']; s.mercado.baralho[l] = []; }\n});\nconst fecharRonda = (m) => {\n  const r = m.state.rodada; let n = 0;\n  while (!m.result && m.state.rodada === r && n++ < 100) m = jogar(m, vez(m), 'PASSAR');\n  return m;\n};\nconst acabar = (m) => { let n = 0; while (!m.result && n++ < 400) m = jogar(m, vez(m), 'PASSAR'); return m; };\n// Fim de jogo na ronda extra (o lugar 1 fez o gatilho e não joga): só o lugar 0 passa.\nconst final = (m, ajustes) => acabar(tweak(m, (s) => { s.fim = { gatilho: 1, rondaExtra: true }; ajustes(s); }));\n// Fim de jogo pelo limite de rondas: ambos jogam (passam).\nconst porLimite = (m, ajustes) => acabar(tweak(m, (s) => { s.rodada = 30; ajustes(s); }));\nconst PECAS = {\n  head: [[2, 0, 3], [1, 1, 8], [1, 1, 15]], chest: [[2, 0, 4], [0, 1, 8], [1, 1, 12]], arm: [[2, 0, 3], [0, 1, 8], [1, 1, 12]],\n  port: [[2, 0, 4], [0, 1, 8], [1, 1, 12]], legs: [[2, 0, 3], [1, 1, 8], [1, 1, 12]],\n};\nconst CPUS = [[2, 0, 5], [1, 1, 9], [1, 1, 14]];\nconst FAMILIAS = ['bio', 'combat', 'agility', 'shield'];",
+  "testes": [
+    {
+      "cartao": "c-setup",
+      "nome": "Preparação",
+      "dado": "uma partida nova com 2, 3 ou 4 jogadores",
+      "quando": "a partida começa",
+      "entao": "cada jogador tem 0 L1, 0 L2, 1 worker, 0 pontos e o robot vazio; o mercado tem 4 peças visíveis por nível; nenhum circuito foi recolhido; a ordem é a dos lugares",
+      "codigo": "test('Preparação', () => {\n  for (const n of [2, 3, 4]) {\n    const m = novo(n);\n    const s = m.state;\n    assert.equal(s.jogadores.length, n);\n    for (const j of s.jogadores) {\n      assert.deepEqual([j.l1, j.l2, j.workers, j.livres, j.deploy], [0, 0, 1, 1, 0]);\n      assert.deepEqual(j.robot, R());\n      assert.equal(j.cpu.nivel, 0);\n      assert.equal(j.circuito, null);\n    }\n    assert.deepEqual(s.ordem, [...Array(n).keys()]);\n    assert.equal(s.rodada, 1);\n    assert.deepEqual(s.esgotados, []);\n    for (const l of [1, 2, 3]) assert.equal(s.mercado.fila[l].length, 4);\n    assert.deepEqual(game.activePlayers(s), [0]);\n    assert.equal(m.result, null);\n  }\n});"
+    },
+    {
+      "cartao": "c-ordem",
+      "nome": "Ordem de turno roda uma posição por ronda",
+      "dado": "uma ronda que acaba de terminar, com 3 jogadores",
+      "quando": "começa a ronda seguinte",
+      "entao": "a ordem passa de [0,1,2] a [1,2,0]; usar a Forja ou o Deploy não altera a ordem",
+      "codigo": "test('Ordem de turno roda uma posição por ronda', () => {\n  let m = fixo(novo(3));\n  m = jogar(m, 0, 'FORJA', { peca: 'arm' });\n  m = jogar(m, 1, 'DEPLOY');\n  m = jogar(m, 2, 'COMPILADOR');\n  assert.equal(m.state.rodada, 2);\n  assert.deepEqual(m.state.ordem, [1, 2, 0]);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n  m = fecharRonda(m);\n  assert.deepEqual(m.state.ordem, [2, 0, 1]);\n});"
+    },
+    {
+      "cartao": "c-turno",
+      "nome": "Um turno usa todos os workers",
+      "dado": "um jogador com 2 workers livres",
+      "quando": "joga",
+      "entao": "cada worker faz uma ação; o turno só passa ao seguinte quando gasta todos; fora da vez a jogada é recusada",
+      "codigo": "test('Um turno usa todos os workers', () => {\n  let m = com(novo(), 0, { workers: 2, livres: 2 });\n  recusa(m, 1, 'COMPILADOR', {}, 'engine.NOT_ACTIVE');\n  m = jogar(m, 0, 'COMPILADOR');\n  assert.deepEqual(game.activePlayers(m.state), [0]);\n  assert.equal(jog(m, 0).livres, 1);\n  m = jogar(m, 0, 'COMPILADOR');\n  assert.equal(jog(m, 0).l1, 6);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n});"
+    },
+    {
+      "cartao": "c-passar",
+      "nome": "Passar gasta os workers que restam",
+      "dado": "um jogador com workers por usar",
+      "quando": "passa",
+      "entao": "fica sem workers livres nesta ronda e o turno passa ao seguinte; a ronda só fecha quando todos jogaram",
+      "codigo": "test('Passar gasta os workers que restam', () => {\n  let m = com(novo(), 0, { workers: 2, livres: 2 });\n  m = jogar(m, 0, 'PASSAR');\n  assert.equal(jog(m, 0).livres, 0);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n  assert.equal(m.state.rodada, 1);\n  m = jogar(m, 1, 'PASSAR');\n  assert.equal(m.state.rodada, 2);\n});"
+    },
+    {
+      "cartao": "c-workers-voltam",
+      "nome": "No fim da ronda os workers regressam",
+      "dado": "todos os jogadores já jogaram o seu turno",
+      "quando": "se fecha a ronda",
+      "entao": "os workers voltam (livres = workers), os slots exclusivos ficam livres, a ordem roda e a ronda sobe",
+      "codigo": "test('No fim da ronda os workers regressam', () => {\n  let m = fixo(com(novo(), 0, { workers: 2, livres: 2 }));\n  m = jogar(m, 0, 'FORJA', { peca: 'head' });\n  m = jogar(m, 0, 'DEPLOY');\n  assert.deepEqual([m.state.tabuleiro.forja, m.state.tabuleiro.deploy], [0, 0]);\n  m = jogar(m, 1, 'PASSAR');\n  assert.equal(m.state.rodada, 2);\n  assert.deepEqual([m.state.tabuleiro.forja, m.state.tabuleiro.deploy], [null, null]);\n  assert.equal(jog(m, 0).livres, 2);\n  assert.equal(jog(m, 1).livres, 1);\n  assert.deepEqual(m.state.ordem, [1, 0]);\n});"
+    },
+    {
+      "cartao": "c-workers-max",
+      "nome": "Máximo de 3 workers e 1 circuito por jogador",
+      "dado": "um jogador que já recolheu um circuito, ou que já tem 3 workers",
+      "quando": "completa as slots de outro circuito",
+      "entao": "não recolhe nenhum worker novo e esse circuito fica disponível",
+      "codigo": "test('Máximo de 3 workers e 1 circuito por jogador', () => {\n  // Já tem um circuito: Mobilidade (tronco+braço+pernas) completa-se mas não dá worker.\n  let a = todas(com(novo(), 0, { workers: 2, livres: 1, circuito: 'central', l1: 2, robot: R({ chest: 1, arm: 1 }) }));\n  a = tweak(a, (s) => { s.esgotados = ['central']; });\n  a = jogar(a, 0, 'COMPRAR', { peca: 'legs1' });\n  assert.equal(jog(a, 0).workers, 2);\n  assert.equal(jog(a, 0).circuito, 'central');\n  assert.ok(!a.state.esgotados.includes('mobilidade'));\n  // Já tem 3 workers (sem circuito): Armas (braço+interface+tronco) completa-se e continua disponível.\n  let b = todas(com(novo(), 0, { workers: 3, livres: 1, l1: 2, robot: R({ arm: 1, port: 1 }) }));\n  b = jogar(b, 0, 'COMPRAR', { peca: 'chest1' });\n  assert.equal(jog(b, 0).workers, 3);\n  assert.equal(jog(b, 0).circuito, null);\n  assert.deepEqual(b.state.esgotados, []);\n});"
+    },
+    {
+      "cartao": "c-compilador",
+      "nome": "Compilador dá 3 L1 por worker",
+      "dado": "um jogador com 2 workers coloca ambos no Compilador",
+      "quando": "a ação se resolve",
+      "entao": "ganha 3 L1 por worker (6 no total); o slot é ilimitado e os dois jogadores podem lá estar",
+      "codigo": "test('Compilador dá 3 L1 por worker', () => {\n  let m = com(novo(), 0, { workers: 2, livres: 2 });\n  m = jogar(m, 0, 'COMPILADOR');\n  m = jogar(m, 0, 'COMPILADOR');\n  assert.equal(jog(m, 0).l1, 6);\n  m = jogar(m, 1, 'COMPILADOR');\n  assert.equal(jog(m, 1).l1, 3);\n});"
+    },
+    {
+      "cartao": "c-optimizador",
+      "nome": "Optimizador converte 2 L1 em 1 L2",
+      "dado": "um jogador com 5 L1 coloca um worker no Optimizador",
+      "quando": "a ação se resolve",
+      "entao": "perde 2 L1 e ganha 1 L2",
+      "codigo": "test('Optimizador converte 2 L1 em 1 L2', () => {\n  let m = com(novo(), 0, { l1: 5 });\n  m = jogar(m, 0, 'OPTIMIZADOR');\n  assert.deepEqual([jog(m, 0).l1, jog(m, 0).l2], [3, 1]);\n});"
+    },
+    {
+      "cartao": "c-optimizador-vazio",
+      "nome": "Optimizador sem 2 L1 gasta o worker sem efeito",
+      "dado": "um jogador com 1 L1 coloca um worker no Optimizador",
+      "quando": "a ação se resolve",
+      "entao": "não ganha nem perde recursos e o worker conta como usado",
+      "codigo": "test('Optimizador sem 2 L1 gasta o worker sem efeito', () => {\n  let m = com(novo(), 0, { l1: 1 });\n  m = jogar(m, 0, 'OPTIMIZADOR');\n  assert.deepEqual([jog(m, 0).l1, jog(m, 0).l2], [1, 0]);\n  assert.equal(jog(m, 0).livres, 0);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n});"
+    },
+    {
+      "cartao": "c-forja",
+      "nome": "Forja dá uma peça L1 à escolha",
+      "dado": "a Forja está livre e o jogador tem um slot vazio com peça L1 em stock",
+      "quando": "coloca lá um worker e escolhe uma peça L1",
+      "entao": "a peça fica instalada sem pagar, o stock baixa 1, a Forja nunca dá CPUs nem peças escondidas nem para slots já ocupados; sem slot vazio o worker gasta-se sem efeito",
+      "codigo": "test('Forja dá uma peça L1 à escolha', () => {\n  let m = fixo(novo());\n  recusa(m, 0, 'FORJA', { peca: 'bio' }, 'err.PECA_INVALIDA');\n  recusa(m, 0, 'FORJA', { peca: 'legs' }, 'err.NAO_VISIVEL');\n  const a = jogar(m, 0, 'FORJA', { peca: 'arm' });\n  assert.equal(jog(a, 0).robot.arm, 1);\n  assert.equal(a.state.mercado.stock.arm1, 3);\n  assert.deepEqual([jog(a, 0).l1, jog(a, 0).l2], [0, 0]);\n  assert.equal(a.state.tabuleiro.forja, 0);\n  const b = fixo(com(novo(), 0, { robot: R({ arm: 1 }) }));\n  recusa(b, 0, 'FORJA', { peca: 'arm' }, 'err.PECA_INVALIDA');\n  // Sem nenhum slot de robot vazio (a CPU não conta): o worker gasta-se sem efeito.\n  const c = jogar(fixo(com(novo(), 0, { robot: R({ head: 1, chest: 1, arm: 1, port: 1, legs: 1 }) })), 0, 'FORJA', {});\n  assert.equal(jog(c, 0).livres, 0);\n  assert.equal(c.state.mercado.stock.head1, 4);\n});"
+    },
+    {
+      "cartao": "c-forja-exclusiva",
+      "nome": "Forja e Deploy são exclusivos",
+      "dado": "a Forja (ou o Deploy) já tem um worker",
+      "quando": "outro jogador, ou o mesmo, tenta lá colocar um worker",
+      "entao": "a jogada é recusada com err.SLOT_OCUPADO",
+      "codigo": "test('Forja e Deploy são exclusivos', () => {\n  let m = fixo(com(novo(), 0, { workers: 2, livres: 2 }));\n  m = jogar(m, 0, 'FORJA', { peca: 'head' });\n  recusa(m, 0, 'FORJA', { peca: 'chest' }, 'err.SLOT_OCUPADO');\n  m = jogar(m, 0, 'DEPLOY');\n  recusa(m, 1, 'FORJA', { peca: 'chest' }, 'err.SLOT_OCUPADO');\n  recusa(m, 1, 'DEPLOY', {}, 'err.SLOT_OCUPADO');\n  const d = jogar(com(novo(), 0, { workers: 2, livres: 2 }), 0, 'DEPLOY');\n  recusa(d, 0, 'DEPLOY', {}, 'err.SLOT_OCUPADO');\n});"
+    },
+    {
+      "cartao": "c-deploy",
+      "nome": "Deploy dá 6 pontos acumulados",
+      "dado": "o Deploy está livre",
+      "quando": "um jogador coloca lá um worker",
+      "entao": "o seu Deploy sobe 6 e o slot fica ocupado; em cada ronda em que o volta a usar sobe mais 6",
+      "codigo": "test('Deploy dá 6 pontos acumulados', () => {\n  let m = novo();\n  m = jogar(m, 0, 'DEPLOY');\n  assert.equal(jog(m, 0).deploy, 6);\n  assert.equal(m.state.tabuleiro.deploy, 0);\n  m = jogar(m, 1, 'PASSAR');\n  assert.equal(m.state.rodada, 2);\n  assert.equal(m.state.tabuleiro.deploy, null);\n  m = jogar(m, vez(m), 'DEPLOY');\n  assert.equal(jog(m, 0).deploy + jog(m, 1).deploy, 12);\n});"
+    },
+    {
+      "cartao": "c-comprar",
+      "nome": "Comprar uma peça paga o custo e reduz o stock",
+      "dado": "um jogador com recursos para o custo da peça, e stock no mercado",
+      "quando": "compra a peça",
+      "entao": "paga o custo em L1 e L2, a peça vai para o robot, o stock baixa 1 e comprar não dá pontos na hora; a peça substituída sai do jogo",
+      "codigo": "test('Comprar uma peça paga o custo e reduz o stock', () => {\n  let m = fixo(com(novo(), 0, { l1: 2, workers: 2, livres: 2 }));\n  m = jogar(m, 0, 'COMPRAR', { peca: 'head1' });\n  assert.equal(jog(m, 0).robot.head, 1);\n  assert.deepEqual([jog(m, 0).l1, jog(m, 0).l2, jog(m, 0).deploy], [0, 0, 0]);\n  assert.equal(m.state.mercado.stock.head1, 3);\n  assert.equal(m.result, null);\n  // CPU: vai para o slot da CPU.\n  let c = fixo(com(novo(), 0, { l1: 2 }));\n  c = jogar(c, 0, 'COMPRAR', { peca: 'bio1' });\n  assert.deepEqual(jog(c, 0).cpu, { familia: 'bio', nivel: 1 });\n  assert.equal(c.state.mercado.stock.bio1, 3);\n  // Substituir: a peça antiga não volta ao stock.\n  let u = fixo(com(novo(), 0, { l1: 1, l2: 1, robot: R({ head: 1 }) }));\n  u = jogar(u, 0, 'COMPRAR', { peca: 'head2' });\n  assert.equal(jog(u, 0).robot.head, 2);\n  assert.equal(u.state.mercado.stock.head1, 4);\n  assert.equal(u.state.mercado.stock.head2, 1);\n});"
+    },
+    {
+      "cartao": "c-comprar-recursos",
+      "nome": "Sem recursos ou sem stock não se compra",
+      "dado": "um jogador sem recursos suficientes, ou uma peça sem stock",
+      "quando": "tenta comprá-la",
+      "entao": "a jogada é recusada (err.RECURSOS ou err.SEM_STOCK) e nada muda",
+      "codigo": "test('Sem recursos ou sem stock não se compra', () => {\n  const m = fixo(com(novo(), 0, { l1: 1 }));\n  recusa(m, 0, 'COMPRAR', { peca: 'head1' }, 'err.RECURSOS');\n  const s = tweak(com(fixo(novo()), 0, { l1: 2 }), (st) => { st.mercado.stock.head1 = 0; });\n  recusa(s, 0, 'COMPRAR', { peca: 'head1' }, 'err.SEM_STOCK');\n  assert.equal(jog(s, 0).l1, 2);\n});"
+    },
+    {
+      "cartao": "c-progressao",
+      "nome": "Progressão obrigatória L1 → L2 → L3",
+      "dado": "um slot do robot",
+      "quando": "o jogador compra uma peça para esse slot",
+      "entao": "L1 só em slot vazio, L2 só sobre L1, L3 só sobre L2; saltar ou repetir níveis é recusado (err.NIVEL); a peça nova substitui a anterior; na CPU só conta o nível (pode mudar de família; o Omni L3 entra sobre qualquer CPU L2)",
+      "codigo": "test('Progressão obrigatória L1 → L2 → L3', () => {\n  let m = fixo(com(novo(), 0, { l1: 20, l2: 20, workers: 3, livres: 3 }));\n  recusa(m, 0, 'COMPRAR', { peca: 'head2' }, 'err.NIVEL');\n  recusa(m, 0, 'COMPRAR', { peca: 'head3' }, 'err.NIVEL');\n  m = jogar(m, 0, 'COMPRAR', { peca: 'head1' });\n  recusa(m, 0, 'COMPRAR', { peca: 'head1' }, 'err.NIVEL');\n  recusa(m, 0, 'COMPRAR', { peca: 'head3' }, 'err.NIVEL');\n  m = jogar(m, 0, 'COMPRAR', { peca: 'head2' });\n  m = jogar(m, 0, 'COMPRAR', { peca: 'head3' });\n  assert.equal(jog(m, 0).robot.head, 3);\n  // CPU: Omni sem CPU L2 é recusado; trocar de família ao subir de nível é permitido.\n  let c = fixo(com(novo(), 0, { l1: 20, l2: 20, workers: 3, livres: 3 }));\n  recusa(c, 0, 'COMPRAR', { peca: 'omni3' }, 'err.NIVEL');\n  c = jogar(c, 0, 'COMPRAR', { peca: 'bio1' });\n  recusa(c, 0, 'COMPRAR', { peca: 'bio3' }, 'err.NIVEL');\n  c = jogar(c, 0, 'COMPRAR', { peca: 'combat2' });\n  assert.deepEqual(jog(c, 0).cpu, { familia: 'combat', nivel: 2 });\n  c = jogar(c, 0, 'COMPRAR', { peca: 'omni3' });\n  assert.deepEqual(jog(c, 0).cpu, { familia: 'omni', nivel: 3 });\n});"
+    },
+    {
+      "cartao": "c-mercado",
+      "nome": "Mercado: baralhos por nível, fila de 4 e rotação",
+      "dado": "o início da partida e o decorrer das rondas",
+      "quando": "se prepara e se usa o mercado",
+      "entao": "cada peça e CPU tem stock 4/2/1; por nível há 4 peças visíveis e 1 escondida (baralhadas com a seed); uma peça esgotada sai da fila e entra a do topo; se numa ronda ninguém adquire peças de um nível, a mais à esquerda vai para o fundo e entra a do topo; escondidas não se compram",
+      "codigo": "test('Mercado: baralhos por nível, fila de 4 e rotação', () => {\n  const m = novo();\n  const st = m.state.mercado.stock;\n  for (const s of ['head', 'chest', 'arm', 'port', 'legs', 'bio', 'combat', 'agility', 'shield']) {\n    assert.deepEqual([st[s + '1'], st[s + '2'], st[s + '3']], [4, 2, 1]);\n  }\n  assert.equal(st.omni3, 1);\n  const filas = new Set();\n  for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {\n    const mk = novo(2, seed).state.mercado;\n    for (const l of [1, 2, 3]) {\n      assert.equal(new Set(mk.fila[l]).size, 4);\n      assert.deepEqual([...mk.fila[l], ...mk.baralho[l]].sort(), ['arm', 'chest', 'head', 'legs', 'port']);\n    }\n    filas.add(JSON.stringify(mk.fila));\n  }\n  assert.ok(filas.size > 1, 'a fila depende da seed');\n  assert.deepEqual(novo(2, 'x').state.mercado, novo(2, 'x').state.mercado);\n  // Escondida não se compra.\n  recusa(fixo(com(novo(), 0, { l1: 2 })), 0, 'COMPRAR', { peca: 'legs1' }, 'err.NAO_VISIVEL');\n  // Esgotar: sai da fila e entra a do topo do baralho.\n  let e = fixo(com(novo(), 0, { l1: 1, l2: 1, robot: R({ head: 2 }) }));\n  e = jogar(e, 0, 'COMPRAR', { peca: 'head3' });\n  assert.equal(e.state.mercado.stock.head3, 0);\n  assert.deepEqual(e.state.mercado.fila[3], ['chest', 'arm', 'port', 'legs']);\n  assert.deepEqual(e.state.mercado.baralho[3], []);\n  // Rotação: ninguém adquire peças dos níveis 2 e 3; o nível 1 teve uma aquisição (Forja).\n  let r = fixo(novo());\n  r = jogar(r, 0, 'FORJA', { peca: 'head' });\n  r = jogar(r, 1, 'PASSAR');\n  assert.deepEqual(r.state.mercado.fila[1], ['head', 'chest', 'arm', 'port']);\n  assert.deepEqual(r.state.mercado.fila[2], ['chest', 'arm', 'port', 'legs']);\n  assert.deepEqual(r.state.mercado.baralho[2], ['head']);\n  assert.deepEqual(r.state.mercado.fila[3], ['chest', 'arm', 'port', 'legs']);\n  assert.equal(r.state.mercado.stock.head2, 2);\n});"
+    },
+    {
+      "cartao": "c-pecas",
+      "nome": "Custos e pontos das peças",
+      "dado": "a tabela de peças",
+      "quando": "se compra e se pontua cada peça",
+      "entao": "cada peça custa o indicado (um L1 ou um L2 a menos é recusado) e vale os pontos da tabela no fim; uma L3 isolada dá também +5 do bónus",
+      "codigo": "test('Custos e pontos das peças', () => {\n  for (const [slot, niveis] of Object.entries(PECAS)) {\n    niveis.forEach(([c1, c2, pts], i) => {\n      const nivel = i + 1;\n      const base = todas(com(novo(), 0, { l1: c1, l2: c2, robot: R({ [slot]: nivel - 1 }) }));\n      const m = jogar(base, 0, 'COMPRAR', { peca: slot + nivel });\n      assert.deepEqual([jog(m, 0).l1, jog(m, 0).l2, jog(m, 0).robot[slot]], [0, 0, nivel], slot + nivel);\n      const curta = com(base, 0, c1 > 0 ? { l1: c1 - 1 } : { l2: c2 - 1 });\n      recusa(curta, 0, 'COMPRAR', { peca: slot + nivel }, 'err.RECURSOS');\n      const f = final(novo(), (s) => { s.jogadores[0].robot = R({ [slot]: nivel }); });\n      assert.equal(f.result.scores[0], pts + (nivel === 3 ? 5 : 0), slot + nivel);\n    });\n  }\n});"
+    },
+    {
+      "cartao": "c-cpus",
+      "nome": "CPUs e custos",
+      "dado": "a tabela de CPUs",
+      "quando": "se compra e se pontua cada CPU",
+      "entao": "Bio, Combat, Agility e Shield custam 2/0, 1/1, 1/1 e valem 5, 9 e 14; o Omni Core só existe em nível 3, custa 2/1 e vale 18; uma CPU L3 dá também +5 do bónus",
+      "codigo": "test('CPUs e custos', () => {\n  for (const fam of FAMILIAS) {\n    CPUS.forEach(([c1, c2, pts], i) => {\n      const nivel = i + 1;\n      const base = todas(com(novo(), 0, { l1: c1, l2: c2, cpu: { familia: nivel > 1 ? 'bio' : null, nivel: nivel - 1 } }));\n      const m = jogar(base, 0, 'COMPRAR', { peca: fam + nivel });\n      assert.deepEqual([jog(m, 0).l1, jog(m, 0).l2], [0, 0]);\n      assert.deepEqual(jog(m, 0).cpu, { familia: fam, nivel });\n      const f = final(novo(), (s) => { s.jogadores[0].cpu = { familia: fam, nivel }; });\n      assert.equal(f.result.scores[0], pts + (nivel === 3 ? 5 : 0), fam + nivel);\n    });\n  }\n  const o = jogar(todas(com(novo(), 0, { l1: 2, l2: 1, cpu: { familia: 'bio', nivel: 2 } })), 0, 'COMPRAR', { peca: 'omni3' });\n  assert.deepEqual([jog(o, 0).l1, jog(o, 0).l2], [0, 0]);\n  recusa(todas(com(novo(), 0, { l1: 9, l2: 9 })), 0, 'COMPRAR', { peca: 'omni1' }, 'err.PECA_INVALIDA');\n  const f = final(novo(), (s) => { s.jogadores[0].cpu = { familia: 'omni', nivel: 3 }; });\n  assert.equal(f.result.scores[0], 18 + 5);\n});"
+    },
+    {
+      "cartao": "c-cpu-fatores",
+      "nome": "A CPU amplifica as zonas indicadas",
+      "dado": "um robot completo (todas as peças L1) com uma CPU",
+      "quando": "se calcula a pontuação",
+      "entao": "cada peça nas zonas da CPU vale pontos × fator, arredondados para baixo (3×2.5 = 7); as outras valem os pontos normais; somam-se os pontos da CPU e os bónus",
+      "codigo": "test('A CPU amplifica as zonas indicadas', () => {\n  const BASE = { head: 3, chest: 4, arm: 3, port: 4, legs: 3 };\n  const ZONAS = {\n    bio: [['head'], ['head'], ['head', 'legs']],\n    combat: [['arm', 'port'], ['arm', 'port'], ['arm', 'port', 'chest']],\n    agility: [['legs'], ['legs'], ['legs', 'head']],\n    shield: [['chest'], ['chest'], ['chest', 'arm', 'port']],\n  };\n  const FATOR = [2, 2.5, 3];\n  const esperado = (zonas, f, cpuPts, nivel) => Object.entries(BASE).reduce((a, [s, p]) => a + Math.floor(zonas.includes(s) ? p * f : p), 0) + cpuPts + 8 + (nivel === 3 ? 5 : 0);\n  for (const fam of FAMILIAS) {\n    for (let i = 0; i < 3; i++) {\n      const f = final(novo(), (s) => {\n        s.jogadores[0].robot = R({ head: 1, chest: 1, arm: 1, port: 1, legs: 1 });\n        s.jogadores[0].cpu = { familia: fam, nivel: i + 1 };\n      });\n      assert.equal(f.result.scores[0], esperado(ZONAS[fam][i], FATOR[i], CPUS[i][2], i + 1), fam + (i + 1));\n    }\n  }\n  const o = final(novo(), (s) => {\n    s.jogadores[0].robot = R({ head: 1, chest: 1, arm: 1, port: 1, legs: 1 });\n    s.jogadores[0].cpu = { familia: 'omni', nivel: 3 };\n  });\n  assert.equal(o.result.scores[0], esperado(['head', 'chest', 'arm', 'port', 'legs'], 1.5, 18, 3));\n  // Exemplo explícito do arredondamento: Bio L2 sobre Cabeça L1 (3 × 2.5 = 7.5 → 7).\n  const r = final(novo(), (s) => { s.jogadores[0].robot = R({ head: 1 }); s.jogadores[0].cpu = { familia: 'bio', nivel: 2 }; });\n  assert.equal(r.result.scores[0], 7 + 9);\n});"
+    },
+    {
+      "cartao": "c-circuito",
+      "nome": "Circuito dá um worker permanente",
+      "dado": "um circuito ainda disponível cujas 3 slots o jogador acaba de preencher",
+      "quando": "completa a terceira slot (por compra ou pela Forja)",
+      "entao": "recolhe o circuito: +1 worker permanente e +1 worker livre já neste turno; o circuito esgota-se para todos; se vários se completam, usa o primeiro da lista",
+      "codigo": "test('Circuito dá um worker permanente', () => {\n  // Armas (braço+interface+tronco): o lugar 0 recolhe; o lugar 1 já não o pode recolher.\n  let m = fixo(com(com(novo(), 0, { l1: 2, robot: R({ arm: 1, port: 1 }) }), 1, { l1: 2, robot: R({ arm: 1, port: 1 }) }));\n  m = jogar(m, 0, 'COMPRAR', { peca: 'chest1' });\n  assert.deepEqual([jog(m, 0).workers, jog(m, 0).livres, jog(m, 0).circuito], [2, 1, 'armas']);\n  assert.deepEqual(m.state.esgotados, ['armas']);\n  assert.deepEqual(game.activePlayers(m.state), [0]);\n  m = jogar(m, 0, 'COMPILADOR');\n  m = jogar(m, 1, 'COMPRAR', { peca: 'chest1' });\n  assert.deepEqual([jog(m, 1).workers, jog(m, 1).circuito], [1, null]);\n  // Vários completos de uma vez: fica com o primeiro da lista (Central).\n  let v = fixo(com(novo(), 0, { l1: 2, robot: R({ head: 1, legs: 1, arm: 1 }) }));\n  v = jogar(v, 0, 'COMPRAR', { peca: 'chest1' });\n  assert.equal(jog(v, 0).circuito, 'central');\n  assert.deepEqual(v.state.esgotados, ['central']);\n  // Pela Forja também conta.\n  let f = tweak(fixo(com(novo(), 0, { robot: R({ head: 1, chest: 1 }) })), (s) => { s.mercado.fila[1] = ['legs', 'chest', 'arm', 'port']; });\n  f = jogar(f, 0, 'FORJA', { peca: 'legs' });\n  assert.equal(jog(f, 0).circuito, 'central');\n});"
+    },
+    {
+      "cartao": "c-circuito-lista",
+      "nome": "Os 5 circuitos",
+      "dado": "os circuitos da partida",
+      "quando": "se consultam as slots exigidas",
+      "entao": "Central: cabeça+tronco+pernas; Combate: cabeça+tronco+braço; Mobilidade: tronco+braço+pernas; Armas: braço+interface+tronco; Processo: cabeça+braço+interface; só dão worker com as 3 preenchidas",
+      "codigo": "test('Os 5 circuitos', () => {\n  const LISTA = {\n    central: ['head', 'chest', 'legs'], combate: ['head', 'chest', 'arm'], mobilidade: ['chest', 'arm', 'legs'],\n    armas: ['arm', 'port', 'chest'], processo: ['head', 'arm', 'port'],\n  };\n  for (const [id, slots] of Object.entries(LISTA)) {\n    const [a, b, c] = slots;\n    let m = todas(com(novo(), 0, { l1: 2, robot: R({ [a]: 1 }) }));\n    const meio = jogar(com(m, 0, { l1: 2, livres: 2, workers: 1 }), 0, 'COMPRAR', { peca: b + '1' });\n    assert.equal(jog(meio, 0).circuito, null, id + ' com 2 slots');\n    m = com(m, 0, { robot: R({ [a]: 1, [b]: 1 }) });\n    m = jogar(m, 0, 'COMPRAR', { peca: c + '1' });\n    assert.equal(jog(m, 0).circuito, id);\n  }\n});"
+    },
+    {
+      "cartao": "c-trigger-fim",
+      "nome": "Gatilho do fim de jogo: risco e recompensa",
+      "dado": "um jogador com as 6 slots preenchidas e pelo menos uma peça L3 (CPU incluída)",
+      "quando": "isso acontece",
+      "entao": "o jogador acaba o turno (gasta os workers que lhe restam) e deixa de jogar; a ronda em curso termina e joga-se mais uma ronda só com os outros; depois o jogo acaba",
+      "codigo": "test('Gatilho do fim de jogo: risco e recompensa', () => {\n  let m = todas(com(novo(), 0, { workers: 2, livres: 2, l1: 2, circuito: 'armas', robot: R({ head: 3, chest: 1, arm: 1, port: 1 }), cpu: { familia: 'bio', nivel: 1 } }));\n  m = jogar(m, 0, 'COMPRAR', { peca: 'legs1' });\n  assert.equal(m.state.fim.gatilho, 0);\n  m = jogar(m, 0, 'COMPILADOR');\n  assert.equal(jog(m, 0).l1, 3);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n  m = jogar(m, 1, 'PASSAR');\n  assert.equal(m.result, null);\n  assert.equal(m.state.fim.rondaExtra, true);\n  assert.equal(m.state.rodada, 2);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n  m = jogar(m, 1, 'PASSAR');\n  assert.notEqual(m.result, null);\n  // A CPU L3 também dá o gatilho.\n  let c = todas(com(novo(), 0, { l1: 1, l2: 1, robot: R({ head: 1, chest: 1, arm: 1, port: 1, legs: 1 }), cpu: { familia: 'bio', nivel: 2 } }));\n  c = jogar(c, 0, 'COMPRAR', { peca: 'bio3' });\n  assert.equal(c.state.fim.gatilho, 0);\n});"
+    },
+    {
+      "cartao": "c-sem-gatilho",
+      "nome": "Sem L3 ou sem 6 slots o jogo não acaba",
+      "dado": "um jogador com as 6 slots preenchidas mas todas L1/L2",
+      "quando": "a ronda acaba",
+      "entao": "não há gatilho e o jogo continua",
+      "codigo": "test('Sem L3 ou sem 6 slots o jogo não acaba', () => {\n  let m = todas(com(novo(), 0, { l1: 2, circuito: 'armas', robot: R({ head: 2, chest: 2, arm: 1, port: 1 }), cpu: { familia: 'combat', nivel: 2 } }));\n  m = jogar(m, 0, 'COMPRAR', { peca: 'legs1' });\n  assert.equal(m.state.fim.gatilho, null);\n  m = jogar(m, 1, 'PASSAR');\n  assert.equal(m.result, null);\n  assert.equal(m.state.rodada, 2);\n  assert.equal(m.state.fim.rondaExtra, false);\n  assert.deepEqual(game.activePlayers(m.state), [1]);\n});"
+    },
+    {
+      "cartao": "c-limite-rondas",
+      "nome": "Limite de rondas de segurança (proposta: 30)",
+      "dado": "a ronda 30 a terminar sem gatilho",
+      "quando": "se fecha a ronda",
+      "entao": "o jogo acaba na mesma e conta a pontuação final; antes da ronda 30 o jogo continua",
+      "codigo": "test('Limite de rondas de segurança (proposta: 30)', () => {\n  let a = tweak(novo(), (s) => { s.rodada = 29; });\n  a = fecharRonda(a);\n  assert.equal(a.result, null);\n  assert.equal(a.state.rodada, 30);\n  const b = fecharRonda(a);\n  assert.notEqual(b.result, null);\n  assert.equal(b.result.scores.length, 2);\n});"
+    },
+    {
+      "cartao": "c-pontuacao",
+      "nome": "Pontuação final",
+      "dado": "o fim do jogo",
+      "quando": "se pontua cada jogador",
+      "entao": "pontos de Deploy + soma (pontos da peça × fator da CPU nas zonas amplificadas) + pontos da CPU; exemplo: cabeça L2 8, tronco L1 4, braço L3 12×2.5=30, interface L2 8×2.5=20, pernas L1 3, Combat L2 9, Deploy 12, bónus 13 = 99",
+      "codigo": "test('Pontuação final', () => {\n  const f = final(novo(), (s) => {\n    s.jogadores[0].robot = R({ head: 2, chest: 1, arm: 3, port: 2, legs: 1 });\n    s.jogadores[0].cpu = { familia: 'combat', nivel: 2 };\n    s.jogadores[0].deploy = 12;\n  });\n  const esperado = 8 + 4 + Math.floor(12 * 2.5) + Math.floor(8 * 2.5) + 3 + 9 + 12 + 13;\n  assert.equal(esperado, 99);\n  assert.equal(f.result.scores[0], 99);\n});"
+    },
+    {
+      "cartao": "c-bonus",
+      "nome": "Bónus de conclusão",
+      "dado": "o fim do jogo",
+      "quando": "se calcula o bónus",
+      "entao": "+8 se as 6 slots estão preenchidas; +5 se há pelo menos uma peça L3; os dois bónus acumulam-se",
+      "codigo": "test('Bónus de conclusão', () => {\n  const pont = (ajustes) => final(novo(), ajustes).result.scores[0];\n  assert.equal(pont((s) => { s.jogadores[0].robot = R(); }), 0);\n  assert.equal(pont((s) => { s.jogadores[0].robot = R({ head: 3 }); }), 15 + 5);\n  const todasL1 = (s, arm) => {\n    s.jogadores[0].robot = R({ head: 1, chest: 1, arm, port: 1, legs: 1 });\n    s.jogadores[0].cpu = { familia: 'agility', nivel: 1 };\n  };\n  assert.equal(pont((s) => todasL1(s, 1)), 3 + 4 + 3 + 4 + 6 + 5 + 8);\n  assert.equal(pont((s) => todasL1(s, 3)), 3 + 4 + 12 + 4 + 6 + 5 + 8 + 5);\n});"
+    },
+    {
+      "cartao": "c-vencedor",
+      "nome": "Vencedor e empates",
+      "dado": "as pontuações finais",
+      "quando": "se ordena",
+      "entao": "ganha quem tiver mais pontos; em empate de pontos ganha quem tem mais peças L3; se continua empatado, partilham a vitória",
+      "codigo": "test('Vencedor e empates', () => {\n  const a = porLimite(novo(), (s) => { s.jogadores[0].deploy = 12; s.jogadores[1].deploy = 6; });\n  assert.deepEqual(a.result.winners, [0]);\n  // 20 pontos para cada: o lugar 0 com cabeça L3 (15+5), o lugar 1 com cabeça L2 (8) + Deploy 12. Ganha quem tem mais L3.\n  const b = porLimite(novo(), (s) => {\n    s.jogadores[0].robot = R({ head: 3 });\n    s.jogadores[1].robot = R({ head: 2 }); s.jogadores[1].deploy = 12;\n  });\n  assert.deepEqual(b.result.scores, [20, 20]);\n  assert.deepEqual(b.result.winners, [0]);\n  // Empate total: partilham.\n  const c = porLimite(novo(), (s) => { s.jogadores[0].deploy = 6; s.jogadores[1].deploy = 6; });\n  assert.deepEqual(c.result.winners, [0, 1]);\n});"
+    }
+  ]
+}
