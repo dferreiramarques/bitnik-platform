@@ -132,7 +132,7 @@
   cursor: pointer; transition: background .15s ease;
 }
 .praia-cell.ghost:hover, .praia-cell.ghost:focus-visible { background: color-mix(in srgb, var(--game-on-table-accent, #ffd9c2) 45%, transparent); }
-.praia-cell.big { width: calc(var(--cell, 44px) * 1.6); height: calc(var(--cell, 44px) * 1.6); }
+.praia-cell.big { width: min(176px, 28vh); height: min(176px, 28vh); }
 .praia-n {
   position: absolute; bottom: 1px; right: 2px; font-family: var(--game-font-display); font-weight: 800;
   font-size: calc(var(--cell, 44px) * .3); color: var(--game-text, #2b1b12); text-shadow: 0 1px 2px rgb(255 255 255 / .6);

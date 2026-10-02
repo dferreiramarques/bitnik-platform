@@ -7,7 +7,8 @@ Sem mudanças de jogo: as peças passam a ter desenho próprio (33 ilustrações
 número de banhistas deixa de aparecer sobre o desenho; fica no tooltip.
 Sem o ficheiro, recua para o emoji com o número, como antes.
 Cores dos jogadores mais vivas; o marcador do salva-vidas passa para o canto
-superior direito da peça, mais pequeno e sem itálico.
+superior direito da peça, mais pequeno e sem itálico. A "minha peça" fica
+150% maior (70 px → 176 px, no máximo 28% da altura do ecrã).
 
 ## 2.1.0 — Tutorial interativo (2026-10-02)
 
