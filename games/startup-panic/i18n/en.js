@@ -241,5 +241,7 @@ export default {
   'tut.salaries.body': "Paying salaries is optional: you can tap \"Risk it 🎲\" and roll a die. On a 6 the worker stays unpaid, on anything else they leave. With no cash for the salary the die is rolled too.",
   'tut.tips.title': "You know how to play!",
   'tut.tips.body': "Tips: dividends compound your cash, the CFO gives income from round 1, and the chart helps you see where to invest. Good luck at the Gates!",
+  'msg.TRADE_ACCEPT': '👍',
+  'msg.TRADE_REJECT': '👎',
   ...gerado,
 };

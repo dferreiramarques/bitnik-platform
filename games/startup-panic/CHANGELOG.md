@@ -1,5 +1,9 @@
 # Startup Panic — histórico de regras
 
+## 3.3.1 — Resposta à troca na mesa (2026-10-02)
+
+Sem mudanças de regras. Quando o jogador visado responde a uma proposta de troca, a mesa mostra a todos 👍 (aceite) ou 👎 (recusada), como mensagem da mesa (ADR-014), além da entrada no registo.
+
 ## 3.3.0 — Tutorial guiado (2026-10-02)
 
 Pedido do David: um tour/wizard para o jogo. Sem mudanças de regras (as mesas guardadas continuam a retomar).

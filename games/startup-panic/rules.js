@@ -386,14 +386,14 @@ export const moves = {
     b.acoes[p.para] = 0;
     b.acoes[p.de] += deles;
     s.proposta = null;
-    ctx.log('log.TRADE_ACCEPT', { de: p.de + 1 });
+    ctx.log('log.TRADE_ACCEPT', { de: p.de + 1 }, { announce: { key: 'msg.TRADE_ACCEPT' } });
   },
 
   SP_TRADE_REJECT(s, _p, ctx) {
     const p = s.proposta;
     if (!p || ctx.seat !== p.para) return ctx.invalid('err.SEM_PROPOSTA');
     s.proposta = null;
-    ctx.log('log.TRADE_REJECT', { de: p.de + 1 });
+    ctx.log('log.TRADE_REJECT', { de: p.de + 1 }, { announce: { variant: 'warn', key: 'msg.TRADE_REJECT' } });
   },
 
   SP_END_MARKET(s, _p, ctx) {

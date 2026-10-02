@@ -8,7 +8,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'startup-panic',
-  version: '3.3.0',
+  version: '3.3.1',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',

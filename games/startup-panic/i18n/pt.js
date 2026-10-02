@@ -241,5 +241,7 @@ export default {
   'tut.salaries.body': "Pagar salários é opcional: podes carregar em «Arriscar 🎲» e lançar um dado. Com 6 o trabalhador fica sem receber, com outro número vai-se embora. Sem cash para o salário também se lança o dado.",
   'tut.tips.title': "Já sabes jogar!",
   'tut.tips.body': "Dicas: os dividendos compõem o cash, o CFO dá renda logo desde a ronda 1, e o gráfico ajuda a ver onde investir. Boa sorte nos Gates!",
+  'msg.TRADE_ACCEPT': '👍',
+  'msg.TRADE_REJECT': '👎',
   ...gerado,
 };

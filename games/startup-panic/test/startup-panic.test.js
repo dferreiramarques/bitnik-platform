@@ -378,10 +378,14 @@ test('Troca no Gate: o outro jogador tem de aceitar; troca todas as ações de u
   assert.deepEqual(activeSeats(game, m), [b]);
   recusa(m, a, 'SP_END_MARKET', {});
   const aceite = jogar(m, b, 'SP_TRADE_ACCEPT');
+  assert.equal(game.i18n.pt['msg.TRADE_ACCEPT'], '👍');
+  assert.equal(aceite.log.at(-1).announce.key, 'msg.TRADE_ACCEPT');
   assert.deepEqual([su(aceite, 'deepanic').acoes[a], su(aceite, 'deepanic').acoes[b]], [0, 2]);
   assert.deepEqual([su(aceite, 'cashburn').acoes[a], su(aceite, 'cashburn').acoes[b]], [1, 0]);
   assert.equal(aceite.state.proposta, null);
   const recusada = jogar(m, b, 'SP_TRADE_REJECT');
+  assert.equal(game.i18n.en['msg.TRADE_REJECT'], '👎');
+  assert.deepEqual([recusada.log.at(-1).announce.key, recusada.log.at(-1).announce.variant], ['msg.TRADE_REJECT', 'warn']);
   assert.deepEqual(su(recusada, 'deepanic').acoes, [2, 0].map((x, i) => (i === a ? 2 : 0)));
   assert.deepEqual(activeSeats(game, recusada), [a]);
 });
