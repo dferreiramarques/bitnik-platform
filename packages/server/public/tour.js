@@ -11,7 +11,7 @@
 //   enter / leave   chamados ao entrar / sair do passo (ex.: pôr os bots a jogar)
 //   final   último passo: "Sair" e "Jogar a sério" em vez de "Seguinte"
 
-import { createMatch, applyMove, viewFor, botMove, activeSeats } from '/engine/index.js';
+import { createMatch, applyMove, fireTimer, viewFor, botMove, activeSeats } from '/engine/index.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -118,8 +118,10 @@ export function createTour({ host, steps, t, ui, exit, playReal, players = 2, ex
  * @param {(state: object) => void} [o.setup]
  * @param {(seat: number, move: object, state: object) => void} [o.after]
  * @param {number} [o.botMs]    pausa entre jogadas do bot
+ * @param {() => boolean} [o.hold]  enquanto for verdade, os timers do jogo esperam (ex.: a revelação de uma ronda, até o guia a explicar)
+ * @param {number} [o.timerMs]  tempo máximo de um timer do jogo (por omissão, 3500 ms)
  */
-export function createSession({ game, board, el, boardCtx, numPlayers = 2, seed = 'tutorial', options, setup, after, botMs = 1100 }) {
+export function createSession({ game, board, el, boardCtx, numPlayers = 2, seed = 'tutorial', options, setup, after, botMs = 1100, hold, timerMs = 3500 }) {
   const tweakMatch = (m, fn) => { const c = structuredClone(m); fn(c.state); return c; };
   let match = createMatch(game, { numPlayers, seed, ...(options ? { options } : {}) });
   if (setup) match = tweakMatch(match, setup);
@@ -131,6 +133,22 @@ export function createSession({ game, board, el, boardCtx, numPlayers = 2, seed 
     try { fn(); } catch (e) { console.error('[tutorial]', e?.stack || e); }
   }, ms));
 
+  // Os timers declarativos do jogo (ctx.schedule) correm aqui, como no servidor.
+  const agendados = new Set();
+  function syncTimers() {
+    for (const tm of match.timers || []) {
+      const id = `${tm.key}:${tm.seq}`;
+      if (agendados.has(id)) continue;
+      agendados.add(id);
+      const fire = () => {
+        if (hold?.()) { later(fire, 400); return; }
+        const r = fireTimer(game, match, tm.key);
+        if (r.ok) { match = r.match; api.push(); }
+      };
+      later(fire, Math.min(tm.delayMs, timerMs));
+    }
+  }
+
   const api = {
     get match() { return match; },
     get state() { return match.state; },
@@ -140,6 +158,7 @@ export function createSession({ game, board, el, boardCtx, numPlayers = 2, seed 
     tweak(fn) { match = tweakMatch(match, fn); api.push(); },
     push() {
       board.update({ ...viewFor(game, match, 0), seat: 0 });
+      syncTimers();
       tour?.refresh();
     },
     play(seat, mv) {
@@ -150,11 +169,11 @@ export function createSession({ game, board, el, boardCtx, numPlayers = 2, seed 
       api.push();
       return true;
     },
-    /** Os bots jogam, jogada a jogada, até a vez voltar ao jogador (ou acabar o jogo); depois `done()`. */
+    /** Os bots jogam, jogada a jogada, até não haver bots a quem caiba jogar (a vez voltou ao jogador, ou o jogo acabou); depois `done()`. */
     bots(done) {
       const tick = () => {
-        const seat = match.result ? 0 : activeSeats(game, match)[0];
-        if (match.result || seat === 0 || seat == null) { done?.(); api.push(); return; }
+        const seat = match.result ? undefined : activeSeats(game, match).find((x) => x !== 0);
+        if (seat === undefined) { done?.(); api.push(); return; }
         const mv = botMove(game, match, seat);
         const r = mv ? applyMove(game, match, seat, mv) : { ok: false };
         if (!r.ok) { done?.(); api.push(); return; }
