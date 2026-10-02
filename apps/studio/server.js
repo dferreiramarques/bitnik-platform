@@ -12,6 +12,7 @@ import nineOils from '@bitnik/game-nine-oils';
 import nineOilsVanilla from '@bitnik/game-nine-oils-vanilla';
 import capivaras from '@bitnik/game-capivaras';
 import robotMaker from '@bitnik/game-robot-maker';
+import startupPanic from '@bitnik/game-startup-panic';
 
 export const bitnikBrand = {
   id: 'bitnik',
@@ -24,10 +25,13 @@ export const bitnikBrand = {
   ],
 };
 
+// Jogo no Studio ainda por aprovar: selo "protótipo" e modo protótipo na mesa; só depois de vendido passa para o runtime do cliente.
+const comoPrototipo = (g) => Object.freeze({ ...g, prototype: true });
+
 export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
   return createPlatform({
     brand: bitnikBrand,
-    games: [catania, bulbous, praia, nineOils, nineOilsVanilla, capivaras, robotMaker],
+    games: [catania, bulbous, praia, nineOils, nineOilsVanilla, capivaras, robotMaker, comoPrototipo(startupPanic)],
     storage: dataDir ? fileStorage(dataDir) : memoryStorage(),
     studio: true,
     // Protótipos da Forge: ficam com os dados; sem pasta de dados, numa pasta temporária.

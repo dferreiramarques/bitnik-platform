@@ -438,11 +438,11 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   assert.equal(st.engineVersion, ENGINE_VERSION);
   assert.equal(st.studio, true);
   assert.equal(st.online, 1);
-  assert.equal(st.rooms.total, 3 + 2 + 3 + 1 + 1 + 5 + 3, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4; Nine Oils a 2; Nine Oils (Vanilla Demo) a 2; Capivaras de 2 a 6; Robot Maker a 2, 3 e 4');
+  assert.equal(st.rooms.total, 3 + 2 + 3 + 1 + 1 + 5 + 3 + 3, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4; Nine Oils a 2; Nine Oils (Vanilla Demo) a 2; Capivaras de 2 a 6; Robot Maker a 2, 3 e 4; Startup Panic a 2, 3 e 4');
   const { games } = await (await fetch(`${base}/admin/games`, { headers: auth })).json();
   assert.equal(games[0].id, 'catania');
   assert.equal(games[0].name, 'Catania');
-  assert.deepEqual(games.map((g) => g.problems), [[], [], [], [], [], [], []]);
+  assert.deepEqual(games.map((g) => g.problems), [[], [], [], [], [], [], [], []]);
   assert.deepEqual(games.find((g) => g.id === 'bulbous').players.counts, [2, 4]);
   await s.stop();
 });
@@ -653,7 +653,7 @@ test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência cert
   const { exportAll, defaultsFor } = await import('../tools/figma.js');
   const { designTokensToAppearance, readDesignTokens, isDesignTokens } = await import('../packages/server/public/design-tokens.js');
   const files = await exportAll();
-  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'bulbous.default.tokens.json', 'capivaras.default.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'nine-oils-vanilla.default.tokens.json', 'nine-oils.default.tokens.json', 'praia-das-percebes.default.tokens.json', 'robot-maker.default.tokens.json', 'vanilla.tokens.json']);
+  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'bulbous.default.tokens.json', 'capivaras.default.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'nine-oils-vanilla.default.tokens.json', 'nine-oils.default.tokens.json', 'praia-das-percebes.default.tokens.json', 'robot-maker.default.tokens.json', 'startup-panic.default.tokens.json', 'vanilla.tokens.json']);
   const vanilla = readDesignTokens(files['vanilla.tokens.json']);
   assert.ok(vanilla.some((t) => t.name === '--table-bg'), 'a vanilla também define a mesa');
   const defaults = await defaultsFor();
