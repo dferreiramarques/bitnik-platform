@@ -5,6 +5,7 @@ import * as rules from './rules.js';
 import { defaultBot } from './bot.js';
 import pt from './i18n/pt.js';
 import en from './i18n/en.js';
+import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'praia-das-percebes',
@@ -18,6 +19,9 @@ export default defineGame({
   ui: './ui/index.js',
   tutorial: './ui/tutorial.js',
   skin: './ui/skin.json',
+  // Modal "Como se joga" (botão ? durante a partida, plataforma): condensado
+  // do REGRAS.md, nas duas línguas — não é lido pelas regras.
+  rules: rulesText,
 
   setup: rules.setup,
   moves: rules.moves,

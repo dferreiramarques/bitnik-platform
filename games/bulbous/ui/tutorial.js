@@ -1,26 +1,29 @@
 // Tutorial do Bulbous (ADR-007, ADR-018): corre o motor verdadeiro no browser, com a mesma
 // UI das mesas (./index.js) e a sessão e o guia de passos da plataforma (ctx.session,
-// ctx.tour). Joga-se a 2, contra o bot do jogo, as primeiras vazas: escolher as Baelfungious,
-// declarar a sequência da ronda e apostar. A mão do jogador é a da lição (números altos nas
-// suas duas cores, um ×2 e um Joker) e é ele o Governante da ronda.
+// ctx.tour). Joga-se a 4 (individual), contra três bots do jogo, as primeiras vazas: escolher
+// a Baelfungious, declarar a sequência da ronda e apostar. A mão do jogador é a da lição
+// (números altos na sua cor, um ×2 e um Joker) e é ele o Governante da ronda.
 import game from '../index.js';
 import * as board from './index.js';
 
-/** A mão da lição: números altos nas duas cores do jogador, um ×2 e o Joker do seu símbolo. */
+const JOGADORES = 4;
+
+/** A mão da lição: números altos na cor do jogador, um ×2 e o Joker do seu símbolo (7 cartas, como a mão cheia). */
 function darMao(s) {
   const eu = s.jogadores[0];
+  const outros = s.jogadores.slice(1);
   const cores = [...new Set(eu.baelfs.map((b) => b.cor))];
-  const todas = [...eu.mao, ...s.jogadores[1].mao, ...s.baralho];
+  const todas = [...eu.mao, ...outros.flatMap((j) => j.mao), ...s.baralho];
   const quer = [];
   cores.forEach((cor, i) => {
-    for (const valor of i === 0 ? [9, 7, 5] : [9, 7, 5, 3]) quer.push(todas.find((c) => c.tipo === 'numero' && c.cor === cor && c.valor === valor));
+    for (const valor of cores.length === 1 ? [9, 8, 7, 5, 3] : i === 0 ? [9, 7, 5] : [9, 7, 5, 3]) quer.push(todas.find((c) => c.tipo === 'numero' && c.cor === cor && c.valor === valor));
   });
   quer.push(todas.find((c) => c.tipo === 'duplo' && c.cor === cores[0]));
   quer.push(todas.find((c) => c.tipo === 'joker' && c.simbolo === eu.simbolo));
   const ids = new Set(quer.map((c) => c.id));
   const sobras = eu.mao.filter((c) => !ids.has(c.id));
-  // As cartas pedidas que estavam noutro sítio (mão do bot, baralho) trocam com as que sobram da mão do jogador.
-  for (const lugar of [s.jogadores[1].mao, s.baralho]) {
+  // As cartas pedidas que estavam noutro sítio (mão dos bots, baralho) trocam com as que sobram da mão do jogador.
+  for (const lugar of [...outros.map((j) => j.mao), s.baralho]) {
     for (let i = 0; i < lugar.length; i++) if (ids.has(lugar[i].id)) lugar[i] = sobras.pop();
   }
   eu.mao = quer;
@@ -31,8 +34,8 @@ export function start(el, ctx) {
   let botsDone = false;
 
   const sess = ctx.session({
-    game, board, el, numPlayers: 2,
-    boardCtx: { gameId: 'bulbous', lang: ctx.lang, t, seatName: (i) => (i === 0 ? t('tut.you') : t('tut.bot')) },
+    game, board, el, numPlayers: JOGADORES,
+    boardCtx: { gameId: 'bulbous', lang: ctx.lang, t, seatName: (i) => (i === 0 ? t('tut.you') : `${t('tut.bot')} ${i}`) },
     setup: (s) => { s.governante = 0; darMao(s); },
   });
   const s = () => sess.state;
@@ -52,7 +55,7 @@ export function start(el, ctx) {
     { id: 'tips', final: true },
   ];
 
-  sess.attach(ctx.tour({ host: el, steps: STEPS, t, players: 2 }));
+  sess.attach(ctx.tour({ host: el, steps: STEPS, t, players: JOGADORES }));
   sess.push();
   return () => sess.stop();
 }
