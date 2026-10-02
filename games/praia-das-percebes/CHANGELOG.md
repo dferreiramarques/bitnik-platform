@@ -8,7 +8,9 @@ número de banhistas deixa de aparecer sobre o desenho; fica no tooltip.
 Sem o ficheiro, recua para o emoji com o número, como antes.
 Cores dos jogadores mais vivas; o marcador do salva-vidas passa para o canto
 superior direito da peça, mais pequeno e sem itálico. A "minha peça" fica
-150% maior (70 px → 176 px, no máximo 28% da altura do ecrã).
+150% do tamanho (70 px → 106 px, no máximo 28% da altura do ecrã). O tabuleiro
+inicial (poucas peças) aparece ao dobro do tamanho: as casas passam de um
+máximo de 64 px para 128 px; com mais peças continua a caber na zona livre.
 
 ## 2.1.0 — Tutorial interativo (2026-10-02)
 

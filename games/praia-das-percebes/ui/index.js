@@ -313,7 +313,7 @@ function applyZoom(limit = false, refit = false) {
   if (!vw || !z || !r) return;
   const o = vw.getBoundingClientRect();
   const { rows, cols } = boardDims;
-  const cell = Math.max(28, Math.min((r.width - GAP * (cols - 1)) / cols, (r.height - GAP * (rows - 1)) / rows, 64));
+  const cell = Math.max(28, Math.min((r.width - GAP * (cols - 1)) / cols, (r.height - GAP * (rows - 1)) / rows, 128));
   const gridW = cell * cols + GAP * (cols - 1);
   const gridH = cell * rows + GAP * (rows - 1);
   const L = (r.left - o.left) + (r.width - gridW) / 2;
