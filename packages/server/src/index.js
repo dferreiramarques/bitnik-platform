@@ -479,6 +479,8 @@ export function createPlatform({
   /** Valida e guarda as afinações; só tokens declarados, só temas que existem. */
   async function setAppearance(input = {}) {
     const next = { brand: { tokens: cleanBrandTokens(input.brand?.tokens) }, games: {} };
+    // A visibilidade tem o seu próprio endpoint; o editor de aparência não a toca.
+    if (appearance.hidden) next.hidden = appearance.hidden;
     for (const [gameId, cfg] of Object.entries(input.games || {})) {
       const out = await cleanGameConfig(gameId, cfg);
       if (out.theme || Object.keys(out.tokens).length || out.thumbnail) next.games[gameId] = out;
@@ -487,6 +489,15 @@ export function createPlatform({
     storage.saveAppearance?.(appearance);
     for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance });
     return appearance;
+  }
+
+  /** Esconde/mostra um jogo na página da marca (sobrepõe o `hidden` do pacote); o link direto continua a funcionar. */
+  function setGameHidden(gameId, hidden) {
+    if (!G.has(gameId)) throw new Error(`${gameId}: jogo não instalado`);
+    appearance = { ...appearance, hidden: { ...appearance.hidden, [gameId]: !!hidden } };
+    storage.saveAppearance?.(appearance);
+    for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance });
+    return appearance.hidden[gameId];
   }
 
   /** Guarda a aparência atual de um alvo (marca ou jogo) como skin nomeada, para reaplicar depois. */
@@ -542,7 +553,7 @@ export function createPlatform({
           prototype: !!g.prototype,
           // Instalado e jogável por link direto, mas fora da lista pública
           // (página da marca) — ex.: uma demonstração do template vanilla.
-          hidden: !!g.hidden,
+          hidden: appearance.hidden?.[g.id] ?? !!g.hidden,
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),
@@ -760,6 +771,7 @@ export function createPlatform({
     const list = [...rooms.values()].filter((r) => r.gameId === g.id);
     return {
       id: g.id, name: gameName(g), version: g.version, players: g.players, prototype: !!g.prototype,
+      hidden: appearance.hidden?.[g.id] ?? !!g.hidden,
       author: g.author ?? null, license: g.license ?? null, langs: Object.keys(g.i18n),
       bots: Object.keys(g.bots || {}), enumerate: !!g.enumerate, describeMove: !!g.describeMove,
       events: Object.keys(g.events || {}), problems: checkGame(g),
@@ -1065,6 +1077,11 @@ export function createPlatform({
         for (const n of counts) results.push(await simulateGame(game, { ...body, numPlayers: n }));
         return json(res, 200, { gameId: game.id, version: game.version, results });
       }
+      const vis = url.match(/^\/admin\/games\/([\w-]+)\/visibility$/);
+      if (vis && req.method === 'PUT') {
+        if (!G.has(vis[1])) return json(res, 404, { error: 'jogo não instalado' });
+        return json(res, 200, { hidden: setGameHidden(vis[1], (await readJson(req)).hidden) });
+      }
       if (url === '/admin/appearance' && req.method === 'GET') return json(res, 200, await appearanceCatalog());
       if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req, APPEARANCE_MAX)) });
       if (url === '/admin/appearance/presets' && req.method === 'POST') {
@@ -1157,6 +1174,7 @@ export function createPlatform({
       return res.end(JSON.stringify({
         id: homeSlash, scope: homeSlash, lang: brand.lang || 'pt',
         name: brand.name, short_name: brand.name, start_url: homeSlash, display: 'standalone',
+        related_applications: [{ platform: 'webapp', url: `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/manifest.webmanifest` }],
         background_color: brand.tokens?.['--color-cream'] || '#fbf3e4',
         theme_color: brand.tokens?.['--color-brick'] || '#b8461f',
         icons: [

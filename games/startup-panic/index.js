@@ -9,6 +9,9 @@ import rulesText from './ui/rules-text.js';
 export default defineGame({
   id: 'startup-panic',
   version: '3.4.0',
+  // Em desenvolvimento: jogável por link direto (consola → Jogos → Abrir),
+  // fora da lista pública da marca. Remover quando for para o público.
+  hidden: true,
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',
