@@ -8,7 +8,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'robot-maker',
-  version: '1.1.0',
+  version: '2.0.0',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',
