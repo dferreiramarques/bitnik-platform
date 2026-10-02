@@ -18,7 +18,7 @@ Coloca salva-vidas nas peças da praia. Cada salva-vidas vigia uma linha ou uma 
 1. **Tirar peça** — tiras a peça do topo do baralho (só tu a vês).
 2. **Colocar peça** — ortogonalmente adjacente a uma peça que já esteja na mesa (nunca na diagonal). A praia nunca passa de 7 × 7.
 3. **Salva-vidas (opcional)** — pões 1 salva-vidas na peça que acabaste de colocar, a vigiar a linha (↔) ou a coluna (↕). Gasta 1 ficha. Só pode haver 1 salva-vidas por linha e por coluna em toda a praia. Não se põe em rochas.
-4. **Objetivos** — se a tua peça completou um objetivo revelado, ficas com a carta logo e revela-se outra.
+4. **Objetivos** — se a tua peça completou um objetivo revelado (a formação tem de incluir essa peça), ficas com a carta logo e revela-se outra. Se a conquista revelar outra carta que a mesma peça também completa, conta logo. O que já estava feito sem a tua peça não conta.
 
 ## Peças especiais
 

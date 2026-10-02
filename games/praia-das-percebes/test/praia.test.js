@@ -111,6 +111,37 @@ test('Objetivos: linha de 5 e 7, coluna de 4 e 6, quadrados 3×3 e 5×5, 2 pranc
   assert.ok(!objetivoFeito('excursao', praiaDe(['33', '32']), 1, 1));
 });
 
+test('Objetivos: a formação tem de incluir a peça acabada de colocar (2.1.3)', () => {
+  // Um quadrado 3×3 e uma linha de 5 que não passam pela peça não contam.
+  assert.ok(!objetivoFeito('quadrado3', praiaDe(['111.', '111.', '111.', '...1']), 3, 3));
+  assert.ok(!objetivoFeito('linha5', praiaDe(['11111', '.....', '1']), 2, 0));
+  assert.ok(!objetivoFeito('pranchas', praiaDe(['SS.1']), 0, 3));
+  assert.ok(!objetivoFeito('excursao', praiaDe(['33.', '33.', '..1']), 2, 2));
+  assert.ok(!objetivoFeito('coluna4', praiaDe(['1.', '1.', '1.', '1.', '.1']), 4, 1));
+  // Com a peça dentro da formação, conta (também no meio e a esticar uma linha).
+  assert.ok(objetivoFeito('quadrado3', praiaDe(['111', '111', '111']), 1, 1));
+  assert.ok(objetivoFeito('linha5', praiaDe(['111111']), 0, 5));
+  assert.ok(objetivoFeito('pranchas', praiaDe(['SS']), 0, 0));
+});
+
+test('O objetivo que se revela a seguir conta se a mesma peça o completar, não se já estava feito (2.1.3)', () => {
+  // A mesma peça fecha a linha de 5 e o quadrado 3×3, que se revela a seguir: contam os dois.
+  const base = (linhas) => tweak(novo(), (s) => {
+    s.tabuleiro = praiaDe(linhas);
+    s.objetivos = [{ id: 'linha5', pts: 4 }];
+    s.porRevelar = [{ id: 'quadrado3', pts: 2 }, { id: 'pranchas', pts: 4 }];
+    s.peca = peca(1, 'areia');
+  });
+  let m = ok(jogar(base(['1111.', '..111', '..111']), 0, 'COLOCAR', { r: 0, c: 4 }));
+  assert.deepEqual(m.state.conquistados.map((o) => o.id), ['linha5', 'quadrado3']);
+  assert.equal(m.state.jogadores[0].objPts, 6);
+  assert.deepEqual(m.state.objetivos.map((o) => o.id), ['pranchas']);
+  // O quadrado já estava feito antes e a peça não faz parte dele: fica por conquistar.
+  m = ok(jogar(base(['1111.', '111..', '111..']), 0, 'COLOCAR', { r: 0, c: 4 }));
+  assert.deepEqual(m.state.conquistados.map((o) => o.id), ['linha5']);
+  assert.deepEqual(m.state.objetivos.map((o) => o.id), ['quadrado3']);
+});
+
 test('Um objetivo feito é de quem pôs a peça e revela-se outro', () => {
   let m = tweak(novo(), (s) => {
     s.tabuleiro = praiaDe(['1111']);

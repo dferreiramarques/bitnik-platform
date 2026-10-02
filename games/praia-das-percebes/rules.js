@@ -64,38 +64,45 @@ export function banhistasVigiados(t, r, c, dir) {
 }
 
 // ─── Objetivos ───────────────────────────────────────────────
-function temLinha(t, fixo, len, dir) {
+// Um objetivo só se conquista com a peça que acabou de ser colocada (r, c): a
+// formação tem de a incluir. Assim, o que já estava feito antes de o objetivo
+// ser revelado não conta (ver CHANGELOG 2.1.3).
+function temLinha(t, fixo, len, dir, pos) {
   const k = dir === 'h' ? 'c' : 'r';
   const m = celulas(t).filter((p) => (dir === 'h' ? p.r : p.c) === fixo).sort((a, b) => a[k] - b[k]);
   for (let i = 0; i + len <= m.length; i++) {
-    let ok = true;
-    for (let j = 1; j < len; j++) if (m[i + j][k] - m[i + j - 1][k] !== 1) { ok = false; break; }
+    let ok = pos >= m[i][k] && pos <= m[i + len - 1][k];
+    for (let j = 1; ok && j < len; j++) if (m[i + j][k] - m[i + j - 1][k] !== 1) ok = false;
     if (ok) return true;
   }
   return false;
 }
-function temQuadrado(t, n) {
-  return celulas(t).some(({ r, c }) => {
-    for (let dr = 0; dr < n; dr++) for (let dc = 0; dc < n; dc++) if (!get(t, r + dr, c + dc)) return false;
-    return true;
-  });
+function temQuadrado(t, n, r, c) {
+  for (let r0 = r - n + 1; r0 <= r; r0++) {
+    for (let c0 = c - n + 1; c0 <= c; c0++) {
+      let cheio = true;
+      for (let dr = 0; cheio && dr < n; dr++) for (let dc = 0; cheio && dc < n; dc++) if (!get(t, r0 + dr, c0 + dc)) cheio = false;
+      if (cheio) return true;
+    }
+  }
+  return false;
 }
-const temPranchas = (t) => celulas(t).some(({ r, c }) => get(t, r, c).tipo === 'prancha'
-  && [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dr, dc]) => get(t, r + dr, c + dc)?.tipo === 'prancha'));
-const temExcursao = (t) => celulas(t).some(({ r, c }) => [[0, 0], [0, 1], [1, 0], [1, 1]].every(([dr, dc]) => get(t, r + dr, c + dc)?.banhistas === 3));
+const temPranchas = (t, r, c) => get(t, r, c)?.tipo === 'prancha'
+  && [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dr, dc]) => get(t, r + dr, c + dc)?.tipo === 'prancha');
+const temExcursao = (t, r, c) => [r - 1, r].some((r0) => [c - 1, c].some((c0) => [[0, 0], [0, 1], [1, 0], [1, 1]].every(([dr, dc]) => get(t, r0 + dr, c0 + dc)?.banhistas === 3)));
 
 export function objetivoFeito(id, t, r, c) {
   switch (id) {
-    case 'quadrado3': return temQuadrado(t, 3);
-    case 'quadrado5': return temQuadrado(t, 5);
-    case 'linha5': return temLinha(t, r, 5, 'h');
-    case 'linha7': return temLinha(t, r, 7, 'h');
+    case 'quadrado3': return temQuadrado(t, 3, r, c);
+    case 'quadrado5': return temQuadrado(t, 5, r, c);
+    case 'linha5': return temLinha(t, r, 5, 'h', c);
+    case 'linha7': return temLinha(t, r, 7, 'h', c);
     // 2.0.0: colunas de 4 e 6 (as linhas ficam 5 e 7). Com comprimentos ímpares e pares,
     // os objetivos deixam de calhar sempre ao mesmo jogador (ver CHANGELOG).
-    case 'coluna4': return temLinha(t, c, 4, 'v');
-    case 'coluna6': return temLinha(t, c, 6, 'v');
-    case 'pranchas': return temPranchas(t);
-    case 'excursao': return temExcursao(t);
+    case 'coluna4': return temLinha(t, c, 4, 'v', r);
+    case 'coluna6': return temLinha(t, c, 6, 'v', r);
+    case 'pranchas': return temPranchas(t, r, c);
+    case 'excursao': return temExcursao(t, r, c);
     default: return false;
   }
 }
@@ -168,8 +175,9 @@ export const moves = {
     s.ultima = { tipo: 'COLOCAR', r, c, jogador: ctx.seat };
     ctx.log('log.COLOCOU', { peca: `@peca.${peca.tipo}`, banhistas: peca.banhistas });
     // Objetivos revelados feitos com esta peça: são de quem a pôs; revela-se outro.
-    for (const o of [...s.objetivos]) {
-      if (!objetivoFeito(o.id, s.tabuleiro, r, c)) continue;
+    // O objetivo que se revela a seguir também conta com esta peça, se ela o completar
+    // (2.1.3); o que já estava feito sem ela não conta.
+    for (let o = s.objetivos.find((x) => objetivoFeito(x.id, s.tabuleiro, r, c)); o; o = s.objetivos.find((x) => objetivoFeito(x.id, s.tabuleiro, r, c))) {
       s.objetivos = s.objetivos.filter((x) => x.id !== o.id);
       s.conquistados.push({ ...o, jogador: ctx.seat });
       s.jogadores[ctx.seat].objPts += o.pts;
