@@ -182,8 +182,23 @@ function renderDeck(v) {
   return `<div class="praia-deck">${esc(ctx.t('ui.deckLeft', { n: v.baralho, total: v.total }))}</div>`;
 }
 
+// Desenhos das peças (ui/pecas/*.webp): uma variante por peça, escolhida pelo id
+// (estável: a mesma peça tem sempre o mesmo desenho). Um token --card-<tipo> com
+// imagem sobrepõe-se; sem ficheiro, recua para o emoji.
+const TILE_ART = { 1: 9, 2: 12, 3: 6, prancha: 4, rocha: 1, areia: 1 };
+function tileFile(p) {
+  const k = p.tipo === 'normal' ? p.banhistas : p.tipo;
+  const n = TILE_ART[k];
+  if (!n) return '';
+  const name = p.tipo === 'normal' ? `banhistas${k}` : k;
+  return new URL(`./pecas/${name}${n > 1 ? `-${(Math.abs(p.id ?? 0) % n) + 1}` : ''}.webp`, import.meta.url).href;
+}
+
 function tileCell(p) {
-  return `${art(`card-${p.tipo}`, p.tipo, TILE_EMOJI[p.tipo] ?? '❔')}${p.banhistas > 0 ? `<b class="praia-n">${p.banhistas}</b>` : ''}`;
+  const url = tokenUrl(`card-${p.tipo}`) || tileFile(p);
+  return url
+    ? `<img src="${esc(url)}" data-fallback="${esc(p.tipo)}" alt="">`
+    : `<span class="praia-emoji-fallback">${TILE_EMOJI[p.tipo] ?? '❔'}</span>${p.banhistas > 0 ? `<b class="praia-n">${p.banhistas}</b>` : ''}`;
 }
 
 function renderBoard(v) {

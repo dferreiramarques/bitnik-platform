@@ -1,5 +1,13 @@
 # Praia das Percebes — histórico de regras
 
+## 2.0.21 — Arte das peças (2026-10-02)
+
+Sem mudanças de jogo: as peças passam a ter desenho próprio (33 ilustrações:
+9 de 1 banhista, 12 de 2, 6 de 3, 4 pranchas, 1 rocha, 1 areia), em
+`ui/pecas/`. Cada peça usa sempre a mesma variante (escolhida pelo id). O
+número de banhistas deixa de aparecer sobre o desenho; fica no tooltip.
+Sem o ficheiro, recua para o emoji com o número, como antes.
+
 ## 2.0.20 — Registo flutuante a sério (2026-10-01)
 
 Sem mudanças de jogo: o registo estava dentro da linha de baixo e, ao
