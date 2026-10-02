@@ -1,0 +1,483 @@
+{
+  "gameName": "Nine Oils",
+  "nodes": [
+    {
+      "id": "d-banca",
+      "kind": "DATA",
+      "label": "Banca: 6 casas (2 bloqueadas por cubos vermelhos) e reserva de 6 garrafas",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "d-baralho",
+      "kind": "DATA",
+      "label": "Baralho: 8 cartas de Personagem (2 Sedutoras, 2 Rapazes, 4 Valentões)",
+      "x": 40,
+      "y": 140
+    },
+    {
+      "id": "d-dados",
+      "kind": "DATA",
+      "label": "9 dados de 6 faces",
+      "x": 40,
+      "y": 240
+    },
+    {
+      "id": "f-turno",
+      "kind": "FLOW",
+      "label": "Turno: cartas → lançar → combinações → descartar",
+      "x": 300,
+      "y": 40
+    },
+    {
+      "id": "f-defesa",
+      "kind": "FLOW",
+      "label": "Defesa: o adversário responde aos Rapazes com Valentões",
+      "x": 300,
+      "y": 160
+    },
+    {
+      "id": "f-conflito",
+      "kind": "FLOW",
+      "label": "Conflito: cada face só dá uma combinação (escolhe-se)",
+      "x": 300,
+      "y": 280
+    },
+    {
+      "id": "a-cartas",
+      "kind": "ACTION",
+      "label": "Jogar cartas de Personagem (opcional)",
+      "x": 560,
+      "y": 40
+    },
+    {
+      "id": "a-lancar",
+      "kind": "ACTION",
+      "label": "Lançar os 9 dados",
+      "x": 560,
+      "y": 120
+    },
+    {
+      "id": "a-combo",
+      "kind": "ACTION",
+      "label": "Resolver combinações",
+      "x": 560,
+      "y": 200
+    },
+    {
+      "id": "a-descartar",
+      "kind": "ACTION",
+      "label": "Descartar até 3 cartas",
+      "x": 560,
+      "y": 280
+    },
+    {
+      "id": "a-sedutora",
+      "kind": "ACTION",
+      "label": "Sedutora: +1 garrafa no Triplo + Duplo",
+      "x": 820,
+      "y": 20
+    },
+    {
+      "id": "a-rapaz",
+      "kind": "ACTION",
+      "label": "Rapaz: rouba 1 garrafa",
+      "x": 820,
+      "y": 90
+    },
+    {
+      "id": "a-valentao",
+      "kind": "ACTION",
+      "label": "Valentão: bloqueia um Rapaz, ou (2) descarta às cegas",
+      "x": 820,
+      "y": 160
+    },
+    {
+      "id": "a-duplo",
+      "kind": "ACTION",
+      "label": "Duplo: 1 carta",
+      "x": 820,
+      "y": 230
+    },
+    {
+      "id": "a-triplo",
+      "kind": "ACTION",
+      "label": "Triplo + Duplo: 1 garrafa",
+      "x": 820,
+      "y": 300
+    },
+    {
+      "id": "a-quad",
+      "kind": "ACTION",
+      "label": "Quad: abre uma casa",
+      "x": 820,
+      "y": 370
+    },
+    {
+      "id": "a-penta",
+      "kind": "ACTION",
+      "label": "Penta: o adversário descarta a mão",
+      "x": 820,
+      "y": 440
+    },
+    {
+      "id": "a-seis",
+      "kind": "ACTION",
+      "label": "Seis: 3 cartas",
+      "x": 820,
+      "y": 510
+    },
+    {
+      "id": "a-especiais",
+      "kind": "ACTION",
+      "label": "Joker (7), Oito (8, 2 cubos) e Nove (vitória)",
+      "x": 820,
+      "y": 580
+    },
+    {
+      "id": "s-vitoria",
+      "kind": "SCORE",
+      "label": "Vitória: 6 garrafas na banca, ou nove iguais",
+      "x": 300,
+      "y": 400
+    }
+  ],
+  "edges": [
+    {
+      "from": "f-turno",
+      "to": "a-cartas"
+    },
+    {
+      "from": "f-turno",
+      "to": "a-lancar"
+    },
+    {
+      "from": "f-turno",
+      "to": "a-combo"
+    },
+    {
+      "from": "f-turno",
+      "to": "a-descartar"
+    },
+    {
+      "from": "a-cartas",
+      "to": "a-sedutora"
+    },
+    {
+      "from": "a-cartas",
+      "to": "a-rapaz"
+    },
+    {
+      "from": "a-cartas",
+      "to": "a-valentao"
+    },
+    {
+      "from": "a-rapaz",
+      "to": "f-defesa"
+    },
+    {
+      "from": "f-defesa",
+      "to": "a-valentao"
+    },
+    {
+      "from": "a-lancar",
+      "to": "d-dados"
+    },
+    {
+      "from": "a-combo",
+      "to": "f-conflito"
+    },
+    {
+      "from": "f-conflito",
+      "to": "a-duplo"
+    },
+    {
+      "from": "f-conflito",
+      "to": "a-triplo"
+    },
+    {
+      "from": "f-conflito",
+      "to": "a-quad"
+    },
+    {
+      "from": "f-conflito",
+      "to": "a-penta"
+    },
+    {
+      "from": "f-conflito",
+      "to": "a-seis"
+    },
+    {
+      "from": "f-conflito",
+      "to": "a-especiais"
+    },
+    {
+      "from": "a-duplo",
+      "to": "d-baralho"
+    },
+    {
+      "from": "a-seis",
+      "to": "d-baralho"
+    },
+    {
+      "from": "a-triplo",
+      "to": "d-banca"
+    },
+    {
+      "from": "a-quad",
+      "to": "d-banca"
+    },
+    {
+      "from": "a-especiais",
+      "to": "d-banca"
+    },
+    {
+      "from": "a-sedutora",
+      "to": "a-triplo"
+    },
+    {
+      "from": "d-banca",
+      "to": "s-vitoria"
+    },
+    {
+      "from": "a-especiais",
+      "to": "s-vitoria"
+    }
+  ],
+  "cards": [
+    {
+      "id": "c-setup",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "general",
+      "ref": null,
+      "title": "Preparação",
+      "given": "uma partida nova de 2 jogadores",
+      "when": "a partida começa",
+      "then": "cada jogador tem uma banca [cubo, cubo, livre, livre, livre, livre], 6 garrafas na reserva e 1 carta; o baralho tem as 6 restantes (8 cartas: 2 Sedutoras, 2 Rapazes, 4 Valentões); a vez é sorteada; só se joga a 2"
+    },
+    {
+      "id": "c-turno",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "player",
+      "ref": null,
+      "title": "Turno",
+      "given": "a minha vez, na fase das cartas",
+      "when": "jogo cartas (opcional), lanço os 9 dados e os dois vemos os dados",
+      "then": "as combinações resolvem-se; se acabo com mais de 3 cartas descarto até 3; depois joga o adversário"
+    },
+    {
+      "id": "c-uma-por-face",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "node",
+      "ref": "f-conflito",
+      "title": "Cada face dá uma só combinação",
+      "given": "um lançamento em que a mesma face dá várias combinações",
+      "when": "resolvo as combinações",
+      "then": "só uma por face: não há cascata (4 dados iguais não são Quad e par ao mesmo tempo); o par do Triplo + Duplo é de uma face diferente do trio"
+    },
+    {
+      "id": "c-conflito",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "node",
+      "ref": "f-conflito",
+      "title": "Conflito: melhores opções primeiro",
+      "given": "um lançamento com mais do que uma opção",
+      "when": "escolho a combinação",
+      "then": "as opções que nenhuma outra contém vêm primeiro e com ★; as restantes depois; uma só opção aplica-se logo"
+    },
+    {
+      "id": "c-double",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-duplo",
+      "title": "Duplo: compra 1 carta",
+      "given": "dois dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "compro 1 carta do baralho"
+    },
+    {
+      "id": "c-triplo-duplo",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-triplo",
+      "title": "Triplo + Duplo: 1 garrafa",
+      "given": "três dados de uma face e dois de outra",
+      "when": "a combinação resolve-se",
+      "then": "ponho 1 garrafa numa casa livre da banca (reserva −1)"
+    },
+    {
+      "id": "c-quad",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-quad",
+      "title": "Quad: abre uma casa",
+      "given": "quatro dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "tiro 1 cubo vermelho e a casa fica livre"
+    },
+    {
+      "id": "c-penta",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-penta",
+      "title": "Penta: o adversário descarta a mão",
+      "given": "cinco dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "o adversário descarta a mão toda"
+    },
+    {
+      "id": "c-seis",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-seis",
+      "title": "Seis: 3 cartas",
+      "given": "seis dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "compro 3 cartas do baralho"
+    },
+    {
+      "id": "c-joker",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-especiais",
+      "title": "Joker (7 iguais)",
+      "given": "sete dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "escolho qualquer combinação, de Duplo a Seis; no Triplo + Duplo os 7 dados contam (o par pode ser da mesma face)"
+    },
+    {
+      "id": "c-oito",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-especiais",
+      "title": "Oito de um Tipo",
+      "given": "oito dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "tiro 2 cubos vermelhos logo"
+    },
+    {
+      "id": "c-nove",
+      "kind": "SCORE",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-especiais",
+      "title": "Nove de um Tipo",
+      "given": "nove dados da mesma face",
+      "when": "a combinação resolve-se",
+      "then": "ganho a partida de imediato"
+    },
+    {
+      "id": "c-sedutora",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-sedutora",
+      "title": "Sedutora",
+      "given": "uma Sedutora na mão, antes de lançar",
+      "when": "a jogo e lanço os dados com Triplo + Duplo",
+      "then": "a Sedutora dá +1 garrafa (2 no total; duas Sedutoras, 3)"
+    },
+    {
+      "id": "c-rapaz",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-rapaz",
+      "title": "Rapaz: rouba uma garrafa",
+      "given": "um Rapaz na mão e garrafas na banca do adversário",
+      "when": "jogo o Rapaz antes de lançar",
+      "then": "se o adversário não defender, ele perde 1 garrafa (volta à reserva); dois Rapazes em simultâneo roubam 2, antes da resposta"
+    },
+    {
+      "id": "c-valentao-defesa",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "f-defesa",
+      "title": "Valentão: defesa",
+      "given": "o adversário jogou Rapazes e eu tenho Valentões",
+      "when": "respondo",
+      "then": "escolho quantos Valentões jogar (até ao número de Rapazes): cada um bloqueia um Rapaz e ambos são descartados; depois lançam-se os dados"
+    },
+    {
+      "id": "c-valentao-ataque",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-valentao",
+      "title": "Valentão: ataque",
+      "given": "dois Valentões na mão, no meu turno",
+      "when": "os jogo antes de lançar",
+      "then": "tiro às cegas 1 carta da mão do adversário (não vejo a mão dele)"
+    },
+    {
+      "id": "c-limite-mao",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-descartar",
+      "title": "Limite de mão",
+      "given": "acabo o turno com mais de 3 cartas",
+      "when": "resolvi as combinações",
+      "then": "descarto, uma a uma, até ficar com 3; sem mínimo"
+    },
+    {
+      "id": "c-vitoria",
+      "kind": "SCORE",
+      "category": "regra",
+      "scope": "node",
+      "ref": "s-vitoria",
+      "title": "Vitória",
+      "given": "a minha banca",
+      "when": "ponho a 6.ª garrafa, ou saem nove dados iguais",
+      "then": "ganho; result tem as garrafas por lugar e o(s) vencedor(es)"
+    },
+    {
+      "id": "c-log",
+      "kind": "ACTION",
+      "category": "plataforma",
+      "scope": "general",
+      "ref": null,
+      "title": "Registo e mensagens da mesa",
+      "given": "qualquer jogada",
+      "when": "ela acontece",
+      "then": "o registo mostra o que aconteceu (dados, cartas, combinações); a plataforma anuncia a vez e as combinações raras"
+    },
+    {
+      "id": "c-bot",
+      "kind": "ACTION",
+      "category": "bot",
+      "scope": "player",
+      "ref": null,
+      "title": "Bot",
+      "given": "um lugar com bot",
+      "when": "é a sua vez",
+      "then": "joga Sedutoras ou um Rapaz, escolhe a melhor combinação, bloqueia sempre que pode e nunca usa 2 Valentões para atacar"
+    }
+  ],
+  "rules": [
+    {
+      "id": "r-resumo",
+      "ref": null,
+      "title": "Nine Oils: resumo",
+      "text": "Jogo de dados e cartas para 2 jogadores, ~15 minutos. Cada um tem uma banca de 6 casas (2 bloqueadas por cubos vermelhos) e 6 garrafas de óleo de cobra. Ganha quem primeiro as pôr todas na banca: lança 9 dados, faz combinações (Duplo, Triplo + Duplo, Quad, Penta, Seis, e as raras Joker, Oito e Nove) e usa as cartas de Personagem (Sedutora, Rapaz, Valentão). Fonte: games/nine-oils/REGRAS.md (edição portuguesa do README do jogo online antigo, v1.4)."
+    },
+    {
+      "id": "r-decisoes",
+      "ref": null,
+      "title": "Decisões já tomadas",
+      "text": "- 2 Rapazes (8 cartas), como diz o texto; o jogo online antigo tinha 3 (versão 1.1.0).\n- Na escolha de combinações, as opções que nenhuma outra contém aparecem primeiro e com ★.\n- A pausa depois de lançar (para os dois verem os dados) é uma jogada, CONTINUAR; a UI avança sozinha ~1 s depois.\n- Defender é uma jogada do adversário (DEFENDER { valentoes }), por isso é a fase DEFESA, com o outro lugar ativo.\n- O Valentão ofensivo (2 no próprio turno) tira uma carta às cegas: o view esconde a mão do adversário."
+    }
+  ]
+}

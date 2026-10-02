@@ -23,19 +23,31 @@ Cada jogador é um **Business Angel** a investir em 10 startups, espalhadas por 
 | FusionFail | Energia | 2M |
 | SolarScam | Energia | 3M |
 
-**Preço de mercado** = preço base + valor acumulado do setor, no mínimo 1M. As startups do mesmo setor sobem e descem sempre juntas.
+**Histórico:** a UI guarda e mostra o preço de cada startup ronda a ronda num gráfico de velas (abertura, máximo, mínimo e fecho), aberto pelo nome da startup.
 
-**Trabalhadores:** pool partilhada de 12 (3 de cada tipo).
+**Preço de mercado** = preço base + valor acumulado do setor + 1M por cada PR (de qualquer jogador) na startup, no mínimo 1M. As startups do mesmo setor sobem e descem juntas (o PR é a única diferença).
 
-| Tipo | Dividendo base por ação e por ronda |
-|---|---|
-| Engenheiro | 2M |
-| Advogado | 1M |
-| PR | 1M |
-| CFO | 1M |
+**Trabalhadores:** pool partilhada com **uma cópia de cada tipo por jogador** (2 jogadores: 8; 3: 12; 4: 16), para ninguém ficar sem tipos.
 
-- **Estagiário:** grátis; gera o dividendo base.
-- **Sénior:** custa 2M ao contratar e 1M por ronda de salário; gera o **dobro**.
+| Tipo | O que rende (antes do nível) | Efeito próprio |
+|---|---|---|
+| Engenheiro | 2M por ação e por ronda | — |
+| Advogado | 1M por ação e por ronda | **Protege** a startup de implodir |
+| PR | 1M por ação e por ronda | **+1M ao preço** da startup |
+| CFO | **Renda fixa de 2M por ronda**, mesmo sem ações | — |
+
+**Nível** (depende da ordem em que contratas; fica fixo ao contratar):
+
+| Contratado | Nível | Rende | Custa a contratar | Salário por ronda |
+|---|---|---|---|---|
+| 1.º | Estagiário | ×1 | 0M | 0M |
+| 2.º | Júnior | ×2 | 1M | 1M |
+| 3.º | Mid | ×3 | 2M | 2M |
+| 4.º em diante | Sénior | ×4 | 3M | 3M |
+
+Despedir devolve o trabalhador à pool mas não promove nem despromove os outros: o seguinte que contratares tem o nível que a tua equipa atual dá.
+
+Quanto mais nível, mais rende (também a renda fixa do CFO), mas mais caro é manter a equipa: uma equipa de 4 paga 6M por ronda.
 
 ## Preparação
 
@@ -47,20 +59,20 @@ Cada CEO tem um **setor de afinidade**, que recebe sempre **+1M** antes do efeit
 
 | CEO | Arquétipo | Afinidade | Dado | Efeito |
 |---|---|---|---|---|
-| Elon V. | Caótico Visionário | Energia | sim | IA +⌊dado/2⌋M; com 5 ou 6, implode uma startup |
+| Elon V. | Caótico Visionário | Energia | sim | IA +⌊dado/2⌋M; com 5 ou 6, implode uma startup (a mais cara sem Advogado) |
 | Mark Z. | Metódico Controlador | Fintech | não | Fintech +2M, IA −1M |
 | Sam A. | Hype Master | IA | sim | IA +dado M, Biotech −1M |
 | Jensen H. | Técnico Preciso | IA | não | IA +3M, Energia −1M |
 | Reed H. | Pivot Constante | Fintech | sim | O setor n.º (dado mod 5) sobe 2M e o n.º ((dado+2) mod 5) desce 2M, pela ordem IA, Fintech, Segurança, Biotech, Energia |
-| Travis K. | Disruptivo | Segurança | sim | Implode uma startup (salvo "seguro"); Segurança +(dado−2)M |
+| Travis K. | Disruptivo | Segurança | sim | Implode uma startup (a mais cara sem Advogado; salvo "seguro"); Segurança +(dado−2)M |
 | Elizabeth H. | Fraude Elegante | Biotech | não | Biotech +4M agora e **−4M no início da ronda seguinte** |
 | Brian C. | Partilha de Risco | Energia | não | Todos os setores +1M; nenhuma startup implode nessa ronda ("seguro") |
 | Adam N. | Wellness Caótico | Biotech | sim | Biotech +(dado−3)M; salários +1M nessa ronda |
 | Patrick C. | Crescimento Metódico | Fintech | não | Fintech +2M, Segurança +1M |
-| Sam B. | Colapso Espectacular | Fintech | sim | Dado ≥ 4: implode uma startup; abaixo: Fintech +4M |
+| Sam B. | Colapso Espectacular | Fintech | sim | Dado ≥ 4: implode uma startup (a mais cara sem Advogado); abaixo: Fintech +4M |
 | Whitney W. | Exit Queen | Segurança | não | O multiplicador dos Gates seguintes sobe 1 nível (acumula) |
 
-Uma startup que **implode** deixa de valer: não se compra, não paga dividendos, não conta na pontuação e não se vende. A que implode é escolhida ao acaso entre as vivas.
+Uma startup que **implode** deixa de valer: não se compra, não paga dividendos, não conta na pontuação e não se vende. Implode **a startup viva mais cara que não tenha um Advogado** (de qualquer jogador); se houver empate no preço, sorteia-se entre as mais caras. Se todas as startups vivas tiverem Advogado, nada implode.
 
 ## A ronda
 
@@ -80,10 +92,10 @@ Há **12 rondas**, uma por CEO. Cada ronda:
 
 ### Mercado
 
-- **Comprar** (`SP_BUY`): `qty` ações de uma startup viva ao preço atual. **Máximo 4 ações da mesma startup por jogador.**
+- **Comprar** (`SP_BUY`): `qty` ações de uma startup viva ao preço atual. **Máximo 4 ações da mesma startup por jogador e 9 no total** (em startups vivas): só dá para ter 2 ou 3 maiorias. Vender liberta espaço.
 - **Vender no mercado** (`SP_SELL_MARKET`): a qualquer momento da fase de Mercado, sem Gate nem maioria, ao preço atual e **sem multiplicador**. É a saída de liquidez de quem não tem maioria.
-- **Vender no Gate** (`SP_SELL_STARTUP`): só com o Gate aberto e com **maioria real** (mais de 50% das ações emitidas da startup; empatar ou ser o maior não chega). Recebe `preço × ações × multiplicador` e perde todas as ações dessa startup. Não se vende uma startup implodida.
-- **Trocar no Gate** (`SP_TRADE_PROPOSE`): com o Gate aberto, o jogador propõe a outro trocar **todas** as suas ações de uma startup por **todas** as ações que ele tem noutra. A troca só se faz se o outro **aceitar** (`SP_TRADE_ACCEPT`); se recusar (`SP_TRADE_REJECT`), nada muda e o proponente continua o turno. Ambos têm de ter ações das startups trocadas e a troca não pode dar a ninguém mais de 4 ações da mesma startup.
+- **Vender no Gate** (`SP_SELL_STARTUP`): só com o Gate aberto e com **maioria real** (mais de 50% das ações emitidas da startup; empatar ou ser o maior não chega). Recebe `preço × ações × multiplicador` e perde todas as ações dessa startup. Não se vende uma startup implodida, nem uma startup em que se comprou **nesse mesmo turno** (senão bastava comprar uma ação e vendê-la logo ao multiplicador, sem limite).
+- **Trocar no Gate** (`SP_TRADE_PROPOSE`): com o Gate aberto, o jogador propõe a outro trocar **todas** as suas ações de uma startup por **todas** as ações que ele tem noutra. A troca só se faz se o outro **aceitar** (`SP_TRADE_ACCEPT`); se recusar (`SP_TRADE_REJECT`), nada muda e o proponente continua o turno. Ambos têm de ter ações das startups trocadas e a troca não pode dar a ninguém mais de 4 ações da mesma startup nem mais de 9 no total.
 - **Fechar o Mercado** (`SP_END_MARKET`): passa à Manutenção.
 
 ### Gate de Venda
@@ -98,20 +110,22 @@ O resultado arredonda-se e soma-se o bónus acumulado da Whitney W. O Gate fica 
 
 ### Manutenção
 
-- **Contratar** (`SP_HIRE`): tira um trabalhador da pool e põe-no numa startup (não é preciso ter ações nela, mas só se recebem dividendos dela com ações). Estagiário grátis ou Sénior por 2M. **Máximo 1 de cada tipo por startup e 4 trabalhadores por jogador.**
+- **Contratar** (`SP_HIRE`): tira um trabalhador da pool e põe-no numa startup (não é preciso ter ações nela, mas só se recebem dividendos dela com ações). O nível (e o custo) sai da ordem de contratação. **Máximo 1 de cada tipo por startup; não há limite fixo de trabalhadores**, só a pool e o custo.
 - **Despedir** (`SP_FIRE`): o trabalhador volta à pool.
-- **Mover** (`SP_MOVE_WORKER`): muda um trabalhador de startup, com indemnização de 1M (Estagiário) ou 2M (Sénior); não para a mesma startup nem onde já tens um desse tipo.
-- **Pagar salários** (`SP_PAY_SALARY`): 1M (mais a sobretaxa do Adam N.) por cada Sénior. Quem não tiver cash para um Sénior perde-o: volta à pool. Os salários por pagar cobram-se sozinhos ao terminar o turno.
+- **Mover** (`SP_MOVE_WORKER`): muda um trabalhador de startup, com indemnização igual ao salário (mínimo 1M); não para a mesma startup nem onde já tens um desse tipo.
+- **Salários** (de cada trabalhador com salário, mais 1M de sobretaxa com o Adam N.): **pagar é opcional**. Por trabalhador podes **pagar** (`SP_PAY_SALARY`, ou sem `worker` para pagar todos os que o cash deixar) ou **arriscar** (`SP_RISK_SALARY`): não pagas e **lança-se um dado**; com **6 o trabalhador fica** (sem receber), com **qualquer outro número vai-se embora** e volta à pool. Arriscar não custa cash e podes fazê-lo mesmo tendo dinheiro. O que não decidires cobra-se ao terminar o turno: paga-se se houver cash e, se não houver, **lança-se o dado**. Quem se paga (ou arrisca) neste turno não se cobra outra vez. A mesa avisa sempre o que aconteceu.
 - **Terminar o turno** (`SP_END_TURN`).
 
 ### Dividendos
 
-No fim de cada ronda, para cada startup viva em que o jogador tem ações **e** pelo menos um trabalhador seu:
+No fim de cada ronda, para cada startup viva onde o jogador tem trabalhadores:
 
 ```
-dividendo por ação = Σ (dividendo base do tipo × 2 se for Sénior)
-ganho = ações × dividendo por ação
+por ação = Σ (dividendo do tipo × 2 se for Sénior), para Engenheiro, Advogado e PR (nível: ×1 a ×4)
+ganho = ações × por ação + Σ (2M × nível), para os CFO
 ```
+
+Sem ações, só os CFO rendem. Sem trabalhadores, nada. A UI mostra o que cada trabalhador rende e o total previsto.
 
 ## Fim do jogo
 
@@ -119,9 +133,9 @@ Pontuação = `cash + Σ (ações × preço atual)` das startups não implodidas
 
 ## Estratégia (resumo)
 
-1. Os dividendos compõem o cash: uma ação sem trabalhador não paga nada, e o Engenheiro Sénior (4M por ação) costuma ser o melhor investimento.
-2. A maioria real é o que abre o Gate. Concentra onde queres maioria; diversifica onde só queres exposição.
+1. Os dividendos compõem o cash: uma ação sem trabalhador não paga nada, e o Engenheiro Sénior (4M por ação) costuma ser o melhor investimento. O CFO dá cash logo desde a ronda 1, sem ações. Cada trabalhador a mais custa mais: pensa antes de passares do 3.º.
+2. A maioria real é o que abre o Gate. Com 9 ações no total, escolhe 2 ou 3 startups onde queres maioria.
 3. O CEO é revelado antes de jogares: reage a setores que acabaram de cair.
-4. Elon V., Travis K. e Sam B. podem fazer implodir uma startup: não ponhas tudo numa só.
-5. Mantém cash para os salários dos Séniores.
+4. Elon V., Travis K. e Sam B. fazem implodir a startup mais cara sem Advogado: ser dono da líder tem risco. Um Advogado protege a startup (e as ações de todos os que a têm); um PR sobe-lhe o preço.
+5. Mantém cash para os salários: sem pagamento há um dado, e só com um 6 o trabalhador fica. Arriscar de propósito poupa cash, mas 5 em 6 perdes o trabalhador.
 6. Só o Gate realiza o multiplicador; ações guardadas até ao fim valem o preço normal.

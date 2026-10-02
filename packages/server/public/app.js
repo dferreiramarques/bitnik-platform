@@ -5,6 +5,7 @@
 import { BitnikClient } from '/sdk/client.js';
 import { translate } from '/engine/i18n.js';
 import { applyGameSkin, applyOverrides } from '/appearance.js';
+import { createTour, createSession } from '/tour.js';
 
 const UI = {
   pt: {
@@ -23,6 +24,7 @@ const UI = {
     points: '{n} pts', again: 'Jogar outra vez', system: 'Jogo',
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
+    install: 'Instalar app', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
     timer: '{event} em {s} s',
     expired: 'Versão antiga ({from}), já não pode ser retomada',
     expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
@@ -30,6 +32,7 @@ const UI = {
     inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
+    'tour.step': 'Passo {n} de {total}', 'tour.next': 'Seguinte', 'tour.skip': 'Saltar tutorial', 'tour.exit': 'Sair', 'tour.playReal': 'Jogar a sério',
     notices: 'Avisos', back: 'Voltar ao lobby', howToPlay: 'Como se joga', seeTable: 'Ver a mesa', lobby: 'Lobby',
     writeName: 'Escreve o teu nome',
     homeNote: 'A tua mesa contra bots, as mesas com outras pessoas e as de aprovação estão no lobby de cada jogo.',
@@ -57,6 +60,7 @@ const UI = {
     points: '{n} pts', again: 'Play again', system: 'Game',
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
+    install: 'Install app', installIos: 'To install: tap Share, then "Add to Home Screen".',
     timer: '{event} in {s} s',
     expired: 'Old version ({from}), can no longer be resumed',
     expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
@@ -64,6 +68,7 @@ const UI = {
     inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
+    'tour.step': 'Step {n} of {total}', 'tour.next': 'Next', 'tour.skip': 'Skip tutorial', 'tour.exit': 'Exit', 'tour.playReal': 'Play for real',
     notices: 'Notices', back: 'Back to lobby', howToPlay: 'How to play', seeTable: 'See the table', lobby: 'Lobby',
     writeName: 'Type your name',
     homeNote: 'Your table against bots, tables with other people and review tables are in each game\'s lobby.',
@@ -237,7 +242,7 @@ function renderLobby(only = null) {
       <div class="lob-head">
         <div class="lob-title"><h1>${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</h1>
           <p>${playersText(g.players)}</p></div>
-        ${guideLink(g, g.id)}
+        <div class="lob-tools">${installButton()}${guideLink(g, g.id)}</div>
       </div>
       <div class="lob-name">${nameField({ compact: true })}</div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
@@ -487,9 +492,35 @@ function guideButton(meta) {
 }
 
 /** Como guideButton(), mas com texto (lobby e sala de espera, antes da mesa). */
+/**
+ * Instalar a app (PWA): o manifest é da marca, por isso instala o lobby com os
+ * jogos deste deploy. Chrome, Edge e Android dão o evento `beforeinstallprompt`;
+ * o iOS não — aí só se explica o caminho manual. Some quando já está instalada
+ * (modo standalone).
+ */
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installButton() {
+  if (isStandalone() || app.installed || (!app.installEvent && !isIos())) return '';
+  return `<button class="lob-btn" data-install><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>${u('install')}</button>`;
+}
+async function installApp() {
+  const ev = app.installEvent;
+  if (!ev) { toast(u('installIos')); return; }
+  app.installEvent = null; // o pedido só se pode usar uma vez
+  ev.prompt();
+  if ((await ev.userChoice).outcome === 'accepted') app.installed = true;
+  if (!routeRoom()) render();
+}
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); app.installEvent = e; if (!routeRoom()) render(); });
+window.addEventListener('appinstalled', () => { app.installEvent = null; app.installed = true; if (!routeRoom()) render(); });
+
 function guideLink(meta, id) {
   const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
-  if (meta?.rules) return `<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
+  const play = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
+  // O tutorial interativo tem botão próprio: com regras escritas (modal), deixava de se chegar a ele.
+  const tutorial = meta?.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(id)}">${play}${u('tutorial')}</a>` : '';
+  if (meta?.rules) return `${tutorial}<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
   if (meta?.tutorial) return `<a class="lob-btn" href="#/tutorial/${esc(id)}">${icon}${u('howToPlay')}</a>`;
   return '';
 }
@@ -882,6 +913,9 @@ async function syncTutorial(gameId) {
     toast,
     exit: () => goGame(gameId),
     playReal: (n) => client.createSolo(gameId, n),
+    // Guia de passos e partida local (tour.js): o pacote só dá os passos, os textos e, se quiser, o cenário.
+    session: (o) => createSession({ ...o, boardCtx: { ...o.boardCtx, toast } }),
+    tour: (o) => createTour({ ...o, ui: (key, params) => u(key, params), exit: () => goGame(gameId), playReal: (n) => client.createSolo(gameId, n) }),
   });
 }
 
@@ -984,6 +1018,7 @@ $('#view').addEventListener('click', (e) => {
   if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
   if ('reg' in d) { app.regOpen = !app.regOpen; render(); return; }
   if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
+  if ('install' in d) { installApp(); return; }
   if ('rules' in d) { app.rulesOpen = true; render(); return; }
   if ('closerules' in d) { app.rulesOpen = false; render(); return; }
   const roomId = app.room?.room.id;

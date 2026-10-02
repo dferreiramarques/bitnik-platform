@@ -67,7 +67,7 @@ test('Todas as chaves err./log./msg. usadas nas regras existem em PT e EN', () =
   for (const k of usadas) for (const l of ['pt', 'en']) assert.ok(k in game.i18n[l], `${l}: falta ${k}`);
 });
 
-test('Preparação: 10 startups em 5 setores, 10M cada, 12 CEOs, 12 trabalhadores', () => {
+test('Preparação: 10 startups em 5 setores, 10M cada, 12 CEOs e uma cópia de cada tipo de trabalhador por jogador', () => {
   for (const n of [2, 3, 4]) {
     const s = novo(n).state;
     assert.equal(s.startups.length, 10);
@@ -75,8 +75,8 @@ test('Preparação: 10 startups em 5 setores, 10M cada, 12 CEOs, 12 trabalhadore
     for (const x of SETORES) assert.equal(s.startups.filter((y) => y.setor === x).length, 2);
     assert.ok(s.jogadores.every((j) => j.cash === 10 && j.trab.length === 0));
     assert.deepEqual([...s.baralho].sort(), [...CEO_IDS].sort());
-    assert.equal(s.pool.length, 12);
-    for (const t of ['engineer', 'lawyer', 'pr', 'cfo']) assert.equal(s.pool.filter((w) => w.tipo === t).length, 3);
+    assert.equal(s.pool.length, 4 * n);
+    for (const t of ['engineer', 'lawyer', 'pr', 'cfo']) assert.equal(s.pool.filter((w) => w.tipo === t).length, n);
     assert.equal(s.ronda, 1);
     assert.equal(s.fase, 'MERCADO');
   }
@@ -129,7 +129,7 @@ test('Cada ronda revela um CEO e o seu setor de afinidade recebe sempre +1M', ()
 const setor = (s, x) => s.setores[x];
 const implodidas = (s) => s.startups.filter((x) => x.implodida).length;
 
-test('CEO Elon V.: IA sobe ⌊dado/2⌋M; com 5 ou 6 implode uma startup', () => {
+test('CEO Elon V.: IA sobe ⌊dado/2⌋M; com 5 ou 6 implode a startup mais cara', () => {
   let s = limpo(); CEOS.ev.efeito(s, falso(), 4);
   assert.equal(setor(s, 'ia'), 2); assert.equal(implodidas(s), 0);
   s = limpo(); CEOS.ev.efeito(s, falso(), 5);
@@ -207,6 +207,82 @@ test('CEO Whitney W.: o multiplicador do Gate sobe 1 nível', () => {
   assert.equal(s.bonusGate, 1);
 });
 
+test('Implosão: atinge a startup viva mais cara; com empate, sorteia entre as mais caras', () => {
+  const s = limpo();
+  CEOS.sb.efeito(s, falso(), 4); // CashBurn (4M) é a única mais cara
+  assert.deepEqual(s.startups.filter((x) => x.implodida).map((x) => x.id), ['cashburn']);
+  CEOS.sb.efeito(s, { ...falso(), rng: { pick: (a) => a.at(-1) } }, 4); // agora CRISPRash 4M
+  assert.deepEqual(s.startups.filter((x) => x.implodida).map((x) => x.id), ['cashburn', 'crispash']);
+  const t = limpo(); t.startups.find((x) => x.id === 'cashburn').preco = 9;
+  CEOS.sb.efeito(t, falso(), 4);
+  assert.ok(t.startups.find((x) => x.id === 'cashburn').implodida);
+});
+
+test('Advogado: a startup onde há um Advogado (de qualquer jogador) não implode; a seguinte mais cara sim', () => {
+  const s = limpo();
+  s.jogadores[1].trab = [{ id: 'l', tipo: 'lawyer', nome: 'x', startup: 'cashburn', nivel: 0 }];
+  CEOS.sb.efeito(s, falso(), 4);
+  assert.equal(s.startups.find((x) => x.id === 'cashburn').implodida, false);
+  assert.equal(s.startups.find((x) => x.id === 'crispash').implodida, true); // a seguinte mais cara (4M)
+  const t = limpo();
+  for (const x of t.startups) t.jogadores[0].trab.push({ id: 'l' + x.id, tipo: 'lawyer', nome: 'x', startup: x.id, nivel: 0 });
+  CEOS.sb.efeito(t, falso(), 4);
+  assert.equal(t.startups.filter((x) => x.implodida).length, 0);
+});
+
+test('PR: cada PR numa startup sobe 1M ao preço, e desfaz-se ao despedir ou mover', () => {
+  let m = manutencao(novo(2, 'pr'));
+  const j = vez(m);
+  const antes = su(m, 'deepanic').preco;
+  m = jogar(m, j, 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'pr').id, startup: 'deepanic', nivel: 0 });
+  assert.equal(su(m, 'deepanic').preco, antes + 1);
+  const w = jog(m, j).trab[0];
+  m = jogar(m, j, 'SP_MOVE_WORKER', { worker: w.id, startup: 'halluci' });
+  assert.equal(su(m, 'deepanic').preco, antes);
+  assert.equal(su(m, 'halluci').preco, 3);
+  m = jogar(m, j, 'SP_FIRE', { worker: w.id });
+  assert.equal(su(m, 'halluci').preco, 2);
+});
+
+test('CFO: renda fixa de 2M por ronda, multiplicada pelo nível, sem precisar de ações', () => {
+  let m = proximaWhitney(novo(2, 'cfo'));
+  const j = m.state.ordem[0];
+  m = tweak(m, (s) => {
+    s.jogadores[j].trab = [{ id: 'c1', tipo: 'cfo', nome: 'x', startup: 'deepanic', nivel: 0 }, { id: 'c2', tipo: 'cfo', nome: 'y', startup: 'halluci', nivel: 1 }];
+    s.pool = s.pool.filter((p) => !['c1', 'c2'].includes(p.id));
+  });
+  m = fecharRonda(m);
+  assert.equal(jog(m, j).cash, 10 - 1 + 2 + 4); // salário do Júnior (1M) + 2M do Estagiário + 4M do Júnior
+  assert.deepEqual(m.state.dividendos.map((d) => [d.startup, d.ganho]), [['deepanic', 2], ['halluci', 4]]);
+});
+
+test('Previsão: o view mostra o que cada trabalhador rende e os dividendos previstos', () => {
+  const m = tweak(novo(2, 'prev'), (s) => {
+    su({ state: s }, 'deepanic').acoes[0] = 3;
+    s.jogadores[0].trab = [
+      { id: 'a', tipo: 'engineer', nome: 'x', startup: 'deepanic', nivel: 3 }, // 3 ações × 2M × 4
+      { id: 'b', tipo: 'lawyer', nome: 'y', startup: 'deepanic', nivel: 0 }, // 3 ações × 1M × 1
+      { id: 'c', tipo: 'cfo', nome: 'z', startup: 'halluci', nivel: 1 }, // 2M × 2
+    ];
+    s.jogadores[0].cash = 4;
+  });
+  const v = viewFor(game, m, 0).view;
+  assert.deepEqual(v.jogadores[0].trab.map((w) => w.rende), [24, 3, 4]);
+  assert.equal(v.jogadores[0].previsao.reduce((a, d) => a + d.ganho, 0), 31);
+  assert.equal(v.meuPatrimonio, 4 + 3 * su(m, 'deepanic').preco);
+  assert.equal(viewFor(game, m, 1).view.meuPatrimonio, 10);
+  assert.equal(v.startups.find((x) => x.id === 'deepanic').protegida, true);
+  assert.equal(v.meusSalarios, 3 + 1);
+  assert.deepEqual([v.proximo.nivel, v.proximo.custo], [3, 3]);
+});
+
+test('Variação: o estado guarda quanto o CEO da ronda mexeu no preço de cada startup', () => {
+  const m = fecharRonda(proximaWhitney(novo(2, 'var'))); // Whitney: afinidade Segurança +1M
+  assert.equal(m.state.ceo.id, 'ww');
+  assert.deepEqual(Object.entries(m.state.variacoes).filter(([, d]) => d !== 0).sort(), [['hackshield', 1], ['zerotrust', 1]]);
+  assert.equal(viewFor(game, m, 0).view.variacoes.hackshield, 1);
+});
+
 test('Uma implosão deixa a startup sem valor: sai da pontuação e das compras', () => {
   let m = novo(2, 'imp');
   m = tweak(m, (s) => { const j = vez(m); s.startups[0].acoes[j] = 2; s.startups[0].implodida = true; s.jogadores[j].cash = 5; });
@@ -269,6 +345,19 @@ test('Gate de Venda: recusado com o Gate fechado, fora do Mercado ou numa startu
   recusa(base((s) => { su({ state: s }, 'deepanic').implodida = true; }), j, 'SP_SELL_STARTUP', { startup: 'deepanic' }, 'err.IMPLODIDA');
 });
 
+test('Gate de Venda: não se vende uma startup em que se comprou nesse mesmo turno', () => {
+  let m = gate(mercado(novo(2, 'cv')), 5);
+  const j = vez(m);
+  m = jogar(m, j, 'SP_BUY', { startup: 'halluci', qty: 1 }); // maioria imediata, mas comprada agora
+  recusa(m, j, 'SP_SELL_STARTUP', { startup: 'halluci' }, 'err.COMPRADA_NO_TURNO');
+  assert.ok(!game.enumerate(m.state, j).some((x) => x.type === 'SP_SELL_STARTUP'));
+  m = jogar(jogar(m, j, 'SP_END_MARKET'), j, 'SP_END_TURN');
+  m = jogar(jogar(m, vez(m), 'SP_END_MARKET'), vez(m), 'SP_END_TURN'); // a ronda fecha; o Gate fecha com ela
+  m = gate(mercado(m), 5);
+  assert.deepEqual(m.state.compradas, []);
+  jogar(m, vez(m), 'SP_SELL_STARTUP', { startup: 'halluci' }); // numa vez seguinte já pode vender
+});
+
 test('Venda livre no mercado: ao preço atual, sem multiplicador, sem Gate e sem maioria', () => {
   let m = mercado(novo(2, 'vm'));
   const j = vez(m);
@@ -295,6 +384,16 @@ test('Troca no Gate: o outro jogador tem de aceitar; troca todas as ações de u
   const recusada = jogar(m, b, 'SP_TRADE_REJECT');
   assert.deepEqual(su(recusada, 'deepanic').acoes, [2, 0].map((x, i) => (i === a ? 2 : 0)));
   assert.deepEqual(activeSeats(game, recusada), [a]);
+});
+
+test('Troca no Gate: respeita o limite total de 9 ações de cada um', () => {
+  const base = gate(mercado(novo(2, 'trt')), 5);
+  const a = vez(base), b = 1 - a;
+  const com = tweak(base, (s) => {
+    su({ state: s }, 'deepanic').acoes[a] = 1; su({ state: s }, 'cashburn').acoes[b] = 4;
+    su({ state: s }, 'halluci').acoes[a] = 4; su({ state: s }, 'crispash').acoes[a] = 4; // a tem 9; ficaria com 12
+  });
+  recusa(com, a, 'SP_TRADE_PROPOSE', { de: 'deepanic', para: b, por: 'cashburn' }, 'err.MAX_TOTAL');
 });
 
 test('Troca no Gate: só com o Gate aberto, com ações dos dois lados e respeitando o máximo de 4 ações', () => {
@@ -327,6 +426,25 @@ test('Comprar: sem cash suficiente é recusado', () => {
   recusa(m, j, 'SP_BUY', { startup: 'cashburn', qty: 1 }, 'err.CASH');
 });
 
+test('Comprar: máximo de 9 ações no total, em todas as startups (só dá para ter 2 ou 3 maiorias)', () => {
+  let m = mercado(novo(2, 'bt'));
+  const j = vez(m);
+  m = tweak(m, (s) => { s.jogadores[j].cash = 99; su({ state: s }, 'deepanic').acoes[j] = 4; su({ state: s }, 'cashburn').acoes[j] = 4; });
+  m = jogar(m, j, 'SP_BUY', { startup: 'halluci', qty: 1 }); // 9.ª ação
+  recusa(m, j, 'SP_BUY', { startup: 'halluci', qty: 1 }, 'err.MAX_TOTAL');
+  recusa(m, j, 'SP_BUY', { startup: 'solarscam', qty: 1 }, 'err.MAX_TOTAL');
+  assert.ok(!game.enumerate(m.state, j).some((x) => x.type === 'SP_BUY'));
+  m = jogar(m, j, 'SP_SELL_MARKET', { startup: 'cashburn', qty: 2 }); // vender liberta espaço
+  jogar(m, j, 'SP_BUY', { startup: 'solarscam', qty: 2 });
+});
+
+test('Comprar: as ações de startups implodidas não contam para o limite total', () => {
+  let m = mercado(novo(2, 'bti'));
+  const j = vez(m);
+  m = tweak(m, (s) => { s.jogadores[j].cash = 99; su({ state: s }, 'deepanic').acoes[j] = 4; su({ state: s }, 'deepanic').implodida = true; su({ state: s }, 'cashburn').acoes[j] = 4; });
+  jogar(m, j, 'SP_BUY', { startup: 'halluci', qty: 4 });
+});
+
 test('Comprar: máximo de 4 ações da mesma startup por jogador', () => {
   let m = mercado(novo(2, 'bm'));
   const j = vez(m);
@@ -351,33 +469,41 @@ test('Fechar Mercado: passa à Manutenção', () => {
 
 const contratar = (m, tipo, startup, senior = false) => jogar(m, vez(m), 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === tipo).id, startup, senior });
 
-test('Contratar: o Estagiário é grátis e o Sénior custa 2M; o trabalhador sai da pool', () => {
-  let m = manutencao(novo(2, 'h'));
+test('Contratar: o nível sai da ordem — Estagiário grátis, Júnior, Mid e do 4.º em diante Sénior; custo cresce', () => {
+  let m = tweak(manutencao(novo(2, 'h')), (s) => { s.jogadores[s.ordem[s.pos]].cash = 50; });
   const j = vez(m);
-  m = contratar(m, 'engineer', 'deepanic');
-  assert.equal(jog(m, j).cash, 10);
-  assert.equal(m.state.pool.length, 11);
-  assert.equal(jog(m, j).trab[0].senior, false);
-  m = contratar(m, 'lawyer', 'deepanic', true);
-  assert.equal(jog(m, j).cash, 8);
-  assert.equal(jog(m, j).trab[1].senior, true);
+  const esperado = [[0, 0], [1, 1], [2, 2], [3, 3], [3, 3]]; // [nível, custo]
+  const tipos = ['engineer', 'lawyer', 'pr', 'cfo', 'engineer'];
+  const sus = ['deepanic', 'deepanic', 'deepanic', 'deepanic', 'halluci'];
+  esperado.forEach(([nivel, custo], i) => {
+    const antes = jog(m, j).cash;
+    m = jogar(m, j, 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === tipos[i]).id, startup: sus[i] });
+    assert.equal(jog(m, j).trab[i].nivel, nivel, `contratado ${i + 1}`);
+    assert.equal(antes - jog(m, j).cash, custo);
+  });
+  assert.equal(m.state.pool.length, 8 - 5);
 });
 
 test('Contratar: no máximo 1 trabalhador de cada tipo por startup', () => {
   let m = contratar(manutencao(novo(2, 'h1')), 'engineer', 'deepanic');
-  recusa(m, vez(m), 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'engineer').id, startup: 'deepanic', senior: false }, 'err.TIPO_REPETIDO');
+  recusa(m, vez(m), 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'engineer').id, startup: 'deepanic', nivel: 0 }, 'err.TIPO_REPETIDO');
   contratar(m, 'engineer', 'halluci'); // noutra startup já pode
 });
 
-test('Contratar: no máximo 4 trabalhadores por jogador', () => {
-  let m = manutencao(novo(2, 'h4'));
-  for (const [t, s] of [['engineer', 'deepanic'], ['lawyer', 'deepanic'], ['pr', 'deepanic'], ['cfo', 'deepanic']]) m = contratar(m, t, s);
-  recusa(m, vez(m), 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'engineer').id, startup: 'halluci' }, 'err.MAX_TRABALHADORES');
+test('Contratar: sem limite fixo de trabalhadores, só a pool e o custo; a pool tem uma cópia de cada tipo por jogador', () => {
+  let m = tweak(manutencao(novo(2, 'h4')), (s) => { s.jogadores[s.ordem[s.pos]].cash = 99; });
+  for (const [t, s] of [['engineer', 'deepanic'], ['lawyer', 'deepanic'], ['pr', 'deepanic'], ['cfo', 'deepanic'], ['engineer', 'halluci']]) m = contratar(m, t, s);
+  assert.equal(jog(m, vez(m)).trab.length, 5);
+  m = contratar(m, 'lawyer', 'halluci');
+  m = contratar(m, 'pr', 'halluci');
+  m = contratar(m, 'cfo', 'halluci');
+  recusa(m, vez(m), 'SP_HIRE', { worker: 'nao_existe', startup: 'halluci' }, 'err.TRABALHADOR'); // a pool de 8 acabou
+  assert.equal(m.state.pool.length, 0);
 });
 
-test('Contratar: Sénior sem 2M é recusado e o trabalhador tem de estar na pool', () => {
-  let m = tweak(manutencao(novo(2, 'h2')), (s) => { s.jogadores[s.ordem[s.pos]].cash = 1; });
-  recusa(m, vez(m), 'SP_HIRE', { worker: m.state.pool[0].id, startup: 'deepanic', senior: true }, 'err.CASH');
+test('Contratar: sem cash para o custo do nível é recusado, e o trabalhador tem de estar na pool', () => {
+  let m = tweak(contratar(manutencao(novo(2, 'h2')), 'engineer', 'deepanic'), (s) => { s.jogadores[s.ordem[s.pos]].cash = 0; });
+  recusa(m, vez(m), 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'cfo').id, startup: 'deepanic' }, 'err.CASH'); // o 2.º é Júnior: 1M
   recusa(m, vez(m), 'SP_HIRE', { worker: 'nao_existe', startup: 'deepanic' }, 'err.TRABALHADOR');
 });
 
@@ -389,13 +515,15 @@ test('Despedir: o trabalhador volta à pool partilhada', () => {
   assert.ok(m.state.pool.some((w) => w.id === id));
 });
 
-test('Mover trabalhador: indemnização de 1M (Estagiário) ou 2M (Sénior)', () => {
-  let m = contratar(contratar(manutencao(novo(2, 'mv')), 'engineer', 'deepanic'), 'lawyer', 'deepanic', true);
+test('Mover trabalhador: indemnização igual ao salário (mínimo 1M)', () => {
+  let m = contratar(contratar(tweak(manutencao(novo(2, 'mv')), (s) => { s.jogadores[s.ordem[s.pos]].cash = 20; }), 'engineer', 'deepanic'), 'lawyer', 'deepanic');
   const j = vez(m);
-  const [e, l] = jog(m, j).trab;
-  const antes = jog(m, j).cash;
+  const [e, l] = jog(m, j).trab; // Estagiário (salário 0 → 1M) e Júnior (1M)
+  let antes = jog(m, j).cash;
   m = jogar(m, j, 'SP_MOVE_WORKER', { worker: e.id, startup: 'halluci' });
   assert.equal(jog(m, j).cash, antes - 1);
+  m = tweak(m, (s) => { s.jogadores[j].trab[1].nivel = 3; });
+  antes = jog(m, j).cash;
   m = jogar(m, j, 'SP_MOVE_WORKER', { worker: l.id, startup: 'halluci' });
   assert.equal(jog(m, j).cash, antes - 3);
   assert.deepEqual(jog(m, j).trab.map((w) => w.startup), ['halluci', 'halluci']);
@@ -408,30 +536,116 @@ test('Mover trabalhador: não para a mesma startup nem onde já há um desse tip
   recusa(m, vez(m), 'SP_MOVE_WORKER', { worker: a.id, startup: 'halluci' }, 'err.TIPO_REPETIDO');
 });
 
-test('Salários: cada Sénior custa 1M (mais a sobretaxa) e só se paga uma vez por turno', () => {
-  let m = tweak(contratar(manutencao(novo(2, 'sal')), 'engineer', 'deepanic', true), (s) => { s.sobretaxa = 1; });
+test('Salários: cada trabalhador pago custa o seu salário (mais a sobretaxa) e só se paga uma vez por turno', () => {
+  let m = tweak(manutencao(novo(2, 'sal')), (s) => {
+    const j = s.ordem[s.pos];
+    s.jogadores[j].trab = [{ id: 'a', tipo: 'engineer', nome: 'x', startup: 'deepanic', nivel: 0 }, { id: 'b', tipo: 'cfo', nome: 'y', startup: 'halluci', nivel: 2 }];
+    s.pool = s.pool.filter((p) => !['a', 'b'].includes(p.id));
+    s.sobretaxa = 1;
+  });
   const j = vez(m);
   const antes = jog(m, j).cash;
   m = jogar(m, j, 'SP_PAY_SALARY');
-  assert.equal(jog(m, j).cash, antes - 2);
+  assert.equal(jog(m, j).cash, antes - 3); // o Estagiário não tem salário; o Mid paga 2M + 1M de sobretaxa
   recusa(m, j, 'SP_PAY_SALARY', {}, 'err.SEM_SALARIOS');
 });
 
-test('Salários: um Sénior sem salário abandona e volta à pool', () => {
-  let m = contratar(manutencao(novo(2, 'ab')), 'engineer', 'deepanic', true);
+test('Salários: sem cash, ao terminar o turno lança-se um dado: com 6 o trabalhador fica (sem receber), com outro número vai-se embora', () => {
+  const base = tweak(manutencao(novo(2, 'ab')), (s) => {
+    const j = s.ordem[s.pos];
+    s.jogadores[j].trab = [{ id: 'a', tipo: 'engineer', nome: 'Ada', startup: 'deepanic', nivel: 3 }];
+    s.pool = s.pool.filter((p) => p.id !== 'a');
+    s.jogadores[j].cash = 0;
+  });
+  const j = vez(base);
+  const resultados = new Set();
+  for (let i = 0; i < 40 && resultados.size < 2; i++) {
+    const m = jogar({ ...structuredClone(base), rng: i * 7919 + 1 }, j, 'SP_END_TURN');
+    const ficou = jog(m, j).trab.length === 1;
+    resultados.add(ficou);
+    const entrada = m.log.filter((e) => e.key === 'log.FICA' || e.key === 'log.ABANDONOU').at(-1);
+    assert.equal(entrada.key, ficou ? 'log.FICA' : 'log.ABANDONOU');
+    assert.ok(entrada.announce, 'o jogador é avisado com uma mensagem da mesa');
+    assert.equal(entrada.params.dado === 6, ficou);
+    assert.equal(jog(m, j).cash, 0);
+    if (!ficou) assert.ok(m.state.pool.some((w) => w.id === 'a'));
+  }
+  assert.equal(resultados.size, 2, 'viu-se um que ficou e um que saiu');
+});
+
+const comEquipa = (cash = 20) => tweak(manutencao(novo(2, 'opt')), (s) => {
+  const j = s.ordem[s.pos];
+  s.jogadores[j].trab = [
+    { id: 'a', tipo: 'engineer', nome: 'Ada', startup: 'deepanic', nivel: 0 }, // sem salário
+    { id: 'b', tipo: 'lawyer', nome: 'Saul', startup: 'deepanic', nivel: 1 }, // 1M
+    { id: 'c', tipo: 'pr', nome: 'Max', startup: 'halluci', nivel: 3 }, // 3M
+  ];
+  s.pool = s.pool.filter((p) => !['a', 'b', 'c'].includes(p.id));
+  s.jogadores[j].cash = cash;
+});
+
+test('Salários: pagar é opcional e um a um; o que se paga não se cobra outra vez ao terminar o turno', () => {
+  let m = comEquipa();
   const j = vez(m);
-  m = tweak(m, (s) => { s.jogadores[j].cash = 0; });
-  m = jogar(m, j, 'SP_PAY_SALARY');
-  assert.equal(jog(m, j).trab.length, 0);
-  assert.equal(m.state.pool.length, 12);
+  m = jogar(m, j, 'SP_PAY_SALARY', { worker: 'c' });
+  assert.equal(jog(m, j).cash, 17);
+  recusa(m, j, 'SP_PAY_SALARY', { worker: 'c' }, 'err.SEM_SALARIOS'); // já pago
+  recusa(m, j, 'SP_PAY_SALARY', { worker: 'a' }, 'err.SEM_SALARIOS'); // o Estagiário não tem salário
+  m = jogar(m, j, 'SP_END_TURN'); // cobra só o que faltava (o Júnior, 1M)
+  assert.equal(jog(m, j).cash, 16);
+  assert.equal(jog(m, j).trab.length, 3);
+});
+
+test('Salários: sem worker paga os de todos os que o cash deixa; um a um recusa o que não se pode pagar', () => {
+  let m = comEquipa(2);
+  const j = vez(m);
+  recusa(m, j, 'SP_PAY_SALARY', { worker: 'c' }, 'err.CASH'); // 3M e só há 2M
+  m = jogar(m, j, 'SP_PAY_SALARY'); // paga o Júnior (1M); o Sénior não dá
+  assert.equal(jog(m, j).cash, 1);
+  assert.deepEqual(m.state.pagos, ['b']);
+});
+
+test('Salários: arriscar — com cash para pagar, pode não pagar e jogar o dado (6 fica, outro número sai), sem gastar cash', () => {
+  const base = comEquipa(20);
+  const j = vez(base);
+  const resultados = new Set();
+  for (let i = 0; i < 40 && resultados.size < 2; i++) {
+    const m = jogar({ ...structuredClone(base), rng: i * 7919 + 1 }, j, 'SP_RISK_SALARY', { worker: 'c' });
+    const ficou = jog(m, j).trab.some((w) => w.id === 'c');
+    resultados.add(ficou);
+    assert.equal(jog(m, j).cash, 20, 'arriscar não custa cash');
+    const entrada = m.log.filter((e) => e.key === 'log.ARRISCOU_FICA' || e.key === 'log.ARRISCOU_SAI').at(-1);
+    assert.equal(entrada.key, ficou ? 'log.ARRISCOU_FICA' : 'log.ARRISCOU_SAI');
+    assert.ok(entrada.announce);
+    assert.equal(entrada.params.dado === 6, ficou);
+    assert.ok(m.state.pagos.includes('c') || !ficou, 'já está decidido neste turno');
+    recusa(m, j, 'SP_RISK_SALARY', { worker: 'c' }, 'err.SEM_SALARIOS');
+    if (!ficou) assert.ok(m.state.pool.some((w) => w.id === 'c'));
+    const fim = jogar(m, j, 'SP_END_TURN'); // o Júnior paga; o arriscado não se cobra outra vez
+    assert.equal(jog(fim, j).cash, 19);
+  }
+  assert.equal(resultados.size, 2);
+  recusa(base, j, 'SP_RISK_SALARY', { worker: 'a' }, 'err.SEM_SALARIOS'); // o Estagiário não tem salário
+});
+
+test('Salários: o view diz quanto cada trabalhador custa e se já foi tratado; enumerate oferece pagar ou arriscar', () => {
+  let m = comEquipa(20);
+  const j = vez(m);
+  let v = viewFor(game, m, j);
+  assert.deepEqual(v.view.jogadores[j].trab.map((w) => [w.salario, w.pago]), [[0, false], [1, false], [3, false]]);
+  assert.ok(v.legal.some((x) => x.type === 'SP_RISK_SALARY' && x.payload.worker === 'b'));
+  assert.ok(v.legal.some((x) => x.type === 'SP_PAY_SALARY' && x.payload.worker === 'c'));
+  m = jogar(m, j, 'SP_PAY_SALARY', { worker: 'b' });
+  v = viewFor(game, m, j);
+  assert.equal(v.view.jogadores[j].trab[1].pago, true);
+  assert.ok(!v.legal.some((x) => ['SP_PAY_SALARY', 'SP_RISK_SALARY'].includes(x.type) && x.payload?.worker === 'b'));
 });
 
 test('Terminar turno: cobra os salários por pagar e passa a vez', () => {
-  let m = contratar(manutencao(novo(2, 'et')), 'engineer', 'deepanic', true);
+  let m = tweak(contratar(contratar(manutencao(novo(2, 'et')), 'engineer', 'deepanic'), 'lawyer', 'deepanic'), (s) => { s.jogadores[s.ordem[s.pos]].cash = 5; });
   const j = vez(m);
-  const antes = jog(m, j).cash;
   m = jogar(m, j, 'SP_END_TURN');
-  assert.equal(jog(m, j).cash, antes - 1);
+  assert.equal(jog(m, j).cash, 4); // o Júnior (2.º) custa 1M por ronda
   assert.equal(m.state.fase, 'MERCADO');
   assert.notEqual(vez(m), j);
   assert.deepEqual(m.state.pagos, []);
@@ -441,19 +655,19 @@ test('Terminar turno: cobra os salários por pagar e passa a vez', () => {
 
 const proximaWhitney = (m) => tweak(m, (s) => { s.baralho[s.idx] = 'ww'; });
 
-test('Dividendos: ações × Σ(dividendo do tipo, a dobrar no Sénior), só com trabalhador na startup', () => {
+test('Dividendos: ações × Σ(dividendo do tipo × nível), só com trabalhador na startup', () => {
   let m = proximaWhitney(novo(2, 'div'));
   const j = m.state.ordem[0];
   m = tweak(m, (s) => {
     su({ state: s }, 'deepanic').acoes[j] = 3;
     su({ state: s }, 'cashburn').acoes[j] = 2; // sem trabalhadores: não paga
-    const w = (id, tipo, startup, senior) => ({ id, tipo, nome: id, startup, senior });
-    s.jogadores[j].trab = [w('x1', 'engineer', 'deepanic', true), w('x2', 'lawyer', 'deepanic', false)];
+    const w = (id, tipo, startup, nivel) => ({ id, tipo, nome: id, startup, nivel });
+    s.jogadores[j].trab = [w('x1', 'engineer', 'deepanic', 1), w('x2', 'lawyer', 'deepanic', 0)];
     s.pool = s.pool.filter((p) => !['x1', 'x2'].includes(p.id));
     s.jogadores[j].cash = 10;
   });
   m = fecharRonda(m);
-  // (2×2 + 1) × 3 ações = 15; o Sénior paga 1M de salário.
+  // (2M × 2 do Júnior + 1M × 1 do Estagiário) × 3 ações = 15; o Júnior cobra 1M de salário.
   assert.equal(jog(m, j).cash, 10 - 1 + 15);
   assert.deepEqual(m.state.dividendos.map((d) => [d.startup, d.ganho]), [['deepanic', 15]]);
 });
@@ -463,7 +677,7 @@ test('Dividendos: startups implodidas não pagam', () => {
   const j = m.state.ordem[0];
   m = tweak(m, (s) => {
     su({ state: s }, 'deepanic').acoes[j] = 3; su({ state: s }, 'deepanic').implodida = true;
-    s.jogadores[j].trab = [{ id: 'x1', tipo: 'engineer', nome: 'x', startup: 'deepanic', senior: false }];
+    s.jogadores[j].trab = [{ id: 'x1', tipo: 'engineer', nome: 'x', startup: 'deepanic', nivel: 0 }];
   });
   m = fecharRonda(m);
   assert.equal(jog(m, j).cash, 10);
@@ -558,7 +772,7 @@ test('Informação escondida: só o cash dos outros jogadores; ações, trabalha
   let m = tweak(novo(3, 'hid'), (s) => {
     s.jogadores[1].cash = 7;
     su({ state: s }, 'deepanic').acoes[1] = 2;
-    s.jogadores[1].trab = [{ id: 'x', tipo: 'pr', nome: 'x', startup: 'deepanic', senior: false }];
+    s.jogadores[1].trab = [{ id: 'x', tipo: 'pr', nome: 'x', startup: 'deepanic', nivel: 0 }];
   });
   const v = viewFor(game, m, 0).view;
   assert.equal(v.meuCash, 10);
@@ -580,4 +794,55 @@ test('Simulação: partidas completas com o bot por omissão acabam sem falhas',
     assert.equal(r.failures.length, 0);
     assert.equal(r.finished, 3);
   }
+});
+
+// ─── Histórico de preços (gráfico de velas) ──────────────────
+
+test('Histórico: cada ronda abre uma vela por startup viva e a vela acompanha o preço (abertura, máximo, mínimo, fecho)', () => {
+  let m = novo(2, 'hist');
+  assert.ok(Object.values(m.state.hist).every((v) => v.length === 1 && v[0].r === 1));
+  m = proximaWhitney(m);
+  m = fecharRonda(m); // ronda 2: Whitney dá +1M à Segurança
+  const h = m.state.hist;
+  assert.deepEqual(h.hackshield.map((c) => c.r), [1, 2]);
+  assert.deepEqual([h.hackshield[1].o, h.hackshield[1].c], [3, 4]); // abre ao preço em que a ronda 1 fechou
+  assert.equal(h.hackshield[0].c, 3);
+  assert.deepEqual([h.deepanic[1].o, h.deepanic[1].c], [3, 3]);
+  assert.equal(viewFor(game, m, 0).view.historico.hackshield.length, 2);
+});
+
+test('Histórico: contratar um PR a meio da ronda sobe o máximo da vela; despedir desce o fecho mas não o máximo', () => {
+  let m = manutencao(novo(2, 'histpr'));
+  const j = vez(m);
+  m = jogar(m, j, 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'pr').id, startup: 'deepanic' });
+  let c = m.state.hist.deepanic[0];
+  assert.deepEqual([c.o, c.h, c.l, c.c], [3, 4, 3, 4]);
+  m = jogar(m, j, 'SP_FIRE', { worker: jog(m, j).trab[0].id });
+  c = m.state.hist.deepanic[0];
+  assert.deepEqual([c.o, c.h, c.l, c.c], [3, 4, 3, 3]);
+});
+
+test('Histórico: a startup que implode fecha a vela a 0 (marcada) e deixa de ter velas novas', () => {
+  const m = fecharRonda(proximaWhitney(tweak(novo(2, 'histimp'), (s) => {
+    CEOS.sb.efeito(s, { log() {}, rng: { pick: (a) => a[0] } }, 4); // implode CashBurn, a mais cara
+  })));
+  const h = m.state.hist.cashburn;
+  assert.equal(h.length, 1);
+  assert.deepEqual([h[0].l, h[0].c, h[0].x], [0, 0, true]);
+  assert.equal(m.state.hist.deepanic.length, 2);
+});
+
+
+// ─── Cenário do tutorial ─────────────────────────────────────
+
+test('Cenário tutorial: o jogador 0 abre e os 3 primeiros CEOs são fixos (sem dado), para o guia', () => {
+  for (const seed of ['a', 'b', 'c']) {
+    const m = createMatch(game, { numPlayers: 2, seed, options: { scenario: 'tutorial' } });
+    assert.deepEqual(m.state.baralho.slice(0, 3), ['jh', 'pc', 'mz']);
+    assert.deepEqual([...m.state.baralho].sort(), [...CEO_IDS].sort());
+    assert.equal(m.state.ordem[0], 0);
+    assert.equal(m.state.ceo.id, 'jh');
+    assert.equal(m.state.ceo.dado, null);
+  }
+  assert.ok(typeof game.tutorial === 'string' && game.tutorial.endsWith('tutorial.js'));
 });

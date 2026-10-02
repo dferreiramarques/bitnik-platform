@@ -1,4 +1,8 @@
 # Capivaras — histórico de regras
+## 2.1.0 — Tutorial interativo (2026-10-02)
+
+Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se uma ronda a sério contra dois bots, com o motor verdadeiro no browser: as cartas da mesa, a aposta em segredo, a revelação (a carta mais valiosa foge, porque os dois bots apostam nela), a pontuação, os nenúfares, o token do pássaro e as duas voltas ao baralho. Usa o guia de passos e a partida local da plataforma (`ctx.tour`, `ctx.session`, ADR-018).
+
 
 ## 2.0.8 — Registo flutuante a sério (2026-10-01)
 

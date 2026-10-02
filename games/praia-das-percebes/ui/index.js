@@ -147,13 +147,14 @@ function render() {
     <div class="praia-bottom">
       ${renderPiece(v, me)}
     </div>
-    ${msg.result ? '' : `<div class="praia-bar">${renderBar(v, me)}</div>`}
+    ${msg.result ? '' : `<div class="praia-bar" data-tut="bar">${renderBar(v, me)}</div>`}
     ${renderLog()}`;
   applyZoom();
+  ctx.afterRender?.(); // o tutorial volta a pôr o destaque
 }
 
 function renderPlayers(v, me) {
-  return `<div class="praia-players">${v.jogadores.map((j, i) => `<div class="praia-player${i === me ? ' me' : ''}${i === v.vez ? ' active' : ''}">
+  return `<div class="praia-players" data-tut="players">${v.jogadores.map((j, i) => `<div class="praia-player${i === me ? ' me' : ''}${i === v.vez ? ' active' : ''}">
     <div class="praia-pname"><i class="praia-dot" style="background:var(--game-color-${i + 1})"></i><span>${esc(ctx.seatName(i))}</span><b class="praia-score">${j.pts}</b></div>
     <div class="praia-pmeta">
       <span>${art('token-salvavidas', 'salvavidas', LIFEGUARD_EMOJI)}×${j.fichas}</span>
@@ -164,7 +165,7 @@ function renderPlayers(v, me) {
 
 function renderObjectives(v) {
   const extra = v.porRevelar > 0 ? `<span class="praia-note">${esc(ctx.t('ui.toReveal', { n: v.porRevelar }))}</span>` : '';
-  return `<div class="praia-objectives${ui.objOpen ? ' open' : ''}">
+  return `<div class="praia-objectives${ui.objOpen ? ' open' : ''}" data-tut="objectives">
     <button class="praia-lbl praia-obj-head" type="button" data-act="objfold" aria-expanded="${ui.objOpen}">
       ${esc(ctx.t('ui.objectives'))}<i class="praia-obj-chevron" aria-hidden="true">${ui.objOpen ? '▾' : '▸'}</i>
     </button>
@@ -226,7 +227,7 @@ function renderBoard(v) {
 
 function renderPiece(v, me) {
   if (me == null || v.fase !== 'COLOCAR' || !v.peca || v.peca.escondida) return '<div></div>';
-  return `<div class="praia-piece">
+  return `<div class="praia-piece" data-tut="piece">
     <div class="praia-lbl">${esc(ctx.t('ui.myPiece'))}</div>
     <div class="praia-cell tile ${v.peca.tipo} big">${tileCell(v.peca)}</div>
   </div>`;

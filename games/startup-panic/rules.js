@@ -3,11 +3,20 @@
 
 export const SETORES = ['ia', 'fintech', 'seguranca', 'biotech', 'energia'];
 export const MAX_ACOES = 4; // por jogador e por startup
-export const MAX_TRABALHADORES = 4; // por jogador
+export const MAX_ACOES_TOTAL = 9; // por jogador, somando todas as startups vivas: só dá para ter 2 ou 3 maiorias
 export const RONDAS = 12; // uma por CEO
 export const CASH_INICIAL = 10;
-export const SALARIO = 1;
-export const CUSTO_SENIOR = 2;
+/**
+ * Nível de um trabalhador: o 1.º que contratas é Estagiário, o 2.º Júnior, o 3.º Mid e do 4.º em diante Sénior
+ * (fica fixo no momento da contratação). Mais nível rende mais (mult) mas custa mais a contratar e a manter.
+ */
+export const NIVEIS = [
+  { id: 'estagiario', mult: 1, custo: 0, salario: 0 },
+  { id: 'junior', mult: 2, custo: 1, salario: 1 },
+  { id: 'mid', mult: 3, custo: 2, salario: 2 },
+  { id: 'senior', mult: 4, custo: 3, salario: 3 },
+];
+export const nivelPara = (contratados) => Math.min(contratados, NIVEIS.length - 1);
 
 export const STARTUPS = [
   { id: 'deepanic', setor: 'ia', base: 3 },
@@ -23,8 +32,14 @@ export const STARTUPS = [
 ];
 
 export const TIPOS = ['engineer', 'lawyer', 'pr', 'cfo'];
-/** Dividendo base por ação e por ronda; o Sénior paga o dobro. */
-export const DIVIDENDO = { engineer: 2, lawyer: 1, pr: 1, cfo: 1 };
+/**
+ * Dividendo base por ação e por ronda, multiplicado pelo nível do trabalhador. O CFO não paga por ação: tem renda fixa.
+ * Efeitos próprios: o Advogado protege a startup de implodir; o PR sobe o preço da startup;
+ * o CFO rende FIXO_CFO por ronda mesmo sem ações.
+ */
+export const DIVIDENDO = { engineer: 2, lawyer: 1, pr: 1 };
+export const FIXO_CFO = 2; // por ronda, multiplicado pelo nível
+export const BONUS_PR = 1;
 export const NOMES = {
   engineer: ['Ada', 'Linus', 'Grace', 'Tim', 'Bjarne', 'Guido', 'Dennis', 'Ken'],
   lawyer: ['Harvey', 'Kim', 'Elle', 'Saul', 'Alan', 'Ruth', 'Thurgood', 'Amal'],
@@ -43,21 +58,52 @@ const fmt = (n) => (n >= 0 ? '+' : '') + n + 'M';
 
 // ─── Efeitos de mercado ─────────────────────────────────────
 
+/** Há um Advogado (de qualquer jogador) nesta startup: não implode. */
+export const protegida = (s, id) => s.jogadores.some((j) => j.trab.some((w) => w.startup === id && w.tipo === 'lawyer'));
+/** Bónus de preço dos PR (de qualquer jogador) nesta startup. */
+export const bonusPr = (s, id) => BONUS_PR * s.jogadores.reduce((a, j) => a + j.trab.filter((w) => w.startup === id && w.tipo === 'pr').length, 0);
+
+/** Preço = base + valor do setor + PR, no mínimo 1M. */
+export function recalcular(s) {
+  for (const su of s.startups) {
+    if (su.implodida) continue;
+    su.preco = Math.max(1, su.base + s.setores[su.setor] + bonusPr(s, su.id));
+    const c = s.hist?.[su.id]?.at(-1); // a vela da ronda acompanha o preço: fecho, máximo e mínimo
+    if (c) { c.c = su.preco; c.h = Math.max(c.h, su.preco); c.l = Math.min(c.l, su.preco); }
+  }
+}
+
+/** Abre a vela da ronda de cada startup viva: abertura, máximo, mínimo e fecho. A que implode fecha a 0 (x). */
+function abrirVelas(s) {
+  s.hist ??= {};
+  for (const su of s.startups) {
+    if (!su.implodida) (s.hist[su.id] ??= []).push({ r: s.ronda, o: su.preco, h: su.preco, l: su.preco, c: su.preco });
+  }
+}
+
 function mexer(s, ctx, setor, delta) {
   if (!delta) return;
   s.setores[setor] += delta;
-  for (const su of s.startups) {
-    if (su.setor === setor && !su.implodida) su.preco = Math.max(1, su.base + s.setores[setor]);
-  }
+  recalcular(s);
   ctx.log('log.SETOR', { setor: `@setor.${setor}`, d: fmt(delta) });
 }
 
+/** Implode a startup viva mais cara que não tenha Advogado (empate: sorteio). */
 function implodir(s, ctx) {
   if (s.seguro) return;
   const vivas = s.startups.filter((x) => !x.implodida);
-  if (!vivas.length) return;
-  const alvo = ctx.rng.pick(vivas);
+  const livres = vivas.filter((x) => !protegida(s, x.id));
+  if (!livres.length) {
+    if (vivas.length) ctx.log('log.PROTEGIDAS');
+    return;
+  }
+  const max = Math.max(...livres.map((x) => x.preco));
+  const topo = livres.filter((x) => x.preco === max);
+  const alvo = topo.length > 1 ? ctx.rng.pick(topo) : topo[0];
+  for (const x of vivas) if (protegida(s, x.id) && x.preco >= alvo.preco) ctx.log('log.PROTEGIDA', { startup: `@startup.${x.id}` });
   alvo.implodida = true;
+  const vela = s.hist?.[alvo.id]?.at(-1);
+  if (vela) { vela.c = 0; vela.l = 0; vela.x = true; }
   ctx.log('log.IMPLODE', { startup: `@startup.${alvo.id}` }, { announce: 'warn' });
 }
 
@@ -82,6 +128,9 @@ export const CEO_IDS = Object.keys(CEOS);
 
 const atual = (s) => s.ordem[s.pos];
 const total = (su) => su.acoes.reduce((a, b) => a + b, 0);
+/** Ações de um jogador em startups vivas (as implodidas não contam para o limite). */
+export const totalAcoes = (s, seat) => s.startups.reduce((a, su) => a + (su.implodida ? 0 : su.acoes[seat]), 0);
+const salarioDe = (s, w) => (NIVEIS[w.nivel].salario > 0 ? NIVEIS[w.nivel].salario + s.sobretaxa : 0);
 const startup = (s, id) => s.startups.find((x) => x.id === id);
 const tem = (j, su, tipo) => j.trab.some((w) => w.startup === su && w.tipo === tipo);
 
@@ -106,10 +155,12 @@ export function setup(ctx) {
   const pool = [];
   for (const tipo of TIPOS) {
     const nomes = ctx.rng.shuffle([...NOMES[tipo]]);
-    for (let i = 0; i < 3; i++) pool.push({ id: `${tipo}_${i}`, tipo, nome: nomes[i] });
+    for (let i = 0; i < n; i++) pool.push({ id: `${tipo}_${i}`, tipo, nome: nomes[i] }); // uma cópia de cada tipo por jogador: ninguém fica sem
   }
-  const baralho = ctx.rng.shuffle([...CEO_IDS]);
-  const primeiro = ctx.rng.int(n);
+  // Cenário fixo (tutorial): os 3 primeiros CEOs sem dado, para mostrar o efeito, e o jogador 0 a abrir (ADR-007).
+  const tutorial = ctx.options?.scenario === 'tutorial';
+  const baralho = tutorial ? ['jh', 'pc', 'mz', ...CEO_IDS.filter((x) => !['jh', 'pc', 'mz'].includes(x))] : ctx.rng.shuffle([...CEO_IDS]);
+  const primeiro = tutorial ? 0 : ctx.rng.int(n);
   const s = {
     n,
     jogadores: Array.from({ length: n }, () => ({ cash: CASH_INICIAL, trab: [] })),
@@ -128,9 +179,12 @@ export function setup(ctx) {
     seguro: false,
     sobretaxa: 0,
     penalizacao: null,
-    pagos: [], // Séniores já pagos neste turno
+    pagos: [], // trabalhadores cujo salário já foi tratado neste turno
+    compradas: [], // startups em que o jogador da vez comprou neste turno
     proposta: null, // troca à espera de resposta
     dividendos: [],
+    variacoes: {}, // variação de preço de cada startup causada pelo CEO da ronda
+    hist: {}, // velas de preço por startup e por ronda: { r, o, h, l, c, x? }
     acabou: false,
   };
   ctx.log('log.RONDA', { n: 1 });
@@ -139,6 +193,8 @@ export function setup(ctx) {
 }
 
 function comecarRonda(s, ctx) {
+  const antes = Object.fromEntries(s.startups.map((x) => [x.id, x.preco]));
+  abrirVelas(s);
   s.seguro = false;
   s.sobretaxa = 0;
   if (s.penalizacao) {
@@ -154,6 +210,7 @@ function comecarRonda(s, ctx) {
   ctx.log('log.CEO', { ceo: `@ceo.${id}`, setor: `@setor.${ceo.setor}`, dado: dado ?? '' });
   if (dado) ctx.log('log.DADO', { n: dado });
   ceo.efeito(s, ctx, dado);
+  s.variacoes = Object.fromEntries(s.startups.map((x) => [x.id, x.implodida ? 0 : x.preco - antes[x.id]]));
 
   const base = GATE_BASE[s.idx];
   if (base) {
@@ -165,41 +222,72 @@ function comecarRonda(s, ctx) {
   }
 }
 
+/** Quanto rende um trabalhador por ronda ao seu dono: por ação (Engenheiro, Advogado, PR) ou fixo (CFO). */
+export function rendimento(s, seat, w) {
+  const su = startup(s, w.startup);
+  if (!su || su.implodida) return 0;
+  const m = NIVEIS[w.nivel].mult;
+  return w.tipo === 'cfo' ? FIXO_CFO * m : su.acoes[seat] * DIVIDENDO[w.tipo] * m;
+}
+
+/** Dividendos de um jogador por startup viva onde tem trabalhadores (os mesmos que se pagam no fim da ronda). */
+export function dividendosDe(s, seat) {
+  const out = [];
+  for (const su of s.startups) {
+    if (su.implodida) continue;
+    const meus = s.jogadores[seat].trab.filter((w) => w.startup === su.id);
+    const ganho = meus.reduce((a, w) => a + rendimento(s, seat, w), 0);
+    if (ganho > 0) out.push({ seat, startup: su.id, acoes: su.acoes[seat], ganho });
+  }
+  return out;
+}
+
 function fimDeRonda(s, ctx) {
   s.dividendos = [];
   s.jogadores.forEach((j, seat) => {
-    let soma = 0;
-    for (const su of s.startups) {
-      if (su.implodida || !su.acoes[seat]) continue;
-      const meus = j.trab.filter((w) => w.startup === su.id);
-      if (!meus.length) continue; // sem trabalhadores, não há dividendos
-      const div = meus.reduce((a, w) => a + DIVIDENDO[w.tipo] * (w.senior ? 2 : 1), 0);
-      const ganho = su.acoes[seat] * div;
-      j.cash += ganho;
-      soma += ganho;
-      s.dividendos.push({ seat, startup: su.id, acoes: su.acoes[seat], div, ganho });
-    }
+    const lista = dividendosDe(s, seat);
+    const soma = lista.reduce((a, d) => a + d.ganho, 0);
+    j.cash += soma;
+    s.dividendos.push(...lista);
     if (soma > 0) ctx.log('log.DIVIDENDOS', { lugar: seat + 1, n: soma });
   });
   s.ronda += 1;
 }
 
-/** Paga os salários dos Séniores ainda por pagar; quem não tiver cash abandona. Devolve quanto foi pago. */
+/** Dado do salário: com 6 o trabalhador fica (sem receber), com outro número vai-se embora e volta à pool. */
+function dadoDoSalario(s, ctx, j, w, sal, arriscou) {
+  const dado = 1 + ctx.rng.int(6);
+  if (dado === 6) {
+    ctx.log(arriscou ? 'log.ARRISCOU_FICA' : 'log.FICA', { nome: w.nome, sal, dado }, { announce: { variant: 'warn', key: 'msg.FICA', params: { nome: w.nome, dado } } });
+  } else {
+    j.trab.splice(j.trab.indexOf(w), 1);
+    s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
+    ctx.log(arriscou ? 'log.ARRISCOU_SAI' : 'log.ABANDONOU', { nome: w.nome, sal, dado }, { announce: { variant: 'warn', key: 'msg.ABANDONOU', params: { nome: w.nome, dado } } });
+  }
+  s.pagos.push(w.id);
+}
+
+/** Salários ainda por decidir neste turno. */
+const porPagar = (s, seat) => s.jogadores[seat].trab.filter((w) => salarioDe(s, w) > 0 && !s.pagos.includes(w.id));
+
+/**
+ * Ao terminar o turno cobra o que o jogador não decidiu: paga se houver cash; se não houver, lança o dado.
+ * (Pagar é opcional: ele pode antes pagar um a um com SP_PAY_SALARY ou arriscar com SP_RISK_SALARY.)
+ */
 function liquidar(s, ctx, seat) {
   const j = s.jogadores[seat];
-  const sal = SALARIO + s.sobretaxa;
   let pago = 0;
-  for (const w of j.trab.filter((x) => x.senior && !s.pagos.includes(x.id))) {
+  for (const w of porPagar(s, seat)) {
+    const sal = salarioDe(s, w);
     if (j.cash >= sal) {
       j.cash -= sal;
       pago += sal;
       s.pagos.push(w.id);
     } else {
-      j.trab.splice(j.trab.indexOf(w), 1);
-      s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
-      ctx.log('log.ABANDONOU', { nome: w.nome });
+      dadoDoSalario(s, ctx, j, w, sal, false);
     }
   }
+  recalcular(s);
   if (pago > 0) ctx.log('log.SALARIOS', { n: pago });
   return pago;
 }
@@ -224,10 +312,12 @@ export const moves = {
     if (!Number.isInteger(qty) || qty < 1) return ctx.invalid('err.QTD');
     const j = s.jogadores[ctx.seat];
     if (su.acoes[ctx.seat] + qty > MAX_ACOES) return ctx.invalid('err.MAX_ACOES', { max: MAX_ACOES, tens: su.acoes[ctx.seat] });
+    if (totalAcoes(s, ctx.seat) + qty > MAX_ACOES_TOTAL) return ctx.invalid('err.MAX_TOTAL', { max: MAX_ACOES_TOTAL });
     const custo = su.preco * qty;
     if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
     j.cash -= custo;
     su.acoes[ctx.seat] += qty;
+    if (!s.compradas.includes(su.id)) s.compradas.push(su.id);
     ctx.log('log.BUY', { qty, startup: `@startup.${su.id}`, custo });
   },
 
@@ -259,6 +349,7 @@ export const moves = {
     const tenho = su.acoes[ctx.seat];
     if (!tenho) return ctx.invalid('err.SEM_ACOES');
     if (tenho * 2 <= total(su)) return ctx.invalid('err.MAIORIA');
+    if (s.compradas.includes(su.id)) return ctx.invalid('err.COMPRADA_NO_TURNO');
     const ganho = Math.round(su.preco * tenho * s.gate.mult);
     s.jogadores[ctx.seat].cash += ganho;
     su.acoes[ctx.seat] = 0;
@@ -278,6 +369,7 @@ export const moves = {
     const deles = b.acoes[para];
     if (!mine || !deles) return ctx.invalid('err.TROCA_SEM_ACOES');
     if (b.acoes[ctx.seat] + deles > MAX_ACOES || a.acoes[para] + mine > MAX_ACOES) return ctx.invalid('err.MAX_ACOES', { max: MAX_ACOES });
+    if (totalAcoes(s, ctx.seat) - mine + deles > MAX_ACOES_TOTAL || totalAcoes(s, para) - deles + mine > MAX_ACOES_TOTAL) return ctx.invalid('err.MAX_TOTAL', { max: MAX_ACOES_TOTAL });
     s.proposta = { de: ctx.seat, para, dar: a.id, receber: b.id };
     ctx.log('log.TRADE_PROPOSE', { dar: `@startup.${a.id}`, receber: `@startup.${b.id}`, para: para + 1 });
   },
@@ -310,7 +402,7 @@ export const moves = {
     s.fase = 'MANUTENCAO';
   },
 
-  SP_HIRE(s, { worker, startup: id, senior = false }, ctx) {
+  SP_HIRE(s, { worker, startup: id }, ctx) {
     const e = naVez(s, ctx, 'MANUTENCAO');
     if (e) return e;
     const w = s.pool.find((x) => x.id === worker);
@@ -319,13 +411,14 @@ export const moves = {
     if (!su || su.implodida) return ctx.invalid('err.STARTUP');
     const j = s.jogadores[ctx.seat];
     if (tem(j, su.id, w.tipo)) return ctx.invalid('err.TIPO_REPETIDO');
-    if (j.trab.length >= MAX_TRABALHADORES) return ctx.invalid('err.MAX_TRABALHADORES', { max: MAX_TRABALHADORES });
-    const custo = senior ? CUSTO_SENIOR : 0;
+    const nivel = nivelPara(j.trab.length);
+    const custo = NIVEIS[nivel].custo;
     if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
     j.cash -= custo;
     s.pool.splice(s.pool.indexOf(w), 1);
-    j.trab.push({ id: w.id, tipo: w.tipo, nome: w.nome, startup: su.id, senior: !!senior });
-    ctx.log(senior ? 'log.HIRE_SENIOR' : 'log.HIRE', { nome: w.nome, tipo: `@tipo.${w.tipo}`, startup: `@startup.${su.id}` });
+    j.trab.push({ id: w.id, tipo: w.tipo, nome: w.nome, startup: su.id, nivel });
+    recalcular(s);
+    ctx.log('log.HIRE', { nome: w.nome, tipo: `@tipo.${w.tipo}`, nivel: `@nivel.${NIVEIS[nivel].id}`, startup: `@startup.${su.id}` });
   },
 
   SP_FIRE(s, { worker }, ctx) {
@@ -336,6 +429,7 @@ export const moves = {
     if (i < 0) return ctx.invalid('err.TRABALHADOR');
     const [w] = j.trab.splice(i, 1);
     s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
+    recalcular(s);
     ctx.log('log.FIRE', { nome: w.nome });
   },
 
@@ -349,18 +443,42 @@ export const moves = {
     const su = startup(s, id);
     if (!su || su.implodida || su.id === w.startup) return ctx.invalid('err.STARTUP');
     if (tem(j, su.id, w.tipo)) return ctx.invalid('err.TIPO_REPETIDO');
-    const custo = w.senior ? 2 : 1;
+    const custo = Math.max(1, NIVEIS[w.nivel].salario);
     if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
     j.cash -= custo;
     w.startup = su.id;
+    recalcular(s);
     ctx.log('log.MOVE', { nome: w.nome, startup: `@startup.${su.id}`, custo });
   },
 
-  SP_PAY_SALARY(s, _p, ctx) {
+  /** Paga o salário de um trabalhador (`worker`) ou, sem `worker`, de todos os que o cash deixar pagar. */
+  SP_PAY_SALARY(s, { worker } = {}, ctx) {
     const e = naVez(s, ctx, 'MANUTENCAO');
     if (e) return e;
-    if (!s.jogadores[ctx.seat].trab.some((x) => x.senior && !s.pagos.includes(x.id))) return ctx.invalid('err.SEM_SALARIOS');
-    liquidar(s, ctx, ctx.seat);
+    const j = s.jogadores[ctx.seat];
+    const pendentes = porPagar(s, ctx.seat).filter((w) => worker === undefined || w.id === worker);
+    if (!pendentes.length) return ctx.invalid('err.SEM_SALARIOS');
+    let pago = 0;
+    for (const w of pendentes) {
+      const sal = salarioDe(s, w);
+      if (j.cash < sal) continue;
+      j.cash -= sal;
+      pago += sal;
+      s.pagos.push(w.id);
+    }
+    if (!pago) return ctx.invalid('err.CASH', { preciso: salarioDe(s, pendentes[0]), tens: j.cash });
+    ctx.log('log.SALARIOS', { n: pago });
+  },
+
+  /** Não paga o salário de um trabalhador e arrisca: dado, com 6 ele fica (sem receber), com outro número sai. */
+  SP_RISK_SALARY(s, { worker }, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    const j = s.jogadores[ctx.seat];
+    const w = porPagar(s, ctx.seat).find((x) => x.id === worker);
+    if (!w) return ctx.invalid('err.SEM_SALARIOS');
+    dadoDoSalario(s, ctx, j, w, salarioDe(s, w), true);
+    recalcular(s);
   },
 
   /** Passa a vez. Os salários por pagar são cobrados aqui. No fim da última vez da ronda pagam-se os dividendos e entra o CEO seguinte. */
@@ -369,6 +487,7 @@ export const moves = {
     if (e) return e;
     liquidar(s, ctx, ctx.seat);
     s.pagos = [];
+    s.compradas = [];
     s.pos += 1;
     if (s.pos >= s.n) {
       fimDeRonda(s, ctx);
@@ -401,9 +520,9 @@ export function enumerate(s, seat) {
   if (s.fase === 'MERCADO') {
     for (const su of vivas) {
       const mine = su.acoes[seat];
-      for (let q = 1; q <= MAX_ACOES - mine && su.preco * q <= j.cash; q++) out.push({ type: 'SP_BUY', payload: { startup: su.id, qty: q } });
+      for (let q = 1; q <= Math.min(MAX_ACOES - mine, MAX_ACOES_TOTAL - totalAcoes(s, seat)) && su.preco * q <= j.cash; q++) out.push({ type: 'SP_BUY', payload: { startup: su.id, qty: q } });
       for (let q = 1; q <= mine; q++) out.push({ type: 'SP_SELL_MARKET', payload: { startup: su.id, qty: q } });
-      if (s.gate.aberto && mine && mine * 2 > total(su)) out.push({ type: 'SP_SELL_STARTUP', payload: { startup: su.id } });
+      if (s.gate.aberto && mine && mine * 2 > total(su) && !s.compradas.includes(su.id)) out.push({ type: 'SP_SELL_STARTUP', payload: { startup: su.id } });
     }
     if (s.gate.aberto) {
       for (const a of vivas.filter((x) => x.acoes[seat] > 0)) {
@@ -412,6 +531,7 @@ export function enumerate(s, seat) {
           for (let para = 0; para < s.n; para++) {
             if (para === seat || !b.acoes[para]) continue;
             if (b.acoes[seat] + b.acoes[para] > MAX_ACOES || a.acoes[para] + a.acoes[seat] > MAX_ACOES) continue;
+            if (totalAcoes(s, seat) - a.acoes[seat] + b.acoes[para] > MAX_ACOES_TOTAL || totalAcoes(s, para) - b.acoes[para] + a.acoes[seat] > MAX_ACOES_TOTAL) continue;
             out.push({ type: 'SP_TRADE_PROPOSE', payload: { de: a.id, para, por: b.id } });
           }
         }
@@ -421,22 +541,26 @@ export function enumerate(s, seat) {
   } else {
     // Um candidato por tipo: os 3 da pool são equivalentes (só o nome muda).
     const livres = TIPOS.map((t) => s.pool.find((w) => w.tipo === t)).filter(Boolean);
-    if (j.trab.length < MAX_TRABALHADORES) {
+    if (j.cash >= NIVEIS[nivelPara(j.trab.length)].custo) {
       for (const w of livres) {
         for (const su of vivas) {
           if (tem(j, su.id, w.tipo)) continue;
-          out.push({ type: 'SP_HIRE', payload: { worker: w.id, startup: su.id, senior: false } });
-          if (j.cash >= CUSTO_SENIOR) out.push({ type: 'SP_HIRE', payload: { worker: w.id, startup: su.id, senior: true } });
+          out.push({ type: 'SP_HIRE', payload: { worker: w.id, startup: su.id } });
         }
       }
     }
     for (const w of j.trab) {
       out.push({ type: 'SP_FIRE', payload: { worker: w.id } });
-      const custo = w.senior ? 2 : 1;
+      const custo = Math.max(1, NIVEIS[w.nivel].salario);
       if (j.cash < custo) continue;
       for (const su of vivas) if (su.id !== w.startup && !tem(j, su.id, w.tipo)) out.push({ type: 'SP_MOVE_WORKER', payload: { worker: w.id, startup: su.id } });
     }
-    if (j.trab.some((x) => x.senior && !s.pagos.includes(x.id))) out.push({ type: 'SP_PAY_SALARY', payload: {} });
+    const pendentes = porPagar(s, seat);
+    if (pendentes.some((w) => j.cash >= salarioDe(s, w))) out.push({ type: 'SP_PAY_SALARY', payload: {} });
+    for (const w of pendentes) {
+      if (j.cash >= salarioDe(s, w)) out.push({ type: 'SP_PAY_SALARY', payload: { worker: w.id } });
+      out.push({ type: 'SP_RISK_SALARY', payload: { worker: w.id } });
+    }
     out.push({ type: 'SP_END_TURN', payload: {} });
   }
   return out;
@@ -460,19 +584,29 @@ export function view(s, seat) {
     bonusGate: s.bonusGate,
     penalizacao: s.penalizacao,
     setores: s.setores,
-    startups: s.startups,
+    startups: s.startups.map((su) => ({ ...su, protegida: protegida(s, su.id), bonusPr: bonusPr(s, su.id) })),
+    variacoes: s.variacoes,
+    historico: s.hist ?? {},
     pool: s.pool,
     pagos: s.pagos,
+    compradas: s.compradas,
     proposta: s.proposta,
     dividendos: s.dividendos,
     maxAcoes: MAX_ACOES,
-    maxTrabalhadores: MAX_TRABALHADORES,
+    maxAcoesTotal: MAX_ACOES_TOTAL,
+    niveis: NIVEIS,
+    gateBase: GATE_BASE,
     jogadores: s.jogadores.map((j, i) => ({
       cash: i === seat ? j.cash : null,
-      trab: j.trab,
+      trab: j.trab.map((w) => ({ ...w, rende: rendimento(s, i, w), salario: salarioDe(s, w), pago: s.pagos.includes(w.id) })),
       acoes: acoesDe(s, i),
+      totalAcoes: totalAcoes(s, i),
+      previsao: dividendosDe(s, i),
     })),
     meuCash: meu ? meu.cash : null,
+    meuPatrimonio: meu ? pontuar(s, seat) : null,
+    proximo: meu ? { nivel: nivelPara(meu.trab.length), ...NIVEIS[nivelPara(meu.trab.length)] } : null,
+    meusSalarios: meu ? meu.trab.reduce((a, w) => a + salarioDe(s, w), 0) : null,
     acabou: s.acabou,
     players: s.jogadores.map((j, i) => ({
       score: s.acabou ? pontuar(s, i) : undefined,
@@ -494,7 +628,9 @@ export function describeMove(move) {
   if (move.type === 'SP_SELL_MARKET') return { key: 'moveLabel.SP_SELL_MARKET', params: { qty: p.qty ?? '', startup: `@startup.${p.startup}` } };
   if (move.type === 'SP_SELL_STARTUP') return { key: 'moveLabel.SP_SELL_STARTUP', params: { startup: `@startup.${p.startup}` } };
   if (move.type === 'SP_TRADE_PROPOSE') return { key: 'moveLabel.SP_TRADE_PROPOSE', params: { dar: `@startup.${p.de}`, receber: `@startup.${p.por}`, para: p.para + 1 } };
-  if (move.type === 'SP_HIRE') return { key: p.senior ? 'moveLabel.SP_HIRE_SENIOR' : 'moveLabel.SP_HIRE', params: { tipo: `@tipo.${String(p.worker).split('_')[0]}`, startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_HIRE') return { key: 'moveLabel.SP_HIRE', params: { tipo: `@tipo.${String(p.worker).split('_')[0]}`, startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_PAY_SALARY' && p.worker) return { key: 'moveLabel.SP_PAY_ONE', params: {} };
+  if (move.type === 'SP_RISK_SALARY') return { key: 'moveLabel.SP_RISK_SALARY', params: {} };
   if (move.type === 'SP_MOVE_WORKER') return { key: 'moveLabel.SP_MOVE_WORKER', params: { startup: `@startup.${p.startup}` } };
   return { key: `move.${move.type}`, params: {} };
 }
