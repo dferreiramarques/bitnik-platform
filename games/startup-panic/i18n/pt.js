@@ -214,7 +214,7 @@ export default {
   'tut.startups.title': "As startups",
   'tut.startups.body': "Dez startups em 5 setores. O preço é o preço base mais o valor do setor. Por baixo de cada uma vês quem tem ações e quem tem a maioria. Podes ter até 4 ações por startup e 9 no total.",
   'tut.chart.title': "Histórico de preços",
-  'tut.chart.body': "Toca no nome de uma startup (tem um 📈) para ver o gráfico de velas: uma vela por ronda, verde se o preço subiu, vermelho se desceu. Experimenta!",
+  'tut.chart.body': "Em cada startup vês um mini gráfico de velas, uma por ronda. Toca nele para o ver em grande: verde se o preço subiu, vermelho se desceu. Experimenta!",
   'tut.chart2.title': "Ler o gráfico",
   'tut.chart2.body': "O corpo da vela vai do preço de abertura ao de fecho da ronda; o pavio mostra o máximo e o mínimo. As rondas de Gate vêm sombreadas. Usa-o para ver que setores estão a subir antes de comprar.",
   'tut.buy.title': "A tua vez: compra ações",
@@ -241,5 +241,9 @@ export default {
   'tut.salaries.body': "Pagar salários é opcional: podes carregar em «Arriscar 🎲» e lançar um dado. Com 6 o trabalhador fica sem receber, com outro número vai-se embora. Sem cash para o salário também se lança o dado.",
   'tut.tips.title': "Já sabes jogar!",
   'tut.tips.body': "Dicas: os dividendos compõem o cash, o CFO dá renda logo desde a ronda 1, e o gráfico ajuda a ver onde investir. Boa sorte nos Gates!",
+  'msg.TRADE_ACCEPT': '👍',
+  'msg.TRADE_REJECT': '👎',
+  'ui.buyShort': "Comprar",
+  'ui.sellShort': "Vender",
   ...gerado,
 };
