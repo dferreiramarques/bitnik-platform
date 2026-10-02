@@ -269,6 +269,19 @@ test('Gate de Venda: recusado com o Gate fechado, fora do Mercado ou numa startu
   recusa(base((s) => { su({ state: s }, 'deepanic').implodida = true; }), j, 'SP_SELL_STARTUP', { startup: 'deepanic' }, 'err.IMPLODIDA');
 });
 
+test('Gate de Venda: não se vende uma startup em que se comprou nesse mesmo turno', () => {
+  let m = gate(mercado(novo(2, 'cv')), 5);
+  const j = vez(m);
+  m = jogar(m, j, 'SP_BUY', { startup: 'halluci', qty: 1 }); // maioria imediata, mas comprada agora
+  recusa(m, j, 'SP_SELL_STARTUP', { startup: 'halluci' }, 'err.COMPRADA_NO_TURNO');
+  assert.ok(!game.enumerate(m.state, j).some((x) => x.type === 'SP_SELL_STARTUP'));
+  m = jogar(jogar(m, j, 'SP_END_MARKET'), j, 'SP_END_TURN');
+  m = jogar(jogar(m, vez(m), 'SP_END_MARKET'), vez(m), 'SP_END_TURN'); // a ronda fecha; o Gate fecha com ela
+  m = gate(mercado(m), 5);
+  assert.deepEqual(m.state.compradas, []);
+  jogar(m, vez(m), 'SP_SELL_STARTUP', { startup: 'halluci' }); // numa vez seguinte já pode vender
+});
+
 test('Venda livre no mercado: ao preço atual, sem multiplicador, sem Gate e sem maioria', () => {
   let m = mercado(novo(2, 'vm'));
   const j = vez(m);

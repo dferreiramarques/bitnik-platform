@@ -77,6 +77,7 @@ function onClick(e) {
   else if (act === 'forjapick') { ui.forja = false; send(legalMove('FORJA', { peca: b.dataset.id })); }
   else if (act === 'forjacancel') { ui.forja = false; render(); }
   else if (act === 'pass') send(legalMove('PASSAR', {}));
+  else if (act === 'market') send(legalMove('IR_AO_MERCADO', {}));
   else if (act === 'logfold') { ui.logOpen = !ui.logOpen; render(); }
 }
 
@@ -170,7 +171,7 @@ function pieceCard(v, id, { stockShown = true } = {}) {
   const stock = v.mercado.stock[id];
   const can = !!legalMove('COMPRAR', { peca: id });
   const cost = [c1 ? `${c1}×L1` : '', c2 ? `${c2}×L2` : ''].filter(Boolean).join(' + ');
-  const why = can ? '' : missing(v, id);
+  const why = can ? '' : (v.fase === 'trabalho' && activeSeat(v) === mySeat() ? ctx.t('ui.workFirst') : missing(v, id));
   return `<button class="rm-piece${can ? ' buy' : ''}${stock <= 0 ? ' sold' : ''}" type="button" data-act="buy" data-id="${id}" ${can ? '' : 'disabled'} title="${esc(why)}">
     <span class="nm">${esc(ctx.t(`peca.${id}`))}</span>
     <span class="ct">${esc(ctx.t('ui.cost'))}: ${esc(cost)}</span>
@@ -225,9 +226,17 @@ function renderBar(v) {
   const legal = msg.legal || [];
   if (me == null) return `<div class="rm-bar"><span class="rm-hint">${esc(ctx.t('ui.spectating'))}</span></div>`;
   if (!legal.length) return `<div class="rm-bar"><span class="rm-hint">${esc(ctx.t('ui.waiting', { nome: ctx.seatName(act ?? 0) }))}</span></div>`;
-  return `<div class="rm-bar">
-    <span class="rm-hint">${esc(ctx.t('ui.yourTurn'))} · 🔧 ${v.jogadores[me].livres}/${v.jogadores[me].workers}</span>
+  const j = v.jogadores[me];
+  if (v.fase === 'trabalho') {
+    return `<div class="rm-bar">
+    <span class="rm-hint">${esc(ctx.t('ui.phaseWork', { n: j.livres }))}</span>
+    ${legalMove('IR_AO_MERCADO', {}) ? `<button class="rm-btn primary" type="button" data-act="market">${esc(ctx.t('ui.goMarket'))}</button>` : ''}
     <button class="rm-btn" type="button" data-act="pass">${esc(ctx.t('ui.pass'))}</button>
+  </div>`;
+  }
+  return `<div class="rm-bar">
+    <span class="rm-hint">${esc(ctx.t('ui.phaseMarket'))}</span>
+    <button class="rm-btn" type="button" data-act="pass">${esc(ctx.t('ui.endTurn'))}</button>
   </div>`;
 }
 

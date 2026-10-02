@@ -1,0 +1,150 @@
+{
+  "estado": "Estado (JSON), lugares 0..1 (só se joga a 2); activePlayers = [vez] (a fase DEFESA dá a vez ao outro lugar: 1 - vez; vazio quando acabou).\n{\n  jogadores: [{ banca: [0,0,1,1,1,1], mao: ['TEMPTRESS'|'BOY'|'BULLY', ...], reserva: 6 }, ...],\n                                    // banca: 0 = cubo vermelho (casa bloqueada), 1 = casa livre, 2 = garrafa; reserva = garrafas por pôr\n  baralho: [...], descarte: [...],  // cartas de Personagem; compra-se do fim (pop); acabado o baralho, o descarte é baralhado\n  dados: [3,3,1,...],               // 9 dados do último lançamento (0 antes do primeiro)\n  vez: 0,                           // quem joga\n  fase: 'CARTAS',                   // CARTAS (jogar cartas e lançar), DEFESA (o adversário responde a Rapazes), ESCOLHA_CEGA (2 Valentões),\n                                    // PAUSA (os dois veem os dados), COMBO (escolher entre combinações), DESCARTE (mais de 3 cartas)\n  sedutoras: 0, rapazes: 0,         // Sedutoras jogadas neste turno; Rapazes à espera da defesa\n  pendente: { combos, opcoes, joker } | null,   // análise do lançamento: combos aplica-se logo; opcoes (lista de listas) obriga a escolher\n  opcoes: [...] | null, joker: false,           // as opções em escolha (fase COMBO)\n  combos: [],                       // combinações aplicadas neste lançamento\n  vencedor: null\n}\nCombinações (chaves): DOUBLE, TRIPLE_DOUBLE, QUAD, PENTA, SIX_OF_KIND, DOUBLE_QUAD (8 iguais), INSTANT_WIN (9 iguais).\nJogadas: LANCAR { cartas: [índices na mão] } (jogar cartas e lançar), DEFENDER { valentoes: n } (o adversário), ESCOLHA_CEGA { carta: índice }, CONTINUAR {} (depois de ver os dados), ESCOLHER_COMBO { opcao: índice em state.opcoes }, DESCARTAR { carta: índice }.\nErros: engine.NOT_ACTIVE (jogada de quem não é a vez), err.FASE, err.OPCAO.\nresult: { scores: [garrafas na banca por lugar], winners: [lugares] }.",
+  "auxiliares": "const novo = (seed = 'oils') => createMatch(game, { numPlayers: 2, seed });\nconst jogar = (m, lugar, type, payload = {}) => applyMove(game, m, lugar, { type, payload });\nconst ok = (r) => { assert.ok(r.ok, JSON.stringify(r.error)); return r.match; };\nconst garrafas = (m, lugar) => m.state.jogadores[lugar].banca.filter((x) => x === 2).length;\nconst cubos = (m, lugar) => m.state.jogadores[lugar].banca.filter((x) => x === 0).length;\n// Põe o jogo na pausa depois de um lançamento com estes dados e esta análise (pendente), para o lugar 0.\nconst comDados = (m, dados, pendente, fn = () => {}) => tweak(m, (s) => { s.vez = 0; s.dados = dados; s.pendente = pendente; s.fase = 'PAUSA'; fn(s); });\nconst direto = (...combos) => ({ combos, opcoes: null, joker: false });\n// Continua depois dos dados; se houver escolha, escolhe a opção que tem esta combinação.\nconst continuar = (m, combo) => {\n  m = ok(jogar(m, 0, 'CONTINUAR'));\n  if (m.state.fase === 'COMBO') m = ok(jogar(m, 0, 'ESCOLHER_COMBO', { opcao: m.state.opcoes.findIndex((o) => o.includes(combo)) }));\n  return m;\n};\nconst contar = (dados) => dados.reduce((c, d) => ({ ...c, [d]: (c[d] || 0) + 1 }), {});\n// Primeiros lançamentos de várias seeds (quem joga lança sem cartas): para ver o que as regras dão com dados reais.\nconst lancamentos = (n) => Array.from({ length: n }, (_, i) => { const m = novo('l' + i); return ok(jogar(m, m.state.vez, 'LANCAR', { cartas: [] })); });\n// Uma opção (lista de combinações) é possível se se consegue dar a cada combinação faces diferentes, com dados que cheguem.\nconst NECESSIDADE = { DOUBLE: [2], TRIPLE_DOUBLE: [3, 2], QUAD: [4], PENTA: [5], SIX_OF_KIND: [6] };\nconst possivel = (contagens, combos) => {\n  if (!combos.length) return true;\n  const [c, ...resto] = combos;\n  const faces = Object.keys(contagens);\n  const tenta = (need, usadas) => {\n    if (!need.length) return possivel(Object.fromEntries(Object.entries(contagens).filter(([f]) => !usadas.includes(f))), resto);\n    return faces.some((f) => !usadas.includes(f) && contagens[f] >= need[0] && tenta(need.slice(1), [...usadas, f]));\n  };\n  return tenta(NECESSIDADE[c], []);\n};",
+  "testes": [
+    {
+      "cartao": "c-setup",
+      "nome": "Preparação: banca de 6 casas com 2 cubos, 1 carta a cada um, baralho de 6",
+      "dado": "uma partida nova de 2 jogadores",
+      "quando": "a partida começa",
+      "entao": "cada banca é [0,0,1,1,1,1], cada jogador tem 1 carta e 6 garrafas na reserva; o baralho tem 6 cartas (2 Sedutoras, 2 Rapazes, 4 Valentões no total); só se joga a 2",
+      "codigo": "test('Preparação: banca de 6 casas com 2 cubos, 1 carta a cada um, baralho de 6', () => {\n  const m = novo();\n  for (const j of m.state.jogadores) {\n    assert.deepEqual(j.banca, [0, 0, 1, 1, 1, 1]);\n    assert.equal(j.mao.length, 1);\n    assert.equal(j.reserva, 6);\n  }\n  assert.equal(m.state.baralho.length, 6, '8 cartas: 2 Sedutoras, 2 Rapazes, 4 Valentões');\n  const todas = [...m.state.baralho, ...m.state.jogadores.flatMap((j) => j.mao)];\n  assert.deepEqual([...todas].sort(), ['BOY', 'BOY', 'BULLY', 'BULLY', 'BULLY', 'BULLY', 'TEMPTRESS', 'TEMPTRESS']);\n  assert.ok([0, 1].includes(m.state.vez));\n  assert.throws(() => createMatch(game, { numPlayers: 3, seed: 1 }));\n});"
+    },
+    {
+      "cartao": "c-uma-por-face",
+      "nome": "Cada face só dá uma combinação: todas as opções de um lançamento real são possíveis sem repetir faces",
+      "dado": "lançamentos reais (várias seeds)",
+      "quando": "o jogo analisa os dados",
+      "entao": "cada opção oferecida pode formar-se dando a cada combinação faces diferentes (nunca o mesmo valor para duas combinações) e com dados que cheguem",
+      "codigo": "test('Cada face só dá uma combinação: todas as opções de um lançamento real são possíveis sem repetir faces', () => {\n  let conflitos = 0;\n  for (const m of lancamentos(300)) {\n    const p = m.state.pendente;\n    const contagens = contar(m.state.dados);\n    for (const combos of p.opcoes ?? [p.combos]) assert.ok(possivel(contagens, combos), JSON.stringify([m.state.dados, combos]));\n    if (p.opcoes) conflitos++;\n  }\n  assert.ok(conflitos > 0, 'há lançamentos com conflito');\n});"
+    },
+    {
+      "cartao": "c-conflito",
+      "nome": "Conflito: as melhores opções aparecem primeiro; nenhuma opção boa fica atrás de uma que a contém",
+      "dado": "lançamentos reais com mais do que uma opção",
+      "quando": "o jogo ordena as opções",
+      "entao": "nenhuma opção aparece antes de outra que a contém; a fase COMBO oferece uma jogada por opção, e a escolha aplica essa opção",
+      "codigo": "test('Conflito: as melhores opções aparecem primeiro; nenhuma opção boa fica atrás de uma que a contém', () => {\n  const contem = (maior, menor) => maior.length > menor.length && menor.every((c) => maior.filter((x) => x === c).length >= menor.filter((x) => x === c).length);\n  let vistos = 0;\n  for (const m of lancamentos(300)) {\n    const o = m.state.pendente.opcoes;\n    if (!o) continue;\n    vistos++;\n    o.forEach((a, i) => o.slice(0, i).forEach((b) => assert.ok(!contem(a, b), JSON.stringify([m.state.dados, b, a]))));\n    const c = ok(jogar(m, m.state.vez, 'CONTINUAR'));\n    assert.equal(c.state.fase, 'COMBO');\n    assert.equal(viewFor(game, c, c.state.vez).legal.length, o.length);\n  }\n  assert.ok(vistos > 0);\n});"
+    },
+    {
+      "cartao": "c-double",
+      "nome": "Duplo: compra 1 carta",
+      "dado": "um lançamento com um Duplo",
+      "quando": "o jogador continua",
+      "entao": "o jogador compra 1 carta do baralho",
+      "codigo": "test('Duplo: compra 1 carta', () => {\n  let m = comDados(novo(), [1, 1, 2, 3, 4, 5, 6, 2, 3], direto('DOUBLE'), (s) => { s.jogadores[0].mao = []; });\n  const antes = m.state.baralho.length;\n  m = ok(jogar(m, 0, 'CONTINUAR'));\n  assert.equal(m.state.jogadores[0].mao.length, 1);\n  assert.equal(m.state.baralho.length, antes - 1);\n});"
+    },
+    {
+      "cartao": "c-triplo-duplo",
+      "nome": "Triplo + Duplo põe uma garrafa numa casa livre",
+      "dado": "um Triplo + Duplo",
+      "quando": "o jogador continua",
+      "entao": "uma casa livre da banca passa a ter garrafa e a reserva desce 1",
+      "codigo": "test('Triplo + Duplo põe uma garrafa numa casa livre', () => {\n  const m = continuar(comDados(novo(), [1, 1, 1, 2, 2, 3, 4, 5, 6], direto('TRIPLE_DOUBLE')), 'TRIPLE_DOUBLE');\n  assert.equal(garrafas(m, 0), 1);\n  assert.equal(m.state.jogadores[0].reserva, 5);\n});"
+    },
+    {
+      "cartao": "c-quad",
+      "nome": "Quad: abre uma casa com cubo",
+      "dado": "um Quad e uma banca com 2 cubos",
+      "quando": "o jogador continua",
+      "entao": "a banca fica com 1 cubo",
+      "codigo": "test('Quad: abre uma casa com cubo', () => {\n  const m = continuar(comDados(novo(), [4, 4, 4, 4, 1, 2, 3, 5, 6], direto('QUAD')), 'QUAD');\n  assert.equal(cubos(m, 0), 1);\n});"
+    },
+    {
+      "cartao": "c-penta",
+      "nome": "Penta: o adversário descarta a mão toda",
+      "dado": "um Penta e o adversário com cartas",
+      "quando": "o jogador continua",
+      "entao": "a mão do adversário fica vazia",
+      "codigo": "test('Penta: o adversário descarta a mão toda', () => {\n  let m = comDados(novo(), [3, 3, 3, 3, 3, 1, 2, 4, 6], direto('PENTA'), (s) => { s.jogadores[1].mao = ['BULLY', 'BOY']; });\n  m = continuar(m, 'PENTA');\n  assert.deepEqual(m.state.jogadores[1].mao, []);\n});"
+    },
+    {
+      "cartao": "c-seis",
+      "nome": "Seis: compra 3 cartas",
+      "dado": "seis dados iguais",
+      "quando": "o jogador continua",
+      "entao": "o jogador compra 3 cartas do baralho",
+      "codigo": "test('Seis: compra 3 cartas', () => {\n  let m = comDados(novo(), [2, 2, 2, 2, 2, 2, 1, 3, 4], direto('SIX_OF_KIND'), (s) => { s.jogadores[0].mao = []; });\n  const antes = m.state.baralho.length;\n  m = ok(jogar(m, 0, 'CONTINUAR'));\n  assert.equal(m.state.jogadores[0].mao.length, 3);\n  assert.equal(m.state.baralho.length, antes - 3);\n});"
+    },
+    {
+      "cartao": "c-joker",
+      "nome": "Joker (7 iguais): escolhe qualquer combinação, de Duplo a Seis",
+      "dado": "sete dados iguais",
+      "quando": "o jogador continua",
+      "entao": "a fase COMBO oferece Duplo, Triplo + Duplo, Quad, Penta e Seis; escolher o Quad abre uma casa",
+      "codigo": "test('Joker (7 iguais): escolhe qualquer combinação, de Duplo a Seis', () => {\n  const opcoes = [['DOUBLE'], ['TRIPLE_DOUBLE'], ['QUAD'], ['PENTA'], ['SIX_OF_KIND']];\n  let m = comDados(novo(), [2, 2, 2, 2, 2, 2, 2, 1, 3], { combos: null, opcoes, joker: true });\n  m = ok(jogar(m, 0, 'CONTINUAR'));\n  assert.equal(m.state.fase, 'COMBO');\n  assert.equal(viewFor(game, m, 0).legal.length, 5);\n  m = ok(jogar(m, 0, 'ESCOLHER_COMBO', { opcao: 2 }));\n  assert.equal(cubos(m, 0), 1);\n});"
+    },
+    {
+      "cartao": "c-oito",
+      "nome": "Oito iguais: tira 2 cubos vermelhos",
+      "dado": "oito dados iguais",
+      "quando": "o jogador continua",
+      "entao": "a banca fica sem cubos",
+      "codigo": "test('Oito iguais: tira 2 cubos vermelhos', () => {\n  const m = ok(jogar(comDados(novo(), [6, 6, 6, 6, 6, 6, 6, 6, 1], direto('DOUBLE_QUAD')), 0, 'CONTINUAR'));\n  assert.equal(cubos(m, 0), 0);\n});"
+    },
+    {
+      "cartao": "c-nove",
+      "nome": "Nove iguais: vitória imediata",
+      "dado": "nove dados iguais",
+      "quando": "o jogador continua",
+      "entao": "o jogador ganha a partida",
+      "codigo": "test('Nove iguais: vitória imediata', () => {\n  const m = ok(jogar(comDados(novo(), Array(9).fill(4), direto('INSTANT_WIN')), 0, 'CONTINUAR'));\n  assert.deepEqual(m.result.winners, [0]);\n});"
+    },
+    {
+      "cartao": "c-sedutora",
+      "nome": "Sedutora: com Triplo + Duplo dá 1 garrafa a mais",
+      "dado": "uma Sedutora jogada antes de lançar e um Triplo + Duplo",
+      "quando": "o jogador continua",
+      "entao": "a banca fica com 2 garrafas em vez de 1",
+      "codigo": "test('Sedutora: com Triplo + Duplo dá 1 garrafa a mais', () => {\n  let m = tweak(novo(), (s) => { s.vez = 0; s.jogadores[0].mao = ['TEMPTRESS']; });\n  m = ok(jogar(m, 0, 'LANCAR', { cartas: [0] }));\n  assert.equal(m.state.sedutoras, 1);\n  m = continuar(comDados(m, [1, 1, 1, 2, 2, 3, 4, 5, 6], direto('TRIPLE_DOUBLE'), (s) => { s.sedutoras = 1; }), 'TRIPLE_DOUBLE');\n  assert.equal(garrafas(m, 0), 2);\n});"
+    },
+    {
+      "cartao": "c-rapaz",
+      "nome": "Rapaz rouba 1 garrafa quando o adversário não tem Valentões",
+      "dado": "um Rapaz e o adversário com 2 garrafas e sem Valentões",
+      "quando": "o jogador joga o Rapaz e lança",
+      "entao": "o adversário fica com 1 garrafa",
+      "codigo": "test('Rapaz rouba 1 garrafa quando o adversário não tem Valentões', () => {\n  const m = ok(jogar(tweak(novo(), (s) => {\n    s.vez = 0; s.jogadores[0].mao = ['BOY'];\n    s.jogadores[1].banca = [0, 0, 2, 2, 1, 1]; s.jogadores[1].reserva = 4; s.jogadores[1].mao = [];\n  }), 0, 'LANCAR', { cartas: [0] }));\n  assert.equal(garrafas(m, 1), 1);\n});"
+    },
+    {
+      "cartao": "c-valentao-defesa",
+      "nome": "Valentão bloqueia o Rapaz; a decisão é do adversário",
+      "dado": "um Rapaz contra um adversário com 1 Valentão",
+      "quando": "o adversário responde na fase DEFESA",
+      "entao": "só o adversário pode defender; ao bloquear, o roubo falha, ambas as cartas saem e os dados são lançados",
+      "codigo": "test('Valentão bloqueia o Rapaz; a decisão é do adversário', () => {\n  let m = ok(jogar(tweak(novo(), (s) => {\n    s.vez = 0; s.jogadores[0].mao = ['BOY'];\n    s.jogadores[1].banca = [0, 0, 2, 2, 1, 1]; s.jogadores[1].reserva = 4; s.jogadores[1].mao = ['BULLY'];\n  }), 0, 'LANCAR', { cartas: [0] }));\n  assert.equal(m.state.fase, 'DEFESA');\n  assert.equal(jogar(m, 0, 'DEFENDER', { valentoes: 1 }).error.code, 'engine.NOT_ACTIVE');\n  m = ok(jogar(m, 1, 'DEFENDER', { valentoes: 1 }));\n  assert.equal(garrafas(m, 1), 2, 'bloqueado');\n  assert.deepEqual(m.state.jogadores[1].mao, []);\n  assert.equal(m.state.fase, 'PAUSA', 'depois da defesa, os dados são lançados');\n});"
+    },
+    {
+      "cartao": "c-valentao-ataque",
+      "nome": "2 Valentões no próprio turno tiram às cegas uma carta do adversário",
+      "dado": "dois Valentões jogados no meu turno",
+      "quando": "escolho a carta às cegas",
+      "entao": "o jogador não vê a mão do adversário e a carta escolhida sai dela",
+      "codigo": "test('2 Valentões no próprio turno tiram às cegas uma carta do adversário', () => {\n  let m = tweak(novo(), (s) => { s.vez = 0; s.jogadores[0].mao = ['BULLY', 'BULLY']; s.jogadores[1].mao = ['TEMPTRESS', 'BOY']; });\n  m = ok(jogar(m, 0, 'LANCAR', { cartas: [0, 1] }));\n  assert.equal(m.state.fase, 'ESCOLHA_CEGA');\n  assert.equal(game.view(m.state, 0).jogadores[1].mao, undefined, 'não vê a mão do adversário');\n  m = ok(jogar(m, 0, 'ESCOLHA_CEGA', { carta: 1 }));\n  assert.deepEqual(m.state.jogadores[1].mao, ['TEMPTRESS']);\n});"
+    },
+    {
+      "cartao": "c-limite-mao",
+      "nome": "Limite de mão: com mais de 3 cartas no fim do turno, descarta até 3",
+      "dado": "um jogador que acaba o turno com 4 cartas",
+      "quando": "resolve as combinações",
+      "entao": "a fase DESCARTE obriga a descartar até 3 e depois joga o adversário",
+      "codigo": "test('Limite de mão: com mais de 3 cartas no fim do turno, descarta até 3', () => {\n  let m = comDados(novo(), [2, 2, 2, 2, 2, 2, 1, 3, 4], direto('SIX_OF_KIND'), (s) => { s.jogadores[0].mao = ['BOY']; });\n  m = ok(jogar(m, 0, 'CONTINUAR'));\n  assert.equal(m.state.jogadores[0].mao.length, 4);\n  assert.equal(m.state.fase, 'DESCARTE');\n  m = ok(jogar(m, 0, 'DESCARTAR', { carta: 0 }));\n  assert.equal(m.state.jogadores[0].mao.length, 3);\n  assert.equal(m.state.vez, 1);\n});"
+    },
+    {
+      "cartao": "c-vitoria",
+      "nome": "Vitória: a 6.ª garrafa na banca",
+      "dado": "uma banca com 5 garrafas e 1 casa livre",
+      "quando": "o jogador faz um Triplo + Duplo",
+      "entao": "o jogador ganha",
+      "codigo": "test('Vitória: a 6.ª garrafa na banca', () => {\n  const m = continuar(comDados(novo(), [1, 1, 1, 2, 2, 3, 4, 5, 6], direto('TRIPLE_DOUBLE'), (s) => { s.jogadores[0].banca = [2, 2, 2, 2, 2, 1]; s.jogadores[0].reserva = 1; }), 'TRIPLE_DOUBLE');\n  assert.deepEqual(m.result.winners, [0]);\n});"
+    },
+    {
+      "cartao": "c-bot",
+      "nome": "Simulação: 200 partidas com bots acabam, sem erros",
+      "dado": "bots nos dois lugares",
+      "quando": "se simulam 200 partidas",
+      "entao": "todas acabam, sem jogadas recusadas",
+      "codigo": "test('Simulação: 200 partidas com bots acabam, sem erros', () => {\n  const r = simulate(game, { numPlayers: 2, games: 200, seed: 't' });\n  assert.equal(r.finished, 200);\n  assert.deepEqual(r.failures, []);\n});"
+    }
+  ]
+}

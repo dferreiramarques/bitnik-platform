@@ -56,3 +56,15 @@ Atualizado a 2026-09-29.
 
 - **Empates davam a vitória ao lugar mais baixo** (o 1.º lugar tinha 35,5% a 3 jogadores). **Resolvido na 1.0.0**: um empate partilha a vitória.
 - As apostas são simultâneas: não há vantagem de lugar.
+
+## Startup Panic (1.0.0)
+
+| Jogadores | Vitórias por lugar (1000 partidas, bot do pacote) | Referência do jogo original |
+|---|---|---|
+| 2 | 47,2 / 52,8 | 52 / 48 |
+| 3 | 32,1 / 34,0 / 33,8 | 36 / 33 / 31 |
+| 4 | 23,7 / 24,8 / 26,5 / 25,1 | 26 / 26 / 24 / 25 |
+
+- O "lugar" é o do assento, não a ordem de jogo (que muda a cada ronda). Tudo dentro do ruído da simulação (~±1,5 pontos), exceto o desvio do 2 jogadores, que sai invertido.
+- A referência vem de um simulador que não está no repositório. A diferença provável é a correção da 0.2.0: comprar e vender no Gate no mesmo turno dava lucro sem limite e o `spBot` original nunca a exerceu.
+- O bot só compra, vende no Gate e contrata Engenheiros Estagiários: não contrata Séniores nem propõe trocas.

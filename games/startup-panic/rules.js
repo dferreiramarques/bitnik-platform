@@ -129,6 +129,7 @@ export function setup(ctx) {
     sobretaxa: 0,
     penalizacao: null,
     pagos: [], // Séniores já pagos neste turno
+    compradas: [], // startups em que o jogador da vez comprou neste turno
     proposta: null, // troca à espera de resposta
     dividendos: [],
     acabou: false,
@@ -228,6 +229,7 @@ export const moves = {
     if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
     j.cash -= custo;
     su.acoes[ctx.seat] += qty;
+    if (!s.compradas.includes(su.id)) s.compradas.push(su.id);
     ctx.log('log.BUY', { qty, startup: `@startup.${su.id}`, custo });
   },
 
@@ -259,6 +261,7 @@ export const moves = {
     const tenho = su.acoes[ctx.seat];
     if (!tenho) return ctx.invalid('err.SEM_ACOES');
     if (tenho * 2 <= total(su)) return ctx.invalid('err.MAIORIA');
+    if (s.compradas.includes(su.id)) return ctx.invalid('err.COMPRADA_NO_TURNO');
     const ganho = Math.round(su.preco * tenho * s.gate.mult);
     s.jogadores[ctx.seat].cash += ganho;
     su.acoes[ctx.seat] = 0;
@@ -369,6 +372,7 @@ export const moves = {
     if (e) return e;
     liquidar(s, ctx, ctx.seat);
     s.pagos = [];
+    s.compradas = [];
     s.pos += 1;
     if (s.pos >= s.n) {
       fimDeRonda(s, ctx);
@@ -403,7 +407,7 @@ export function enumerate(s, seat) {
       const mine = su.acoes[seat];
       for (let q = 1; q <= MAX_ACOES - mine && su.preco * q <= j.cash; q++) out.push({ type: 'SP_BUY', payload: { startup: su.id, qty: q } });
       for (let q = 1; q <= mine; q++) out.push({ type: 'SP_SELL_MARKET', payload: { startup: su.id, qty: q } });
-      if (s.gate.aberto && mine && mine * 2 > total(su)) out.push({ type: 'SP_SELL_STARTUP', payload: { startup: su.id } });
+      if (s.gate.aberto && mine && mine * 2 > total(su) && !s.compradas.includes(su.id)) out.push({ type: 'SP_SELL_STARTUP', payload: { startup: su.id } });
     }
     if (s.gate.aberto) {
       for (const a of vivas.filter((x) => x.acoes[seat] > 0)) {
@@ -463,6 +467,7 @@ export function view(s, seat) {
     startups: s.startups,
     pool: s.pool,
     pagos: s.pagos,
+    compradas: s.compradas,
     proposta: s.proposta,
     dividendos: s.dividendos,
     maxAcoes: MAX_ACOES,

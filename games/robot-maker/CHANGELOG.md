@@ -1,5 +1,14 @@
 # Robot Maker — histórico de regras
 
+## 2.0.0 — Turno em duas fases e mercado que roda (2026-10-02)
+
+- Turno em duas fases, por esta ordem: primeiro os workers no tabuleiro (um por ação) e depois uma compra no mercado, que já não gasta worker e acaba o turno. Novas jogadas: `IR_AO_MERCADO` (acaba a fase dos workers) e erro `err.FASE`.
+- Se não houver nada que se possa pagar, o turno acaba logo depois do último worker.
+- Circuito: pela Forja o worker novo joga já; por compra só joga na ronda seguinte.
+- Mercado: a peça mais à esquerda de cada nível vai para o fundo do baralho no fim da ronda se ninguém a adquiriu (antes só rodava quando ninguém adquiria nada desse nível, e com a Forja a comprar L1 todas as rondas o mercado ficava parado).
+- Estado novo (`fase`, `adquiridos` por nível com os slots): as mesas de 1.x ficam expiradas.
+- Simulação com bots (300 partidas): 15 peças diferentes vistas no mercado por partida; rondas médias 10,9 (2 jogadores), 10,4 (3) e 10,8 (4).
+
 ## 1.1.0 — Jogo mais longo, mais peças L1 (2026-10-02)
 
 - Gatilho do fim de jogo: 6 slots preenchidas, pelo menos 1 peça L3 e 3 peças de nível 2 ou mais (1×L3, 2×L2, 3×L1, CPU incluída). Antes bastava 1 peça L3.

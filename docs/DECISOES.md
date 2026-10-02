@@ -421,6 +421,7 @@ Alternativas consideradas: só o botão existente (não resolve — ninguém o u
 ---
 
 ## ADR-017: O design system da Bitnik vai dentro da plataforma, numa versão fixa
+## ADR-018: Startup Panic: ordem de turno no estado e jogo novo registado como protótipo
 
 **Estado:** aceite (2026-10-02)
 
@@ -441,3 +442,19 @@ Alternativas consideradas: manter o CDN (zero manutenção, mas dependência ext
 - ✔ Zero dependência externa para os estilos da plataforma; a PWA funciona offline.
 - Um passo manual para atualizar o design system, em troca de nenhuma alteração chegar a um cliente sem passar por um deploy.
 - Os ficheiros copiados não se editam aqui: uma mudança faz-se no repositório do design system e volta como nova tag.
+O Startup Panic muda a ordem de jogo a cada ronda (joga primeiro quem tem ações na startup mais cara). O contrato já dava a `activePlayers(state)` a liberdade de devolver qualquer lugar, por isso não era claro se o motor precisava de mudar. O jogo traz ainda uma troca de ações entre jogadores que, no servidor original, era unilateral, e a simulação revelou que comprar e vender no Gate no mesmo turno dava lucro sem limite.
+
+### Decisão
+
+- **Ordem de turno:** `state.ordem` (lugares) e `state.pos` (índice da vez); `activePlayers` devolve `ordem[pos]`. A ordem recalcula-se no início de cada ronda, depois do CEO, por `calcularOrdem`. **O motor não muda.**
+- **Troca no Gate:** uma proposta guardada em `state.proposta`; enquanto existe, `activePlayers` devolve só o jogador visado, que aceita ou recusa. É a primeira jogada em que quem responde não é o jogador da vez.
+- **Gate:** não se vende uma startup em que se comprou nesse turno (`state.compradas`).
+- **Estado do jogo no Studio:** o jogo foi registado em `apps/studio/server.js` com `prototype: true` (selo e modo protótipo na mesa) até ser aprovado. Aprovado a 2026-10-02: passou a 1.0.0 sem a marca. Só depois de vendido passa para o runtime de um cliente.
+
+### Consequências
+
+- ✔ Ordem variável sem tocar no motor, com replay e simulação intactos.
+- ✔ O padrão da proposta com resposta de outro jogador serve a futuros jogos de negociação.
+- Os bots nunca propõem trocas e recusam as que lhes propõem; a simulação não exercita a troca (só os testes).
+- As percentagens de vitória por lugar reproduzem-se de forma aproximada (ver `docs/EQUILIBRIO.md`), não exata, por causa da correção do Gate.
+

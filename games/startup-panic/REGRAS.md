@@ -82,7 +82,7 @@ Há **12 rondas**, uma por CEO. Cada ronda:
 
 - **Comprar** (`SP_BUY`): `qty` ações de uma startup viva ao preço atual. **Máximo 4 ações da mesma startup por jogador.**
 - **Vender no mercado** (`SP_SELL_MARKET`): a qualquer momento da fase de Mercado, sem Gate nem maioria, ao preço atual e **sem multiplicador**. É a saída de liquidez de quem não tem maioria.
-- **Vender no Gate** (`SP_SELL_STARTUP`): só com o Gate aberto e com **maioria real** (mais de 50% das ações emitidas da startup; empatar ou ser o maior não chega). Recebe `preço × ações × multiplicador` e perde todas as ações dessa startup. Não se vende uma startup implodida.
+- **Vender no Gate** (`SP_SELL_STARTUP`): só com o Gate aberto e com **maioria real** (mais de 50% das ações emitidas da startup; empatar ou ser o maior não chega). Recebe `preço × ações × multiplicador` e perde todas as ações dessa startup. Não se vende uma startup implodida, nem uma startup em que se comprou **nesse mesmo turno** (senão bastava comprar uma ação e vendê-la logo ao multiplicador, sem limite).
 - **Trocar no Gate** (`SP_TRADE_PROPOSE`): com o Gate aberto, o jogador propõe a outro trocar **todas** as suas ações de uma startup por **todas** as ações que ele tem noutra. A troca só se faz se o outro **aceitar** (`SP_TRADE_ACCEPT`); se recusar (`SP_TRADE_REJECT`), nada muda e o proponente continua o turno. Ambos têm de ter ações das startups trocadas e a troca não pode dar a ninguém mais de 4 ações da mesma startup.
 - **Fechar o Mercado** (`SP_END_MARKET`): passa à Manutenção.
 
