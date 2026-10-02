@@ -1,5 +1,17 @@
 # Startup Panic — histórico de regras
 
+## 2.0.0 — Trabalhadores com papel e implosão com critério (2026-10-02)
+
+Feedback do David depois de jogar: "as ações parecem não ter impacto", "não sei o que faço com os trabalhadores" e "qual o critério da implosão?". Mudança de regras (as mesas guardadas da 1.x ficam expiradas):
+
+- **Advogado:** protege a startup onde está (de qualquer jogador) de implodir; mantém o dividendo de 1M por ação.
+- **PR:** sobe 1M ao preço da startup por cada PR lá; mantém o dividendo de 1M por ação.
+- **CFO:** deixa de pagar por ação; passa a renda fixa de 2M por ronda (4M no Sénior), mesmo sem ações. Dá cash desde a ronda 1.
+- **Engenheiro:** igual (2M por ação).
+- **Implosão:** atinge a startup viva **mais cara sem Advogado** (empate: sorteio), em vez de uma ao acaso. Se todas tiverem Advogado, nada implode.
+- **UI (sem regras):** cada trabalhador mostra o que faz e quanto rende por ronda; cada startup mostra o rendimento da minha equipa, um aviso se tenho ações sem equipa, a proteção do Advogado, o bónus de PR e a variação de preço do CEO (▲▼); a minha área mostra o valor total e os dividendos previstos; ao contratar vê-se a descrição do tipo.
+- O bot contrata também um Advogado (onde tem mais valor) e um CFO.
+
 ## 1.0.0 — Aprovado (2026-10-02)
 
 Aprovado pelo David no Studio: deixa de ser protótipo (sem selo nem modo protótipo). Sem mudanças de regras nem de UI em relação à 0.2.1; as mesas guardadas da 0.x ficam expiradas.

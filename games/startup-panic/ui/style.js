@@ -94,6 +94,14 @@ export default `
 
 @container (max-width: 520px) { .sp-startups { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sp-su { padding: 7px 8px; } }
 
+.sp-su .price small { font-size: 11px; font-weight: 800; margin-left: 4px; }
+.sp-su .price small.up { color: var(--game-accent-strong, #8f3513); }
+.sp-su .price small.down { color: var(--game-danger, #b3261e); }
+.sp-su .sp-warn { color: var(--game-danger, #b3261e); font-weight: 700; }
+.sp-yield { font-family: var(--game-font-display); font-size: 13px; color: var(--game-accent-strong, #8f3513); }
+.sp-wk { align-items: center; }
+.sp-desc { margin: 0; font-size: 13px; }
+
 /* a minha equipa */
 .sp-team { display: grid; gap: 6px; }
 .sp-teamhead { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; justify-content: center; }
