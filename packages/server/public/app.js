@@ -23,6 +23,7 @@ const UI = {
     points: '{n} pts', again: 'Jogar outra vez', system: 'Jogo',
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
+    install: 'Instalar app', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
     timer: '{event} em {s} s',
     expired: 'Versão antiga ({from}), já não pode ser retomada',
     expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
@@ -57,6 +58,7 @@ const UI = {
     points: '{n} pts', again: 'Play again', system: 'Game',
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
+    install: 'Install app', installIos: 'To install: tap Share, then "Add to Home Screen".',
     timer: '{event} in {s} s',
     expired: 'Old version ({from}), can no longer be resumed',
     expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
@@ -237,7 +239,7 @@ function renderLobby(only = null) {
       <div class="lob-head">
         <div class="lob-title"><h1>${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</h1>
           <p>${playersText(g.players)}</p></div>
-        ${guideLink(g, g.id)}
+        <div class="lob-tools">${installButton()}${guideLink(g, g.id)}</div>
       </div>
       <div class="lob-name">${nameField({ compact: true })}</div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
@@ -487,6 +489,29 @@ function guideButton(meta) {
 }
 
 /** Como guideButton(), mas com texto (lobby e sala de espera, antes da mesa). */
+/**
+ * Instalar a app (PWA): o manifest é da marca, por isso instala o lobby com os
+ * jogos deste deploy. Chrome, Edge e Android dão o evento `beforeinstallprompt`;
+ * o iOS não — aí só se explica o caminho manual. Some quando já está instalada
+ * (modo standalone).
+ */
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installButton() {
+  if (isStandalone() || app.installed || (!app.installEvent && !isIos())) return '';
+  return `<button class="lob-btn" data-install><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>${u('install')}</button>`;
+}
+async function installApp() {
+  const ev = app.installEvent;
+  if (!ev) { toast(u('installIos')); return; }
+  app.installEvent = null; // o pedido só se pode usar uma vez
+  ev.prompt();
+  if ((await ev.userChoice).outcome === 'accepted') app.installed = true;
+  if (!routeRoom()) render();
+}
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); app.installEvent = e; if (!routeRoom()) render(); });
+window.addEventListener('appinstalled', () => { app.installEvent = null; app.installed = true; if (!routeRoom()) render(); });
+
 function guideLink(meta, id) {
   const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
   if (meta?.rules) return `<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
@@ -984,6 +1009,7 @@ $('#view').addEventListener('click', (e) => {
   if ('notices' in d) { app.noticesOpen = !app.noticesOpen; renderNotices(); return; }
   if ('reg' in d) { app.regOpen = !app.regOpen; render(); return; }
   if ('closeresult' in d) { app.resultClosed = d.closeresult; render(); return; }
+  if ('install' in d) { installApp(); return; }
   if ('rules' in d) { app.rulesOpen = true; render(); return; }
   if ('closerules' in d) { app.rulesOpen = false; render(); return; }
   const roomId = app.room?.room.id;

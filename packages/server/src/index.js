@@ -127,7 +127,7 @@ export function createPlatform({
   // A versão é um hash do conteúdo do que fica em cache e da marca: muda
   // sozinha a cada deploy que mexa no motor, na UI ou num jogo.
   // O design system da Bitnik (v1.0.0) vai na própria plataforma (ADR-017): sem CDN, funciona offline.
-  const SHELL = ['app.js', 'app.css', 'appearance.js', 'icon.svg', 'design-system/index.css', 'design-system/tokens.css', 'design-system/base.css', 'design-system/components.css', 'design-system/game-ui.css'];
+  const SHELL = ['app.js', 'app.css', 'appearance.js', 'icon.svg', 'icon-192.png', 'icon-512.png', 'design-system/index.css', 'design-system/tokens.css', 'design-system/base.css', 'design-system/components.css', 'design-system/game-ui.css'];
   const sw = (() => {
     const hash = createHash('sha256').update(JSON.stringify(brand));
     const files = [];
@@ -1143,7 +1143,11 @@ export function createPlatform({
         name: brand.name, short_name: brand.name, start_url: homeSlash, display: 'standalone',
         background_color: brand.tokens?.['--color-cream'] || '#fbf3e4',
         theme_color: brand.tokens?.['--color-brick'] || '#b8461f',
-        icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
+        ],
       }));
     }
     if (url === '/documentation' || url === '/documentation/' || url === '/documentation/index.html') {
@@ -1163,7 +1167,7 @@ export function createPlatform({
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
     const ds = url.match(/^\/design-system\/(index|tokens|base|components|game-ui)\.css$/);
     if (ds) return serveFile(res, join(PUBLIC_DIR, 'design-system', `${ds[1]}.css`), MIME['.css']);
-    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
+    const pub = url.match(/^\/(app\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });
