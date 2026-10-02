@@ -1,0 +1,500 @@
+// Startup Panic — regras puras (investimento em startups, CEOs caóticos e Gates de Venda).
+// Só depende de @bitnik/engine (via index.js) e de ficheiros próprios.
+
+export const SETORES = ['ia', 'fintech', 'seguranca', 'biotech', 'energia'];
+export const MAX_ACOES = 4; // por jogador e por startup
+export const MAX_TRABALHADORES = 4; // por jogador
+export const RONDAS = 12; // uma por CEO
+export const CASH_INICIAL = 10;
+export const SALARIO = 1;
+export const CUSTO_SENIOR = 2;
+
+export const STARTUPS = [
+  { id: 'deepanic', setor: 'ia', base: 3 },
+  { id: 'halluci', setor: 'ia', base: 2 },
+  { id: 'cashburn', setor: 'fintech', base: 4 },
+  { id: 'tokenstonk', setor: 'fintech', base: 3 },
+  { id: 'hackshield', setor: 'seguranca', base: 3 },
+  { id: 'zerotrust', setor: 'seguranca', base: 2 },
+  { id: 'crispash', setor: 'biotech', base: 4 },
+  { id: 'pharmarush', setor: 'biotech', base: 3 },
+  { id: 'fusionfail', setor: 'energia', base: 2 },
+  { id: 'solarscam', setor: 'energia', base: 3 },
+];
+
+export const TIPOS = ['engineer', 'lawyer', 'pr', 'cfo'];
+/** Dividendo base por ação e por ronda; o Sénior paga o dobro. */
+export const DIVIDENDO = { engineer: 2, lawyer: 1, pr: 1, cfo: 1 };
+export const NOMES = {
+  engineer: ['Ada', 'Linus', 'Grace', 'Tim', 'Bjarne', 'Guido', 'Dennis', 'Ken'],
+  lawyer: ['Harvey', 'Kim', 'Elle', 'Saul', 'Alan', 'Ruth', 'Thurgood', 'Amal'],
+  pr: ['Max', 'Donna', 'Olivia', 'Louis', 'Judy', 'Seth', 'Ari', 'Samantha'],
+  cfo: ['Gordon', 'Warren', 'Ray', 'Carol', 'Jack', 'Sheryl', 'Jamie', 'Mary'],
+};
+
+/** Piso do multiplicador do Gate por ronda; o arquétipo do CEO multiplica-o. */
+export const GATE_BASE = { 4: 5, 8: 10, 12: 20 };
+export const CEO_ALTO = ['sa', 'ev', 'ww', 'sb'];
+export const CEO_BAIXO = ['mz', 'jh', 'pc', 'bc'];
+export const MULT_ALTO = 1.5;
+export const MULT_BAIXO = 0.7;
+
+const fmt = (n) => (n >= 0 ? '+' : '') + n + 'M';
+
+// ─── Efeitos de mercado ─────────────────────────────────────
+
+function mexer(s, ctx, setor, delta) {
+  if (!delta) return;
+  s.setores[setor] += delta;
+  for (const su of s.startups) {
+    if (su.setor === setor && !su.implodida) su.preco = Math.max(1, su.base + s.setores[setor]);
+  }
+  ctx.log('log.SETOR', { setor: `@setor.${setor}`, d: fmt(delta) });
+}
+
+function implodir(s, ctx) {
+  if (s.seguro) return;
+  const vivas = s.startups.filter((x) => !x.implodida);
+  if (!vivas.length) return;
+  const alvo = ctx.rng.pick(vivas);
+  alvo.implodida = true;
+  ctx.log('log.IMPLODE', { startup: `@startup.${alvo.id}` }, { announce: 'warn' });
+}
+
+/** CEOs: setor de afinidade (+1M sempre), se lança o dado e o efeito. */
+export const CEOS = {
+  ev: { setor: 'energia', dado: true, efeito: (s, ctx, d) => { mexer(s, ctx, 'ia', Math.floor(d / 2)); if (d >= 5) implodir(s, ctx); } },
+  mz: { setor: 'fintech', dado: false, efeito: (s, ctx) => { mexer(s, ctx, 'fintech', 2); mexer(s, ctx, 'ia', -1); } },
+  sa: { setor: 'ia', dado: true, efeito: (s, ctx, d) => { mexer(s, ctx, 'ia', d); mexer(s, ctx, 'biotech', -1); } },
+  jh: { setor: 'ia', dado: false, efeito: (s, ctx) => { mexer(s, ctx, 'ia', 3); mexer(s, ctx, 'energia', -1); } },
+  rh: { setor: 'fintech', dado: true, efeito: (s, ctx, d) => { mexer(s, ctx, SETORES[d % 5], 2); mexer(s, ctx, SETORES[(d + 2) % 5], -2); } },
+  tk: { setor: 'seguranca', dado: true, efeito: (s, ctx, d) => { implodir(s, ctx); mexer(s, ctx, 'seguranca', d - 2); } },
+  eh: { setor: 'biotech', dado: false, efeito: (s, ctx) => { mexer(s, ctx, 'biotech', 4); s.penalizacao = { setor: 'biotech', d: -4 }; ctx.log('log.PENALIZACAO'); } },
+  bc: { setor: 'energia', dado: false, efeito: (s, ctx) => { s.seguro = true; for (const x of SETORES) mexer(s, ctx, x, 1); ctx.log('log.SEGURO'); } },
+  an: { setor: 'biotech', dado: true, efeito: (s, ctx, d) => { mexer(s, ctx, 'biotech', d - 3); s.sobretaxa = 1; ctx.log('log.SOBRETAXA'); } },
+  pc: { setor: 'fintech', dado: false, efeito: (s, ctx) => { mexer(s, ctx, 'fintech', 2); mexer(s, ctx, 'seguranca', 1); } },
+  sb: { setor: 'fintech', dado: true, efeito: (s, ctx, d) => { if (d >= 4) implodir(s, ctx); else mexer(s, ctx, 'fintech', 4); } },
+  ww: { setor: 'seguranca', dado: false, efeito: (s, ctx) => { s.bonusGate += 1; ctx.log('log.WHITNEY'); } },
+};
+export const CEO_IDS = Object.keys(CEOS);
+
+// ─── Auxiliares ─────────────────────────────────────────────
+
+const atual = (s) => s.ordem[s.pos];
+const total = (su) => su.acoes.reduce((a, b) => a + b, 0);
+const startup = (s, id) => s.startups.find((x) => x.id === id);
+const tem = (j, su, tipo) => j.trab.some((w) => w.startup === su && w.tipo === tipo);
+
+export const acoesDe = (s, seat) => s.startups.map((su) => ({ id: su.id, n: su.acoes[seat] })).filter((x) => x.n > 0);
+
+export function pontuar(s, seat) {
+  let t = s.jogadores[seat].cash;
+  for (const su of s.startups) if (!su.implodida) t += su.acoes[seat] * su.preco;
+  return t;
+}
+
+/** Joga primeiro quem tem ações na startup mais cara; sem ações joga no fim; empates mantêm a ordem anterior. */
+export function calcularOrdem(s) {
+  const melhor = (seat) => Math.max(0, ...s.startups.filter((su) => !su.implodida && su.acoes[seat] > 0).map((su) => su.preco));
+  return s.ordem.slice().sort((a, b) => melhor(b) - melhor(a) || s.ordem.indexOf(a) - s.ordem.indexOf(b));
+}
+
+// ─── Preparação ─────────────────────────────────────────────
+
+export function setup(ctx) {
+  const n = ctx.numPlayers;
+  const pool = [];
+  for (const tipo of TIPOS) {
+    const nomes = ctx.rng.shuffle([...NOMES[tipo]]);
+    for (let i = 0; i < 3; i++) pool.push({ id: `${tipo}_${i}`, tipo, nome: nomes[i] });
+  }
+  const baralho = ctx.rng.shuffle([...CEO_IDS]);
+  const primeiro = ctx.rng.int(n);
+  const s = {
+    n,
+    jogadores: Array.from({ length: n }, () => ({ cash: CASH_INICIAL, trab: [] })),
+    startups: STARTUPS.map((x) => ({ ...x, preco: x.base, acoes: Array(n).fill(0), implodida: false })),
+    setores: Object.fromEntries(SETORES.map((x) => [x, 0])),
+    baralho,
+    idx: 0,
+    ceo: null,
+    pool,
+    ronda: 1,
+    ordem: Array.from({ length: n }, (_, i) => (primeiro + i) % n),
+    pos: 0,
+    fase: 'MERCADO', // MERCADO | MANUTENCAO | FIM
+    gate: { aberto: false, mult: 1 },
+    bonusGate: 0,
+    seguro: false,
+    sobretaxa: 0,
+    penalizacao: null,
+    pagos: [], // Séniores já pagos neste turno
+    proposta: null, // troca à espera de resposta
+    dividendos: [],
+    acabou: false,
+  };
+  ctx.log('log.RONDA', { n: 1 });
+  comecarRonda(s, ctx);
+  return s;
+}
+
+function comecarRonda(s, ctx) {
+  s.seguro = false;
+  s.sobretaxa = 0;
+  if (s.penalizacao) {
+    mexer(s, ctx, s.penalizacao.setor, s.penalizacao.d);
+    s.penalizacao = null;
+  }
+  const id = s.baralho[s.idx];
+  s.idx += 1;
+  const ceo = CEOS[id];
+  const dado = ceo.dado ? 1 + ctx.rng.int(6) : null;
+  s.ceo = { id, dado };
+  mexer(s, ctx, ceo.setor, 1);
+  ctx.log('log.CEO', { ceo: `@ceo.${id}`, setor: `@setor.${ceo.setor}`, dado: dado ?? '' });
+  if (dado) ctx.log('log.DADO', { n: dado });
+  ceo.efeito(s, ctx, dado);
+
+  const base = GATE_BASE[s.idx];
+  if (base) {
+    const arq = CEO_ALTO.includes(id) ? MULT_ALTO : CEO_BAIXO.includes(id) ? MULT_BAIXO : 1;
+    s.gate = { aberto: true, mult: Math.max(1, Math.round(base * arq)) + s.bonusGate };
+    ctx.log('log.GATE', { mult: s.gate.mult, ceo: `@ceo.${id}` }, { announce: { key: 'msg.GATE', params: { mult: s.gate.mult } } });
+  } else {
+    s.gate = { aberto: false, mult: 1 };
+  }
+}
+
+function fimDeRonda(s, ctx) {
+  s.dividendos = [];
+  s.jogadores.forEach((j, seat) => {
+    let soma = 0;
+    for (const su of s.startups) {
+      if (su.implodida || !su.acoes[seat]) continue;
+      const meus = j.trab.filter((w) => w.startup === su.id);
+      if (!meus.length) continue; // sem trabalhadores, não há dividendos
+      const div = meus.reduce((a, w) => a + DIVIDENDO[w.tipo] * (w.senior ? 2 : 1), 0);
+      const ganho = su.acoes[seat] * div;
+      j.cash += ganho;
+      soma += ganho;
+      s.dividendos.push({ seat, startup: su.id, acoes: su.acoes[seat], div, ganho });
+    }
+    if (soma > 0) ctx.log('log.DIVIDENDOS', { lugar: seat + 1, n: soma });
+  });
+  s.ronda += 1;
+}
+
+/** Paga os salários dos Séniores ainda por pagar; quem não tiver cash abandona. Devolve quanto foi pago. */
+function liquidar(s, ctx, seat) {
+  const j = s.jogadores[seat];
+  const sal = SALARIO + s.sobretaxa;
+  let pago = 0;
+  for (const w of j.trab.filter((x) => x.senior && !s.pagos.includes(x.id))) {
+    if (j.cash >= sal) {
+      j.cash -= sal;
+      pago += sal;
+      s.pagos.push(w.id);
+    } else {
+      j.trab.splice(j.trab.indexOf(w), 1);
+      s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
+      ctx.log('log.ABANDONOU', { nome: w.nome });
+    }
+  }
+  if (pago > 0) ctx.log('log.SALARIOS', { n: pago });
+  return pago;
+}
+
+// ─── Jogadas ────────────────────────────────────────────────
+
+export const activePlayers = (s) => (s.acabou ? [] : s.proposta ? [s.proposta.para] : [atual(s)]);
+
+const naVez = (s, ctx, fase) => {
+  if (s.proposta) return ctx.invalid('err.PROPOSTA_PENDENTE');
+  if (ctx.seat !== atual(s)) return ctx.invalid('err.NAO_E_A_TUA_VEZ');
+  if (s.fase !== fase) return ctx.invalid('err.FASE');
+  return null;
+};
+
+export const moves = {
+  SP_BUY(s, { startup: id, qty = 1 }, ctx) {
+    const e = naVez(s, ctx, 'MERCADO');
+    if (e) return e;
+    const su = startup(s, id);
+    if (!su || su.implodida) return ctx.invalid('err.STARTUP');
+    if (!Number.isInteger(qty) || qty < 1) return ctx.invalid('err.QTD');
+    const j = s.jogadores[ctx.seat];
+    if (su.acoes[ctx.seat] + qty > MAX_ACOES) return ctx.invalid('err.MAX_ACOES', { max: MAX_ACOES, tens: su.acoes[ctx.seat] });
+    const custo = su.preco * qty;
+    if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
+    j.cash -= custo;
+    su.acoes[ctx.seat] += qty;
+    ctx.log('log.BUY', { qty, startup: `@startup.${su.id}`, custo });
+  },
+
+  /** Venda livre no mercado: ao preço atual, sem multiplicador, a qualquer momento da fase de Mercado. */
+  SP_SELL_MARKET(s, { startup: id, qty }, ctx) {
+    const e = naVez(s, ctx, 'MERCADO');
+    if (e) return e;
+    const su = startup(s, id);
+    if (!su) return ctx.invalid('err.STARTUP');
+    if (su.implodida) return ctx.invalid('err.IMPLODIDA');
+    const tenho = su.acoes[ctx.seat];
+    if (!tenho) return ctx.invalid('err.SEM_ACOES');
+    const q = qty === undefined ? tenho : qty;
+    if (!Number.isInteger(q) || q < 1 || q > tenho) return ctx.invalid('err.QTD');
+    const ganho = su.preco * q;
+    s.jogadores[ctx.seat].cash += ganho;
+    su.acoes[ctx.seat] -= q;
+    ctx.log('log.SELL_MARKET', { qty: q, startup: `@startup.${su.id}`, ganho });
+  },
+
+  /** Venda da startup no Gate: exige maioria real (mais de 50% das ações emitidas). */
+  SP_SELL_STARTUP(s, { startup: id }, ctx) {
+    const e = naVez(s, ctx, 'MERCADO');
+    if (e) return e;
+    if (!s.gate.aberto) return ctx.invalid('err.GATE_FECHADO');
+    const su = startup(s, id);
+    if (!su) return ctx.invalid('err.STARTUP');
+    if (su.implodida) return ctx.invalid('err.IMPLODIDA');
+    const tenho = su.acoes[ctx.seat];
+    if (!tenho) return ctx.invalid('err.SEM_ACOES');
+    if (tenho * 2 <= total(su)) return ctx.invalid('err.MAIORIA');
+    const ganho = Math.round(su.preco * tenho * s.gate.mult);
+    s.jogadores[ctx.seat].cash += ganho;
+    su.acoes[ctx.seat] = 0;
+    ctx.log('log.SELL_STARTUP', { startup: `@startup.${su.id}`, mult: s.gate.mult, ganho });
+  },
+
+  /** Proposta de troca no Gate: todas as ações de uma startup por todas as de outra, se o outro jogador aceitar. */
+  SP_TRADE_PROPOSE(s, { de, para, por }, ctx) {
+    const e = naVez(s, ctx, 'MERCADO');
+    if (e) return e;
+    if (!s.gate.aberto) return ctx.invalid('err.GATE_FECHADO');
+    if (!Number.isInteger(para) || para === ctx.seat || !s.jogadores[para]) return ctx.invalid('err.ALVO');
+    const a = startup(s, de);
+    const b = startup(s, por);
+    if (!a || !b || a === b || a.implodida || b.implodida) return ctx.invalid('err.STARTUP');
+    const mine = a.acoes[ctx.seat];
+    const deles = b.acoes[para];
+    if (!mine || !deles) return ctx.invalid('err.TROCA_SEM_ACOES');
+    if (b.acoes[ctx.seat] + deles > MAX_ACOES || a.acoes[para] + mine > MAX_ACOES) return ctx.invalid('err.MAX_ACOES', { max: MAX_ACOES });
+    s.proposta = { de: ctx.seat, para, dar: a.id, receber: b.id };
+    ctx.log('log.TRADE_PROPOSE', { dar: `@startup.${a.id}`, receber: `@startup.${b.id}`, para: para + 1 });
+  },
+
+  SP_TRADE_ACCEPT(s, _p, ctx) {
+    const p = s.proposta;
+    if (!p || ctx.seat !== p.para) return ctx.invalid('err.SEM_PROPOSTA');
+    const a = startup(s, p.dar);
+    const b = startup(s, p.receber);
+    const mine = a.acoes[p.de];
+    const deles = b.acoes[p.para];
+    a.acoes[p.de] = 0;
+    a.acoes[p.para] += mine;
+    b.acoes[p.para] = 0;
+    b.acoes[p.de] += deles;
+    s.proposta = null;
+    ctx.log('log.TRADE_ACCEPT', { de: p.de + 1 });
+  },
+
+  SP_TRADE_REJECT(s, _p, ctx) {
+    const p = s.proposta;
+    if (!p || ctx.seat !== p.para) return ctx.invalid('err.SEM_PROPOSTA');
+    s.proposta = null;
+    ctx.log('log.TRADE_REJECT', { de: p.de + 1 });
+  },
+
+  SP_END_MARKET(s, _p, ctx) {
+    const e = naVez(s, ctx, 'MERCADO');
+    if (e) return e;
+    s.fase = 'MANUTENCAO';
+  },
+
+  SP_HIRE(s, { worker, startup: id, senior = false }, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    const w = s.pool.find((x) => x.id === worker);
+    if (!w) return ctx.invalid('err.TRABALHADOR');
+    const su = startup(s, id);
+    if (!su || su.implodida) return ctx.invalid('err.STARTUP');
+    const j = s.jogadores[ctx.seat];
+    if (tem(j, su.id, w.tipo)) return ctx.invalid('err.TIPO_REPETIDO');
+    if (j.trab.length >= MAX_TRABALHADORES) return ctx.invalid('err.MAX_TRABALHADORES', { max: MAX_TRABALHADORES });
+    const custo = senior ? CUSTO_SENIOR : 0;
+    if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
+    j.cash -= custo;
+    s.pool.splice(s.pool.indexOf(w), 1);
+    j.trab.push({ id: w.id, tipo: w.tipo, nome: w.nome, startup: su.id, senior: !!senior });
+    ctx.log(senior ? 'log.HIRE_SENIOR' : 'log.HIRE', { nome: w.nome, tipo: `@tipo.${w.tipo}`, startup: `@startup.${su.id}` });
+  },
+
+  SP_FIRE(s, { worker }, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    const j = s.jogadores[ctx.seat];
+    const i = j.trab.findIndex((x) => x.id === worker);
+    if (i < 0) return ctx.invalid('err.TRABALHADOR');
+    const [w] = j.trab.splice(i, 1);
+    s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
+    ctx.log('log.FIRE', { nome: w.nome });
+  },
+
+  /** Muda um trabalhador de startup, com indemnização (1M Estagiário, 2M Sénior). */
+  SP_MOVE_WORKER(s, { worker, startup: id }, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    const j = s.jogadores[ctx.seat];
+    const w = j.trab.find((x) => x.id === worker);
+    if (!w) return ctx.invalid('err.TRABALHADOR');
+    const su = startup(s, id);
+    if (!su || su.implodida || su.id === w.startup) return ctx.invalid('err.STARTUP');
+    if (tem(j, su.id, w.tipo)) return ctx.invalid('err.TIPO_REPETIDO');
+    const custo = w.senior ? 2 : 1;
+    if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
+    j.cash -= custo;
+    w.startup = su.id;
+    ctx.log('log.MOVE', { nome: w.nome, startup: `@startup.${su.id}`, custo });
+  },
+
+  SP_PAY_SALARY(s, _p, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    if (!s.jogadores[ctx.seat].trab.some((x) => x.senior && !s.pagos.includes(x.id))) return ctx.invalid('err.SEM_SALARIOS');
+    liquidar(s, ctx, ctx.seat);
+  },
+
+  /** Passa a vez. Os salários por pagar são cobrados aqui. No fim da última vez da ronda pagam-se os dividendos e entra o CEO seguinte. */
+  SP_END_TURN(s, _p, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    liquidar(s, ctx, ctx.seat);
+    s.pagos = [];
+    s.pos += 1;
+    if (s.pos >= s.n) {
+      fimDeRonda(s, ctx);
+      if (s.idx >= RONDAS) {
+        s.fase = 'FIM';
+        s.acabou = true;
+        ctx.log('log.FIM');
+        return;
+      }
+      ctx.log('log.RONDA', { n: s.ronda });
+      comecarRonda(s, ctx);
+      s.ordem = calcularOrdem(s);
+      s.pos = 0;
+    }
+    s.fase = 'MERCADO';
+  },
+};
+
+// ─── Leitura ────────────────────────────────────────────────
+
+export function enumerate(s, seat) {
+  if (s.acabou) return [];
+  if (s.proposta) {
+    return s.proposta.para === seat ? [{ type: 'SP_TRADE_ACCEPT', payload: {} }, { type: 'SP_TRADE_REJECT', payload: {} }] : [];
+  }
+  if (atual(s) !== seat) return [];
+  const j = s.jogadores[seat];
+  const out = [];
+  const vivas = s.startups.filter((x) => !x.implodida);
+  if (s.fase === 'MERCADO') {
+    for (const su of vivas) {
+      const mine = su.acoes[seat];
+      for (let q = 1; q <= MAX_ACOES - mine && su.preco * q <= j.cash; q++) out.push({ type: 'SP_BUY', payload: { startup: su.id, qty: q } });
+      for (let q = 1; q <= mine; q++) out.push({ type: 'SP_SELL_MARKET', payload: { startup: su.id, qty: q } });
+      if (s.gate.aberto && mine && mine * 2 > total(su)) out.push({ type: 'SP_SELL_STARTUP', payload: { startup: su.id } });
+    }
+    if (s.gate.aberto) {
+      for (const a of vivas.filter((x) => x.acoes[seat] > 0)) {
+        for (const b of vivas) {
+          if (a === b) continue;
+          for (let para = 0; para < s.n; para++) {
+            if (para === seat || !b.acoes[para]) continue;
+            if (b.acoes[seat] + b.acoes[para] > MAX_ACOES || a.acoes[para] + a.acoes[seat] > MAX_ACOES) continue;
+            out.push({ type: 'SP_TRADE_PROPOSE', payload: { de: a.id, para, por: b.id } });
+          }
+        }
+      }
+    }
+    out.push({ type: 'SP_END_MARKET', payload: {} });
+  } else {
+    // Um candidato por tipo: os 3 da pool são equivalentes (só o nome muda).
+    const livres = TIPOS.map((t) => s.pool.find((w) => w.tipo === t)).filter(Boolean);
+    if (j.trab.length < MAX_TRABALHADORES) {
+      for (const w of livres) {
+        for (const su of vivas) {
+          if (tem(j, su.id, w.tipo)) continue;
+          out.push({ type: 'SP_HIRE', payload: { worker: w.id, startup: su.id, senior: false } });
+          if (j.cash >= CUSTO_SENIOR) out.push({ type: 'SP_HIRE', payload: { worker: w.id, startup: su.id, senior: true } });
+        }
+      }
+    }
+    for (const w of j.trab) {
+      out.push({ type: 'SP_FIRE', payload: { worker: w.id } });
+      const custo = w.senior ? 2 : 1;
+      if (j.cash < custo) continue;
+      for (const su of vivas) if (su.id !== w.startup && !tem(j, su.id, w.tipo)) out.push({ type: 'SP_MOVE_WORKER', payload: { worker: w.id, startup: su.id } });
+    }
+    if (j.trab.some((x) => x.senior && !s.pagos.includes(x.id))) out.push({ type: 'SP_PAY_SALARY', payload: {} });
+    out.push({ type: 'SP_END_TURN', payload: {} });
+  }
+  return out;
+}
+
+/** Só o cash dos outros jogadores é escondido; ações, trabalhadores e pool são públicos. */
+export function view(s, seat) {
+  const meu = seat != null && seat >= 0 && s.jogadores[seat];
+  return {
+    n: s.n,
+    ronda: s.ronda,
+    rondas: RONDAS,
+    ordem: s.ordem,
+    pos: s.pos,
+    vez: s.acabou ? null : atual(s),
+    fase: s.fase,
+    ceo: s.ceo,
+    gate: s.gate,
+    seguro: s.seguro,
+    sobretaxa: s.sobretaxa,
+    bonusGate: s.bonusGate,
+    penalizacao: s.penalizacao,
+    setores: s.setores,
+    startups: s.startups,
+    pool: s.pool,
+    pagos: s.pagos,
+    proposta: s.proposta,
+    dividendos: s.dividendos,
+    maxAcoes: MAX_ACOES,
+    maxTrabalhadores: MAX_TRABALHADORES,
+    jogadores: s.jogadores.map((j, i) => ({
+      cash: i === seat ? j.cash : null,
+      trab: j.trab,
+      acoes: acoesDe(s, i),
+    })),
+    meuCash: meu ? meu.cash : null,
+    acabou: s.acabou,
+    players: s.jogadores.map((j, i) => ({
+      score: s.acabou ? pontuar(s, i) : undefined,
+      summary: `👷${j.trab.length} 📈${s.startups.reduce((a, su) => a + su.acoes[i], 0)}`,
+    })),
+  };
+}
+
+export function result(s) {
+  if (!s.acabou) return null;
+  const scores = s.jogadores.map((_, i) => pontuar(s, i));
+  const max = Math.max(...scores);
+  return { scores, winners: scores.flatMap((x, i) => (x === max ? [i] : [])) };
+}
+
+export function describeMove(move) {
+  const p = move.payload || {};
+  if (move.type === 'SP_BUY') return { key: 'moveLabel.SP_BUY', params: { qty: p.qty ?? 1, startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_SELL_MARKET') return { key: 'moveLabel.SP_SELL_MARKET', params: { qty: p.qty ?? '', startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_SELL_STARTUP') return { key: 'moveLabel.SP_SELL_STARTUP', params: { startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_TRADE_PROPOSE') return { key: 'moveLabel.SP_TRADE_PROPOSE', params: { dar: `@startup.${p.de}`, receber: `@startup.${p.por}`, para: p.para + 1 } };
+  if (move.type === 'SP_HIRE') return { key: p.senior ? 'moveLabel.SP_HIRE_SENIOR' : 'moveLabel.SP_HIRE', params: { tipo: `@tipo.${String(p.worker).split('_')[0]}`, startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_MOVE_WORKER') return { key: 'moveLabel.SP_MOVE_WORKER', params: { startup: `@startup.${p.startup}` } };
+  return { key: `move.${move.type}`, params: {} };
+}
