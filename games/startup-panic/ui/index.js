@@ -79,16 +79,15 @@ function onClick(e) {
   else if (act === 'fire') send(find('SP_FIRE', { worker: id }));
   else if (act === 'accept') send(legal('SP_TRADE_ACCEPT')[0]);
   else if (act === 'decline') send(legal('SP_TRADE_REJECT')[0]);
-  else if (act === 'hire') { ui.hire = { tipo: null, senior: null, startup: null }; render(); }
+  else if (act === 'hire') { ui.hire = { tipo: null, startup: null }; render(); }
   else if (act === 'move') { ui.move = { worker: id }; render(); }
   else if (act === 'trade') { ui.trade = { de: null, para: null, por: null }; render(); }
   else if (act === 'close') { ui.hire = null; ui.move = null; ui.trade = null; render(); }
-  else if (act === 'hire-tipo') { ui.hire.tipo = id; ui.hire.senior = null; ui.hire.startup = null; render(); }
-  else if (act === 'hire-nivel') { ui.hire.senior = id === '1'; ui.hire.startup = null; render(); }
+  else if (act === 'hire-tipo') { ui.hire.tipo = id; ui.hire.startup = null; render(); }
   else if (act === 'hire-su') { ui.hire.startup = id; render(); }
   else if (act === 'hire-ok') {
     const h = ui.hire;
-    const mv = legal('SP_HIRE').find((m) => tipoDe(m.payload.worker) === h.tipo && m.payload.senior === h.senior && m.payload.startup === h.startup);
+    const mv = legal('SP_HIRE').find((m) => tipoDe(m.payload.worker) === h.tipo && m.payload.startup === h.startup);
     ui.hire = null;
     send(mv);
   } else if (act === 'move-su') {
@@ -110,6 +109,7 @@ function render() {
   const v = msg.view;
   layout.innerHTML = `
     ${renderPlayers(v)}
+    ${renderTimeline(v)}
     <div class="sp-top">${renderCeo(v)}${renderSectors(v)}</div>
     ${renderStartups(v)}
     ${renderTeam(v)}
@@ -125,15 +125,25 @@ function renderPlayers(v) {
   const act = activeSeat(v);
   return `<div class="sp-players" aria-label="${esc(ctx.t('ui.order'))}">${v.ordem.map((i, k) => {
     const j = v.jogadores[i];
-    const n = j.acoes.reduce((a, x) => a + x.n, 0);
     const state = i === act ? (i === me ? ctx.t('ui.yourTurn') : ctx.t('ui.turnOf', { nome: nameOf(i) })) : '';
     const cash = j.cash == null ? `<span title="${esc(ctx.t('ui.hidden'))}">🔒</span>` : `<b>${j.cash}M</b>`;
     return `<div class="sp-glass sp-player${i === me ? ' me' : ''}${i === act ? ' active' : ''}">
       <div class="sp-pname"><span class="sp-pos">${k + 1}</span><i class="sp-dot" style="background:var(--game-color-${(i % 4) + 1})"></i><span class="n">${esc(nameOf(i))}</span></div>
       <div class="sp-pstate">${esc(state) || '&nbsp;'}</div>
-      <div class="sp-res"><span title="${esc(ctx.t('ui.cash'))}">💰 ${cash}</span><span title="${esc(ctx.t('ui.shares'))}">📈 <b>${n}</b></span><span title="${esc(ctx.t('ui.workers'))}">👷 <b>${j.trab.length}</b>/${v.maxTrabalhadores}</span></div>
+      <div class="sp-res"><span title="${esc(ctx.t('ui.cash'))}">💰 ${cash}</span><span title="${esc(ctx.t('ui.totalShares'))}">📈 <b>${j.totalAcoes}</b>/${v.maxAcoesTotal}</span><span title="${esc(ctx.t('ui.workersCount'))}">👷 <b>${j.trab.length}</b></span></div>
     </div>`;
   }).join('')}</div>`;
+}
+
+function renderTimeline(v) {
+  const cells = Array.from({ length: v.rondas }, (_, k) => {
+    const n = k + 1;
+    const base = v.gateBase[n];
+    const cls = ['sp-tl', n < v.ronda || (v.acabou && n === v.ronda - 1) ? 'done' : '', n === v.ronda && !v.acabou ? 'now' : '', base ? 'gate' : ''].filter(Boolean).join(' ');
+    const open = base && n === v.ronda && v.gate.aberto ? v.gate.mult : null;
+    return `<li class="${cls}"${base ? ` title="${esc(ctx.t('ui.gateRound', { mult: base }))}"` : ''}><b>${n}</b>${base ? `<span>🔔 ×${open ?? base}</span>` : ''}</li>`;
+  }).join('');
+  return `<ol class="sp-timeline" aria-label="${esc(ctx.t('ui.timeline'))}">${cells}</ol>`;
 }
 
 function renderCeo(v) {
@@ -188,7 +198,7 @@ function renderStartups(v) {
       <div class="sp-holders">${holders.map((h) => `<span><i class="sp-dot" style="background:var(--game-color-${(h.i % 4) + 1})"></i><b>${h.n}</b>${h.i === me ? ` <small>${esc(ctx.t('ui.you'))}</small>` : ''}</span>`).join('') || '<small>—</small>'}</div>
       <small>${major ? esc(ctx.t('ui.majority', { nome: nameOf(major.i) })) : esc(ctx.t('ui.noMajority'))}</small>
       ${semEquipa ? `<small class="sp-warn">⚠ ${esc(ctx.t('ui.noTeamWarn'))}</small>` : ''}
-      <div class="sp-wk">${rende ? `<b class="sp-yield">${esc(ctx.t('ui.perRound', { n: rende }))}</b>` : ''}${team.map((w) => `<span title="${esc(w.nome)}">${TIPO_ICON[w.tipo]}${w.senior ? '⭐' : ''}</span>`).join('')}</div>
+      <div class="sp-wk">${rende ? `<b class="sp-yield">${esc(ctx.t('ui.perRound', { n: rende }))}</b>` : ''}${team.map((w) => `<span title="${esc(w.nome)}">${TIPO_ICON[w.tipo]}${w.nivel >= 3 ? '⭐' : ''}</span>`).join('')}</div>
       ${acts}
     </div>`;
   }).join('');
@@ -203,7 +213,7 @@ function renderTeam(v) {
   const previsto = j.previsao.reduce((a, d) => a + d.ganho, 0);
   const canMaint = v.fase === 'MANUTENCAO' && legal('SP_END_TURN').length > 0;
   const workers = j.trab.map((w) => `<div class="sp-worker">
-    <span class="nm">${TIPO_ICON[w.tipo]} ${esc(w.nome)} ${w.senior ? `⭐ <small>${esc(ctx.t('ui.senior1'))}</small>` : ''}</span>
+    <span class="nm">${TIPO_ICON[w.tipo]} ${esc(w.nome)} <small>${esc(ctx.t(`nivel.${v.niveis[w.nivel].id}`))} ×${v.niveis[w.nivel].mult}</small></span>
     <small>${esc(ctx.t(`tipo.${w.tipo}`))} · ${esc(stName(w.startup))} · <b>${esc(ctx.t('ui.yields', { n: w.rende }))}</b></small>
     <small>${esc(ctx.t(`tipo.${w.tipo}.desc`))}</small>
     ${canMaint ? `<div class="sp-acts">
@@ -212,7 +222,7 @@ function renderTeam(v) {
     </div>` : ''}
   </div>`).join('');
   return `<section class="sp-team">
-    <div class="sp-teamhead"><span class="sp-lbl">${esc(ctx.t('ui.team'))}</span><span>💰 <b>${v.meuCash}M</b></span><span title="${esc(ctx.t('ui.networth'))}">📊 <b>${v.meuPatrimonio}M</b></span><span title="${esc(ctx.t('ui.expectedHint'))}">💵 ${esc(ctx.t('ui.expected'))}: <b>${esc(ctx.t('ui.perRound', { n: previsto }))}</b></span><span class="sp-lbl">${esc(ctx.t('ui.pool'))}</span><span>${pool}</span>
+    <div class="sp-teamhead"><span class="sp-lbl">${esc(ctx.t('ui.team'))}</span><span>💰 <b>${v.meuCash}M</b></span><span title="${esc(ctx.t('ui.networth'))}">📊 <b>${v.meuPatrimonio}M</b></span><span title="${esc(ctx.t('ui.expectedHint'))}">💵 ${esc(ctx.t('ui.expected'))}: <b>${esc(ctx.t('ui.perRound', { n: previsto }))}</b></span><span title="${esc(ctx.t('ui.salaries'))}">💸 ${esc(ctx.t('ui.salaries'))}: <b>${v.meusSalarios}M</b></span><span class="sp-lbl">${esc(ctx.t('ui.pool'))}</span><span>${pool}</span>
       ${canMaint && legal('SP_HIRE').length ? `<button class="sp-act" type="button" data-act="hire">${esc(ctx.t('ui.hire'))}</button>` : ''}</div>
     ${j.trab.length ? `<div class="sp-workers">${workers}</div>` : `<div class="sp-empty">${esc(ctx.t('ui.noTeam'))}</div>`}
   </section>`;
@@ -255,16 +265,15 @@ function renderModal(v) {
     const h = ui.hire;
     const all = legal('SP_HIRE');
     const tipos = uniq(all.map((m) => tipoDe(m.payload.worker)));
-    const niveis = uniq(all.filter((m) => tipoDe(m.payload.worker) === h.tipo).map((m) => m.payload.senior));
-    const sus = uniq(all.filter((m) => tipoDe(m.payload.worker) === h.tipo && m.payload.senior === h.senior).map((m) => m.payload.startup));
-    const ok = h.tipo && h.senior != null && h.startup;
+    const sus = uniq(all.filter((m) => tipoDe(m.payload.worker) === h.tipo).map((m) => m.payload.startup));
+    const ok = h.tipo && h.startup;
+    const pr = v.proximo;
     return `<div class="sp-modal"><div class="sp-modal-box" role="dialog" aria-label="${esc(ctx.t('ui.hire'))}">
       <h3>${esc(ctx.t('ui.hire'))}</h3>
       <div class="sp-lbl">${esc(ctx.t('ui.pickType'))}</div>
       <div class="sp-opts">${tipos.map((t) => opt('hire-tipo', t, `${TIPO_ICON[t]} ${esc(ctx.t(`tipo.${t}`))}`, h.tipo === t)).join('')}</div>
-      ${h.tipo ? `<p class="sp-desc">${esc(ctx.t(`tipo.${h.tipo}.desc`))}</p>` : ''}
-      ${h.tipo ? `<div class="sp-lbl">${esc(ctx.t('ui.pickLevel'))}</div><div class="sp-opts">${niveis.map((s) => opt('hire-nivel', s ? '1' : '0', esc(ctx.t(s ? 'ui.senior' : 'ui.intern')), h.senior === s)).join('')}</div>` : ''}
-      ${h.senior != null ? `<div class="sp-lbl">${esc(ctx.t('ui.pickStartup'))}</div><div class="sp-opts">${sus.map((s) => opt('hire-su', s, esc(stName(s)), h.startup === s)).join('')}</div>` : ''}
+      <p class="sp-desc"><b>${esc(ctx.t('ui.nextLevel', { nivel: ctx.t(`nivel.${pr.id}`), custo: pr.custo, salario: pr.salario, mult: pr.mult }))}</b></p>
+      ${h.tipo ? `<p class="sp-desc">${esc(ctx.t(`tipo.${h.tipo}.desc`))}</p><div class="sp-lbl">${esc(ctx.t('ui.pickStartup'))}</div><div class="sp-opts">${sus.map((s) => opt('hire-su', s, esc(stName(s)), h.startup === s)).join('')}</div>` : ''}
       <div class="sp-modal-acts"><button class="sp-btn" type="button" data-act="close">${esc(ctx.t('ui.cancel'))}</button><button class="sp-btn primary" type="button" data-act="hire-ok" ${ok ? '' : 'disabled'}>${esc(ctx.t('ui.confirm'))}</button></div>
     </div></div>`;
   }

@@ -79,3 +79,14 @@ Atualizado a 2026-09-29.
 
 - Mais equilibrado do que a 1.0.0 (sem vantagem de lugar). O bot agora também contrata Advogado e CFO. Partidas mais longas: ~163, 186 e 211 jogadas por partida (2, 3 e 4 jogadores).
 - **O que a simulação não mede:** se o jogo é mais divertido. Observado a jogar: os bots esgotam a pool partilhada de trabalhadores já na ronda 1 (4+3+2 de 12), o que é um ponto a rever no assessment (pool maior, ou limite por ronda).
+
+## Startup Panic (3.0.0)
+
+| Jogadores | Vitórias por lugar (1000 partidas, bot do pacote) |
+|---|---|
+| 2 | 50,1 / 49,9 |
+| 3 | 33,5 / 33,1 / 33,4 |
+| 4 | 25,1 / 25,3 / 24,9 / 24,8 |
+
+- Sem vantagem de lugar. Partidas mais curtas em jogadas (56, 85 e 112 por partida a 2, 3 e 4 jogadores): o limite de 9 ações faz o bot parar de comprar.
+- **O que a simulação não mede:** se o jogo ficou mais divertido, nem se a economia (dividendos até ×4, salários até 3M) está bem calibrada para humanos. Assessment pendente com partidas reais.
