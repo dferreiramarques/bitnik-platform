@@ -25,13 +25,10 @@ export const bitnikBrand = {
   ],
 };
 
-// Jogo no Studio ainda por aprovar: selo "protótipo" e modo protótipo na mesa; só depois de vendido passa para o runtime do cliente.
-const comoPrototipo = (g) => Object.freeze({ ...g, prototype: true });
-
 export function makeStudio({ dataDir = process.env.DATA_DIR, ...opts } = {}) {
   return createPlatform({
     brand: bitnikBrand,
-    games: [catania, bulbous, praia, nineOils, nineOilsVanilla, capivaras, robotMaker, comoPrototipo(startupPanic)],
+    games: [catania, bulbous, praia, nineOils, nineOilsVanilla, capivaras, robotMaker, startupPanic],
     storage: dataDir ? fileStorage(dataDir) : memoryStorage(),
     studio: true,
     // Protótipos da Forge: ficam com os dados; sem pasta de dados, numa pasta temporária.

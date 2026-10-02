@@ -1,5 +1,9 @@
 # Startup Panic — histórico de regras
 
+## 1.0.0 — Aprovado (2026-10-02)
+
+Aprovado pelo David no Studio: deixa de ser protótipo (sem selo nem modo protótipo). Sem mudanças de regras nem de UI em relação à 0.2.1; as mesas guardadas da 0.x ficam expiradas.
+
 ## 0.2.1 — UI própria no template vanilla (2026-10-02)
 
 Sem mudanças de regras. UI própria (`ui/`): jogadores pela ordem da ronda (o cash dos outros aparece como cadeado), CEO do dia com o dado, setores, as 10 startups com as ações de cada um e a maioria, a minha equipa, janelas para contratar, mover, propor e responder a trocas, e a modal "Como se joga". Skin `ui/skin.json` com a mesa azul-noite e uma cor por setor. Registado no Studio como protótipo, a aguardar aprovação.

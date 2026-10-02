@@ -433,7 +433,7 @@ O Startup Panic muda a ordem de jogo a cada ronda (joga primeiro quem tem açõe
 - **Ordem de turno:** `state.ordem` (lugares) e `state.pos` (índice da vez); `activePlayers` devolve `ordem[pos]`. A ordem recalcula-se no início de cada ronda, depois do CEO, por `calcularOrdem`. **O motor não muda.**
 - **Troca no Gate:** uma proposta guardada em `state.proposta`; enquanto existe, `activePlayers` devolve só o jogador visado, que aceita ou recusa. É a primeira jogada em que quem responde não é o jogador da vez.
 - **Gate:** não se vende uma startup em que se comprou nesse turno (`state.compradas`).
-- **Estado do jogo no Studio:** o jogo é registado em `apps/studio/server.js` com `prototype: true`, o que lhe dá o selo e o modo protótipo na mesa. Só depois de aprovado e vendido passa para o runtime do cliente (sem a marca).
+- **Estado do jogo no Studio:** o jogo foi registado em `apps/studio/server.js` com `prototype: true` (selo e modo protótipo na mesa) até ser aprovado. Aprovado a 2026-10-02: passou a 1.0.0 sem a marca. Só depois de vendido passa para o runtime de um cliente.
 
 ### Consequências
 
