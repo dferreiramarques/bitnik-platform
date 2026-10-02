@@ -5,6 +5,7 @@
 import { BitnikClient } from '/sdk/client.js';
 import { translate } from '/engine/i18n.js';
 import { applyGameSkin, applyOverrides } from '/appearance.js';
+import { createTour } from '/tour.js';
 
 const UI = {
   pt: {
@@ -31,6 +32,7 @@ const UI = {
     inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
+    'tour.step': 'Passo {n} de {total}', 'tour.next': 'Seguinte', 'tour.skip': 'Saltar tutorial', 'tour.exit': 'Sair', 'tour.playReal': 'Jogar a sério',
     notices: 'Avisos', back: 'Voltar ao lobby', howToPlay: 'Como se joga', seeTable: 'Ver a mesa', lobby: 'Lobby',
     writeName: 'Escreve o teu nome',
     homeNote: 'A tua mesa contra bots, as mesas com outras pessoas e as de aprovação estão no lobby de cada jogo.',
@@ -66,6 +68,7 @@ const UI = {
     inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
+    'tour.step': 'Step {n} of {total}', 'tour.next': 'Next', 'tour.skip': 'Skip tutorial', 'tour.exit': 'Exit', 'tour.playReal': 'Play for real',
     notices: 'Notices', back: 'Back to lobby', howToPlay: 'How to play', seeTable: 'See the table', lobby: 'Lobby',
     writeName: 'Type your name',
     homeNote: 'Your table against bots, tables with other people and review tables are in each game\'s lobby.',
@@ -514,7 +517,10 @@ window.addEventListener('appinstalled', () => { app.installEvent = null; app.ins
 
 function guideLink(meta, id) {
   const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
-  if (meta?.rules) return `<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
+  const play = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
+  // O tutorial interativo tem botão próprio: com regras escritas (modal), deixava de se chegar a ele.
+  const tutorial = meta?.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(id)}">${play}${u('tutorial')}</a>` : '';
+  if (meta?.rules) return `${tutorial}<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
   if (meta?.tutorial) return `<a class="lob-btn" href="#/tutorial/${esc(id)}">${icon}${u('howToPlay')}</a>`;
   return '';
 }
@@ -907,6 +913,8 @@ async function syncTutorial(gameId) {
     toast,
     exit: () => goGame(gameId),
     playReal: (n) => client.createSolo(gameId, n),
+    // Guia de passos partilhado (tour.js): o pacote só dá os passos e os textos.
+    tour: (o) => createTour({ ...o, ui: (key, params) => u(key, params), exit: () => goGame(gameId), playReal: (n) => client.createSolo(gameId, n) }),
   });
 }
 

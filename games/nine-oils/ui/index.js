@@ -292,12 +292,13 @@ function render() {
   const me = mySeat();
   view.innerHTML = `
     ${renderPlayers(v, me)}
-    <div class="nof-center">${renderCenter(v, me)}${ui.reveal ? renderReveal() : ''}</div>
+    <div class="nof-center" data-tut="center">${renderCenter(v, me)}${ui.reveal ? renderReveal() : ''}</div>
     <div class="nof-bottom">${renderHand(v, me)}</div>
     ${msg.result ? '' : `<div class="nof-bar">${renderBar(v, me)}</div>`}
     ${renderLog()}
     <div class="nof-modal-host"></div>`;
   syncCardInfo();
+  ctx.afterRender?.(); // o tutorial volta a pôr o destaque
 }
 
 /** Modal com a arte e as regras da carta (imagem própria; recua para o emoji se faltar). */
@@ -337,7 +338,7 @@ function slotClass(x) {
 const SLOT_ICON = { blocked: '✕', filled: '🧪', free: '' };
 
 function renderBanca(j) {
-  return `<div class="nof-banca">${j.banca.map((x) => {
+  return `<div class="nof-banca" data-tut="banca">${j.banca.map((x) => {
     const cls = slotClass(x);
     return `<i class="nof-slot ${cls}" title="${esc(ctx.t(`ui.slot.${cls}`))}">${SLOT_ICON[cls]}</i>`;
   }).join('')}</div>`;
@@ -357,7 +358,7 @@ function renderPlayers(v, me) {
   // (.nof-players-list): no telemóvel na horizontal, só eles é que fazem
   // scroll — a ficha fica fora disso, para a sua tooltip poder abrir para a
   // direita sem ser cortada pelo "overflow" da lista.
-  return `<div class="nof-players"><div class="nof-players-list">${cards}</div>${renderComboInfo(v)}</div>`;
+  return `<div class="nof-players"><div class="nof-players-list" data-tut="players">${cards}</div>${renderComboInfo(v)}</div>`;
 }
 
 function renderCenter(v, me) {
@@ -448,12 +449,12 @@ function renderComboInfo(v) {
   const has = !!v.opcoes?.length;
   const open = has && ui.comboOpen;
   const toggle = `<button class="nof-combo-pill" type="button" data-act="combo-toggle" aria-expanded="${open}"${has ? '' : ' disabled'}>${esc(ctx.t('ui.comboOptions'))} ${open ? '▴' : '▾'}</button>`;
-  if (!open) return `<div class="nof-combo-dock">${toggle}</div>`;
+  if (!open) return `<div class="nof-combo-dock" data-tut="combos">${toggle}</div>`;
   const rows = v.opcoes.map((o, i) => {
     const label = describeMove({ type: 'ESCOLHER_COMBO', payload: { opcao: i } }, v);
     return `<div class="nof-combo-info-row">${esc(ctx.t(label.key, label.params))}</div>`;
   });
-  return `<div class="nof-combo-dock">${toggle}<div class="nof-combo-info">${rows.join('')}</div></div>`;
+  return `<div class="nof-combo-dock" data-tut="combos">${toggle}<div class="nof-combo-info">${rows.join('')}</div></div>`;
 }
 
 /** Carta(s) jogada(s) pelo adversário, reveladas uns segundos (ver update()). */
@@ -480,7 +481,7 @@ function renderHand(v, me) {
     ${canDiscard ? `<button class="nof-x-btn" type="button" data-discard="${esc(c)}" title="${esc(ctx.t('move.DESCARTAR'))}" aria-label="${esc(ctx.t('moveLabel.DESCARTAR', { carta: ctx.t(`carta.${c}`) }))}">✕</button>` : ''}
   </span>`;
   }).join('');
-  return `<div class="nof-hand">
+  return `<div class="nof-hand" data-tut="hand">
     <div class="nof-lbl">${esc(ctx.t('ui.myHand'))}</div>
     <div class="nof-hand-cards">${cards || `<span class="nof-note">${esc(ctx.t('ui.handEmpty'))}</span>`}</div>
   </div>`;

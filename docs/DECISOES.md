@@ -507,3 +507,26 @@ Jogando a 2.0.0, o David viu que: com 4 ações por startup é difícil ter maio
 - Os valores (9 ações, ×1 a ×4, salários 0 a 3M) são constantes no topo de `rules.js`.
 - Muda regras: pacote em 3.0.0 e mesas guardadas da 2.x expiradas.
 
+
+---
+
+## ADR-018: Guia de tutorial da plataforma (`ctx.tour`) e botão "Tutorial" à parte
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+Desde que os jogos ganharam a modal "Como se joga" (`rules`), o lobby só mostrava essa modal: o tutorial interativo do Catania (e depois o do Startup Panic) continuava a existir mas deixou de ter botão — perderam-se no caminho. Os dois tutoriais também repetiam o mesmo guia (cartão de passo, destaque de zonas, "Seguinte", "Jogar a sério"), cada um com o seu CSS.
+
+### Decisão
+
+- "Como se joga" (regras escritas) e "Tutorial" (interativo, `defineGame({ tutorial })`) são dois botões, lado a lado, no lobby e na entrada na mesa.
+- A plataforma dá o guia: `packages/server/public/tour.js`, entregue ao pacote por `ctx.tour({ host, steps, t })` (os pacotes só podem importar o motor). O pacote declara os passos (`id`, `target`, `next`, `done`, `skip`, `enter`, `leave`, `final`), os textos `tut.<id>.title/body` em PT e EN e marca na sua UI as zonas a destacar com `data-tut="nome"`; a UI chama `ctx.afterRender?.()` no fim de cada desenho para o destaque voltar a ser posto.
+- O cartão fica na metade do ecrã oposta à da primeira zona destacada (ao meio, sem zona); em ecrãs largos (≥ 1100 px), num painel ao lado.
+- Continua a regra da ADR-007: o tutorial corre o motor verdadeiro e o `bot` do jogo, sem cópias de regras. Para ensinar uma combinação concreta, o tutorial pode substituir o estado local depois de uma jogada (o Nine Oils põe os dados do 1.º lançamento num roteiro).
+- Um teste verifica, para cada tutorial que usa `ctx.tour`, que todos os passos têm texto nas duas línguas e que cada zona destacada existe na UI.
+
+### Consequências
+
+- ✔ Voltam a ser alcançáveis os tutoriais do Catania e do Startup Panic; um jogo novo faz o seu em ~100 linhas (passos + textos + marcas).
+- Os tutoriais do Catania e do Startup Panic continuam com o guia próprio; migrá-los para `ctx.tour` fica para depois.
