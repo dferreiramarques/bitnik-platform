@@ -482,3 +482,28 @@ Depois de jogar a 1.0.0, o David apontou: o jogo é aborrecido, as ações parec
 - Os valores (2M, +1M) foram escolhidos sem playtest: assessment pendente. A simulação mede só o equilíbrio por lugar, não a diversão.
 - Muda regras: pacote em 2.0.0 e mesas guardadas da 1.x expiradas.
 
+---
+
+## ADR-019: Startup Panic 3.0.0: limite total de ações, níveis pela ordem e dado nos salários
+
+**Estado:** aceite, a rever no assessment (2026-10-02)
+
+### Contexto
+
+Jogando a 2.0.0, o David viu que: com 4 ações por startup é difícil ter maioria; só lhe sobravam trabalhadores PR (a pool de 12 esgotava-se na ronda 1); não era claro o que acontecia quando não conseguia pagar salários; e faltava uma noção das 12 rondas e dos Gates. Pediu ainda que os trabalhadores sigam a lógica das ações: um escalão de nível pela ordem de contratação, com salários que fazem a equipa custar caro.
+
+### Decisão
+
+- Limite de 9 ações por jogador no total (`MAX_ACOES_TOTAL`), em startups vivas, nas compras e nas trocas. Concentra o investimento em 2 ou 3 startups, onde a maioria é natural.
+- Pool com `numPlayers` cópias de cada tipo. Remove-se o limite fixo de 4 trabalhadores (`MAX_TRABALHADORES`): o custo crescente e a pool limitam.
+- Nível = escalão pela ordem de contratação (`NIVEIS`: Estagiário, Júnior, Mid, Sénior), fixado ao contratar; `SP_HIRE` deixa de ter o campo `senior`. Multiplica o rendimento; custo de contratar e salário por ronda sobem com o nível.
+- Salário sem cash: dado via `ctx.rng` (6 fica sem receber, outro número sai), com mensagem da mesa e registo (ADR-014).
+- O `view` traz `proximo` (nível, custo e salário do próximo), `meusSalarios`, `totalAcoes` e `gateBase`, para a UI explicar os custos e desenhar a timeline.
+
+### Consequências
+
+- ✔ Maiorias possíveis e disputadas; ninguém fica sem tipos de trabalhador; custos de equipa visíveis antes de contratar.
+- A economia muda muito: dividendos até ×4 com salários de 3M. A simulação mede o equilíbrio por lugar (ver `docs/EQUILIBRIO.md`), não se o jogo ficou mais divertido: assessment pendente.
+- Os valores (9 ações, ×1 a ×4, salários 0 a 3M) são constantes no topo de `rules.js`.
+- Muda regras: pacote em 3.0.0 e mesas guardadas da 2.x expiradas.
+

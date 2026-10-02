@@ -1,5 +1,16 @@
 # Startup Panic — histórico de regras
 
+## 3.0.0 — Limite total de ações, níveis de trabalhador e salários com dado (2026-10-02)
+
+Feedback do David a jogar a 2.0.0 (as mesas guardadas da 2.x ficam expiradas):
+
+- **Limite total de ações:** 9 por jogador, em startups vivas (além das 4 por startup), para só dar para ter 2 ou 3 maiorias. Aplica-se às compras e às trocas; vender liberta espaço.
+- **Pool de trabalhadores:** uma cópia de cada tipo por jogador (8, 12 ou 16), em vez de 3 de cada. Com 12 fixos os primeiros a jogar esgotavam os tipos e o último ficava só com PR.
+- **Níveis de trabalhador pela ordem de contratação:** 1.º Estagiário (×1, grátis), 2.º Júnior (×2, 1M), 3.º Mid (×3, 2M) e 4.º em diante Sénior (×4, 3M); salário por ronda igual ao custo. Deixa de se escolher Estagiário ou Sénior, e **deixa de haver limite de 4 trabalhadores** (o custo e a pool limitam). A indemnização de mover passa a ser o salário (mínimo 1M).
+- **Salários não pagos:** em vez de o trabalhador sair sempre, lança-se um dado: com **6 fica** (sem receber), com outro número **sai**. A mesa avisa o que aconteceu (mensagem e registo).
+- **UI:** timeline das 12 rondas com os Gates em destaque (🔔 e o piso ×5, ×10, ×20; o multiplicador real quando abre), ações n/9 em cada jogador, nível de cada trabalhador, salários por ronda, e ao contratar mostra o nível, o custo e o salário do próximo.
+- O bot só contrata se o cash chegar para o custo, os salários de todos e uma folga, e não passa dos 4 trabalhadores.
+
 ## 2.0.0 — Trabalhadores com papel e implosão com critério (2026-10-02)
 
 Feedback do David depois de jogar: "as ações parecem não ter impacto", "não sei o que faço com os trabalhadores" e "qual o critério da implosão?". Mudança de regras (as mesas guardadas da 1.x ficam expiradas):

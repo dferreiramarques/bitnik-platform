@@ -45,6 +45,16 @@ export default `
   .sp-player { flex: none; width: 176px; scroll-snap-align: start; }
 }
 
+/* timeline das 12 rondas */
+.sp-timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; }
+.sp-tl { border-radius: 8px; padding: 4px 2px; text-align: center; display: grid; gap: 2px; align-content: start; min-height: 40px; background: var(--g); border: 1px solid var(--gl); color: var(--otm); }
+.sp-tl b { font-family: var(--game-font-display); font-size: 14px; }
+.sp-tl span { font-size: 10px; font-weight: 700; white-space: nowrap; }
+.sp-tl.done { opacity: .55; }
+.sp-tl.now { color: var(--ot); border-color: var(--ot); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ac) 70%, transparent); }
+.sp-tl.gate { background: color-mix(in srgb, var(--game-accent, #b8461f) 55%, transparent); color: var(--ot); border-color: var(--ac); }
+@container (max-width: 520px) { .sp-tl span { font-size: 8px; } .sp-tl b { font-size: 12px; } }
+
 /* CEO, Gate e setores */
 .sp-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 @container (min-width: 880px) { .sp-top { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
