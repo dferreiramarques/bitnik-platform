@@ -112,6 +112,21 @@ export default `
 .sp-wk { align-items: center; }
 .sp-desc { margin: 0; font-size: 13px; }
 
+/* gráfico de velas */
+.sp-nm { background: none; border: 0; padding: 0; color: inherit; text-align: left; font-family: var(--game-font-display); font-size: 15px; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.sp-nm:hover { text-decoration: underline; }
+.sp-chartbox { max-width: 720px; }
+.sp-chart { width: 100%; height: auto; display: block; border-radius: 10px; }
+.sp-chartbg { fill: var(--game-panel, #fffaf1); }
+.sp-grid { stroke: var(--game-line, #d8c7a8); stroke-width: 1; }
+.sp-axis { fill: var(--game-muted, #6b5b4e); font-size: 11px; font-family: var(--game-font-body, Inter, system-ui, sans-serif); }
+.sp-axisx.now { fill: var(--game-text, #2b1b12); font-weight: 800; }
+.sp-gatebg { fill: var(--game-accent, #b8461f); opacity: .12; }
+.sp-candle line { stroke-width: 2; }
+.sp-candle.up line, .sp-candle.up rect { stroke: var(--sp-up, #2e9e4f); fill: var(--sp-up, #2e9e4f); }
+.sp-candle.down line, .sp-candle.down rect { stroke: var(--sp-down, #d1242f); fill: var(--sp-down, #d1242f); }
+.sp-candle.flat line, .sp-candle.flat rect { stroke: var(--game-muted, #6b5b4e); fill: var(--game-muted, #6b5b4e); }
+
 /* a minha equipa */
 .sp-team { display: grid; gap: 6px; }
 .sp-teamhead { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; justify-content: center; }

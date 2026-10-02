@@ -24,7 +24,7 @@ let root = null;
 let layout = null;
 let ctx = null;
 let msg = null;
-const fresh = () => ({ logOpen: false, lastLogSeq: 0, hire: null, move: null, trade: null });
+const fresh = () => ({ logOpen: false, lastLogSeq: 0, hire: null, move: null, trade: null, chart: null });
 let ui = fresh();
 
 export function mount(el, context) {
@@ -84,7 +84,8 @@ function onClick(e) {
   else if (act === 'hire') { ui.hire = { tipo: null, startup: null }; render(); }
   else if (act === 'move') { ui.move = { worker: id }; render(); }
   else if (act === 'trade') { ui.trade = { de: null, para: null, por: null }; render(); }
-  else if (act === 'close') { ui.hire = null; ui.move = null; ui.trade = null; render(); }
+  else if (act === 'chart') { ui.chart = id; render(); }
+  else if (act === 'close') { ui.hire = null; ui.move = null; ui.trade = null; ui.chart = null; render(); }
   else if (act === 'hire-tipo') { ui.hire.tipo = id; ui.hire.startup = null; render(); }
   else if (act === 'hire-su') { ui.hire.startup = id; render(); }
   else if (act === 'hire-ok') {
@@ -195,7 +196,7 @@ function renderStartups(v) {
         ${v.gate.aberto && gate ? `<button class="sp-act gate" type="button" data-act="sellgate" data-id="${su.id}">${esc(ctx.t('ui.sellGate', { mult: v.gate.mult }))}</button>` : ''}` : ''}
     </div>`;
     return `<div class="sp-su${mine ? ' mine' : ''}${su.implodida ? ' dead' : ''}" style="--sc:var(--sp-setor-${su.setor})">
-      <div class="sp-suhead"><span class="nm">${SETOR_ICON[su.setor]} ${esc(stName(su.id))}</span><span class="price">${su.implodida ? '💀' : `${su.preco}M`}${delta ? `<small class="${delta > 0 ? 'up' : 'down'}" title="${esc(ctx.t('ui.priceChange'))}">${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}</small>` : ''}</span></div>
+      <div class="sp-suhead"><button class="nm sp-nm" type="button" data-act="chart" data-id="${su.id}" title="${esc(ctx.t('ui.chartOpen'))}" aria-label="${esc(`${stName(su.id)}: ${ctx.t('ui.chartOpen')}`)}">${SETOR_ICON[su.setor]} ${esc(stName(su.id))} <span aria-hidden="true">📈</span></button><span class="price">${su.implodida ? '💀' : `${su.preco}M`}${delta ? `<small class="${delta > 0 ? 'up' : 'down'}" title="${esc(ctx.t('ui.priceChange'))}">${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}</small>` : ''}</span></div>
       <small>${su.implodida ? esc(ctx.t('ui.imploded')) : `${esc(ctx.t('ui.base'))} ${su.base}M + ${esc(ctx.t(`setor.${su.setor}`))} ${v.setores[su.setor] >= 0 ? '+' : ''}${v.setores[su.setor]}M${su.bonusPr ? ` + ${esc(ctx.t('ui.prBonus', { n: su.bonusPr }))}` : ''}`}${su.protegida && !su.implodida ? ` <span title="${esc(ctx.t('ui.protected'))}">🛡️</span>` : ''}</small>
       <div class="sp-holders">${holders.map((h) => `<span><i class="sp-dot" style="background:var(--game-color-${(h.i % 4) + 1})"></i><b>${h.n}</b>${h.i === me ? ` <small>${esc(ctx.t('ui.you'))}</small>` : ''}</span>`).join('') || '<small>—</small>'}</div>
       <small>${major ? esc(ctx.t('ui.majority', { nome: nameOf(major.i) })) : esc(ctx.t('ui.noMajority'))}</small>
@@ -259,6 +260,7 @@ const uniq = (a) => [...new Set(a)];
 
 function renderModal(v) {
   const me = mySeat();
+  if (ui.chart && !(v.proposta && v.proposta.para === me)) return renderChart(v);
   if (v.proposta && v.proposta.para === me) {
     const p = v.proposta;
     return `<div class="sp-modal"><div class="sp-modal-box" role="dialog" aria-label="${esc(ctx.t('ui.trade'))}">
@@ -307,6 +309,44 @@ function renderModal(v) {
     </div></div>`;
   }
   return '';
+}
+
+/** Gráfico de velas (como num gráfico de câmbio): uma vela por ronda, verde a subir e vermelha a descer. */
+function renderChart(v) {
+  const su = v.startups.find((x) => x.id === ui.chart);
+  if (!su) return '';
+  const velas = v.historico?.[su.id] || [];
+  const W = 640, H = 320, L = 14, R = 52, T = 16, B = 30;
+  const px = (W - L - R) / v.rondas;
+  const valores = velas.flatMap((c) => [c.h, c.l, c.o, c.c]);
+  const max = Math.max(4, ...valores), min = Math.min(0, ...valores);
+  const passo = Math.max(1, Math.ceil((max - min) / 5));
+  const topo = Math.ceil(max / passo) * passo, base = Math.floor(min / passo) * passo;
+  const y = (val) => T + (H - T - B) * (1 - (val - base) / (topo - base || 1));
+  const grelha = [];
+  for (let g = base; g <= topo; g += passo) grelha.push(`<line x1="${L}" x2="${W - R}" y1="${y(g)}" y2="${y(g)}" class="sp-grid"/><text x="${W - R + 6}" y="${y(g) + 4}" class="sp-axis">${g}M</text>`);
+  const eixoX = Array.from({ length: v.rondas }, (_, k) => {
+    const n = k + 1, x0 = L + k * px;
+    const gate = v.gateBase[n];
+    return `${gate ? `<rect x="${x0}" y="${T}" width="${px}" height="${H - T - B}" class="sp-gatebg"/>` : ''}<text x="${x0 + px / 2}" y="${H - 10}" class="sp-axis sp-axisx${n === v.ronda ? ' now' : ''}" text-anchor="middle">${gate ? '🔔' : ''}${n}</text>`;
+  }).join('');
+  const corpo = velas.map((c) => {
+    const k = c.r - 1, cx = L + k * px + px / 2, w = Math.max(6, px * 0.55);
+    const sobe = c.c >= c.o;
+    const topoC = y(Math.max(c.o, c.c)), altura = Math.max(2, Math.abs(y(c.o) - y(c.c)));
+    const tip = ctx.t('ui.chartCandle', { r: c.r, o: c.o, h: c.h, l: c.l, c: c.c });
+    return `<g class="sp-candle ${c.c === c.o ? 'flat' : sobe ? 'up' : 'down'}"><title>${esc(tip)}</title>
+      <line x1="${cx}" x2="${cx}" y1="${y(c.h)}" y2="${y(c.l)}"/><rect x="${cx - w / 2}" y="${topoC}" width="${w}" height="${altura}"/>${c.x ? `<text x="${cx}" y="${y(0) - 6}" text-anchor="middle" class="sp-axis">💀</text>` : ''}</g>`;
+  }).join('');
+  const morta = velas.find((c) => c.x);
+  const desc = velas.map((c) => ctx.t('ui.chartCandle', { r: c.r, o: c.o, h: c.h, l: c.l, c: c.c })).join('. ');
+  return `<div class="sp-modal"><div class="sp-modal-box sp-chartbox" role="dialog" aria-label="${esc(ctx.t('ui.chartTitle', { startup: stName(su.id) }))}">
+    <h3>${SETOR_ICON[su.setor]} ${esc(ctx.t('ui.chartTitle', { startup: stName(su.id) }))} · ${su.implodida ? '💀' : `${esc(ctx.t('ui.chartNow'))} ${su.preco}M`}</h3>
+    ${velas.length ? `<svg class="sp-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(desc)}"><rect x="0" y="0" width="${W}" height="${H}" class="sp-chartbg"/>${eixoX}${grelha.join('')}${corpo}</svg>` : `<p class="sp-desc">${esc(ctx.t('ui.chartEmpty'))}</p>`}
+    ${morta ? `<p class="sp-desc"><b>${esc(ctx.t('ui.chartDead', { r: morta.r }))}</b></p>` : ''}
+    <p class="sp-desc">${esc(ctx.t('ui.chartHint'))}</p>
+    <div class="sp-modal-acts"><button class="sp-btn primary" type="button" data-act="close">${esc(ctx.t('ui.close'))}</button></div>
+  </div></div>`;
 }
 
 function renderLog() {
