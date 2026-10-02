@@ -550,7 +550,7 @@ test('Salários: cada trabalhador pago custa o seu salário (mais a sobretaxa) e
   recusa(m, j, 'SP_PAY_SALARY', {}, 'err.SEM_SALARIOS');
 });
 
-test('Salários: sem cash lança-se um dado: com 6 o trabalhador fica (sem receber), com outro número vai-se embora', () => {
+test('Salários: sem cash, ao terminar o turno lança-se um dado: com 6 o trabalhador fica (sem receber), com outro número vai-se embora', () => {
   const base = tweak(manutencao(novo(2, 'ab')), (s) => {
     const j = s.ordem[s.pos];
     s.jogadores[j].trab = [{ id: 'a', tipo: 'engineer', nome: 'Ada', startup: 'deepanic', nivel: 3 }];
@@ -560,7 +560,7 @@ test('Salários: sem cash lança-se um dado: com 6 o trabalhador fica (sem receb
   const j = vez(base);
   const resultados = new Set();
   for (let i = 0; i < 40 && resultados.size < 2; i++) {
-    const m = jogar({ ...structuredClone(base), rng: i * 7919 + 1 }, j, 'SP_PAY_SALARY');
+    const m = jogar({ ...structuredClone(base), rng: i * 7919 + 1 }, j, 'SP_END_TURN');
     const ficou = jog(m, j).trab.length === 1;
     resultados.add(ficou);
     const entrada = m.log.filter((e) => e.key === 'log.FICA' || e.key === 'log.ABANDONOU').at(-1);
@@ -571,6 +571,74 @@ test('Salários: sem cash lança-se um dado: com 6 o trabalhador fica (sem receb
     if (!ficou) assert.ok(m.state.pool.some((w) => w.id === 'a'));
   }
   assert.equal(resultados.size, 2, 'viu-se um que ficou e um que saiu');
+});
+
+const comEquipa = (cash = 20) => tweak(manutencao(novo(2, 'opt')), (s) => {
+  const j = s.ordem[s.pos];
+  s.jogadores[j].trab = [
+    { id: 'a', tipo: 'engineer', nome: 'Ada', startup: 'deepanic', nivel: 0 }, // sem salário
+    { id: 'b', tipo: 'lawyer', nome: 'Saul', startup: 'deepanic', nivel: 1 }, // 1M
+    { id: 'c', tipo: 'pr', nome: 'Max', startup: 'halluci', nivel: 3 }, // 3M
+  ];
+  s.pool = s.pool.filter((p) => !['a', 'b', 'c'].includes(p.id));
+  s.jogadores[j].cash = cash;
+});
+
+test('Salários: pagar é opcional e um a um; o que se paga não se cobra outra vez ao terminar o turno', () => {
+  let m = comEquipa();
+  const j = vez(m);
+  m = jogar(m, j, 'SP_PAY_SALARY', { worker: 'c' });
+  assert.equal(jog(m, j).cash, 17);
+  recusa(m, j, 'SP_PAY_SALARY', { worker: 'c' }, 'err.SEM_SALARIOS'); // já pago
+  recusa(m, j, 'SP_PAY_SALARY', { worker: 'a' }, 'err.SEM_SALARIOS'); // o Estagiário não tem salário
+  m = jogar(m, j, 'SP_END_TURN'); // cobra só o que faltava (o Júnior, 1M)
+  assert.equal(jog(m, j).cash, 16);
+  assert.equal(jog(m, j).trab.length, 3);
+});
+
+test('Salários: sem worker paga os de todos os que o cash deixa; um a um recusa o que não se pode pagar', () => {
+  let m = comEquipa(2);
+  const j = vez(m);
+  recusa(m, j, 'SP_PAY_SALARY', { worker: 'c' }, 'err.CASH'); // 3M e só há 2M
+  m = jogar(m, j, 'SP_PAY_SALARY'); // paga o Júnior (1M); o Sénior não dá
+  assert.equal(jog(m, j).cash, 1);
+  assert.deepEqual(m.state.pagos, ['b']);
+});
+
+test('Salários: arriscar — com cash para pagar, pode não pagar e jogar o dado (6 fica, outro número sai), sem gastar cash', () => {
+  const base = comEquipa(20);
+  const j = vez(base);
+  const resultados = new Set();
+  for (let i = 0; i < 40 && resultados.size < 2; i++) {
+    const m = jogar({ ...structuredClone(base), rng: i * 7919 + 1 }, j, 'SP_RISK_SALARY', { worker: 'c' });
+    const ficou = jog(m, j).trab.some((w) => w.id === 'c');
+    resultados.add(ficou);
+    assert.equal(jog(m, j).cash, 20, 'arriscar não custa cash');
+    const entrada = m.log.filter((e) => e.key === 'log.ARRISCOU_FICA' || e.key === 'log.ARRISCOU_SAI').at(-1);
+    assert.equal(entrada.key, ficou ? 'log.ARRISCOU_FICA' : 'log.ARRISCOU_SAI');
+    assert.ok(entrada.announce);
+    assert.equal(entrada.params.dado === 6, ficou);
+    assert.ok(m.state.pagos.includes('c') || !ficou, 'já está decidido neste turno');
+    recusa(m, j, 'SP_RISK_SALARY', { worker: 'c' }, 'err.SEM_SALARIOS');
+    if (!ficou) assert.ok(m.state.pool.some((w) => w.id === 'c'));
+    const fim = jogar(m, j, 'SP_END_TURN'); // o Júnior paga; o arriscado não se cobra outra vez
+    assert.equal(jog(fim, j).cash, 19);
+  }
+  assert.equal(resultados.size, 2);
+  recusa(base, j, 'SP_RISK_SALARY', { worker: 'a' }, 'err.SEM_SALARIOS'); // o Estagiário não tem salário
+});
+
+test('Salários: o view diz quanto cada trabalhador custa e se já foi tratado; enumerate oferece pagar ou arriscar', () => {
+  let m = comEquipa(20);
+  const j = vez(m);
+  let v = viewFor(game, m, j);
+  assert.deepEqual(v.view.jogadores[j].trab.map((w) => [w.salario, w.pago]), [[0, false], [1, false], [3, false]]);
+  assert.ok(v.legal.some((x) => x.type === 'SP_RISK_SALARY' && x.payload.worker === 'b'));
+  assert.ok(v.legal.some((x) => x.type === 'SP_PAY_SALARY' && x.payload.worker === 'c'));
+  m = jogar(m, j, 'SP_PAY_SALARY', { worker: 'b' });
+  v = viewFor(game, m, j);
+  assert.equal(v.view.jogadores[j].trab[1].pago, true);
+  assert.ok(!v.legal.some((x) => ['SP_PAY_SALARY', 'SP_RISK_SALARY'].includes(x.type) && x.payload?.worker === 'b'));
 });
 
 test('Terminar turno: cobra os salários por pagar e passa a vez', () => {

@@ -19,7 +19,7 @@ export default {
     { title: 'Equipa e dividendos', body: [
       'Contrata trabalhadores (no máximo 1 de cada tipo por startup). O nível sai da ordem: o 1.º é Estagiário (grátis, ×1), o 2.º Júnior (1M, ×2), o 3.º Mid (2M, ×3) e do 4.º em diante Sénior (3M, ×4). Rendem mais, mas o salário por ronda também sobe.',
       'Engenheiro: 2M por ação e por ronda. Advogado: 1M por ação e protege a startup de implodir. PR: 1M por ação e sobe 1M ao preço da startup. CFO: renda fixa de 2M por ronda, mesmo sem ações.',
-      'No fim da ronda recebes o que a tua equipa rende; o ecrã mostra quanto cada trabalhador rende e o total previsto. Ações numa startup sem equipa não pagam nada. Sem cash para um salário, lança-se um dado: com 6 o trabalhador fica, com outro número vai-se embora.',
+      'No fim da ronda recebes o que a tua equipa rende; o ecrã mostra quanto cada trabalhador rende e o total previsto. Ações numa startup sem equipa não pagam nada. Pagar o salário é opcional: podes arriscar não pagar e lançar um dado (com 6 o trabalhador fica sem receber, com outro número vai-se embora). Sem cash, também se lança o dado.',
     ] },
     { title: 'Implosões', body: [
       'Alguns CEOs fazem implodir a startup mais cara que não tenha um Advogado (de qualquer jogador): deixa de valer, de pagar dividendos e de se poder vender. Com preços iguais, sorteia-se.',
@@ -43,7 +43,7 @@ export default {
     { title: 'Team and dividends', body: [
       'Hire workers (at most 1 of each type per startup). The level comes from the order: the 1st is an Intern (free, ×1), the 2nd a Junior (1M, ×2), the 3rd a Mid (2M, ×3) and from the 4th on a Senior (3M, ×4). They earn more, but the salary per round rises too.',
       'Engineer: 2M per share per round. Lawyer: 1M per share and protects the startup from imploding. PR: 1M per share and adds 1M to the startup price. CFO: fixed income of 2M per round, even with no shares.',
-      'At the end of the round you collect what your team earns; the screen shows what each worker earns and the expected total. Shares in a startup with no team pay nothing. With no cash for a salary, a die is rolled: on a 6 the worker stays, on anything else they leave.',
+      'At the end of the round you collect what your team earns; the screen shows what each worker earns and the expected total. Shares in a startup with no team pay nothing. Paying a salary is optional: you can risk not paying and roll a die (on a 6 the worker stays unpaid, on anything else they leave). With no cash, the die is rolled too.',
     ] },
     { title: 'Implosions', body: [
       'Some CEOs make the most expensive startup without a Lawyer (anyone\'s) implode: it stops being worth anything, paying dividends and being sold. On equal prices, it is drawn.',

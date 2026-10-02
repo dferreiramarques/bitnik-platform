@@ -74,7 +74,9 @@ function onClick(e) {
   else if (act === 'sell') send(find('SP_SELL_MARKET', { startup: id, qty: 1 }));
   else if (act === 'sellgate') send(find('SP_SELL_STARTUP', { startup: id }));
   else if (act === 'endmarket') send(legal('SP_END_MARKET')[0]);
-  else if (act === 'pay') send(legal('SP_PAY_SALARY')[0]);
+  else if (act === 'pay') send(legal('SP_PAY_SALARY').find((m) => m.payload.worker === undefined));
+  else if (act === 'pay1') send(find('SP_PAY_SALARY', { worker: id }));
+  else if (act === 'risk') send(find('SP_RISK_SALARY', { worker: id }));
   else if (act === 'endturn') send(legal('SP_END_TURN')[0]);
   else if (act === 'fire') send(find('SP_FIRE', { worker: id }));
   else if (act === 'accept') send(legal('SP_TRADE_ACCEPT')[0]);
@@ -216,6 +218,10 @@ function renderTeam(v) {
     <span class="nm">${TIPO_ICON[w.tipo]} ${esc(w.nome)} <small>${esc(ctx.t(`nivel.${v.niveis[w.nivel].id}`))} ×${v.niveis[w.nivel].mult}</small></span>
     <small>${esc(ctx.t(`tipo.${w.tipo}`))} · ${esc(stName(w.startup))} · <b>${esc(ctx.t('ui.yields', { n: w.rende }))}</b></small>
     <small>${esc(ctx.t(`tipo.${w.tipo}.desc`))}</small>
+    ${canMaint && w.salario > 0 ? (w.pago ? `<small>✔ ${esc(ctx.t('ui.paid'))}</small>` : `<div class="sp-acts" title="${esc(ctx.t('ui.riskHint'))}">
+      <button class="sp-act" type="button" data-act="pay1" data-id="${w.id}" ${find('SP_PAY_SALARY', { worker: w.id }) ? '' : 'disabled'}>${esc(ctx.t('ui.payOne', { n: w.salario }))}</button>
+      <button class="sp-act" type="button" data-act="risk" data-id="${w.id}">${esc(ctx.t('ui.risk'))}</button>
+    </div>`) : ''}
     ${canMaint ? `<div class="sp-acts">
       <button class="sp-act" type="button" data-act="move" data-id="${w.id}" ${legal('SP_MOVE_WORKER').some((m) => m.payload.worker === w.id) ? '' : 'disabled'}>${esc(ctx.t('ui.move'))}</button>
       <button class="sp-act" type="button" data-act="fire" data-id="${w.id}">${esc(ctx.t('ui.fire'))}</button>
@@ -243,7 +249,7 @@ function renderBar(v) {
   }
   return `<div class="sp-bar">
     <span class="sp-hint">${esc(ctx.t('ui.phaseMaint'))}</span>
-    ${legal('SP_PAY_SALARY').length ? `<button class="sp-btn" type="button" data-act="pay">${esc(ctx.t('ui.paySalary'))}</button>` : ''}
+    ${legal('SP_PAY_SALARY').some((m) => m.payload.worker === undefined) ? `<button class="sp-btn" type="button" data-act="pay">${esc(ctx.t('ui.paySalary'))}</button>` : ''}
     <button class="sp-btn primary" type="button" data-act="endturn">${esc(ctx.t('ui.endTurn'))}</button>
   </div>`;
 }
