@@ -1,12 +1,13 @@
 // Pacote de jogo: Startup Panic. Só depende de @bitnik/engine.
 import { defineGame } from '@bitnik/engine';
 import * as rules from './rules.js';
+import { defaultBot } from './bot.js';
 import pt from './i18n/pt.js';
 import en from './i18n/en.js';
 
 export default defineGame({
   id: 'startup-panic',
-  version: '0.1.0',
+  version: '0.2.0',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',
@@ -21,4 +22,5 @@ export default defineGame({
   view: rules.view,
   result: rules.result,
   describeMove: rules.describeMove,
+  bots: { default: defaultBot },
 });

@@ -1,5 +1,9 @@
 # Startup Panic — histórico de regras
 
+## 0.2.0 — Sem comprar e vender no Gate no mesmo turno (2026-10-02)
+
+Encontrado ao simular com o bot: com o Gate aberto, comprar 1 ação (maioria imediata) e vendê-la logo a seguir dava lucro de ×5/×10/×20, repetível sem limite (o `server.js` original tem o mesmo buraco). Passa a ser recusada a venda no Gate de uma startup em que o jogador comprou nesse turno (`err.COMPRADA_NO_TURNO`). Comprar uma ronda antes e vender no Gate continua a ser a jogada normal.
+
 ## 0.1.0 — Migração para a plataforma (2026-10-02)
 
 Primeira versão no pacote: regras do `server.js` do repositório `startup-panic`, com `REGRAS.md` escrito a partir do `RULES.md`. Protótipo: só no Studio, a aguardar aprovação.

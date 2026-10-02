@@ -64,6 +64,7 @@ export default {
   'err.CASH': 'Precisas de {preciso}M e tens {tens}M.',
   'err.SEM_ACOES': 'Não tens ações dessa startup.',
   'err.GATE_FECHADO': 'O Gate de Venda não está aberto.',
+  'err.COMPRADA_NO_TURNO': 'Não podes vender no Gate uma startup em que compraste neste turno.',
   'err.MAIORIA': 'Precisas de maioria real (mais de 50% das ações) para vender no Gate.',
   'err.ALVO': 'Jogador inválido para a troca.',
   'err.TROCA_SEM_ACOES': 'Ambos precisam de ter ações das startups trocadas.',
