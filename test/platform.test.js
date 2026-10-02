@@ -699,7 +699,7 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
   assert.doesNotMatch(js, /\{\{/, 'sem marcadores por preencher');
   const { version, precache } = s.platform.serviceWorker;
   assert.match(js, new RegExp(`const VERSION = '${version}'`));
-  for (const f of ['/', '/app.js', '/sdk/client.js', '/engine/index.js', '/games/catania/ui/tutorial.js', '/games/catania/scenarios.js', '/games/catania/i18n/pt.js']) {
+  for (const f of ['/', '/app.js', '/tour.js', '/sdk/client.js', '/engine/index.js', '/games/catania/ui/tutorial.js', '/games/catania/scenarios.js', '/games/catania/i18n/pt.js']) {
     assert.ok(precache.includes(f), `guarda ${f}`);
   }
   assert.ok(!precache.some((f) => f.includes('/test/') || f.startsWith('/console') || f.startsWith('/admin')), 'nunca testes, consola nem admin');
@@ -722,6 +722,32 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
     assert.ok(precache.includes(`/icon-${size}.png`), `o service worker guarda o ícone ${size}`);
   }
   await s.stop();
+});
+
+test('tutoriais com o guia da plataforma (ctx.tour): cada passo tem texto em PT e EN e cada zona destacada existe na UI do jogo', async () => {
+  const { readdirSync, existsSync } = await import('node:fs');
+  const dir = new URL('../games/', import.meta.url);
+  let vistos = 0;
+  for (const nome of readdirSync(dir)) {
+    const tut = new URL(`${nome}/ui/tutorial.js`, dir);
+    if (!existsSync(tut)) continue;
+    const src = await readFile(tut, 'utf8');
+    if (!src.includes('ctx.tour(')) continue;
+    vistos++;
+    const jogo = (await import(new URL(`${nome}/index.js`, dir).href)).default;
+    const ui = await readFile(new URL(`${nome}/ui/index.js`, dir), 'utf8');
+    const bloco = src.match(/const STEPS = \[([\s\S]*?)\n  \];/)?.[1] ?? '';
+    const passos = [...bloco.matchAll(/\{ id: '([\w-]+)'(?:, target: '([^']*)')?/g)];
+    assert.ok(passos.length >= 6, `${nome}: poucos passos`);
+    for (const [, id, target] of passos) {
+      for (const lang of ['pt', 'en']) for (const parte of ['title', 'body']) {
+        assert.ok(jogo.i18n[lang][`tut.${id}.${parte}`], `${nome}: falta tut.${id}.${parte} em ${lang}`);
+      }
+      for (const zona of (target || '').split(' ').filter(Boolean)) assert.ok(ui.includes(`data-tut="${zona}"`), `${nome}: o passo ${id} destaca "${zona}", que a UI não marca`);
+    }
+    assert.ok(jogo.tutorial, `${nome}: o index.js tem de declarar tutorial`);
+  }
+  assert.ok(vistos >= 1, 'há pelo menos um tutorial com o guia da plataforma');
 });
 
 test('Forge: os exemplos em docs/forge-seeds importam (projeto, partida narrada e testes) e só citam cartões que existem', async () => {

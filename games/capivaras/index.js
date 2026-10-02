@@ -23,7 +23,7 @@ function terminar(state, ctx) {
 
 export default defineGame({
   id: 'capivaras',
-  version: '2.0.8',
+  version: '2.1.0',
   players: { min: 2, max: 6 },
   author: 'David Marques',
   defaultLang: 'pt',
@@ -31,6 +31,7 @@ export default defineGame({
   // UI própria (ADR-006, ADR-014): servida pela plataforma a partir desta pasta.
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
+  tutorial: './ui/tutorial.js',
   skin: './ui/skin.json',
   // Modal "Como se joga" (botão ? durante a partida, plataforma): condensado
   // do REGRAS.md, nas duas línguas — não é lido pelas regras.

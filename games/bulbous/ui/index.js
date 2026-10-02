@@ -175,18 +175,19 @@ function render() {
   if (!view || !msg) return;
   const v = msg.view;
   view.innerHTML = `
-    <div class="bulbous-topline">
+    <div class="bulbous-topline" data-tut="players">
       ${renderPlayers(v)}
       ${renderChips(v)}
     </div>
-    <div class="bulbous-center">${renderCenter(v)}</div>
-    <div class="bulbous-bottom">
+    <div class="bulbous-center" data-tut="center">${renderCenter(v)}</div>
+    <div class="bulbous-bottom" data-tut="mine">
       ${renderMyBaelfs(v)}
     </div>
     ${renderHand(v)}
-    ${msg.result ? '' : `<div class="bulbous-bar">${renderBar(v)}</div>`}
+    ${msg.result ? '' : `<div class="bulbous-bar" data-tut="bar">${renderBar(v)}</div>`}
     ${renderLog()}`;
   fitHand();
+  ctx.afterRender?.(); // o tutorial volta a pôr o destaque
 }
 
 /** As cartas da mão nunca quebram linha: sobrepõem-se (margem negativa) só o
@@ -331,7 +332,7 @@ function renderHand(v) {
   const podeSelecionar = v.fase === 'ACOES' && v.vaza && v.vaza.aDescartar === -1 && v.vaza.ordem[v.vaza.atual] === me;
   const jogaveis = new Set((msg.legal || []).filter((m) => m.type === 'APOSTAR').flatMap((m) => m.payload.cartas));
   const clickable = podeSelecionar || aDescartar;
-  return `<div class="bulbous-hand">${mao.map((c) => {
+  return `<div class="bulbous-hand" data-tut="hand">${mao.map((c) => {
     const vis = cardVisual(c);
     const sel = ui.selected.has(c.id);
     const dim = podeSelecionar && !aDescartar && !jogaveis.has(c.id) && !sel;

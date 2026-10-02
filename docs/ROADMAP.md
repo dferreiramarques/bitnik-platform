@@ -38,6 +38,7 @@ Por etapas:
 1. ✔ Infraestrutura da UI no pacote.
 2. ✔ Tabuleiro do Catania.
 3. ✔ Tutorial com o motor verdadeiro e cenários no pacote.
+   Tutoriais interativos em todos os jogos (2026-10-02): guia da plataforma `ctx.tour` e partida local `ctx.session` (ADR-018) no Nine Oils, Praia das Percebes, Capivaras, Bulbous e Robot Maker; botão "Tutorial" à parte de "Como se joga" no lobby. Catania e Startup Panic voltam a ser acessíveis mas mantêm o guia próprio (migração para `ctx.tour` fica para depois).
 4. ✔ "Aparência" na consola (tokens, temas, pré-visualização). Desde 2026-10-01, o fundo do lobby é sempre o `--table-bg` do jogo (escurecido, nenhum campo) e a miniatura na página da marca é um campo à parte (`thumbnail`, fora do skin.json — sobrepõe-se à do pacote, chega já pronta no WELCOME).
 5. ✔ Template vanilla: preparação (`design/vanilla/skin.json`, `npm run figma`) e desenho montado no Claude Design, no canvas "Bitnik — Template vanilla" (<https://claude.ai/artifact/9yZPAYkg1bMhpgzWKrLgpX>): tokens, componentes, mesa no computador e no telemóvel, Início, Marca-produto, Lobby, Entrada, Fim e Relatório. Guião em `design/figma/TEMPLATE.md`; a mesa em ecrã inteiro ficou na ADR-014.
 6. ✔ Service worker (PWA). Instalável (2026-10-02): ícones PNG 192/512 no manifest e botão "Instalar app" no lobby de cada jogo (evento `beforeinstallprompt`; no iOS, só as instruções). O manifest é da marca: instala o lobby com todos os jogos do deploy.

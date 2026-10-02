@@ -1,4 +1,8 @@
 # Robot Maker — histórico de regras
+## 2.1.0 — Tutorial interativo (2026-10-02)
+
+Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se a 2, contra o bot, com o motor verdadeiro no browser: o tabuleiro, a Forja (fase dos workers), a compra no mercado (fase 2), o turno do bot, a rotação da ronda e, em texto, os circuitos, a pontuação do robot e o fim do jogo. O jogador começa com 2 L1 na lição para poder comprar logo. Usa o guia de passos e a partida local da plataforma (`ctx.tour`, `ctx.session`, ADR-018).
+
 
 ## 2.0.0 — Turno em duas fases e mercado que roda (2026-10-02)
 

@@ -110,7 +110,7 @@ function render() {
       ${mySeat() != null ? renderMe(v) : '<div></div>'}
       <div></div>
     </div>
-    ${msg.result ? '' : `<div class="capi-bar">${renderBar(v)}</div>`}
+    ${msg.result ? '' : `<div class="capi-bar" data-tut="bar">${renderBar(v)}</div>`}
     ${renderLog()}`;
   fitCards();
   keepStrip(stripX);
@@ -123,7 +123,7 @@ const lilyDot = (c, on = true) => `<i class="capi-lily${on ? '' : ' off'}" style
 function renderPlayers(v) {
   const me = mySeat();
   const reveal = v.fase === 'REVELACAO' && v.revelacao;
-  return `<div class="capi-players">${v.jogadores.map((j, i) => {
+  return `<div class="capi-players" data-tut="players">${v.jogadores.map((j, i) => {
     const p = v.players?.[i] || {};
     // Nas apostas, a vista diz só se cada um já apostou (a minha traz a letra).
     const thinking = v.fase === 'APOSTAS' && !v.apostas?.[i];
@@ -147,7 +147,7 @@ function renderPlayers(v) {
 function renderChips(v) {
   const holder = v.tokenPassaro;
   const pass = (v.reciclagens || 0) > 0 ? ctx.t('ui.pass2') : ctx.t('ui.pass1');
-  return `<div class="capi-chips">
+  return `<div class="capi-chips" data-tut="chips">
     <span class="capi-chip">${esc(ctx.t('ui.round', { n: v.ronda }))}</span>
     <span class="capi-chip${(v.reciclagens || 0) > 0 ? ' hot' : ''}">${esc(pass)} <span class="capi-chip-sub">· ${esc(ctx.t('ui.deckLeft', { n: v.baralhoRestante }))}</span></span>
     <span class="capi-chip${holder != null ? ' gold' : ''}"><img src="${BIRD}" alt="" width="18" height="18">${esc(holder != null ? ctx.t('ui.birdOf', { nome: ctx.seatName(holder) }) : ctx.t('ui.birdNone'))}</span>
@@ -162,7 +162,7 @@ function renderTable(v) {
   const me = mySeat();
   const reveal = v.fase === 'REVELACAO' && v.revelacao;
   const myBet = me != null ? (reveal ? v.revelacao.apostas[me] : v.apostas?.[me]) : null;
-  return `<div class="capi-table" style="--n:${v.mesa.length}">${v.mesa.map((x) => {
+  return `<div class="capi-table" data-tut="table" style="--n:${v.mesa.length}">${v.mesa.map((x) => {
     const c = x.carta;
     const mv = betMove(x.letra);
     const mine = typeof myBet === 'string' && myBet === x.letra;
@@ -196,7 +196,7 @@ function renderMe(v) {
   const cores = new Set(j.apanhadas.flatMap((c) => c.nenufares));
   const falta = CORES.filter((c) => !cores.has(c)).length;
   const cards = j.apanhadas.map((c) => `<img class="capi-mini" src="${cardImg(c)}" alt="${esc(cardDesc(c))}" title="${esc(cardDesc(c))}">`).join('');
-  return `<div class="capi-me">
+  return `<div class="capi-me" data-tut="me">
     <div class="capi-me-grp capi-me-cards">
       <div class="capi-lbl">${esc(ctx.t('ui.myCards'))} · ${j.apanhadas.reduce((t, c) => t + c.capivaras, 0)}</div>
       <div class="capi-minis">${cards || `<span class="capi-note">${esc(ctx.t('ui.myCardsEmpty'))}</span>`}</div>
