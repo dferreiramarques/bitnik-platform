@@ -1,9 +1,16 @@
 # Startup Panic — histórico de regras
 
+## 3.4.0 — Bots que jogam a sério e cartões compactos (2026-10-02)
+
+Sem mudanças de regras (as mesas guardadas continuam a retomar). Dois pedidos do David depois de jogar:
+
+- **Bots parados:** desde a 3.0.0 os bots ficavam sem fazer nada (resultado típico: 12 pts cada). Gastavam o cash em ações caras, ficavam a 0M e o filtro de contratação exigia cash de folga, por isso nunca contratavam sequer o Estagiário grátis: sem equipa não há dividendos e ficavam assim até ao fim. Agora o 1.º trabalhador contrata-se sempre, a compra guarda o cash dos salários devidos, prefere reforçar onde já tem ações (rumo à maioria) e escolhe, com o `rng`, entre as 3 mais caras. **As percentagens de equilíbrio da 3.0.0 à 3.3.1 não valem** (bots simétricos e parados dão 25% a todos); ver `docs/EQUILIBRIO.md`.
+- **Cartão da startup compacto:** o gráfico de velas passa a mini gráfico dentro do cartão, por cima do nome (clicar abre o gráfico grande, como antes), e as ações passam a botões pequenos lado a lado: "Comprar | Vender" e, no Gate, "Vender ×N".
+
+
 ## 3.3.1 — Resposta à troca na mesa (2026-10-02)
 
 Sem mudanças de regras. Quando o jogador visado responde a uma proposta de troca, a mesa mostra a todos 👍 (aceite) ou 👎 (recusada), como mensagem da mesa (ADR-014), além da entrada no registo.
-
 ## 3.3.0 — Tutorial guiado (2026-10-02)
 
 Pedido do David: um tour/wizard para o jogo. Sem mudanças de regras (as mesas guardadas continuam a retomar).

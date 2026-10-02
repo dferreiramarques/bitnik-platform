@@ -97,6 +97,8 @@ export default `
 .sp-wk { display: flex; gap: 4px; flex-wrap: wrap; font-size: 12px; min-height: 18px; }
 .sp-wk span { background: var(--game-panel-2, #f3e4cb); border-radius: 6px; padding: 0 5px; }
 .sp-acts { display: flex; gap: 5px; flex-wrap: wrap; }
+.sp-su .sp-acts { flex-wrap: nowrap; gap: 4px; }
+.sp-su .sp-act { flex: 1 1 0; min-height: 28px; padding: 0 6px; font-size: 11px; white-space: nowrap; }
 .sp-act { min-height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--game-line, #d8c7a8); background: var(--game-panel-2, #f3e4cb); color: var(--game-text, #2b1b12); font-weight: 700; font-size: 12px; }
 .sp-act.buy { border-color: var(--game-accent, #b8461f); }
 .sp-act.gate { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fff); border-color: transparent; }
@@ -111,6 +113,12 @@ export default `
 .sp-yield { font-family: var(--game-font-display); font-size: 13px; color: var(--game-accent-strong, #8f3513); }
 .sp-wk { align-items: center; }
 .sp-desc { margin: 0; font-size: 13px; }
+
+/* mini gráfico no cartão da startup */
+.sp-mini { display: block; width: 100%; padding: 0; margin: 0; border: 1px solid var(--game-line, #d8c7a8); border-radius: 8px; background: var(--game-panel-2, #f3e4cb); cursor: pointer; overflow: hidden; }
+.sp-mini svg { display: block; width: 100%; height: 44px; }
+.sp-mini:hover { border-color: var(--game-accent, #b8461f); }
+.sp-su.dead .sp-mini { opacity: .6; }
 
 /* gráfico de velas */
 .sp-nm { background: none; border: 0; padding: 0; color: inherit; text-align: left; font-family: var(--game-font-display); font-size: 15px; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }

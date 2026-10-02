@@ -90,3 +90,17 @@ Atualizado a 2026-09-29.
 
 - Sem vantagem de lugar. Partidas mais curtas em jogadas (56, 85 e 112 por partida a 2, 3 e 4 jogadores): o limite de 9 ações faz o bot parar de comprar.
 - **O que a simulação não mede:** se o jogo ficou mais divertido, nem se a economia (dividendos até ×4, salários até 3M) está bem calibrada para humanos. Assessment pendente com partidas reais.
+
+## Startup Panic (3.4.0) — corrige as secções anteriores desde a 3.0.0
+
+**As tabelas da 3.0.0 (50/50, 33/33/33, 25/25/25/25) não valem:** nessa versão os bots ficavam parados (0M, sem equipa, 12 pts cada) e, sendo todos iguais, davam 25% a cada lugar sem jogarem. Corrigido na 3.4.0 (ver `CHANGELOG.md`). Com os bots a jogar a sério (1000 partidas por configuração, pontuação em 200):
+
+| Jogadores | Vitórias por lugar | Pontos: mediana / p90 / máximo |
+|---|---|---|
+| 2 | 49,5 / 50,5 | 610 / 1868 / 3631 |
+| 3 | 33,9 / 32,3 / 33,9 | 411 / 1773 / 5499 |
+| 4 | 26,4 / 22,7 / 24,3 / 26,7 | 338 / 1400 / 5181 |
+
+- Sem vantagem de lugar relevante (dentro do ruído).
+- **A economia está inflacionada.** O valor final varia de dezenas a milhares de pontos (p90 ≈ 1400–1900, máximo > 5000). Vem dos dividendos até ×4 com 9 ações e do Gate final ×20. O "final apoteótico" é intencional, mas a escala de níveis ×1–×4 da 3.0.0 multiplicou-o; a rever no assessment (por exemplo, ×1 / ×1,5 / ×2 / ×3, ou menos ações por startup nos Gates).
+
