@@ -53,7 +53,7 @@
     {
       "id": "f-fim",
       "kind": "FLOW",
-      "label": "Fim de jogo (ronda em curso + uma ronda sem quem completou)",
+      "label": "Fim de jogo (1×L3, 2×L2, 3×L1; ronda em curso + uma ronda sem quem completou)",
       "x": 300,
       "y": 540
     },
@@ -377,7 +377,7 @@
       "title": "Mercado: baralhos por nível, fila de 4 e rotação",
       "given": "o início da partida",
       "when": "se prepara o mercado",
-      "then": "cada peça (cada slot em cada nível) e cada CPU tem o seu próprio stock: 4 de nível 1, 2 de nível 2, 1 de nível 3. As peças de robot ficam separadas por nível em 3 baralhos, baralhados com ctx.rng; de cada um saem as 4 primeiras para uma fila visível (as CPUs estão sempre à vista). Quando uma peça esgota, sai da fila e entra à direita a do topo do baralho. Rotação: no fim de cada ronda, por nível, se ninguém adquiriu peças desse nível (compra ou Forja), a peça mais à esquerda da fila vai para o fundo do baralho e entra à direita a do topo; a peça não perde stock. Se o baralho do nível está vazio, a fila fica como está"
+      "then": "cada peça (cada slot em cada nível) e cada CPU tem o seu próprio stock: 8 de nível 1, 2 de nível 2, 1 de nível 3. As peças de robot ficam separadas por nível em 3 baralhos, baralhados com ctx.rng; de cada um saem as 4 primeiras para uma fila visível (as CPUs estão sempre à vista). Quando uma peça esgota, sai da fila e entra à direita a do topo do baralho. Rotação: no fim de cada ronda, por nível, se ninguém adquiriu peças desse nível (compra ou Forja), a peça mais à esquerda da fila vai para o fundo do baralho e entra à direita a do topo; a peça não perde stock. Se o baralho do nível está vazio, a fila fica como está"
     },
     {
       "id": "c-pecas",
@@ -441,7 +441,7 @@
       "scope": "node",
       "ref": "f-fim",
       "title": "Gatilho do fim de jogo: risco e recompensa",
-      "given": "um jogador com as 6 slots preenchidas e pelo menos uma peça L3 (CPU incluída)",
+      "given": "um jogador com as 6 slots preenchidas, pelo menos uma peça L3 e pelo menos três peças de nível 2 ou mais (1×L3, 2×L2, 3×L1; CPU incluída)",
       "when": "isso acontece",
       "then": "quem completa o robot acaba o seu turno (gasta os workers que lhe restam) e deixa de jogar a partir daí; a ronda em curso termina e joga-se mais uma ronda completa só com os outros jogadores; depois o jogo acaba. É um mecanismo de risco/recompensa: completar dá bónus mas dá aos outros uma última ronda para ganhar pontos. O impacto avalia-se depois com testes"
     },
@@ -451,10 +451,10 @@
       "category": "regra",
       "scope": "node",
       "ref": "f-fim",
-      "title": "Sem L3 ou sem 6 slots o jogo não acaba",
-      "given": "um jogador com 6 slots preenchidas mas todas L1/L2",
+      "title": "Sem a composição mínima o jogo não acaba",
+      "given": "um jogador com as 6 slots preenchidas mas sem L3, ou com L3 e menos de três peças de nível 2 ou mais",
       "when": "a ronda acaba",
-      "then": "o jogo continua"
+      "then": "não há gatilho e o jogo continua"
     },
     {
       "id": "c-limite-rondas",
@@ -562,7 +562,7 @@
       "id": "r-valores",
       "ref": null,
       "title": "Valores confirmados pelo David",
-      "text": "Fonte: github.com/dferreiramarques/robot-maker (public/index.html, v0.2), com estas decisões do David:\n- Início: 0 Bloco L1 e 1 worker.\n- Turno: um jogador faz tudo o que consegue (um worker por ação) e depois joga o seguinte; a ronda é um turno de cada jogador.\n- Stock 4/2/1 por peça (cada slot e nível, CPUs incluídas), com 4 peças reveladas por nível (3 baralhos baralhados, fila de 4).\n- Rotação do mercado: se ninguém adquire peças de um nível numa ronda, a mais à esquerda vai para o fundo e entra a seguinte.\n- Circuitos: máximo 1 por jogador; esgotam-se para todos; o worker fica disponível já.\n- Fim de jogo: quem completa o robot (gatilho) não joga mais; a ronda em curso acaba e joga-se mais uma ronda só com os outros (risco/recompensa; impacto a avaliar).\n- Progressão: L1 em slot vazio, L2 sobre L1, L3 sobre L2; a Forja só dá L1 em slot vazio, nunca CPUs; a peça substituída sai do jogo; a CPU pode mudar de família respeitando o nível.\n- Arredondamentos: para baixo.\n- Deploy: +6, a ajustar com testes. Com +7 uma estratégia só de Deploy ganhava a todas as partidas simuladas, por isso fica em 6; se for um caminho de vitória, baixa-se.\n- A pontuação é provisória: só se faz commit no fim, como no Catania.\nPropostas minhas, a testar: limite de segurança de 30 rondas e desempate por mais peças L3."
+      "text": "Fonte: github.com/dferreiramarques/robot-maker (public/index.html, v0.2), com estas decisões do David:\n- Início: 0 Bloco L1 e 1 worker.\n- Turno: um jogador faz tudo o que consegue (um worker por ação) e depois joga o seguinte; a ronda é um turno de cada jogador.\n- Stock 8/2/1 por peça (nível 1 duplicado: as L1 nunca devem escassear) (cada slot e nível, CPUs incluídas), com 4 peças reveladas por nível (3 baralhos baralhados, fila de 4).\n- Rotação do mercado: se ninguém adquire peças de um nível numa ronda, a mais à esquerda vai para o fundo e entra a seguinte.\n- Circuitos: máximo 1 por jogador; esgotam-se para todos; o worker fica disponível já.\n- Gatilho: 6 slots com pelo menos 1 peça L3 e 3 peças de nível 2 ou mais (1×L3, 2×L2, 3×L1).\n- Fim de jogo: quem completa o robot (gatilho) não joga mais; a ronda em curso acaba e joga-se mais uma ronda só com os outros (risco/recompensa; impacto a avaliar).\n- Progressão: L1 em slot vazio, L2 sobre L1, L3 sobre L2; a Forja só dá L1 em slot vazio, nunca CPUs; a peça substituída sai do jogo; a CPU pode mudar de família respeitando o nível.\n- Arredondamentos: para baixo.\n- Deploy: +6, a ajustar com testes. Com +7 uma estratégia só de Deploy ganhava a todas as partidas simuladas, por isso fica em 6; se for um caminho de vitória, baixa-se.\n- A pontuação é provisória: só se faz commit no fim, como no Catania.\nPropostas minhas, a testar: limite de segurança de 30 rondas e desempate por mais peças L3."
     }
   ]
 }

@@ -3,7 +3,7 @@
 export default {
   pt: [
     { title: 'Objetivo', body: [
-      'Constrói o robot mais eficiente. O jogo acaba quando alguém o completa (6 slots, com pelo menos uma peça L3) e ganha quem tiver mais pontos.',
+      'Constrói o robot mais eficiente. O jogo acaba quando alguém o completa (6 slots, com pelo menos uma peça L3 e três de nível 2 ou mais: 1×L3, 2×L2, 3×L1) e ganha quem tiver mais pontos.',
       'Cada jogador começa com 1 worker e nenhum bloco. Um turno usa todos os teus workers, um por ação, e só depois joga o seguinte.',
     ] },
     { title: 'Tabuleiro', body: [
@@ -21,12 +21,12 @@ export default {
       'Cada circuito (3 slots preenchidas) dá um worker permanente, no máximo 1 circuito e 3 workers por jogador. Cada circuito só existe uma vez no jogo.',
     ] },
     { title: 'Fim de jogo', body: [
-      'Quem completa o robot (6 slots e uma peça L3) acaba o turno e deixa de jogar; os outros jogam mais uma ronda e o jogo acaba. Bónus: +8 com o robot completo e +5 com uma peça L3.',
+      'Quem completa o robot (6 slots, uma peça L3 e três de nível 2 ou mais) acaba o turno e deixa de jogar; os outros jogam mais uma ronda e o jogo acaba. Bónus: +8 com o robot completo e +5 com uma peça L3.',
     ] },
   ],
   en: [
     { title: 'Goal', body: [
-      'Build the most efficient robot. The game ends when someone completes theirs (6 slots with at least one L3 part) and whoever has the most points wins.',
+      'Build the most efficient robot. The game ends when someone completes theirs (6 slots with at least one L3 part and three parts of level 2 or higher: 1×L3, 2×L2, 3×L1) and whoever has the most points wins.',
       'Each player starts with 1 worker and no blocks. A turn uses all your workers, one per action, and only then does the next player go.',
     ] },
     { title: 'Board', body: [
@@ -44,7 +44,7 @@ export default {
       'Each circuit (3 filled slots) gives a permanent worker, at most 1 circuit and 3 workers per player. Each circuit exists only once in the game.',
     ] },
     { title: 'End of the game', body: [
-      'Whoever completes the robot (6 slots and an L3 part) finishes their turn and stops playing; the others play one more round and the game ends. Bonus: +8 for a complete robot and +5 for an L3 part.',
+      'Whoever completes the robot (6 slots, an L3 part and three parts of level 2 or higher) finishes their turn and stops playing; the others play one more round and the game ends. Bonus: +8 for a complete robot and +5 for an L3 part.',
     ] },
   ],
 };
