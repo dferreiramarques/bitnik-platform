@@ -795,3 +795,40 @@ test('Simulação: partidas completas com o bot por omissão acabam sem falhas',
     assert.equal(r.finished, 3);
   }
 });
+
+// ─── Histórico de preços (gráfico de velas) ──────────────────
+
+test('Histórico: cada ronda abre uma vela por startup viva e a vela acompanha o preço (abertura, máximo, mínimo, fecho)', () => {
+  let m = novo(2, 'hist');
+  assert.ok(Object.values(m.state.hist).every((v) => v.length === 1 && v[0].r === 1));
+  m = proximaWhitney(m);
+  m = fecharRonda(m); // ronda 2: Whitney dá +1M à Segurança
+  const h = m.state.hist;
+  assert.deepEqual(h.hackshield.map((c) => c.r), [1, 2]);
+  assert.deepEqual([h.hackshield[1].o, h.hackshield[1].c], [3, 4]); // abre ao preço em que a ronda 1 fechou
+  assert.equal(h.hackshield[0].c, 3);
+  assert.deepEqual([h.deepanic[1].o, h.deepanic[1].c], [3, 3]);
+  assert.equal(viewFor(game, m, 0).view.historico.hackshield.length, 2);
+});
+
+test('Histórico: contratar um PR a meio da ronda sobe o máximo da vela; despedir desce o fecho mas não o máximo', () => {
+  let m = manutencao(novo(2, 'histpr'));
+  const j = vez(m);
+  m = jogar(m, j, 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'pr').id, startup: 'deepanic' });
+  let c = m.state.hist.deepanic[0];
+  assert.deepEqual([c.o, c.h, c.l, c.c], [3, 4, 3, 4]);
+  m = jogar(m, j, 'SP_FIRE', { worker: jog(m, j).trab[0].id });
+  c = m.state.hist.deepanic[0];
+  assert.deepEqual([c.o, c.h, c.l, c.c], [3, 4, 3, 3]);
+});
+
+test('Histórico: a startup que implode fecha a vela a 0 (marcada) e deixa de ter velas novas', () => {
+  const m = fecharRonda(proximaWhitney(tweak(novo(2, 'histimp'), (s) => {
+    CEOS.sb.efeito(s, { log() {}, rng: { pick: (a) => a[0] } }, 4); // implode CashBurn, a mais cara
+  })));
+  const h = m.state.hist.cashburn;
+  assert.equal(h.length, 1);
+  assert.deepEqual([h[0].l, h[0].c, h[0].x], [0, 0, true]);
+  assert.equal(m.state.hist.deepanic.length, 2);
+});
+

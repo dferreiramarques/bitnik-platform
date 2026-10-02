@@ -188,5 +188,13 @@ export default {
   'ui.paid': "Salary paid",
   'ui.riskHint': "Do not pay: a die is rolled, on a 6 they stay unpaid, on anything else they leave.",
   'ui.salaryDue': "Salary to decide: {n}M",
+  'ui.chartOpen': "See the price history",
+  'ui.chartTitle': "{startup} price",
+  'ui.chartNow': "Now",
+  'ui.chartCandle': "Round {r}: open {o}M, high {h}M, low {l}M, close {c}M",
+  'ui.chartDead': "Imploded in round {r}: the price fell to 0.",
+  'ui.chartHint': "Each candle is a round: green if the price rose, red if it fell. The wick shows the round high and low. Gate rounds are highlighted.",
+  'ui.chartEmpty': "No history yet.",
+  'ui.close': "Close",
   ...gerado,
 };

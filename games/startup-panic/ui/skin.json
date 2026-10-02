@@ -298,6 +298,24 @@
         "pt": "Setor Energia",
         "en": "Energy sector"
       }
+    },
+    "--sp-up": {
+      "value": "#2e9e4f",
+      "type": "color",
+      "group": "grafico",
+      "label": {
+        "pt": "Vela a subir",
+        "en": "Rising candle"
+      }
+    },
+    "--sp-down": {
+      "value": "#d1242f",
+      "type": "color",
+      "group": "grafico",
+      "label": {
+        "pt": "Vela a descer",
+        "en": "Falling candle"
+      }
     }
   },
   "contrast": [
