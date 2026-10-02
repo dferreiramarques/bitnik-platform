@@ -1,5 +1,9 @@
 # Nine Oils — histórico de regras
 
+## 1.2.0 — Tutorial interativo (2026-10-02)
+
+Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se um turno a sério contra o bot, com o motor verdadeiro no browser: lançar os dados, escolher um Triplo + Duplo, ver o adversário jogar e roubar uma garrafa com um Rapaz; a defesa com Valentões e o limite de mão explicam-se em texto. O primeiro lançamento sai de um roteiro (4-4-4-2-2) para ensinar uma combinação concreta. Usa o guia de passos da plataforma (`ctx.tour`, ADR-018).
+
 ## 1.1.26 — Ecrã de fim de jogo com o vidro do lobby, não um tom à parte (2026-10-02)
 
 Sem mudanças de jogo: o ecrã de fim de jogo passava a vidro (1.1.22),

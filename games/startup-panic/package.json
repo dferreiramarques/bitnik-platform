@@ -1,6 +1,6 @@
 {
   "name": "@bitnik/game-startup-panic",
-  "version": "0.1.0",
+  "version": "3.3.0",
   "description": "Startup Panic — pacote de jogo para @bitnik/engine.",
   "type": "module",
   "main": "index.js",
@@ -8,9 +8,11 @@
     ".": "./index.js"
   },
   "files": [
+    "bot.js",
     "index.js",
     "rules.js",
     "i18n/",
+    "ui/",
     "REGRAS.md",
     "CHANGELOG.md"
   ],

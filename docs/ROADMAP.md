@@ -4,7 +4,7 @@ Estado das fases da plataforma e os passos de cada uma. É o único sítio onde 
 
 Legenda: ✔ feito · ◐ em curso · ☐ por fazer.
 
-Atualizado a 2026-09-30.
+Atualizado a 2026-10-02.
 
 ## Resumo
 
@@ -17,6 +17,7 @@ Atualizado a 2026-09-30.
 | 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta a secção "Clientes" na consola) |
 | 3 | ☐ | Tabuleiros — proposta em `docs/TABULEIROS.md`, para começar depois da Fase 1 (o editor depende dos cartões do Forge) |
 | 4 | ☐ | Plataforma multi-marca — ideia por desenhar, para comercializar o output a outras editoras |
+| 5 | ☐ | Companion app para a versão física dos jogos — ideia por desenhar (primeiro caso: Startup Panic) |
 
 ## Fase 0 — Base ✔
 
@@ -37,9 +38,10 @@ Por etapas:
 1. ✔ Infraestrutura da UI no pacote.
 2. ✔ Tabuleiro do Catania.
 3. ✔ Tutorial com o motor verdadeiro e cenários no pacote.
+   Tutoriais interativos em todos os jogos (2026-10-02): guia da plataforma `ctx.tour` e partida local `ctx.session` (ADR-018) no Nine Oils, Praia das Percebes, Capivaras, Bulbous e Robot Maker; botão "Tutorial" à parte de "Como se joga" no lobby. Catania e Startup Panic voltam a ser acessíveis mas mantêm o guia próprio (migração para `ctx.tour` fica para depois).
 4. ✔ "Aparência" na consola (tokens, temas, pré-visualização). Desde 2026-10-01, o fundo do lobby é sempre o `--table-bg` do jogo (escurecido, nenhum campo) e a miniatura na página da marca é um campo à parte (`thumbnail`, fora do skin.json — sobrepõe-se à do pacote, chega já pronta no WELCOME).
 5. ✔ Template vanilla: preparação (`design/vanilla/skin.json`, `npm run figma`) e desenho montado no Claude Design, no canvas "Bitnik — Template vanilla" (<https://claude.ai/artifact/9yZPAYkg1bMhpgzWKrLgpX>): tokens, componentes, mesa no computador e no telemóvel, Início, Marca-produto, Lobby, Entrada, Fim e Relatório. Guião em `design/figma/TEMPLATE.md`; a mesa em ecrã inteiro ficou na ADR-014.
-6. ✔ Service worker (PWA).
+6. ✔ Service worker (PWA). Instalável (2026-10-02): ícones PNG 192/512 no manifest e botão "Instalar app" no lobby de cada jogo (evento `beforeinstallprompt`; no iOS, só as instruções). O manifest é da marca: instala o lobby com todos os jogos do deploy.
 
 ## Fase 0c — Consola ✔
 
@@ -78,6 +80,7 @@ Migração direta do código antigo, um jogo de cada vez.
 | Capivaras | 2.0.0 ✔ | `games/capivaras` | Feitas pela Forge e publicadas; empate partilha a vitória. A 2.0.0 traz o baralho do jogo (o da arte) e UI própria no template |
 | Praia das Percebes | 2.0.2 ✔ | `games/praia-das-percebes` | Colunas de 4 e 6 para tirar a vantagem do 2.º lugar (ver CHANGELOG); UI própria no template vanilla |
 | Nine Oils | 1.1.13 ✔ | `games/nine-oils` | Só a 2; 2 Rapazes; UI própria no template vanilla — a partir de 2026-10-01, deixa de ser só a demonstração do vanilla "nu" (ver linha a seguir) e passa a evoluir para um jogo à parte: fundo customizado, melhores componentes e interação |
+| Startup Panic | 3.3.0 ✔ | `games/startup-panic` | De `dferreiramarques/startup-panic`; 2 a 4 jogadores, classificação comercial: médio. Ordem de turno dinâmica no estado (ADR-017); troca no Gate como proposta com aceitação; corrigido o ciclo comprar+vender no Gate. UI própria no template; aprovado pelo David a 2026-10-02 e registado no Studio sem selo de protótipo. 2.0.0 (mesmo dia, depois do primeiro jogo): trabalhadores com papel (Advogado protege, PR sobe o preço, CFO renda fixa), implosão na startup mais cara sem Advogado, UI com rendimentos e previsão (ADR-018). 3.0.0: limite de 9 ações no total, níveis de trabalhador pela ordem de contratação, pool por jogador, dado nos salários não pagos e timeline na UI (ADR-019). 3.1.0: pagar salários é opcional, com a jogada de arriscar o dado. 3.2.0: histórico de preços com gráfico de velas por startup. 3.3.0: tutorial guiado de 19 passos (cenário `tutorial`) |
 | Nine Oils (Vanilla Demo) | 1.0.1 ✔ | `games/nine-oils-vanilla` | Cópia separada do Nine Oils em 1.1.13 (congelada), para continuar a mostrar o template vanilla tal como ficou desenhado no Claude Design — não recebe as mudanças de UX da linha acima. `hidden: true`: fora da página da marca, só por link direto (consola → Jogos → Abrir) |
 
 Por fazer:
@@ -127,3 +130,14 @@ Isto é bem maior do que o `consoleAtRoot` da Fase 0c: hoje as mesas, o `storage
 - ☐ Isolar `storage` por marca (hoje é um `fileStorage`/`memoryStorage` só).
 - ☐ Decidir como uma marca nova ganha jogos: todos os aprovados por omissão, ou por marca?
 - ☐ Faturação/limites, se isto vier a ser vendido como serviço.
+
+## Fase 5 — Companion app para jogos de tabuleiro físicos ☐
+
+Ideia (2026-10-02, vinda do playtest do Startup Panic), para uma versão futura: quem joga o jogo físico usa uma app no telemóvel para a contabilidade que, sem ajuda, estraga o jogo. A plataforma já tem as regras puras e o motor, por isso a app pode reutilizar o pacote do jogo (`rules.js`) em vez de reescrever a lógica.
+
+No Startup Panic seria preciso, por exemplo: preços das startups a recalcular com o CEO, o PR e as implosões; o cash de cada jogador (escondido dos outros); níveis, salários e dividendos por equipa; a ordem de jogo da ronda; o dado dos salários; e o multiplicador dos Gates. Por desenhar, ainda sem ordem:
+
+- ☐ Decidir o modelo: uma app por mesa (uma pessoa regista tudo) ou uma por jogador (cada um vê só o seu cash).
+- ☐ Decidir o que o motor precisa de oferecer sem servidor de mesa: aplicar jogadas à mão, desfazer, e partilhar o estado entre telemóveis.
+- ☐ Saber que jogos fazem sentido (os que têm contas e informação escondida) e o custo comercial para um publisher.
+

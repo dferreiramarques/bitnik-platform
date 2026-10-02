@@ -438,11 +438,11 @@ test('consola: /console e /admin/status, /admin/games só com ADMIN_TOKEN', asyn
   assert.equal(st.engineVersion, ENGINE_VERSION);
   assert.equal(st.studio, true);
   assert.equal(st.online, 1);
-  assert.equal(st.rooms.total, 3 + 2 + 3 + 1 + 1 + 5 + 3, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4; Nine Oils a 2; Nine Oils (Vanilla Demo) a 2; Capivaras de 2 a 6; Robot Maker a 2, 3 e 4');
+  assert.equal(st.rooms.total, 3 + 2 + 3 + 1 + 1 + 5 + 3 + 3, 'mesas públicas: Catania a 2, 3 e 4; Bulbous a 2 e 4; Praia a 2, 3 e 4; Nine Oils a 2; Nine Oils (Vanilla Demo) a 2; Capivaras de 2 a 6; Robot Maker a 2, 3 e 4; Startup Panic a 2, 3 e 4');
   const { games } = await (await fetch(`${base}/admin/games`, { headers: auth })).json();
   assert.equal(games[0].id, 'catania');
   assert.equal(games[0].name, 'Catania');
-  assert.deepEqual(games.map((g) => g.problems), [[], [], [], [], [], [], []]);
+  assert.deepEqual(games.map((g) => g.problems), [[], [], [], [], [], [], [], []]);
   assert.deepEqual(games.find((g) => g.id === 'bulbous').players.counts, [2, 4]);
   await s.stop();
 });
@@ -653,7 +653,7 @@ test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência cert
   const { exportAll, defaultsFor } = await import('../tools/figma.js');
   const { designTokensToAppearance, readDesignTokens, isDesignTokens } = await import('../packages/server/public/design-tokens.js');
   const files = await exportAll();
-  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'bulbous.default.tokens.json', 'capivaras.default.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'nine-oils-vanilla.default.tokens.json', 'nine-oils.default.tokens.json', 'praia-das-percebes.default.tokens.json', 'robot-maker.default.tokens.json', 'vanilla.tokens.json']);
+  assert.deepEqual(Object.keys(files).sort(), ['brand.tokens.json', 'bulbous.default.tokens.json', 'capivaras.default.tokens.json', 'catania.default.tokens.json', 'catania.dia.tokens.json', 'nine-oils-vanilla.default.tokens.json', 'nine-oils.default.tokens.json', 'praia-das-percebes.default.tokens.json', 'robot-maker.default.tokens.json', 'startup-panic.default.tokens.json', 'vanilla.tokens.json']);
   const vanilla = readDesignTokens(files['vanilla.tokens.json']);
   assert.ok(vanilla.some((t) => t.name === '--table-bg'), 'a vanilla também define a mesa');
   const defaults = await defaultsFor();
@@ -669,6 +669,25 @@ test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência cert
   assert.deepEqual(designTokensToAppearance(changed, { defaults }).games.catania, { theme: null, tokens: { '--cat-gold': '#00aaff' } });
 });
 
+test('design system da Bitnik: servido pela plataforma e guardado pelo service worker, sem CDN (ADR-017)', async () => {
+  for (const make of [makeStudio, makeRuntime]) {
+    const s = await boot(make);
+    const base = `http://localhost:${s.port}`;
+    const html = await (await fetch(`${base}/`)).text();
+    assert.ok(html.includes('href="/design-system/index.css"'));
+    assert.ok(html.includes('href="/design-system/game-ui.css"'));
+    assert.ok(!html.includes('bitnikgames-design-system'), 'já não vem do CDN');
+    for (const f of ['index', 'tokens', 'base', 'components', 'game-ui']) {
+      const res = await fetch(`${base}/design-system/${f}.css`);
+      assert.equal(res.status, 200, f);
+      assert.ok(res.headers.get('content-type').startsWith('text/css'));
+      assert.ok(s.platform.serviceWorker.precache.includes(`/design-system/${f}.css`), `o service worker guarda ${f}`);
+    }
+    assert.equal((await fetch(`${base}/design-system/outro.css`)).status, 404, 'só os cinco ficheiros');
+    await s.stop();
+  }
+});
+
 test('PWA: service worker com versão por conteúdo e o que o tutorial precisa para funcionar offline', async () => {
   const s = await boot(makeStudio);
   const base = `http://localhost:${s.port}`;
@@ -680,7 +699,7 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
   assert.doesNotMatch(js, /\{\{/, 'sem marcadores por preencher');
   const { version, precache } = s.platform.serviceWorker;
   assert.match(js, new RegExp(`const VERSION = '${version}'`));
-  for (const f of ['/', '/app.js', '/sdk/client.js', '/engine/index.js', '/games/catania/ui/tutorial.js', '/games/catania/scenarios.js', '/games/catania/i18n/pt.js']) {
+  for (const f of ['/', '/app.js', '/tour.js', '/sdk/client.js', '/engine/index.js', '/games/catania/ui/tutorial.js', '/games/catania/scenarios.js', '/games/catania/i18n/pt.js']) {
     assert.ok(precache.includes(f), `guarda ${f}`);
   }
   assert.ok(!precache.some((f) => f.includes('/test/') || f.startsWith('/console') || f.startsWith('/admin')), 'nunca testes, consola nem admin');
@@ -693,6 +712,68 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
   const manifest = await (await fetch(`${base}/manifest.webmanifest`)).json();
   assert.equal(manifest.scope, '/');
   assert.equal(manifest.display, 'standalone');
+  // Instalável: os navegadores pedem ícones PNG de 192 e 512, servidos e guardados offline.
+  for (const size of [192, 512]) {
+    assert.ok(manifest.icons.some((i) => i.sizes === `${size}x${size}` && i.type === 'image/png' && i.src === `/icon-${size}.png`), `ícone ${size}`);
+    const png = await fetch(`${base}/icon-${size}.png`);
+    assert.equal(png.status, 200);
+    assert.equal(png.headers.get('content-type'), 'image/png');
+    assert.deepEqual([...new Uint8Array(await png.arrayBuffer()).slice(0, 4)], [137, 80, 78, 71], 'é um PNG');
+    assert.ok(precache.includes(`/icon-${size}.png`), `o service worker guarda o ícone ${size}`);
+  }
+  await s.stop();
+});
+
+test('tutoriais com o guia da plataforma (ctx.tour): cada passo tem texto em PT e EN e cada zona destacada existe na UI do jogo', async () => {
+  const { readdirSync, existsSync } = await import('node:fs');
+  const dir = new URL('../games/', import.meta.url);
+  let vistos = 0;
+  for (const nome of readdirSync(dir)) {
+    const tut = new URL(`${nome}/ui/tutorial.js`, dir);
+    if (!existsSync(tut)) continue;
+    const src = await readFile(tut, 'utf8');
+    if (!src.includes('ctx.tour(')) continue;
+    vistos++;
+    const jogo = (await import(new URL(`${nome}/index.js`, dir).href)).default;
+    const ui = await readFile(new URL(`${nome}/ui/index.js`, dir), 'utf8');
+    const bloco = src.match(/const STEPS = \[([\s\S]*?)\n  \];/)?.[1] ?? '';
+    const passos = [...bloco.matchAll(/\{ id: '([\w-]+)'(?:, target: '([^']*)')?/g)];
+    assert.ok(passos.length >= 6, `${nome}: poucos passos`);
+    for (const [, id, target] of passos) {
+      for (const lang of ['pt', 'en']) for (const parte of ['title', 'body']) {
+        assert.ok(jogo.i18n[lang][`tut.${id}.${parte}`], `${nome}: falta tut.${id}.${parte} em ${lang}`);
+      }
+      for (const zona of (target || '').split(' ').filter(Boolean)) assert.ok(ui.includes(`data-tut="${zona}"`), `${nome}: o passo ${id} destaca "${zona}", que a UI não marca`);
+    }
+    assert.ok(jogo.tutorial, `${nome}: o index.js tem de declarar tutorial`);
+  }
+  assert.ok(vistos >= 1, 'há pelo menos um tutorial com o guia da plataforma');
+});
+
+test('Forge: os exemplos em docs/forge-seeds importam (projeto, partida narrada e testes) e só citam cartões que existem', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const lerSeed = async (f) => JSON.parse(await readFile(new URL(`../docs/forge-seeds/${f}.json`, import.meta.url), 'utf8'));
+  for (const jogo of ['nine-oils', 'robot-maker']) {
+    const imp = await (await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ project: await lerSeed(jogo) }) })).json();
+    assert.equal(imp.slug, jogo);
+    const ids = new Set(imp.project.cards.map((c) => c.id));
+    assert.ok(imp.project.cards.length > 10 && imp.project.nodes.length > 10, jogo);
+
+    const partida = await lerSeed(`${jogo}-partida`);
+    const np = await (await fetch(`${url}/${jogo}/narrations`, { method: 'POST', headers: auth, body: JSON.stringify({ narration: partida }) })).json();
+    assert.equal(np.narration.jogadas.length, partida.jogadas.length, jogo);
+    for (const j of np.narration.jogadas) for (const c of j.cartoes) assert.ok(ids.has(c), `${jogo}: a jogada ${j.n} cita o cartão ${c}, que não existe`);
+    for (const d of np.narration.duvidas) for (const c of d.cartoes) assert.ok(ids.has(c), `${jogo}: a dúvida ${d.id} cita o cartão ${c}`);
+
+    const testes = await (await fetch(`${url}/${jogo}/tests`, { method: 'POST', headers: auth, body: JSON.stringify({ tests: await lerSeed(`${jogo}-testes`) }) })).json();
+    assert.ok(testes.tests.itens.length > 10, jogo);
+    for (const t of testes.tests.itens) {
+      assert.ok(ids.has(t.cartao), `${jogo}: o teste "${t.nome}" cita o cartão ${t.cartao}, que não existe`);
+      assert.match(t.codigo, /^test\(/, `${jogo}: ${t.nome}`);
+    }
+  }
   await s.stop();
 });
 

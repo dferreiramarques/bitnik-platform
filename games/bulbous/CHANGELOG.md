@@ -1,4 +1,8 @@
 # Bulbous — histórico de regras
+## 1.2.0 — Tutorial interativo (2026-10-02)
+
+Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se a 2, contra o bot, com o motor verdadeiro no browser: escolher as Baelfungious, declarar a sequência da ronda como Governante e apostar na 1.ª vaza; o Joker, o ×2, as rondas e a pontuação explicam-se em texto. A mão do jogador é a da lição (números altos nas suas duas cores, um ×2 e o Joker). Usa o guia de passos e a partida local da plataforma (`ctx.tour`, `ctx.session`, ADR-018).
+
 
 ## 1.1.15 — Registo flutuante a sério (2026-10-01)
 

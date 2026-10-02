@@ -417,3 +417,116 @@ Alternativas consideradas: só o botão existente (não resolve — ninguém o u
 - ✔ Resolve o caso relatado: a mesa pública some do lobby assim que o último jogador desliga, com ou sem clique em "Sair".
 - O `graceMs` (por omissão, 60 s) continua a dar tempo a uma queda de rede breve antes de libertar o lugar — não muda só por o jogo ter acabado.
 - Mesas de convite continuam a precisar de um fecho manual: é um comportamento deliberado (ADR-015), não um esquecimento.
+
+---
+
+## ADR-017: O design system da Bitnik vai dentro da plataforma, numa versão fixa
+## ADR-018: Startup Panic: ordem de turno no estado e jogo novo registado como protótipo
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+A ADR-008 pôs o `bitnikgames-design-system` atrás de uma versão fixa (`@v1.0.0`), mas continuava a vir do CDN jsdelivr: um runtime de cliente dependia de rede e de um repositório externo para ter estilos, e o service worker (PWA) não os guardava — offline, a página perdia os tokens, o botão e o cartão. Os cinco ficheiros têm 24 KB no total, sem `url()` nem fontes (as fontes vêm do Google Fonts, à parte).
+
+Alternativas consideradas: manter o CDN (zero manutenção, mas dependência externa em produção e sem offline) e trazer o repositório inteiro para o monorepo (só compensava se o sistema se editasse ao ritmo da plataforma).
+
+### Decisão
+
+- `packages/server/public/design-system/` tem `index`, `tokens`, `base`, `components` e `game-ui` (`.css`), iguais byte a byte à tag `v1.0.0`; o servidor serve-os em `/design-system/<ficheiro>.css` (só estes cinco) e o service worker guarda-os (entram no hash da versão).
+- As marcas do Studio e do runtime limpo apontam para `/design-system/index.css` e `/design-system/game-ui.css`. Um runtime de cliente continua a poder pôr a sua skin por cima, só com tokens (`brand.tokens`).
+- A fonte continua a ser o repositório `bitnikgames-design-system`: atualiza-se de propósito, copiando a nova tag (comandos em `design-system/LEIA-ME.md`) e mudando a versão aqui.
+
+### Consequências
+
+- ✔ Zero dependência externa para os estilos da plataforma; a PWA funciona offline.
+- Um passo manual para atualizar o design system, em troca de nenhuma alteração chegar a um cliente sem passar por um deploy.
+- Os ficheiros copiados não se editam aqui: uma mudança faz-se no repositório do design system e volta como nova tag.
+O Startup Panic muda a ordem de jogo a cada ronda (joga primeiro quem tem ações na startup mais cara). O contrato já dava a `activePlayers(state)` a liberdade de devolver qualquer lugar, por isso não era claro se o motor precisava de mudar. O jogo traz ainda uma troca de ações entre jogadores que, no servidor original, era unilateral, e a simulação revelou que comprar e vender no Gate no mesmo turno dava lucro sem limite.
+
+### Decisão
+
+- **Ordem de turno:** `state.ordem` (lugares) e `state.pos` (índice da vez); `activePlayers` devolve `ordem[pos]`. A ordem recalcula-se no início de cada ronda, depois do CEO, por `calcularOrdem`. **O motor não muda.**
+- **Troca no Gate:** uma proposta guardada em `state.proposta`; enquanto existe, `activePlayers` devolve só o jogador visado, que aceita ou recusa. É a primeira jogada em que quem responde não é o jogador da vez.
+- **Gate:** não se vende uma startup em que se comprou nesse turno (`state.compradas`).
+- **Estado do jogo no Studio:** o jogo foi registado em `apps/studio/server.js` com `prototype: true` (selo e modo protótipo na mesa) até ser aprovado. Aprovado a 2026-10-02: passou a 1.0.0 sem a marca. Só depois de vendido passa para o runtime de um cliente.
+
+### Consequências
+
+- ✔ Ordem variável sem tocar no motor, com replay e simulação intactos.
+- ✔ O padrão da proposta com resposta de outro jogador serve a futuros jogos de negociação.
+- Os bots nunca propõem trocas e recusam as que lhes propõem; a simulação não exercita a troca (só os testes).
+- As percentagens de vitória por lugar reproduzem-se de forma aproximada (ver `docs/EQUILIBRIO.md`), não exata, por causa da correção do Gate.
+
+---
+
+## ADR-018: Startup Panic 2.0.0: trabalhadores com papel e implosão com critério
+
+**Estado:** aceite, a rever no assessment (2026-10-02)
+
+### Contexto
+
+Depois de jogar a 1.0.0, o David apontou: o jogo é aborrecido, as ações parecem não ter impacto, não é claro o que cada trabalhador faz, e a startup que implode é escolhida sem critério. Verificou-se que Advogado, PR e CFO eram idênticos (1M por ação): só o Engenheiro diferia, por isso nada havia para explicar.
+
+### Decisão
+
+- Cada tipo ganha um papel: Advogado protege a startup de implodir, PR sobe 1M ao preço, CFO rende 2M fixos por ronda (sem ações). O Engenheiro mantém 2M por ação. O Sénior dobra tudo.
+- A implosão atinge a startup viva mais cara sem Advogado (empate: sorteio via `ctx.rng`), em vez de uma ao acaso. Quem lidera paga o risco; o Advogado é a contra-jogada.
+- O preço passa a `base + setor + PR` e recalcula-se sempre que a equipa muda (`recalcular`).
+- O `view` passa a trazer o que cada trabalhador rende, os dividendos previstos, o valor total e a variação de preço do CEO, para a UI mostrar o impacto das jogadas.
+- As constantes (`FIXO_CFO`, `BONUS_PR`, `DIVIDENDO`) estão no topo de `rules.js`, para afinar sem mexer na lógica.
+
+### Consequências
+
+- ✔ Escolhas de equipa com sentido (proteger, valorizar, renda), e uma implosão previsível e disputável.
+- Os valores (2M, +1M) foram escolhidos sem playtest: assessment pendente. A simulação mede só o equilíbrio por lugar, não a diversão.
+- Muda regras: pacote em 2.0.0 e mesas guardadas da 1.x expiradas.
+
+---
+
+## ADR-019: Startup Panic 3.0.0: limite total de ações, níveis pela ordem e dado nos salários
+
+**Estado:** aceite, a rever no assessment (2026-10-02)
+
+### Contexto
+
+Jogando a 2.0.0, o David viu que: com 4 ações por startup é difícil ter maioria; só lhe sobravam trabalhadores PR (a pool de 12 esgotava-se na ronda 1); não era claro o que acontecia quando não conseguia pagar salários; e faltava uma noção das 12 rondas e dos Gates. Pediu ainda que os trabalhadores sigam a lógica das ações: um escalão de nível pela ordem de contratação, com salários que fazem a equipa custar caro.
+
+### Decisão
+
+- Limite de 9 ações por jogador no total (`MAX_ACOES_TOTAL`), em startups vivas, nas compras e nas trocas. Concentra o investimento em 2 ou 3 startups, onde a maioria é natural.
+- Pool com `numPlayers` cópias de cada tipo. Remove-se o limite fixo de 4 trabalhadores (`MAX_TRABALHADORES`): o custo crescente e a pool limitam.
+- Nível = escalão pela ordem de contratação (`NIVEIS`: Estagiário, Júnior, Mid, Sénior), fixado ao contratar; `SP_HIRE` deixa de ter o campo `senior`. Multiplica o rendimento; custo de contratar e salário por ronda sobem com o nível.
+- Salário sem cash: dado via `ctx.rng` (6 fica sem receber, outro número sai), com mensagem da mesa e registo (ADR-014). Na 3.1.0 pagar passou a ser opcional: `SP_RISK_SALARY` deixa arriscar o dado por escolha, mesmo com cash; o que não se decide cobra-se ao terminar o turno (paga se der, senão dado).
+- O `view` traz `proximo` (nível, custo e salário do próximo), `meusSalarios`, `totalAcoes` e `gateBase`, para a UI explicar os custos e desenhar a timeline.
+
+### Consequências
+
+- ✔ Maiorias possíveis e disputadas; ninguém fica sem tipos de trabalhador; custos de equipa visíveis antes de contratar.
+- A economia muda muito: dividendos até ×4 com salários de 3M. A simulação mede o equilíbrio por lugar (ver `docs/EQUILIBRIO.md`), não se o jogo ficou mais divertido: assessment pendente.
+- Os valores (9 ações, ×1 a ×4, salários 0 a 3M) são constantes no topo de `rules.js`.
+- Muda regras: pacote em 3.0.0 e mesas guardadas da 2.x expiradas.
+
+
+---
+
+## ADR-018: Guia de tutorial da plataforma (`ctx.tour`) e botão "Tutorial" à parte
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+Desde que os jogos ganharam a modal "Como se joga" (`rules`), o lobby só mostrava essa modal: o tutorial interativo do Catania (e depois o do Startup Panic) continuava a existir mas deixou de ter botão — perderam-se no caminho. Os dois tutoriais também repetiam o mesmo guia (cartão de passo, destaque de zonas, "Seguinte", "Jogar a sério"), cada um com o seu CSS.
+
+### Decisão
+
+- "Como se joga" (regras escritas) e "Tutorial" (interativo, `defineGame({ tutorial })`) são dois botões, lado a lado, no lobby e na entrada na mesa.
+- A plataforma dá o guia: `packages/server/public/tour.js`, entregue ao pacote por `ctx.tour({ host, steps, t })` (os pacotes só podem importar o motor). O pacote declara os passos (`id`, `target`, `next`, `done`, `skip`, `enter`, `leave`, `final`), os textos `tut.<id>.title/body` em PT e EN e marca na sua UI as zonas a destacar com `data-tut="nome"`; a UI chama `ctx.afterRender?.()` no fim de cada desenho para o destaque voltar a ser posto.
+- O cartão fica na metade do ecrã oposta à da primeira zona destacada (ao meio, sem zona); em ecrãs largos (≥ 1100 px), num painel ao lado.
+- Continua a regra da ADR-007: o tutorial corre o motor verdadeiro e o `bot` do jogo, sem cópias de regras. Para ensinar uma combinação concreta, o tutorial pode substituir o estado local depois de uma jogada (o Nine Oils põe os dados do 1.º lançamento num roteiro).
+- Um teste verifica, para cada tutorial que usa `ctx.tour`, que todos os passos têm texto nas duas línguas e que cada zona destacada existe na UI.
+
+### Consequências
+
+- ✔ Voltam a ser alcançáveis os tutoriais do Catania e do Startup Panic; um jogo novo faz o seu em ~100 linhas (passos + textos + marcas).
+- Os tutoriais do Catania e do Startup Panic continuam com o guia próprio; migrá-los para `ctx.tour` fica para depois.

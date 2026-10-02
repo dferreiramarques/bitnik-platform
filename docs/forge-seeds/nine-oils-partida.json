@@ -1,0 +1,466 @@
+{
+  "cenario": "Jogo completo de 2 jogadores, ambos com o bot por omissão (seed \"a\"): J1 e J2 jogam por turnos até alguém ter as 6 casas da banca com garrafa.",
+  "jogadores": 2,
+  "jogadas": [
+    {
+      "n": 1,
+      "jogador": null,
+      "acao": "Preparação: 2 jogadores; cada banca com 6 casas e 2 cubos vermelhos nas casas 1 e 2 (■); 6 garrafas na reserva; 1 carta de Personagem a cada um; começa J2.",
+      "cartoes": [
+        "c-setup"
+      ],
+      "resultado": "Estado inicial.",
+      "estado": "J1: banca [■■□□□□] reserva 6 mão [Valentão]. J2: banca [■■□□□□] reserva 6 mão [Rapaz]. Baralho 6, descarte 0."
+    },
+    {
+      "n": 2,
+      "jogador": 2,
+      "acao": "J2 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J2 lançou os dados: 2 2 2 4 5 5 5 6 6.",
+      "estado": "J1: banca [■■□□□□] reserva 6 mão [Valentão]. J2: banca [■■□□□□] reserva 6 mão [Rapaz]. Baralho 6, descarte 0."
+    },
+    {
+      "n": 3,
+      "jogador": 2,
+      "acao": "J2 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■□□□□] reserva 6 mão [Valentão]. J2: banca [■■□□□□] reserva 6 mão [Rapaz]. Baralho 6, descarte 0."
+    },
+    {
+      "n": 4,
+      "jogador": 2,
+      "acao": "J2 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J2 Duplo: tirou uma carta; J2 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■□□□□] reserva 6 mão [Valentão]. J2: banca [■■●□□□] reserva 5 mão [Rapaz, Valentão]. Baralho 5, descarte 0."
+    },
+    {
+      "n": 5,
+      "jogador": 1,
+      "acao": "J1 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J1 lançou os dados: 1 1 3 3 3 4 5 5 6.",
+      "estado": "J1: banca [■■□□□□] reserva 6 mão [Valentão]. J2: banca [■■●□□□] reserva 5 mão [Rapaz, Valentão]. Baralho 5, descarte 0."
+    },
+    {
+      "n": 6,
+      "jogador": 1,
+      "acao": "J1 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■□□□□] reserva 6 mão [Valentão]. J2: banca [■■●□□□] reserva 5 mão [Rapaz, Valentão]. Baralho 5, descarte 0."
+    },
+    {
+      "n": 7,
+      "jogador": 1,
+      "acao": "J1 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J1 Duplo: tirou uma carta; J1 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão]. J2: banca [■■●□□□] reserva 5 mão [Rapaz, Valentão]. Baralho 4, descarte 0."
+    },
+    {
+      "n": 8,
+      "jogador": 2,
+      "acao": "J2 joga Rapaz e lança os 9 dados.",
+      "cartoes": [
+        "c-turno",
+        "c-rapaz",
+        "c-log"
+      ],
+      "resultado": "J2 jogou 1 carta(s).",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão]. J2: banca [■■●□□□] reserva 5 mão [Valentão]. Baralho 4, descarte 1."
+    },
+    {
+      "n": 9,
+      "jogador": 1,
+      "acao": "J1 responde ao Rapaz com 1 Valentão(ões).",
+      "cartoes": [
+        "c-valentao-defesa",
+        "c-log"
+      ],
+      "resultado": "J1 bloqueou 1 Rapaz(es) com Valentões; J1 lançou os dados: 1 1 2 3 3 3 4 5 6.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão]. J2: banca [■■●□□□] reserva 5 mão [Valentão]. Baralho 4, descarte 2."
+    },
+    {
+      "n": 10,
+      "jogador": 2,
+      "acao": "J2 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão]. J2: banca [■■●□□□] reserva 5 mão [Valentão]. Baralho 4, descarte 2."
+    },
+    {
+      "n": 11,
+      "jogador": 2,
+      "acao": "J2 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J2 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 4, descarte 2."
+    },
+    {
+      "n": 12,
+      "jogador": 1,
+      "acao": "J1 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J1 lançou os dados: 1 1 2 2 3 4 5 6 6.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 4, descarte 2."
+    },
+    {
+      "n": 13,
+      "jogador": 1,
+      "acao": "J1 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 4, descarte 2."
+    },
+    {
+      "n": 14,
+      "jogador": 1,
+      "acao": "J1 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-log"
+      ],
+      "resultado": "J1 Duplo: tirou uma carta; J1 Duplo: tirou uma carta; J1 Duplo: tirou uma carta.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Sedutora, Sedutora]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 1, descarte 2."
+    },
+    {
+      "n": 15,
+      "jogador": 1,
+      "acao": "J1 descarta Sedutora (limite de 3 cartas).",
+      "cartoes": [
+        "c-limite-mao"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Sedutora]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 1, descarte 3."
+    },
+    {
+      "n": 16,
+      "jogador": 2,
+      "acao": "J2 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J2 lançou os dados: 3 3 3 3 4 4 5 5 5.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Sedutora]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 1, descarte 3."
+    },
+    {
+      "n": 17,
+      "jogador": 2,
+      "acao": "J2 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Sedutora]. J2: banca [■■●●□□] reserva 4 mão [Valentão]. Baralho 1, descarte 3."
+    },
+    {
+      "n": 18,
+      "jogador": 2,
+      "acao": "J2 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-quad",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J2 Quad: abriu uma casa da banca; J2 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Sedutora]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 1, descarte 3."
+    },
+    {
+      "n": 19,
+      "jogador": 1,
+      "acao": "J1 joga Sedutora e lança os 9 dados.",
+      "cartoes": [
+        "c-turno",
+        "c-sedutora",
+        "c-log"
+      ],
+      "resultado": "J1 jogou 1 carta(s); J1 lançou os dados: 1 1 3 3 3 3 3 3 6.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 1, descarte 4."
+    },
+    {
+      "n": 20,
+      "jogador": 1,
+      "acao": "J1 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno",
+        "c-seis",
+        "c-log"
+      ],
+      "resultado": "J1 seis iguais: tira 3 cartas.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Valentão, Sedutora, Valentão]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 2, descarte 0."
+    },
+    {
+      "n": 21,
+      "jogador": 1,
+      "acao": "J1 descarta Sedutora (limite de 3 cartas).",
+      "cartoes": [
+        "c-limite-mao"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Rapaz, Valentão, Valentão]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 2, descarte 1."
+    },
+    {
+      "n": 22,
+      "jogador": 1,
+      "acao": "J1 descarta Rapaz (limite de 3 cartas).",
+      "cartoes": [
+        "c-limite-mao"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 2, descarte 2."
+    },
+    {
+      "n": 23,
+      "jogador": 2,
+      "acao": "J2 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J2 lançou os dados: 1 1 2 3 3 3 4 6 6.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 2, descarte 2."
+    },
+    {
+      "n": 24,
+      "jogador": 2,
+      "acao": "J2 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●□□] reserva 3 mão [Valentão]. Baralho 2, descarte 2."
+    },
+    {
+      "n": 25,
+      "jogador": 2,
+      "acao": "J2 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J2 Duplo: tirou uma carta; J2 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão, Rapaz]. Baralho 1, descarte 2."
+    },
+    {
+      "n": 26,
+      "jogador": 1,
+      "acao": "J1 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J1 lançou os dados: 1 3 3 5 5 5 6 6 6.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão, Rapaz]. Baralho 1, descarte 2."
+    },
+    {
+      "n": 27,
+      "jogador": 1,
+      "acao": "J1 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●□□□] reserva 5 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão, Rapaz]. Baralho 1, descarte 2."
+    },
+    {
+      "n": 28,
+      "jogador": 1,
+      "acao": "J1 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J1 Duplo: tirou uma carta; J1 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão, Valentão, Sedutora]. J2: banca [●■●●●□] reserva 2 mão [Valentão, Rapaz]. Baralho 0, descarte 2."
+    },
+    {
+      "n": 29,
+      "jogador": 1,
+      "acao": "J1 descarta Sedutora (limite de 3 cartas).",
+      "cartoes": [
+        "c-limite-mao"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão, Rapaz]. Baralho 0, descarte 3."
+    },
+    {
+      "n": 30,
+      "jogador": 2,
+      "acao": "J2 joga Rapaz e lança os 9 dados.",
+      "cartoes": [
+        "c-turno",
+        "c-rapaz",
+        "c-log"
+      ],
+      "resultado": "J2 jogou 1 carta(s).",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão]. Baralho 0, descarte 4."
+    },
+    {
+      "n": 31,
+      "jogador": 1,
+      "acao": "J1 responde ao Rapaz com 1 Valentão(ões).",
+      "cartoes": [
+        "c-valentao-defesa",
+        "c-log"
+      ],
+      "resultado": "J1 bloqueou 1 Rapaz(es) com Valentões; J1 lançou os dados: 1 3 5 5 5 5 6 6 6.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão]. Baralho 0, descarte 5."
+    },
+    {
+      "n": 32,
+      "jogador": 2,
+      "acao": "J2 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão]. J2: banca [●■●●●□] reserva 2 mão [Valentão]. Baralho 0, descarte 5."
+    },
+    {
+      "n": 33,
+      "jogador": 2,
+      "acao": "J2 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-quad",
+        "c-log"
+      ],
+      "resultado": "J2 Duplo: tirou uma carta; J2 Quad: abriu uma casa da banca.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão]. J2: banca [●□●●●□] reserva 2 mão [Valentão, Sedutora]. Baralho 4, descarte 0."
+    },
+    {
+      "n": 34,
+      "jogador": 1,
+      "acao": "J1 lança os 9 dados, sem jogar cartas.",
+      "cartoes": [
+        "c-turno",
+        "c-log"
+      ],
+      "resultado": "J1 lançou os dados: 1 2 2 3 4 4 4 5 6.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão]. J2: banca [●□●●●□] reserva 2 mão [Valentão, Sedutora]. Baralho 4, descarte 0."
+    },
+    {
+      "n": 35,
+      "jogador": 1,
+      "acao": "J1 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●●□□] reserva 4 mão [Valentão, Valentão]. J2: banca [●□●●●□] reserva 2 mão [Valentão, Sedutora]. Baralho 4, descarte 0."
+    },
+    {
+      "n": 36,
+      "jogador": 1,
+      "acao": "J1 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J1 Triplo + Duplo: 1 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●●●□] reserva 3 mão [Valentão, Valentão]. J2: banca [●□●●●□] reserva 2 mão [Valentão, Sedutora]. Baralho 4, descarte 0."
+    },
+    {
+      "n": 37,
+      "jogador": 2,
+      "acao": "J2 joga Sedutora e lança os 9 dados.",
+      "cartoes": [
+        "c-turno",
+        "c-sedutora",
+        "c-log"
+      ],
+      "resultado": "J2 jogou 1 carta(s); J2 lançou os dados: 1 1 1 2 2 4 4 4 5.",
+      "estado": "J1: banca [■■●●●□] reserva 3 mão [Valentão, Valentão]. J2: banca [●□●●●□] reserva 2 mão [Valentão]. Baralho 4, descarte 1."
+    },
+    {
+      "n": 38,
+      "jogador": 2,
+      "acao": "J2 e o adversário veem os dados; a partida continua.",
+      "cartoes": [
+        "c-turno"
+      ],
+      "resultado": "Sem alterações visíveis.",
+      "estado": "J1: banca [■■●●●□] reserva 3 mão [Valentão, Valentão]. J2: banca [●□●●●□] reserva 2 mão [Valentão]. Baralho 4, descarte 1."
+    },
+    {
+      "n": 39,
+      "jogador": 2,
+      "acao": "J2 escolhe a combinação 1 da lista (★ primeiro).",
+      "cartoes": [
+        "c-uma-por-face",
+        "c-conflito",
+        "c-double",
+        "c-triplo-duplo",
+        "c-log"
+      ],
+      "resultado": "J2 Duplo: tirou uma carta; J2 Triplo + Duplo: 2 garrafa(s) na banca.",
+      "estado": "J1: banca [■■●●●□] reserva 3 mão [Valentão, Valentão]. J2: banca [●●●●●●] reserva 0 mão [Valentão, Rapaz]. Baralho 3, descarte 1."
+    }
+  ],
+  "duvidas": [
+    {
+      "jogada": null,
+      "pergunta": "Quantos Rapazes tem o baralho? O texto das regras diz 2 (8 cartas de Personagem); o jogo online antigo tinha 3.",
+      "assumido": "Assumi 2 Rapazes, como diz o texto das regras: 2 Sedutoras, 2 Rapazes e 4 Valentões.",
+      "cartoes": [
+        "c-setup",
+        "c-rapaz"
+      ],
+      "estado": "resolvida",
+      "nota": "David: 2 Rapazes (versão 1.1.0). Simulação com 20 000 partidas: quem começa ganha 53,1% (53,7% com 3); metade dos roubos."
+    }
+  ],
+  "fim": "Ganha J2: J1 3 garrafa(s) contra J2 6 garrafa(s)."
+}
