@@ -417,3 +417,27 @@ Alternativas consideradas: só o botão existente (não resolve — ninguém o u
 - ✔ Resolve o caso relatado: a mesa pública some do lobby assim que o último jogador desliga, com ou sem clique em "Sair".
 - O `graceMs` (por omissão, 60 s) continua a dar tempo a uma queda de rede breve antes de libertar o lugar — não muda só por o jogo ter acabado.
 - Mesas de convite continuam a precisar de um fecho manual: é um comportamento deliberado (ADR-015), não um esquecimento.
+
+---
+
+## ADR-017: O design system da Bitnik vai dentro da plataforma, numa versão fixa
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+A ADR-008 pôs o `bitnikgames-design-system` atrás de uma versão fixa (`@v1.0.0`), mas continuava a vir do CDN jsdelivr: um runtime de cliente dependia de rede e de um repositório externo para ter estilos, e o service worker (PWA) não os guardava — offline, a página perdia os tokens, o botão e o cartão. Os cinco ficheiros têm 24 KB no total, sem `url()` nem fontes (as fontes vêm do Google Fonts, à parte).
+
+Alternativas consideradas: manter o CDN (zero manutenção, mas dependência externa em produção e sem offline) e trazer o repositório inteiro para o monorepo (só compensava se o sistema se editasse ao ritmo da plataforma).
+
+### Decisão
+
+- `packages/server/public/design-system/` tem `index`, `tokens`, `base`, `components` e `game-ui` (`.css`), iguais byte a byte à tag `v1.0.0`; o servidor serve-os em `/design-system/<ficheiro>.css` (só estes cinco) e o service worker guarda-os (entram no hash da versão).
+- As marcas do Studio e do runtime limpo apontam para `/design-system/index.css` e `/design-system/game-ui.css`. Um runtime de cliente continua a poder pôr a sua skin por cima, só com tokens (`brand.tokens`).
+- A fonte continua a ser o repositório `bitnikgames-design-system`: atualiza-se de propósito, copiando a nova tag (comandos em `design-system/LEIA-ME.md`) e mudando a versão aqui.
+
+### Consequências
+
+- ✔ Zero dependência externa para os estilos da plataforma; a PWA funciona offline.
+- Um passo manual para atualizar o design system, em troca de nenhuma alteração chegar a um cliente sem passar por um deploy.
+- Os ficheiros copiados não se editam aqui: uma mudança faz-se no repositório do design system e volta como nova tag.
