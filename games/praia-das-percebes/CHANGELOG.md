@@ -1,4 +1,10 @@
 # Praia das Percebes — histórico de regras
+
+## 2.1.2 — Marcador do salva-vidas legível (2026-10-02)
+
+Sem mudanças de jogo: o emoji e a seta do salva-vidas ganham sombra (o emoji
+vermelho perdia-se no fundo vermelho do jogador 1) e ficam centrados na etiqueta.
+
 ## 2.1.1 — Arte das peças (2026-10-02)
 
 Sem mudanças de jogo: as peças passam a ter desenho próprio (33 ilustrações:
