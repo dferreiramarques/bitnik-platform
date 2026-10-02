@@ -421,7 +421,53 @@ Alternativas consideradas: só o botão existente (não resolve — ninguém o u
 ---
 
 ## ADR-017: O design system da Bitnik vai dentro da plataforma, numa versão fixa
-## ADR-018: Startup Panic: ordem de turno no estado e jogo novo registado como protótipo
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+A ADR-008 pôs o `bitnikgames-design-system` atrás de uma versão fixa (`@v1.0.0`), mas continuava a vir do CDN jsdelivr: um runtime de cliente dependia de rede e de um repositório externo para ter estilos, e o service worker (PWA) não os guardava — offline, a página perdia os tokens, o botão e o cartão. Os cinco ficheiros têm 24 KB no total, sem `url()` nem fontes (as fontes vêm do Google Fonts, à parte).
+
+Alternativas consideradas: manter o CDN (zero manutenção, mas dependência externa em produção e sem offline) e trazer o repositório inteiro para o monorepo (só compensava se o sistema se editasse ao ritmo da plataforma).
+
+### Decisão
+
+- `packages/server/public/design-system/` tem `index`, `tokens`, `base`, `components` e `game-ui` (`.css`), iguais byte a byte à tag `v1.0.0`; o servidor serve-os em `/design-system/<ficheiro>.css` (só estes cinco) e o service worker guarda-os (entram no hash da versão).
+- As marcas do Studio e do runtime limpo apontam para `/design-system/index.css` e `/design-system/game-ui.css`. Um runtime de cliente continua a poder pôr a sua skin por cima, só com tokens (`brand.tokens`).
+- A fonte continua a ser o repositório `bitnikgames-design-system`: atualiza-se de propósito, copiando a nova tag (comandos em `design-system/LEIA-ME.md`) e mudando a versão aqui.
+
+### Consequências
+
+- ✔ Zero dependência externa para os estilos da plataforma; a PWA funciona offline.
+- Um passo manual para atualizar o design system, em troca de nenhuma alteração chegar a um cliente sem passar por um deploy.
+- Os ficheiros copiados não se editam aqui: uma mudança faz-se no repositório do design system e volta como nova tag.
+
+---
+
+## ADR-018: Guia de tutorial da plataforma (`ctx.tour`) e botão "Tutorial" à parte
+
+**Estado:** aceite (2026-10-02)
+
+### Contexto
+
+Desde que os jogos ganharam a modal "Como se joga" (`rules`), o lobby só mostrava essa modal: o tutorial interativo do Catania (e depois o do Startup Panic) continuava a existir mas deixou de ter botão — perderam-se no caminho. Os dois tutoriais também repetiam o mesmo guia (cartão de passo, destaque de zonas, "Seguinte", "Jogar a sério"), cada um com o seu CSS.
+
+### Decisão
+
+- "Como se joga" (regras escritas) e "Tutorial" (interativo, `defineGame({ tutorial })`) são dois botões, lado a lado, no lobby e na entrada na mesa.
+- A plataforma dá o guia: `packages/server/public/tour.js`, entregue ao pacote por `ctx.tour({ host, steps, t })` (os pacotes só podem importar o motor). O pacote declara os passos (`id`, `target`, `next`, `done`, `skip`, `enter`, `leave`, `final`), os textos `tut.<id>.title/body` em PT e EN e marca na sua UI as zonas a destacar com `data-tut="nome"`; a UI chama `ctx.afterRender?.()` no fim de cada desenho para o destaque voltar a ser posto.
+- O cartão fica na metade do ecrã oposta à da primeira zona destacada (ao meio, sem zona); em ecrãs largos (≥ 1100 px), num painel ao lado.
+- Continua a regra da ADR-007: o tutorial corre o motor verdadeiro e o `bot` do jogo, sem cópias de regras. Para ensinar uma combinação concreta, o tutorial pode substituir o estado local depois de uma jogada (o Nine Oils põe os dados do 1.º lançamento num roteiro).
+- Um teste verifica, para cada tutorial que usa `ctx.tour`, que todos os passos têm texto nas duas línguas e que cada zona destacada existe na UI.
+
+### Consequências
+
+- ✔ Voltam a ser alcançáveis os tutoriais do Catania e do Startup Panic; um jogo novo faz o seu em ~100 linhas (passos + textos + marcas).
+- Os tutoriais do Catania e do Startup Panic continuam com o guia próprio; migrá-los para `ctx.tour` fica para depois.
+
+---
+
+## ADR-019: Startup Panic: ordem de turno no estado e jogo novo registado como protótipo
 
 **Estado:** aceite (2026-10-02)
 
@@ -460,7 +506,7 @@ O Startup Panic muda a ordem de jogo a cada ronda (joga primeiro quem tem açõe
 
 ---
 
-## ADR-018: Startup Panic 2.0.0: trabalhadores com papel e implosão com critério
+## ADR-020: Startup Panic 2.0.0: trabalhadores com papel e implosão com critério
 
 **Estado:** aceite, a rever no assessment (2026-10-02)
 
@@ -484,7 +530,7 @@ Depois de jogar a 1.0.0, o David apontou: o jogo é aborrecido, as ações parec
 
 ---
 
-## ADR-019: Startup Panic 3.0.0: limite total de ações, níveis pela ordem e dado nos salários
+## ADR-021: Startup Panic 3.0.0: limite total de ações, níveis pela ordem e dado nos salários
 
 **Estado:** aceite, a rever no assessment (2026-10-02)
 
@@ -506,27 +552,3 @@ Jogando a 2.0.0, o David viu que: com 4 ações por startup é difícil ter maio
 - A economia muda muito: dividendos até ×4 com salários de 3M. A simulação mede o equilíbrio por lugar (ver `docs/EQUILIBRIO.md`), não se o jogo ficou mais divertido: assessment pendente.
 - Os valores (9 ações, ×1 a ×4, salários 0 a 3M) são constantes no topo de `rules.js`.
 - Muda regras: pacote em 3.0.0 e mesas guardadas da 2.x expiradas.
-
-
----
-
-## ADR-018: Guia de tutorial da plataforma (`ctx.tour`) e botão "Tutorial" à parte
-
-**Estado:** aceite (2026-10-02)
-
-### Contexto
-
-Desde que os jogos ganharam a modal "Como se joga" (`rules`), o lobby só mostrava essa modal: o tutorial interativo do Catania (e depois o do Startup Panic) continuava a existir mas deixou de ter botão — perderam-se no caminho. Os dois tutoriais também repetiam o mesmo guia (cartão de passo, destaque de zonas, "Seguinte", "Jogar a sério"), cada um com o seu CSS.
-
-### Decisão
-
-- "Como se joga" (regras escritas) e "Tutorial" (interativo, `defineGame({ tutorial })`) são dois botões, lado a lado, no lobby e na entrada na mesa.
-- A plataforma dá o guia: `packages/server/public/tour.js`, entregue ao pacote por `ctx.tour({ host, steps, t })` (os pacotes só podem importar o motor). O pacote declara os passos (`id`, `target`, `next`, `done`, `skip`, `enter`, `leave`, `final`), os textos `tut.<id>.title/body` em PT e EN e marca na sua UI as zonas a destacar com `data-tut="nome"`; a UI chama `ctx.afterRender?.()` no fim de cada desenho para o destaque voltar a ser posto.
-- O cartão fica na metade do ecrã oposta à da primeira zona destacada (ao meio, sem zona); em ecrãs largos (≥ 1100 px), num painel ao lado.
-- Continua a regra da ADR-007: o tutorial corre o motor verdadeiro e o `bot` do jogo, sem cópias de regras. Para ensinar uma combinação concreta, o tutorial pode substituir o estado local depois de uma jogada (o Nine Oils põe os dados do 1.º lançamento num roteiro).
-- Um teste verifica, para cada tutorial que usa `ctx.tour`, que todos os passos têm texto nas duas línguas e que cada zona destacada existe na UI.
-
-### Consequências
-
-- ✔ Voltam a ser alcançáveis os tutoriais do Catania e do Startup Panic; um jogo novo faz o seu em ~100 linhas (passos + textos + marcas).
-- Os tutoriais do Catania e do Startup Panic continuam com o guia próprio; migrá-los para `ctx.tour` fica para depois.
