@@ -604,7 +604,7 @@ function mountTableMessages(el) {
     const m = q.shift();
     if (!m) { busy = false; el.className = 'mesa-msg'; return; }
     busy = true;
-    el.innerHTML = `<b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}`;
+    el.innerHTML = `<div class="mesa-msg-box"><b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}</div>`;
     el.className = `mesa-msg${m.variant ? ` ${m.variant}` : ''}`;
     void el.offsetWidth; // recomeça a animação
     el.classList.add('on');
