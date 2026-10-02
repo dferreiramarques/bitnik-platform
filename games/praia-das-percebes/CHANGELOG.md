@@ -1,12 +1,13 @@
 # Praia das Percebes — histórico de regras
 
-## 2.1.3 — Objetivo revelado conta logo (2026-10-02)
+## 2.1.3 — Objetivos só contam com a peça que os completa (2026-10-02)
 
-Correção: quando uma peça conquistava um objetivo, o objetivo que se revelava a
-seguir não era verificado com essa mesma peça. Se já estivesse feito (por exemplo
-um quadrado 3×3 fechado na mesma jogada), ficava por contar e os pontos perdiam-se
-perto do fim, quando o tabuleiro está cheio. Agora repete-se a verificação até
-não haver mais objetivos feitos.
+Correção: um objetivo que já estava feito no tabuleiro quando era revelado
+(um quadrado 3×3, 2 pranchas, uma excursão...) era entregue a quem pusesse a
+peça seguinte, mesmo sem a ter completado; e uma linha ou coluna só contava se
+a peça fosse na mesma linha, o que deixava cartas sem contar perto do fim.
+Agora a formação tem de incluir a peça acabada de colocar, e o objetivo que se
+revela a seguir não conta com essa peça: só se conquista depois de revelado.
 
 ## 2.1.2 — Marcador do salva-vidas legível (2026-10-02)
 
