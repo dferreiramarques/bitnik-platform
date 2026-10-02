@@ -31,7 +31,7 @@ export const CIRCUITOS = [
   ['armas', ['arm', 'port', 'chest']],
   ['processo', ['head', 'arm', 'port']],
 ];
-const STOCK_NIVEL = [4, 2, 1];
+const STOCK_NIVEL = [8, 2, 1];
 
 /** 'head2' → { tipo: 'robot', slot: 'head', nivel: 2 }; 'bio1' → { tipo: 'cpu', familia: 'bio', nivel: 1 }; senão null. */
 export function parsePeca(id) {
@@ -94,6 +94,8 @@ export const activePlayers = (s) => (s.acabou ? [] : [s.ordem[s.vez]]);
 // ─── Auxiliares ─────────────────────────────────────────────
 
 const completo = (j) => SLOTS.every((x) => j.robot[x] > 0) && j.cpu.nivel > 0;
+/** Fim de jogo: 6 slots preenchidas com pelo menos 1 peça L3 e 3 peças de nível 2 ou mais (1×L3, 2×L2, 3×L1). */
+const robotFinal = (j) => completo(j) && temL3(j) && [...SLOTS.map((x) => j.robot[x]), j.cpu.nivel].filter((n) => n >= 2).length >= 3;
 const temL3 = (j) => SLOTS.some((x) => j.robot[x] === 3) || j.cpu.nivel === 3;
 const numL3 = (j) => SLOTS.filter((x) => j.robot[x] === 3).length + (j.cpu.nivel === 3 ? 1 : 0);
 
@@ -153,7 +155,7 @@ function instalar(s, seat, ctx, p) {
       ctx.log(`log.CIRCUITO.${c[0]}`, {}, { announce: true });
     }
   }
-  if (s.fim.gatilho === null && completo(j) && temL3(j)) {
+  if (s.fim.gatilho === null && robotFinal(j)) {
     s.fim.gatilho = seat;
     ctx.log('log.GATILHO', {}, { announce: 'warn' });
   }

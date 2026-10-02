@@ -167,7 +167,7 @@ test('Forja dá uma peça L1 à escolha', () => {
   recusa(m, 0, 'FORJA', { peca: 'legs' }, 'err.NAO_VISIVEL');
   const a = jogar(m, 0, 'FORJA', { peca: 'arm' });
   assert.equal(jog(a, 0).robot.arm, 1);
-  assert.equal(a.state.mercado.stock.arm1, 3);
+  assert.equal(a.state.mercado.stock.arm1, 7);
   assert.deepEqual([jog(a, 0).l1, jog(a, 0).l2], [0, 0]);
   assert.equal(a.state.tabuleiro.forja, 0);
   const b = fixo(com(novo(), 0, { robot: R({ arm: 1 }) }));
@@ -175,7 +175,7 @@ test('Forja dá uma peça L1 à escolha', () => {
   // Sem nenhum slot de robot vazio (a CPU não conta): o worker gasta-se sem efeito.
   const c = jogar(fixo(com(novo(), 0, { robot: R({ head: 1, chest: 1, arm: 1, port: 1, legs: 1 }) })), 0, 'FORJA', {});
   assert.equal(jog(c, 0).livres, 0);
-  assert.equal(c.state.mercado.stock.head1, 4);
+  assert.equal(c.state.mercado.stock.head1, 8);
 });
 
 // cartão c-forja-exclusiva: Forja e Deploy são exclusivos
@@ -209,18 +209,18 @@ test('Comprar uma peça paga o custo e reduz o stock', () => {
   m = jogar(m, 0, 'COMPRAR', { peca: 'head1' });
   assert.equal(jog(m, 0).robot.head, 1);
   assert.deepEqual([jog(m, 0).l1, jog(m, 0).l2, jog(m, 0).deploy], [0, 0, 0]);
-  assert.equal(m.state.mercado.stock.head1, 3);
+  assert.equal(m.state.mercado.stock.head1, 7);
   assert.equal(m.result, null);
   // CPU: vai para o slot da CPU.
   let c = fixo(com(novo(), 0, { l1: 2 }));
   c = jogar(c, 0, 'COMPRAR', { peca: 'bio1' });
   assert.deepEqual(jog(c, 0).cpu, { familia: 'bio', nivel: 1 });
-  assert.equal(c.state.mercado.stock.bio1, 3);
+  assert.equal(c.state.mercado.stock.bio1, 7);
   // Substituir: a peça antiga não volta ao stock.
   let u = fixo(com(novo(), 0, { l1: 1, l2: 1, robot: R({ head: 1 }) }));
   u = jogar(u, 0, 'COMPRAR', { peca: 'head2' });
   assert.equal(jog(u, 0).robot.head, 2);
-  assert.equal(u.state.mercado.stock.head1, 4);
+  assert.equal(u.state.mercado.stock.head1, 8);
   assert.equal(u.state.mercado.stock.head2, 1);
 });
 
@@ -260,7 +260,7 @@ test('Mercado: baralhos por nível, fila de 4 e rotação', () => {
   const m = novo();
   const st = m.state.mercado.stock;
   for (const s of ['head', 'chest', 'arm', 'port', 'legs', 'bio', 'combat', 'agility', 'shield']) {
-    assert.deepEqual([st[s + '1'], st[s + '2'], st[s + '3']], [4, 2, 1]);
+    assert.deepEqual([st[s + '1'], st[s + '2'], st[s + '3']], [8, 2, 1]);
   }
   assert.equal(st.omni3, 1);
   const filas = new Set();
@@ -400,7 +400,7 @@ test('Os 5 circuitos', () => {
 
 // cartão c-trigger-fim: Gatilho do fim de jogo: risco e recompensa
 test('Gatilho do fim de jogo: risco e recompensa', () => {
-  let m = todas(com(novo(), 0, { workers: 2, livres: 2, l1: 2, circuito: 'armas', robot: R({ head: 3, chest: 1, arm: 1, port: 1 }), cpu: { familia: 'bio', nivel: 1 } }));
+  let m = todas(com(novo(), 0, { workers: 2, livres: 2, l1: 2, circuito: 'armas', robot: R({ head: 3, chest: 2, arm: 2, port: 1 }), cpu: { familia: 'bio', nivel: 1 } }));
   m = jogar(m, 0, 'COMPRAR', { peca: 'legs1' });
   assert.equal(m.state.fim.gatilho, 0);
   m = jogar(m, 0, 'COMPILADOR');
@@ -414,13 +414,13 @@ test('Gatilho do fim de jogo: risco e recompensa', () => {
   m = jogar(m, 1, 'PASSAR');
   assert.notEqual(m.result, null);
   // A CPU L3 também dá o gatilho.
-  let c = todas(com(novo(), 0, { l1: 1, l2: 1, robot: R({ head: 1, chest: 1, arm: 1, port: 1, legs: 1 }), cpu: { familia: 'bio', nivel: 2 } }));
+  let c = todas(com(novo(), 0, { l1: 1, l2: 1, robot: R({ head: 2, chest: 2, arm: 1, port: 1, legs: 1 }), cpu: { familia: 'bio', nivel: 2 } }));
   c = jogar(c, 0, 'COMPRAR', { peca: 'bio3' });
   assert.equal(c.state.fim.gatilho, 0);
 });
 
-// cartão c-sem-gatilho: Sem L3 ou sem 6 slots o jogo não acaba
-test('Sem L3 ou sem 6 slots o jogo não acaba', () => {
+// cartão c-sem-gatilho: Sem a composição mínima o jogo não acaba
+test('Sem a composição mínima o jogo não acaba', () => {
   let m = todas(com(novo(), 0, { l1: 2, circuito: 'armas', robot: R({ head: 2, chest: 2, arm: 1, port: 1 }), cpu: { familia: 'combat', nivel: 2 } }));
   m = jogar(m, 0, 'COMPRAR', { peca: 'legs1' });
   assert.equal(m.state.fim.gatilho, null);
@@ -429,6 +429,10 @@ test('Sem L3 ou sem 6 slots o jogo não acaba', () => {
   assert.equal(m.state.rodada, 2);
   assert.equal(m.state.fim.rondaExtra, false);
   assert.deepEqual(game.activePlayers(m.state), [1]);
+  // Com uma L3 mas só uma peça de nível 2 ou mais, também não acaba.
+  let c = todas(com(novo(), 0, { l1: 2, circuito: 'armas', robot: R({ head: 3, chest: 1, arm: 1, port: 1 }), cpu: { familia: 'bio', nivel: 1 } }));
+  c = jogar(c, 0, 'COMPRAR', { peca: 'legs1' });
+  assert.equal(c.state.fim.gatilho, null);
 });
 
 // cartão c-limite-rondas: Limite de rondas de segurança (proposta: 30)
