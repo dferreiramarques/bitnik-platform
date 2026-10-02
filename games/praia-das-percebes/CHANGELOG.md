@@ -1,16 +1,21 @@
 # Praia das Percebes — histórico de regras
-## 2.1.0 — Tutorial interativo (2026-10-02)
-
-Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se uns turnos a sério contra o bot, com o motor verdadeiro no browser: colocar a peça, o salva-vidas, ver o adversário jogar, uma prancha de surf, rochas e areia, a pontuação, os objetivos e o fim do jogo. A 1.ª peça (2 banhistas) e a prancha são as da lição. Usa o guia de passos da plataforma (`ctx.tour`, ADR-018).
-
-
-## 2.0.21 — Arte das peças (2026-10-02)
+## 2.1.1 — Arte das peças (2026-10-02)
 
 Sem mudanças de jogo: as peças passam a ter desenho próprio (33 ilustrações:
 9 de 1 banhista, 12 de 2, 6 de 3, 4 pranchas, 1 rocha, 1 areia), em
 `ui/pecas/`. Cada peça usa sempre a mesma variante (escolhida pelo id). O
 número de banhistas deixa de aparecer sobre o desenho; fica no tooltip.
 Sem o ficheiro, recua para o emoji com o número, como antes.
+Cores dos jogadores mais vivas; o marcador do salva-vidas passa para o canto
+superior direito da peça, mais pequeno e sem itálico. A "minha peça" fica
+150% do tamanho (70 px → 106 px, no máximo 28% da altura do ecrã). O tabuleiro
+inicial (poucas peças) aparece ao dobro do tamanho: as casas passam de um
+máximo de 64 px para 128 px; com mais peças continua a caber na zona livre.
+
+## 2.1.0 — Tutorial interativo (2026-10-02)
+
+Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se uns turnos a sério contra o bot, com o motor verdadeiro no browser: colocar a peça, o salva-vidas, ver o adversário jogar, uma prancha de surf, rochas e areia, a pontuação, os objetivos e o fim do jogo. A 1.ª peça (2 banhistas) e a prancha são as da lição. Usa o guia de passos da plataforma (`ctx.tour`, ADR-018).
+
 
 ## 2.0.20 — Registo flutuante a sério (2026-10-01)
 

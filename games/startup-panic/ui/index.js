@@ -192,12 +192,13 @@ function renderStartups(v) {
     const semEquipa = mine > 0 && !team.length && !su.implodida;
     const acts = su.implodida ? '' : `<div class="sp-acts">
       ${v.fase === 'MERCADO' && me != null && legal('SP_END_MARKET').length ? `
-        <button class="sp-act buy" type="button" data-act="buy" data-id="${su.id}" ${buy ? '' : 'disabled'} title="${esc(buy ? '' : ctx.t('ui.cantAct'))}">${esc(ctx.t('ui.buy'))} · ${su.preco}M</button>
-        <button class="sp-act" type="button" data-act="sell" data-id="${su.id}" ${sell ? '' : 'disabled'}>${esc(ctx.t('ui.sell'))}</button>
+        <button class="sp-act buy" type="button" data-act="buy" data-id="${su.id}" ${buy ? '' : 'disabled'} title="${esc(buy ? `${ctx.t('ui.buy')} · ${su.preco}M` : ctx.t('ui.cantAct'))}">${esc(ctx.t('ui.buyShort'))}</button>
+        <button class="sp-act" type="button" data-act="sell" data-id="${su.id}" ${sell ? '' : 'disabled'} title="${esc(`${ctx.t('ui.sell')} · ${su.preco}M`)}">${esc(ctx.t('ui.sellShort'))}</button>
         ${v.gate.aberto && gate ? `<button class="sp-act gate" type="button" data-act="sellgate" data-id="${su.id}">${esc(ctx.t('ui.sellGate', { mult: v.gate.mult }))}</button>` : ''}` : ''}
     </div>`;
     return `<div class="sp-su${mine ? ' mine' : ''}${su.implodida ? ' dead' : ''}" style="--sc:var(--sp-setor-${su.setor})">
-      <div class="sp-suhead"><button class="nm sp-nm" type="button" data-act="chart" data-id="${su.id}" title="${esc(ctx.t('ui.chartOpen'))}" aria-label="${esc(`${stName(su.id)}: ${ctx.t('ui.chartOpen')}`)}">${SETOR_ICON[su.setor]} ${esc(stName(su.id))} <span aria-hidden="true">📈</span></button><span class="price">${su.implodida ? '💀' : `${su.preco}M`}${delta ? `<small class="${delta > 0 ? 'up' : 'down'}" title="${esc(ctx.t('ui.priceChange'))}">${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}</small>` : ''}</span></div>
+      ${miniChart(v, su)}
+      <div class="sp-suhead"><span class="nm">${SETOR_ICON[su.setor]} ${esc(stName(su.id))}</span><span class="price">${su.implodida ? '💀' : `${su.preco}M`}${delta ? `<small class="${delta > 0 ? 'up' : 'down'}" title="${esc(ctx.t('ui.priceChange'))}">${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}</small>` : ''}</span></div>
       <small>${su.implodida ? esc(ctx.t('ui.imploded')) : `${esc(ctx.t('ui.base'))} ${su.base}M + ${esc(ctx.t(`setor.${su.setor}`))} ${v.setores[su.setor] >= 0 ? '+' : ''}${v.setores[su.setor]}M${su.bonusPr ? ` + ${esc(ctx.t('ui.prBonus', { n: su.bonusPr }))}` : ''}`}${su.protegida && !su.implodida ? ` <span title="${esc(ctx.t('ui.protected'))}">🛡️</span>` : ''}</small>
       <div class="sp-holders">${holders.map((h) => `<span><i class="sp-dot" style="background:var(--game-color-${(h.i % 4) + 1})"></i><b>${h.n}</b>${h.i === me ? ` <small>${esc(ctx.t('ui.you'))}</small>` : ''}</span>`).join('') || '<small>—</small>'}</div>
       <small>${major ? esc(ctx.t('ui.majority', { nome: nameOf(major.i) })) : esc(ctx.t('ui.noMajority'))}</small>
@@ -310,6 +311,23 @@ function renderModal(v) {
     </div></div>`;
   }
   return '';
+}
+
+/** Mini gráfico de velas do cartão (uma vela por ronda); clicar abre o gráfico grande. */
+function miniChart(v, su) {
+  const velas = v.historico?.[su.id] || [];
+  const W = 132, H = 44, px = W / v.rondas, T = 3, B = 3;
+  const valores = velas.flatMap((c) => [c.h, c.l]);
+  const max = Math.max(1, ...valores), min = Math.min(...(valores.length ? valores : [0]));
+  const y = (val) => T + (H - T - B) * (1 - (val - min) / (max - min || 1));
+  const fundo = Array.from({ length: v.rondas }, (_, k) => (v.gateBase[k + 1] ? `<rect x="${k * px}" y="0" width="${px}" height="${H}" class="sp-gatebg"/>` : '')).join('');
+  const corpo = velas.map((c) => {
+    const cx = (c.r - 1) * px + px / 2;
+    const cls = c.c === c.o ? 'flat' : c.c > c.o ? 'up' : 'down';
+    return `<g class="sp-candle ${cls}"><line x1="${cx}" x2="${cx}" y1="${y(c.h)}" y2="${y(c.l)}"/><rect x="${cx - 2.6}" y="${y(Math.max(c.o, c.c))}" width="5.2" height="${Math.max(1.5, Math.abs(y(c.o) - y(c.c)))}"/></g>`;
+  }).join('');
+  const label = `${stName(su.id)}: ${ctx.t('ui.chartOpen')}`;
+  return `<button class="sp-mini" type="button" data-act="chart" data-id="${su.id}" title="${esc(ctx.t('ui.chartOpen'))}" aria-label="${esc(label)}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${fundo}${corpo}</svg></button>`;
 }
 
 /** Gráfico de velas (como num gráfico de câmbio): uma vela por ronda, verde a subir e vermelha a descer. */

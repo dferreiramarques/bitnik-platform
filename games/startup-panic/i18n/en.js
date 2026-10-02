@@ -214,7 +214,7 @@ export default {
   'tut.startups.title': "The startups",
   'tut.startups.body': "Ten startups in 5 sectors. The price is the base price plus the sector value. Under each one you see who holds shares and who has the majority. You can hold up to 4 shares per startup and 9 in total.",
   'tut.chart.title': "Price history",
-  'tut.chart.body': "Tap a startup name (it has a 📈) to see the candlestick chart: one candle per round, green if the price rose, red if it fell. Try it!",
+  'tut.chart.body': "Each startup shows a mini candlestick chart, one candle per round. Tap it to see it large: green if the price rose, red if it fell. Try it!",
   'tut.chart2.title': "Reading the chart",
   'tut.chart2.body': "The candle body goes from the round open price to its close; the wick shows the high and low. Gate rounds are shaded. Use it to see which sectors are rising before you buy.",
   'tut.buy.title': "Your turn: buy shares",
@@ -241,5 +241,9 @@ export default {
   'tut.salaries.body': "Paying salaries is optional: you can tap \"Risk it 🎲\" and roll a die. On a 6 the worker stays unpaid, on anything else they leave. With no cash for the salary the die is rolled too.",
   'tut.tips.title': "You know how to play!",
   'tut.tips.body': "Tips: dividends compound your cash, the CFO gives income from round 1, and the chart helps you see where to invest. Good luck at the Gates!",
+  'msg.TRADE_ACCEPT': '👍',
+  'msg.TRADE_REJECT': '👎',
+  'ui.buyShort': "Buy",
+  'ui.sellShort': "Sell",
   ...gerado,
 };

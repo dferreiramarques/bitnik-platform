@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createMatch, applyMove, checkGame, checkPurity, viewFor, activeSeats, replay } from '@bitnik/engine';
+import { createMatch, applyMove, checkGame, checkPurity, viewFor, activeSeats, replay, botMove } from '@bitnik/engine';
 import game from '../index.js';
 import { CEOS, CEO_IDS, SETORES, STARTUPS, calcularOrdem, pontuar } from '../rules.js';
 
@@ -378,10 +378,14 @@ test('Troca no Gate: o outro jogador tem de aceitar; troca todas as ações de u
   assert.deepEqual(activeSeats(game, m), [b]);
   recusa(m, a, 'SP_END_MARKET', {});
   const aceite = jogar(m, b, 'SP_TRADE_ACCEPT');
+  assert.equal(game.i18n.pt['msg.TRADE_ACCEPT'], '👍');
+  assert.equal(aceite.log.at(-1).announce.key, 'msg.TRADE_ACCEPT');
   assert.deepEqual([su(aceite, 'deepanic').acoes[a], su(aceite, 'deepanic').acoes[b]], [0, 2]);
   assert.deepEqual([su(aceite, 'cashburn').acoes[a], su(aceite, 'cashburn').acoes[b]], [1, 0]);
   assert.equal(aceite.state.proposta, null);
   const recusada = jogar(m, b, 'SP_TRADE_REJECT');
+  assert.equal(game.i18n.en['msg.TRADE_REJECT'], '👎');
+  assert.deepEqual([recusada.log.at(-1).announce.key, recusada.log.at(-1).announce.variant], ['msg.TRADE_REJECT', 'warn']);
   assert.deepEqual(su(recusada, 'deepanic').acoes, [2, 0].map((x, i) => (i === a ? 2 : 0)));
   assert.deepEqual(activeSeats(game, recusada), [a]);
 });
@@ -846,3 +850,33 @@ test('Cenário tutorial: o jogador 0 abre e os 3 primeiros CEOs são fixos (sem 
   }
   assert.ok(typeof game.tutorial === 'string' && game.tutorial.endsWith('tutorial.js'));
 });
+
+// ─── Bot ─────────────────────────────────────────────────────
+
+test('Bot: contrata sempre o 1.º trabalhador (grátis), mesmo sem cash, para o dinheiro render', () => {
+  let m = tweak(manutencao(novo(2, 'botfree')), (s) => {
+    su({ state: s }, 'deepanic').acoes[s.ordem[s.pos]] = 2;
+    s.jogadores[s.ordem[s.pos]].cash = 0;
+  });
+  const seat = vez(m);
+  const mv = botMove(game, m, seat);
+  assert.equal(mv.type, 'SP_HIRE');
+  assert.equal(mv.payload.startup, 'deepanic'); // Engenheiro onde tem ações
+});
+
+test('Bot: numa partida só de bots nenhum fica parado — todos têm equipa e dinheiro a render', () => {
+  for (const n of [2, 4]) {
+    let m = createMatch(game, { numPlayers: n, seed: 'botsativos' + n });
+    let g = 0;
+    let aRonda4 = null;
+    while (!m.result && g++ < 5000) {
+      const seat = activeSeats(game, m)[0];
+      m = applyMove(game, m, seat, botMove(game, m, seat)).match;
+      if (m.state.ronda === 5 && !aRonda4) aRonda4 = structuredClone(m.state);
+    }
+    assert.ok(m.result, 'a partida acabou');
+    assert.ok(aRonda4.jogadores.every((j) => j.trab.length >= 1), 'todos os bots têm pelo menos um trabalhador na ronda 5');
+    assert.ok(Math.max(...m.result.scores) > 50, 'os bots acumulam valor, não ficam parados nos 10M iniciais');
+  }
+});
+
