@@ -193,6 +193,48 @@ test('mesa pública: dois humanos, vez validada, quem sai é substituído por um
   await s.stop();
 });
 
+test('mesa pública acabada: quem desliga sem clicar em "Sair" liberta a mesa', async () => {
+  const s = await boot(makeStudio, { graceMs: 50 });
+  const a = await s.client();
+  const seated = a.next('room');
+  a.join('catania-3p');
+  await seated;
+  const started = a.next('room', (m) => m.room.status === 'playing');
+  a.start('catania-3p');
+  await started;
+  const end = await playToEnd(a, 'catania-3p');
+  assert.ok(end.result);
+  // Fecha a aba sem clicar em "Sair" — ao fim do graceMs, a mesa pública
+  // acabada liberta-se sozinha (senão ficava presa, bloqueando o lobby).
+  a.close();
+  await new Promise((r) => setTimeout(r, 150));
+  const room = s.platform.rooms.get('catania-3p');
+  assert.equal(room.status, 'waiting');
+  assert.ok(room.seats.every((x) => !x.taken));
+  await s.stop();
+});
+
+test('mesa de convite acabada: quem desliga não a liberta (fica para o publisher rever)', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo', graceMs: 50 });
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const created = await (await fetch(`http://localhost:${s.port}/admin/tables`, { method: 'POST', headers: auth, body: JSON.stringify({ gameId: 'catania', numPlayers: 3 }) })).json();
+  const a = await s.client();
+  const seated = a.next('room');
+  a.join(created.id);
+  await seated;
+  const started = a.next('room', (m) => m.room.status === 'playing');
+  a.start(created.id);
+  await started;
+  const end = await playToEnd(a, created.id);
+  assert.ok(end.result);
+  a.close();
+  await new Promise((r) => setTimeout(r, 150));
+  const room = s.platform.rooms.get(created.id);
+  assert.equal(room.status, 'over', 'fica acabada, não volta a "à espera"');
+  assert.ok(room.match, 'o resultado fica guardado para o publisher rever');
+  await s.stop();
+});
+
 test('jogada reenviada sobre um estado antigo é recusada e o cliente recebe o estado atual', async () => {
   const s = await boot(makeStudio, { botDelayMs: [60_000, 60_001] });
   const c = await s.client();

@@ -333,6 +333,17 @@ export function createPlatform({
         touch(room, { lobby: true });
         continue;
       }
+      // Mesa pública já acabada: quem desliga (sem clicar em "Sair") liberta
+      // o lugar na mesma, para a mesa voltar a ficar livre no lobby (ver
+      // resetPublicIfEmpty) — senão ficava presa até alguém a fechar à mão.
+      // Não se aplica à de convite: essa é o publisher a fechar, na consola,
+      // porque pode querer rever o resultado mais tarde (ADR-004).
+      if (room.kind === 'public' && room.status === 'over' && away) {
+        room.seats[s] = emptySeat();
+        resetPublicIfEmpty(room);
+        touch(room, { lobby: true });
+        continue;
+      }
       if (room.seats[s].away !== away) {
         room.seats[s].away = away;
         scheduleBots(room);

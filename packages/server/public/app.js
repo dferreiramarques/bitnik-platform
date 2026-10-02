@@ -256,10 +256,16 @@ function renderLobby(only = null) {
         const title = invite ? esc(r.name || u('inviteTable')) : u('tableOf', { n: r.numPlayers });
         const note = r.status === 'waiting' ? (free === 1 ? u('freeOne') : u('free', { n: free })) : statusText(r);
         const act = seated ? ['open', u('enter')] : r.status === 'waiting' && !invite ? ['join', u('join')] : ['open', invite ? u('enter') : u('view')];
+        // Acabada e já sem mais nada para fazer: sair direto do lobby, sem
+        // reabrir a mesa só para isso — a pública volta logo a ficar livre
+        // para outros (resetPublicIfEmpty); a de convite fica para o
+        // publisher fechar, se quiser rever o resultado mais tarde.
+        const canLeaveHere = seated && r.status === 'over';
         return `<div class="lob-card${seated ? ' mine' : ''}">
           <div class="lob-row"><h3>${title}</h3>${seatDots(r)}</div>
           <p>${invite ? `${u('inviteNote')} · ` : ''}${note}</p>
-          <div class="lob-acts"><button class="lob-btn${seated ? ' pri' : ''}" data-${act[0]}="${r.id}">${act[1]}</button></div>
+          <div class="lob-acts"><button class="lob-btn${seated ? ' pri' : ''}" data-${act[0]}="${r.id}">${act[1]}</button>
+            ${canLeaveHere ? `<button class="lob-btn" data-leave-room="${r.id}">${u('leave')}</button>` : ''}</div>
         </div>`;
       }).join('')}</div>` : `<p class="lob-empty">${u('noOther')}</p>`}
       ${earlier.length ? `<h2 class="lob-lbl">${u('earlier')}</h2>
@@ -985,6 +991,7 @@ $('#view').addEventListener('click', (e) => {
   else if (d.open) go(d.open);
   else if (d.join) { client.join(d.join); go(d.join); }
   else if (d.remove) { if (confirm(u('confirmRemove'))) client.remove(d.remove); }
+  else if (d.leaveRoom) client.leave(d.leaveRoom);
   else if (d.move != null) {
     const mv = app.room.legal[Number(d.move)];
     if (client.move(roomId, { type: mv.type, payload: mv.payload })) b.setAttribute('aria-busy', 'true');
