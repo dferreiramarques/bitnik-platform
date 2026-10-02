@@ -4,6 +4,7 @@
 import { applyGameSkin, applyOverrides, contrast } from '/appearance.js';
 import { translate } from '/engine/i18n.js';
 import { isDesignTokens, designTokensToAppearance } from '/design-tokens.js';
+import { ANIMATIONS, MAX_FRAMES, watchAnimations } from '/animation.js';
 
 const MAX_IMAGE_KB = 300;
 // Sentinela para reutilizar a fiação de input/upload/reset dos tokens (data-tok
@@ -55,6 +56,7 @@ export async function load() {
 }
 
 export function leave() {
+  st.preview?.anim?.stop();
   try { st.preview?.mod.unmount?.(); } catch { /* nada */ }
   st.preview = null;
   if (st.catalog) applyOverrides(JSON.parse(st.saved)); // o que não foi guardado não fica
@@ -121,7 +123,28 @@ export function view() {
     </div>`;
 }
 
-function row(k, type, lbl, value, def) {
+/** Animação de uma imagem: escolhe-se o efeito e juntam-se frames com o + (o frame 1 é a própria imagem). */
+function animHtml(k, cfg) {
+  const { u } = ctx;
+  const a = cfg.anims?.[k];
+  const hasImg = !!cfg.tokens?.[k];
+  const options = Object.entries(ANIMATIONS)
+    .map(([id, name]) => `<option value="${id}" ${a?.name === id ? 'selected' : ''}>${esc(name)}</option>`).join('');
+  let frames = '';
+  if (a && hasImg) {
+    const list = [cfg.tokens[k], ...(a.frames || [])];
+    const thumbs = list.map((f, i) => `<span class="ap-frame" title="${esc(u('apFrame', { n: i + 1 }))}"><i style="background-image:${esc(f)}"></i><small>${i + 1}</small>${i
+      ? `<button type="button" class="ap-frame-x" data-frame-del="${esc(k)}" data-i="${i - 1}" aria-label="${esc(u('apDelFrame'))}">✕</button>` : ''}</span>`).join('');
+    const add = list.length < MAX_FRAMES
+      ? `<label class="ap-frame ap-frame-add" title="${esc(u('apAddFrame'))}">+<input type="file" accept="image/*" data-frame-upload="${esc(k)}" hidden></label>` : '';
+    frames = `<div class="ap-frames">${thumbs}${add}</div><small>${esc(u('apAnimHint'))}</small>`;
+  }
+  return `<div class="ap-anim"><label>${esc(u('apAnim'))}
+      <select data-anim-sel="${esc(k)}" ${hasImg ? '' : 'disabled'}><option value="">${esc(u('apAnimNone'))}</option>${options}</select></label>
+    ${hasImg ? '' : `<small>${esc(u('apAnimNeedsImage'))}</small>`}${frames}</div>`;
+}
+
+function row(k, type, lbl, value, def, extra = '') {
   const { u } = ctx;
   const id = `ap${k.replace(/[^a-z0-9]/gi, '')}`;
   const shown = value || def;
@@ -134,6 +157,7 @@ function row(k, type, lbl, value, def) {
     <label for="${id}">${esc(lbl)}<small>${esc(k)}${def && !['background', 'image'].includes(type) ? ` · ${esc(u('apDefault', { v: def }))}` : ''}</small></label>
     <div class="ap-input">${input}
       <button class="btn btn-ghost" data-reset="${esc(k)}" ${value ? '' : 'hidden'}>${u('apReset')}</button></div>
+    ${extra}
   </div>`;
 }
 
@@ -167,7 +191,7 @@ function gameGroups(g) {
   for (const [k, def] of Object.entries(tokens)) {
     const grp = def.group || 'base';
     if (!groups.has(grp)) groups.set(grp, []);
-    groups.get(grp).push(row(k, def.type, label(def.label) || k, cfg.tokens?.[k] ?? '', gameDefault(g, k)));
+    groups.get(grp).push(row(k, def.type, label(def.label) || k, cfg.tokens?.[k] ?? '', gameDefault(g, k), def.type === 'image' ? animHtml(k, cfg) : ''));
   }
   // A mesa primeiro dentro de "componentes" (ADR-008) — é o --table-bg que também pinta o lobby.
   const order = ['table', ...[...groups.keys()].filter((x) => x !== 'table')];
@@ -244,6 +268,7 @@ async function mountPreview(host) {
   if (!g?.meta?.ui || !g.meta.pkg) return;
   await applyGameSkin(g.meta, st.draft.games[g.id]?.theme);
   if (st.preview?.gameId === g.id) { host.replaceChildren(st.preview.el); return; }
+  st.preview?.anim?.stop();
   try { st.preview?.mod.unmount?.(); } catch { /* nada */ }
   const [{ default: pkg }, engine, mod] = await Promise.all([import(g.meta.pkg), import('@bitnik/engine'), import(g.meta.ui)]);
   const pv = g.meta.preview || { players: pkg.players.min };
@@ -261,7 +286,7 @@ async function mountPreview(host) {
     messages: false, // sem "É a tua vez" por cima da pré-visualização
     move: (mv) => { const r = engine.applyMove(pkg, match, 0, mv); if (r.ok) { match = r.match; push(); } return r.ok; },
   });
-  st.preview = { gameId: g.id, el, mod };
+  st.preview = { gameId: g.id, el, mod, anim: watchAnimations(el, () => st.draft.games[g.id]) };
   host.replaceChildren(el);
   push();
 }
@@ -279,7 +304,14 @@ function setToken(k, v) {
   const g = game();
   if (k === THUMB_KEY) { if (g) gameCfg(g.id).thumbnail = v || null; return; }
   const tokens = g ? gameCfg(g.id).tokens : st.draft.brand.tokens;
-  if (v) tokens[k] = v; else delete tokens[k];
+  if (v) tokens[k] = v; else { delete tokens[k]; dropAnim(g, k); } // sem imagem, não há o que animar
+}
+
+function dropAnim(g, k) {
+  const anims = g && st.draft.games[g.id]?.anims;
+  if (!anims) return;
+  delete anims[k];
+  if (!Object.keys(anims).length) delete st.draft.games[g.id].anims;
 }
 
 function download(name, data) {
@@ -299,6 +331,7 @@ const readFile = (file, how) => new Promise((resolve, reject) => {
 
 export function after(root) {
   applyOverrides(st.draft);
+  st.preview?.anim?.rescan(); // a configuração de animação pode ter mudado
   const host = root.querySelector('#apPreview');
   if (host) mountPreview(host).catch((e) => { console.error('[aparência]', e); host.textContent = String(e.message || e); });
   if (st.handlers) return;
@@ -317,6 +350,8 @@ export function after(root) {
     if (tok && swatch) { const c = swatchOf(v || text?.placeholder); swatch.disabled = !c; if (c) swatch.value = c; }
     const reset = root.querySelector(`[data-reset="${CSS.escape(k)}"]`);
     if (reset) reset.hidden = !v;
+    const animSel = root.querySelector(`[data-anim-sel="${CSS.escape(k)}"]`);
+    if (animSel) animSel.disabled = !v; // sem imagem (frame 1) não há animação
     e.target.closest('.ap-row')?.classList.toggle('set', !!v);
     refresh(root);
   });
@@ -327,6 +362,24 @@ export function after(root) {
       const g = game();
       gameCfg(g.id).theme = e.target.value || null;
       await applyGameSkin(g.meta, gameCfg(g.id).theme);
+      ctx.rerender();
+      return;
+    }
+    const animSel = e.target.dataset.animSel;
+    if (animSel) {
+      const c = gameCfg(game().id);
+      if (e.target.value) (c.anims ??= {})[animSel] = { name: e.target.value, frames: c.anims?.[animSel]?.frames || [] };
+      else dropAnim(game(), animSel);
+      ctx.rerender();
+      return;
+    }
+    const frameUp = e.target.dataset.frameUpload;
+    if (frameUp && e.target.files?.[0]) {
+      const file = e.target.files[0];
+      if (file.size > MAX_IMAGE_KB * 1024) { ctx.toast(u('apTooBig', { kb: MAX_IMAGE_KB })); return; }
+      const a = gameCfg(game().id).anims?.[frameUp];
+      if (!a || a.frames.length >= MAX_FRAMES - 1) return;
+      a.frames.push(`url("${await readFile(file, 'url')}")`);
       ctx.rerender();
       return;
     }
@@ -361,6 +414,12 @@ export function after(root) {
     const { u } = ctx;
     const reset = e.target.closest('[data-reset]')?.dataset.reset;
     if (reset) { setToken(reset, ''); ctx.rerender(); return; }
+    const del = e.target.closest('[data-frame-del]');
+    if (del) {
+      gameCfg(game().id).anims?.[del.dataset.frameDel]?.frames.splice(Number(del.dataset.i), 1);
+      ctx.rerender();
+      return;
+    }
     const tab = e.target.closest('button[data-tab]')?.dataset.tab;
     if (tab) { st.tab = tab; ctx.rerender(); return; }
     const act = e.target.closest('button[data-ap]')?.dataset.ap;

@@ -35,6 +35,29 @@
   .fx-in, .fx-out, .fx-in > .fx-box, .fx-out > .fx-box { animation: none; }
 }
 
+/* Animações de imagem (animation.js; consola › Aparência › Animação).
+   Burning: a chama de baixo para cima, como o Fogo do Etna (cat-burn do Catania).
+   Dice Roll: desfoque e um sobe-desce curto até assentar, como o dado do Nine Oils
+   (0,45 s); os frames, se houver mais do que um, trocam-se em animation.js. */
+@keyframes anim-burning {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); filter: brightness(1); }
+  25% { transform: scale(1.03, .96) rotate(-1.5deg); filter: brightness(1.12); }
+  55% { transform: scale(.98, 1.05) rotate(1.2deg); filter: brightness(1.04); }
+  80% { transform: scale(1.02, .98) rotate(-.6deg); filter: brightness(1.1); }
+}
+@keyframes anim-dice-roll {
+  0% { transform: translateY(-3px) rotate(-8deg); filter: blur(2px); }
+  25% { transform: translateY(3px) rotate(7deg); filter: blur(4px); }
+  50% { transform: translateY(-3px) rotate(-5deg); filter: blur(6px); }
+  75% { transform: translateY(2px) rotate(3deg); filter: blur(3px); }
+  100% { transform: none; filter: blur(0); }
+}
+.anim-burning { transform-origin: 50% 92%; animation: anim-burning 1.8s ease-in-out infinite; }
+.anim-dice-roll { animation: anim-dice-roll .45s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-burning, .anim-dice-roll { animation: none; }
+}
+
 * { box-sizing: border-box; }
 body {
   margin: 0;

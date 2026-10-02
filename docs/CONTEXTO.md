@@ -78,6 +78,8 @@ Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar
 **Consola.**
 - Aparência: as cores com transparência (rgba) podem usar o seletor de cor sem perder a transparência.
 - A pré-visualização da Aparência tem altura própria.
+- Aparência › Animação (`public/animation.js`): cada token `image` do skin.json pode ter uma animação ("Dice Roll" ou "Burning") e vários frames (o frame 1 é o token; o `+` junta mais, até 8). Fica em `appearance.games[id].anims[token]`. A mesa não muda: `watchAnimations` anima as `<img>` cujo `src` é o frame 1 do token (o Praia desenha assim as peças). Os efeitos estão em `app.css` (`.anim-*`). Só cobre `<img>`; fundos CSS e SVG ficam para depois.
+- Movimento (`public/motion.js`, tokens `--motion-fast`/`--motion-ease`): `.fx-in`/`.fx-out` e `afterLeave` para modais, painéis e avisos entrarem e saírem com fade curto; só a renderização que abre leva `.fx-in`, para os redesenhos não a repetirem.
 
 **Deploy.**
 - O Railway arranca com `npm start` e usa o `railway.json`, com o healthcheck em `/health`.

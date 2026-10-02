@@ -641,6 +641,44 @@ test('aparência: catálogo com skin e temas; afinações validadas, enviadas ao
   await s2.stop();
 });
 
+test('aparência: animação de imagens (nome da lista, só tokens de imagem, frames validados e limitados)', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/appearance`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const put = (body) => fetch(url, { method: 'PUT', headers: auth, body: JSON.stringify(body) });
+  const png = (n) => `url("data:image/png;base64,iVBORw0KGgo${n}=")`;
+  const praia = (cfg) => ({ games: { 'praia-das-percebes': cfg } });
+
+  const anims = { '--card-normal': { name: 'dice-roll', frames: [png(2), png(3)] } };
+  assert.equal((await put(praia({ tokens: { '--card-normal': png(1) }, anims: { '--card-normal': { name: 'spin', frames: [] } } }))).status, 400, 'nome desconhecido');
+  assert.equal((await put(praia({ tokens: { '--game-accent': '#ff0000' }, anims: { '--game-accent': { name: 'burning', frames: [] } } }))).status, 400, 'só imagens');
+  assert.equal((await put(praia({ tokens: { '--card-normal': png(1) }, anims: { '--card-normal': { name: 'burning', frames: ['url(javascript:alert(1))'] } } }))).status, 400, 'frames com a mesma validação');
+
+  const ok = await put(praia({ tokens: { '--card-normal': png(1) }, anims }));
+  assert.equal(ok.status, 200);
+  const saved = (await ok.json()).appearance.games['praia-das-percebes'];
+  assert.deepEqual(saved.anims, anims);
+
+  // Sem imagem no token (frame 1) não há o que animar: a animação cai.
+  const none = await (await put(praia({ tokens: {}, anims }))).json();
+  assert.equal(none.appearance.games['praia-das-percebes'], undefined);
+
+  // O frame 1 conta: no máximo MAX_FRAMES no total.
+  const many = Array.from({ length: 20 }, (_, i) => png(i));
+  const cut = await (await put(praia({ tokens: { '--card-normal': png(1) }, anims: { '--card-normal': { name: 'burning', frames: many } } }))).json();
+  assert.equal(cut.appearance.games['praia-das-percebes'].anims['--card-normal'].frames.length, 7);
+  await s.stop();
+});
+
+test('aparência: animation.js junta o frame 1 (o token) aos frames extra', async () => {
+  const { framesOf, urlOf } = await import('../packages/server/public/animation.js');
+  assert.equal(urlOf('url("/a.png")'), '/a.png');
+  assert.equal(urlOf('red'), '');
+  const cfg = { tokens: { '--x': 'url("/a.png")' }, anims: { '--x': { name: 'dice-roll', frames: ['url("/b.png")', 'url("/c.png")'] } } };
+  assert.deepEqual(framesOf(cfg, '--x'), ['/a.png', '/b.png', '/c.png']);
+  assert.deepEqual(framesOf({}, '--x'), []);
+});
+
 test('aparência: miniatura do jogo (nova, ou a sobrepor a do pacote) — nunca o fundo do lobby', async () => {
   const s = await boot(makeStudio, { adminToken: 'segredo' });
   const url = `http://localhost:${s.port}/admin/appearance`;

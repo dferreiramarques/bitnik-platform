@@ -23,6 +23,7 @@ import { PLATFORM_I18N } from './i18n.js';
 import { normalizeProject, projectSummary, slugify, normalizeNarration, bumpVersion, mergeTests, testsKey } from './forge.js';
 import { verifyPackage, ENGINE_ROOT } from './verify.js';
 import { publishProblem, publicationFiles, setVersion, PUBLISH_VERSION } from './publish.js';
+import { ANIMATIONS, MAX_FRAMES } from '../public/animation.js'; // a mesma lista que o browser usa
 
 export { memoryStorage, fileStorage };
 
@@ -53,7 +54,8 @@ export const BRAND_TOKENS = {
 const TOKEN_LIMITS = { color: 64, font: 200, size: 32, background: 400_000, image: 400_000 };
 // Corpo de /admin/appearance: pode ter fundos/imagens até 400 000 carateres cada, em vários jogos.
 // (o omitido em readJson() é só 10 000; sem isto, um fundo em imagem destruía a ligação sem resposta.)
-const APPEARANCE_MAX = 3_000_000;
+// (com frames de animação, cada imagem pode ter até MAX_FRAMES versões.)
+const APPEARANCE_MAX = 8_000_000;
 
 /** Valida um valor de token; devolve o valor limpo ou lança um erro com o motivo. */
 function cleanToken(name, type, value) {
@@ -127,7 +129,7 @@ export function createPlatform({
   // A versão é um hash do conteúdo do que fica em cache e da marca: muda
   // sozinha a cada deploy que mexa no motor, na UI ou num jogo.
   // O design system da Bitnik (v1.0.0) vai na própria plataforma (ADR-017): sem CDN, funciona offline.
-  const SHELL = ['app.js', 'app.css', 'appearance.js', 'motion.js', 'icon.svg', 'tour.js', 'icon-192.png', 'icon-512.png', 'design-system/index.css', 'design-system/tokens.css', 'design-system/base.css', 'design-system/components.css', 'design-system/game-ui.css'];
+  const SHELL = ['app.js', 'app.css', 'appearance.js', 'motion.js', 'animation.js', 'icon.svg', 'tour.js', 'icon-192.png', 'icon-512.png', 'design-system/index.css', 'design-system/tokens.css', 'design-system/base.css', 'design-system/components.css', 'design-system/game-ui.css'];
   const sw = (() => {
     const hash = createHash('sha256').update(JSON.stringify(brand));
     const files = [];
@@ -468,6 +470,15 @@ export function createPlatform({
       const c = cleanToken(k, def.type, v);
       if (c) out.tokens[k] = c;
     }
+    // Animação de uma imagem (animation.js): só tokens "image" que já têm imagem,
+    // um nome da lista e os frames extra (o frame 1 é o próprio token).
+    for (const [k, a] of Object.entries(cfg?.anims || {})) {
+      if (skin?.tokens?.[k]?.type !== 'image') throw new Error(`${gameId}: ${k} não é uma imagem do skin.json`);
+      if (!ANIMATIONS[a?.name]) throw new Error(`${gameId}: animação ${a?.name} desconhecida`);
+      if (!out.tokens[k]) continue;
+      const frames = (Array.isArray(a.frames) ? a.frames : []).slice(0, MAX_FRAMES - 1).map((f) => cleanToken(k, 'image', f)).filter(Boolean);
+      (out.anims ??= {})[k] = { name: a.name, frames };
+    }
     // Não é um token do skin.json (não há CSS por trás) — mesma validação de
     // url() que --table-bg e afins, para aceitar só imagens seguras. Só a
     // miniatura da página da marca: o fundo do lobby é sempre o --table-bg
@@ -483,7 +494,7 @@ export function createPlatform({
     if (appearance.hidden) next.hidden = appearance.hidden;
     for (const [gameId, cfg] of Object.entries(input.games || {})) {
       const out = await cleanGameConfig(gameId, cfg);
-      if (out.theme || Object.keys(out.tokens).length || out.thumbnail) next.games[gameId] = out;
+      if (out.theme || Object.keys(out.tokens).length || out.thumbnail || out.anims) next.games[gameId] = out;
     }
     appearance = next;
     storage.saveAppearance?.(appearance);
@@ -1201,7 +1212,7 @@ export function createPlatform({
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
     const ds = url.match(/^\/design-system\/(index|tokens|base|components|game-ui)\.css$/);
     if (ds) return serveFile(res, join(PUBLIC_DIR, 'design-system', `${ds[1]}.css`), MIME['.css']);
-    const pub = url.match(/^\/(app\.js|tour\.js|motion\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
+    const pub = url.match(/^\/(app\.js|tour\.js|motion\.js|animation\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });

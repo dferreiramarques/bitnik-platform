@@ -96,6 +96,18 @@
 }
 .ap-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .ap-file { cursor: pointer; display: inline-flex; align-items: center; }
+/* Animação de uma imagem: escolha do efeito e fila de frames (+ junta um). */
+.ap-anim { display: grid; gap: 6px; }
+.ap-anim > label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.ap-anim select { font: inherit; padding: 4px 8px; min-height: 36px; border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); color: var(--ui-text); }
+.ap-anim small { color: var(--ui-muted); font-size: .78rem; }
+.ap-frames { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ap-frame { position: relative; width: 52px; height: 52px; border: 2px solid var(--ui-line); border-radius: var(--ui-r-sm); background: var(--ui-card); overflow: hidden; display: grid; place-items: center; }
+.ap-frame i { position: absolute; inset: 0; background: center / contain no-repeat; }
+.ap-frame small { position: absolute; left: 3px; bottom: 1px; font-size: .68rem; font-weight: 700; color: var(--ui-text); text-shadow: 0 0 3px var(--ui-card), 0 0 3px var(--ui-card); }
+.ap-frame-x { position: absolute; right: 1px; top: 1px; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: var(--ui-text); color: var(--ui-card); font-size: .65rem; line-height: 1; cursor: pointer; }
+.ap-frame-add { border-style: dashed; cursor: pointer; font-size: 1.6rem; font-weight: 600; color: var(--ui-muted); }
+.ap-frame-add:hover { border-color: var(--ui-primary); color: var(--ui-primary); }
 .ap-contrast { margin-top: 14px; padding: 10px 12px; border-radius: var(--ui-r-sm); background: var(--ui-alt); }
 .ap-contrast h3 { font-size: 1rem; margin-bottom: 4px; }
 .ap-contrast ul { margin: 0; padding-left: 18px; }

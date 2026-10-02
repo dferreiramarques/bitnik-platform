@@ -7,6 +7,7 @@ import { translate } from '/engine/i18n.js';
 import { applyGameSkin, applyOverrides } from '/appearance.js';
 import { createTour, createSession } from '/tour.js';
 import { afterLeave, flash } from '/motion.js';
+import { watchAnimations } from '/animation.js';
 
 const UI = {
   pt: {
@@ -796,6 +797,7 @@ function renderTable() {
 const uiModules = new Map(); // url → Promise<módulo>
 
 function unmountGameUi() {
+  app.ui?.anim?.stop();
   try { app.ui?.mod.unmount?.(); } catch (e) { console.error(e); }
   app.ui = null;
 }
@@ -824,6 +826,8 @@ async function syncGameUi(msg) {
     el.className = 'game-root';
     el.dataset.game = gameId;
     app.ui = { roomId: msg.room.id, gameId, el, mod: mod.default ?? mod };
+    // Imagens com animação (consola › Aparência): segue a aparência ao vivo.
+    app.ui.anim = watchAnimations(el, () => app.appearance?.games?.[gameId]);
     app.ui.mod.mount(el, {
       gameId,
       lang: () => app.lang,
@@ -1117,6 +1121,7 @@ client.on('notices', (m) => setNotices(m.notices, m.now));
 client.on('appearance', (m) => {
   app.appearance = m.appearance;
   applyOverrides(m.appearance);
+  app.ui?.anim?.rescan();
   const id = app.ui?.gameId || app.tut?.gameId;
   if (id) skinFor(id); // o tema pode ter mudado
   if (!routeRoom() && !routeGame()) render(); // a lista de jogos pode ter mudado
