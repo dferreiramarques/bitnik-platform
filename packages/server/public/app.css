@@ -570,12 +570,10 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .lob-card.solo .lob-bots { flex: none; }
 .lob-card.solo .lob-acts { margin-top: 0; }
 
-/* ── Entrada na mesa (quadro "Entrada"): à espera de jogadores ── */
-.ent-meta { font-size: 12px; opacity: .85; margin-left: 4px; }
-.ent-main { align-self: center; justify-self: center; width: min(560px, 100%); box-sizing: border-box; padding: 24px 16px 40px; display: grid; gap: 12px; justify-items: center; text-align: center; }
-.ent-main h1 { margin: 0; font: 800 44px/1 var(--ui-display); color: #fff; }
-.ent-lead { margin: 0; font-size: 13px; opacity: .9; }
-.ent-seats { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+/* ── Entrada na mesa (quadro "Entrada"): à espera de jogadores — mesmo
+   layout e fundo do lobby deste jogo (.lob, ADR-014): título à esquerda,
+   nome do jogador por baixo (.lob-name), antes dos lugares. ── */
+.ent-seats { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .ent-seat {
   min-height: 88px; box-sizing: border-box; padding: 12px; border-radius: 10px; text-align: left;
   display: flex; flex-direction: column; justify-content: center; gap: 4px;
@@ -589,9 +587,9 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .ent-name b { font-size: 14px; color: #fff; }
 .ent-seat small { font-size: 11px; opacity: .85; }
 .ent-note { margin: 0; font-size: 11px; opacity: .85; }
-.ent-main .timers { justify-content: center; margin: 0; }
+.ent .timers { margin: 0; }
 .ent-bar {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 6px; border-radius: 14px;
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 6px; border-radius: 14px;
   background: rgb(255 250 241 / .22); border: 1px solid rgb(255 250 241 / .35);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
@@ -599,10 +597,6 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 
 @media (max-width: 760px) {
   .lob-card.solo { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .ent-meta { display: none; }
-  .ent-main { align-self: start; padding: 16px 8px 32px; }
-  .ent-main h1 { font-size: 32px; }
-  .ent-lead { font-size: 11px; }
   .ent-seat { min-height: 72px; }
   .ent-bar { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 1fr 1fr; background: none; border: 0; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .ent-bar .pri { grid-column: 1 / -1; min-height: 44px; }

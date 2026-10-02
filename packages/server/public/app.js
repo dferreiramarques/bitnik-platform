@@ -192,17 +192,22 @@ function nameField({ compact = false, id: fieldId = null } = {}) {
   return `<input${fieldId ? ` id="${esc(fieldId)}"` : ''} class="name-field${compact ? ' compact' : ''}" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}">`;
 }
 
-/** Linha de cima do Início e do lobby: marca (· jogo), avisos, consola, voltar e língua. O
- * nome do jogador já não vive aqui (era inconsistente: grande no Início, num
- * campo à parte; pequeno, em vidro, nesta barra, no lobby) — fica sempre
- * debaixo do título, com o mesmo campo (ver nameField). */
-function renderBrandTop(game = null) {
+/** Linha de cima do Início, do lobby e da entrada na mesa: marca (· jogo),
+ * avisos, botões extra (ex.: "Sair" na entrada), voltar e língua. O nome do
+ * jogador já não vive aqui (era inconsistente: grande no Início, num campo à
+ * parte; pequeno, em vidro, nesta barra, no lobby) — fica sempre debaixo do
+ * título, com o mesmo campo (ver nameField). `backHome`: no lobby, o ícone
+ * volta ao Início (só com vários jogos); na entrada, ao lobby deste jogo
+ * (sempre) — é um passo diferente, por isso não é o mesmo botão. */
+function renderBrandTop(game = null, { extra = '', backHome = true } = {}) {
   const brand = W()?.brand?.name || $('#brand').textContent;
+  const back = backHome
+    ? (game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : '')
+    : `<button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>`;
   return `<header class="home-top">
     <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
     <div class="mesa-actions">
-      <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
-      ${game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : ''}
+      <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}${back}
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
   </header>`;
 }
@@ -665,29 +670,28 @@ function renderGenericMesa(msg) {
 
 /**
  * Entrada na mesa (quadro "Entrada" do template): à espera de jogadores, no
- * fundo da marca. Lugares ocupados e livres, "Começar" (os vazios ficam com
- * bots), "Como se joga" e "Copiar convite".
+ * fundo da mesa deste jogo — mesmo layout do lobby (ADR-014): título à
+ * esquerda com "Como se joga" ao lado, nome do jogador por baixo (editável,
+ * `nameField`), antes do resto. Lugares ocupados e livres, "Começar" (os
+ * vazios ficam com bots) e "Copiar convite".
  */
 function renderEntrada(msg) {
   const g = msg.room.gameId;
   const meta = gameMeta(g);
-  const brand = W()?.brand?.name || $('#brand').textContent;
   const seated = msg.seat != null;
   const canLeave = msg.room.kind !== 'solo' && seated;
   const info = msg.room.kind === 'invite' ? esc(msg.room.name || u('inviteTable')) : u('tableOf', { n: msg.room.numPlayers });
-  const guide = guideLink(meta, g);
-  return `<section class="home ent">
+  const extra = canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : '';
+  return `<section class="home lob ent" data-game="${esc(g)}">
     ${renderRulesModal(meta)}
-    <header class="home-top">
-      <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong><span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, g))}</strong><span class="ent-meta">${info}</span></div>
-      <div class="mesa-actions"><span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
-        ${canLeave ? `<button class="mesa-btn" data-leave>${u('leave')}</button>` : ''}
-        <button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-        <button class="mesa-btn" data-lang>${u('lang')}</button></div>
-    </header>
-    <div class="ent-main">
-      <h1>${esc(t('game.name', {}, g))}</h1>
-      <p class="ent-lead">${playersText(meta?.players || { min: msg.room.numPlayers, max: msg.room.numPlayers })}</p>
+    ${renderBrandTop(g, { extra, backHome: false })}
+    <div class="lob-main">
+      <div class="lob-head">
+        <div class="lob-title"><h1>${esc(t('game.name', {}, g))}</h1>
+          <p>${playersText(meta?.players || { min: msg.room.numPlayers, max: msg.room.numPlayers })} · ${info}</p></div>
+        ${guideLink(meta, g)}
+      </div>
+      <div class="lob-name">${nameField({ compact: true })}</div>
       <div class="ent-seats">${msg.room.seats.map((x, i) => x.taken
         ? `<div class="ent-seat${x.isYou ? ' you' : ''}"><div class="ent-name"><i style="background:${SEAT_COLORS[i % SEAT_COLORS.length]}"></i><b>${esc(x.name)}${x.isYou ? ` (${u('you')})` : ''}</b></div>
             <small>${x.bot ? u('bot') : x.away ? u('away') : u('ready')}</small></div>`
@@ -696,7 +700,6 @@ function renderEntrada(msg) {
       <p class="ent-note">${seated ? u('botsFill') : msg.room.kind === 'invite' ? u('inviteJoin') : u('waitingStart')}</p>
       <div class="ent-bar">
         ${seated ? `<button class="lob-btn pri" data-start>${u('startShort')}</button>` : ''}
-        ${guide}
         ${msg.room.kind !== 'solo' ? `<button class="lob-btn" data-copyinvite>${u('copyInvite')}</button>` : ''}
       </div>
     </div>
