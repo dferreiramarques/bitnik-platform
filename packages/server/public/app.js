@@ -5,7 +5,7 @@
 import { BitnikClient } from '/sdk/client.js';
 import { translate } from '/engine/i18n.js';
 import { applyGameSkin, applyOverrides } from '/appearance.js';
-import { createTour } from '/tour.js';
+import { createTour, createSession } from '/tour.js';
 
 const UI = {
   pt: {
@@ -913,7 +913,8 @@ async function syncTutorial(gameId) {
     toast,
     exit: () => goGame(gameId),
     playReal: (n) => client.createSolo(gameId, n),
-    // Guia de passos partilhado (tour.js): o pacote só dá os passos e os textos.
+    // Guia de passos e partida local (tour.js): o pacote só dá os passos, os textos e, se quiser, o cenário.
+    session: (o) => createSession({ ...o, boardCtx: { ...o.boardCtx, toast } }),
     tour: (o) => createTour({ ...o, ui: (key, params) => u(key, params), exit: () => goGame(gameId), playReal: (n) => client.createSolo(gameId, n) }),
   });
 }

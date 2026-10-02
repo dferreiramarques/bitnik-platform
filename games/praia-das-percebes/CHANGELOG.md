@@ -1,4 +1,8 @@
 # Praia das Percebes — histórico de regras
+## 2.1.0 — Tutorial interativo (2026-10-02)
+
+Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se uns turnos a sério contra o bot, com o motor verdadeiro no browser: colocar a peça, o salva-vidas, ver o adversário jogar, uma prancha de surf, rochas e areia, a pontuação, os objetivos e o fim do jogo. A 1.ª peça (2 banhistas) e a prancha são as da lição. Usa o guia de passos da plataforma (`ctx.tour`, ADR-018).
+
 
 ## 2.0.20 — Registo flutuante a sério (2026-10-01)
 

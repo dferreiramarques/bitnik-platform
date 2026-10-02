@@ -11,6 +11,8 @@
 //   enter / leave   chamados ao entrar / sair do passo (ex.: pôr os bots a jogar)
 //   final   último passo: "Sair" e "Jogar a sério" em vez de "Seguinte"
 
+import { createMatch, applyMove, viewFor, botMove, activeSeats } from '/engine/index.js';
+
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /**
@@ -97,4 +99,81 @@ export function createTour({ host, steps, t, ui, exit, playReal, players = 2, ex
     get step() { return step; },
     stop() { guide.remove(); host.querySelectorAll('.tour-hi').forEach((x) => x.classList.remove('tour-hi')); },
   };
+}
+
+/**
+ * A partida local do tutorial: o motor verdadeiro no browser, o jogador no lugar 0 e o
+ * bot do jogo nos outros. O pacote dá os passos e, se quiser ensinar uma situação
+ * concreta, um `setup` (muda o estado inicial) e um `after` (muda o estado depois de
+ * uma jogada). Entregue ao pacote por `ctx.session(...)`.
+ *
+ * @param {object} o
+ * @param {object} o.game      o pacote do jogo
+ * @param {object} o.board     a UI do jogo (mount/update/unmount)
+ * @param {HTMLElement} o.el
+ * @param {object} o.boardCtx  o ctx da UI do jogo (gameId, lang, t, seatName, toast, announce, …)
+ * @param {number} [o.numPlayers]
+ * @param {string} [o.seed]
+ * @param {object} [o.options]  opções do match (ex.: { scenario })
+ * @param {(state: object) => void} [o.setup]
+ * @param {(seat: number, move: object, state: object) => void} [o.after]
+ * @param {number} [o.botMs]    pausa entre jogadas do bot
+ */
+export function createSession({ game, board, el, boardCtx, numPlayers = 2, seed = 'tutorial', options, setup, after, botMs = 1100 }) {
+  const tweakMatch = (m, fn) => { const c = structuredClone(m); fn(c.state); return c; };
+  let match = createMatch(game, { numPlayers, seed, ...(options ? { options } : {}) });
+  if (setup) match = tweakMatch(match, setup);
+  let stopped = false;
+  let tour = null;
+  const timers = [];
+  const later = (fn, ms) => timers.push(setTimeout(() => {
+    if (stopped) return;
+    try { fn(); } catch (e) { console.error('[tutorial]', e?.stack || e); }
+  }, ms));
+
+  const api = {
+    get match() { return match; },
+    get state() { return match.state; },
+    /** Liga o guia: passa a redesenhar-se a cada mudança do jogo. */
+    attach(t) { tour = t; },
+    /** Muda o estado local (cenário do passo) e redesenha. */
+    tweak(fn) { match = tweakMatch(match, fn); api.push(); },
+    push() {
+      board.update({ ...viewFor(game, match, 0), seat: 0 });
+      tour?.refresh();
+    },
+    play(seat, mv) {
+      const r = applyMove(game, match, seat, mv);
+      if (!r.ok) { boardCtx.toast?.(boardCtx.t(r.error.code, r.error.params)); return false; }
+      match = r.match;
+      if (after) match = tweakMatch(match, (st) => after(seat, mv, st));
+      api.push();
+      return true;
+    },
+    /** Os bots jogam, jogada a jogada, até a vez voltar ao jogador (ou acabar o jogo); depois `done()`. */
+    bots(done) {
+      const tick = () => {
+        const seat = match.result ? 0 : activeSeats(game, match)[0];
+        if (match.result || seat === 0 || seat == null) { done?.(); api.push(); return; }
+        const mv = botMove(game, match, seat);
+        const r = mv ? applyMove(game, match, seat, mv) : { ok: false };
+        if (!r.ok) { done?.(); api.push(); return; }
+        match = r.match;
+        api.push();
+        later(tick, botMs);
+      };
+      later(tick, 900);
+    },
+    later,
+    stop() {
+      stopped = true;
+      timers.forEach(clearTimeout);
+      tour?.stop();
+      board.unmount();
+      el.replaceChildren();
+    },
+  };
+
+  board.mount(el, { ...boardCtx, announce: () => {}, move: (mv) => api.play(0, mv), afterRender: () => tour?.refresh() });
+  return api;
 }
