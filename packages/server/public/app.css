@@ -641,6 +641,9 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .tour-guide h3 { margin: 0; font: 800 17px var(--game-font-display, var(--ui-display)); color: var(--game-accent-strong, #8f3417); }
 .tour-guide p { margin: 0; line-height: 1.5; font-size: 14px; }
 .tour-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--game-muted, #6b5b4e); }
+.tour-guide p.tour-wait { font-weight: 700; font-size: 13px; color: var(--game-accent-strong, #8f3417); animation: tour-blink 1.6s ease-in-out infinite; }
+@keyframes tour-blink { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .tour-guide p.tour-wait { animation: none; } }
 .tour-btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .tour-btn {
   min-height: 36px; padding: 4px 12px; font: 600 13px var(--ui-body); cursor: pointer; border-radius: 9px;

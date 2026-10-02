@@ -25,7 +25,7 @@ const UI = {
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
     install: 'Instalar', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
-    installManual: 'Para instalar: usa o ícone de instalar na barra de endereço do browser (ou o menu do browser → Instalar app).',
+    installManual: 'Para instalar: usa o ícone de instalar na barra de endereço do browser (ou o menu do browser → Instalar app). Se já instalaste, abre a app pelo ícone no ambiente de trabalho ou no menu Iniciar.',
     timer: '{event} em {s} s',
     expired: 'Versão antiga ({from}), já não pode ser retomada',
     expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
@@ -33,7 +33,7 @@ const UI = {
     inviteTable: 'Mesa de aprovação', inviteJoin: 'Foste convidado para esta mesa. Senta-te para jogar.',
     protoUi: 'Modo protótipo', gameUi: 'Ver tabuleiro', loadingUi: 'A carregar a mesa…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
-    'tour.step': 'Passo {n} de {total}', 'tour.next': 'Seguinte', 'tour.skip': 'Saltar tutorial', 'tour.exit': 'Sair', 'tour.playReal': 'Jogar a sério',
+    'tour.step': 'Passo {n} de {total}', 'tour.next': 'Seguinte', 'tour.act': '👆 Faz a jogada na mesa para continuar.','tour.skip': 'Saltar tutorial', 'tour.exit': 'Sair', 'tour.playReal': 'Jogar a sério',
     notices: 'Avisos', back: 'Voltar ao lobby', howToPlay: 'Como se joga', seeTable: 'Ver a mesa', lobby: 'Lobby',
     writeName: 'Escreve o teu nome',
     homeNote: 'A tua mesa contra bots, as mesas com outras pessoas e as de aprovação estão no lobby de cada jogo.',
@@ -62,7 +62,7 @@ const UI = {
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
     install: 'Install', installIos: 'To install: tap Share, then "Add to Home Screen".',
-    installManual: 'To install: use the install icon in the browser address bar (or the browser menu → Install app).',
+    installManual: 'To install: use the install icon in the browser address bar (or the browser menu → Install app). If you already installed it, open the app from its desktop or Start menu icon.',
     timer: '{event} in {s} s',
     expired: 'Old version ({from}), can no longer be resumed',
     expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
@@ -70,7 +70,7 @@ const UI = {
     inviteTable: 'Review table', inviteJoin: 'You were invited to this table. Sit down to play.',
     protoUi: 'Prototype mode', gameUi: 'Show board', loadingUi: 'Loading the table…',
     tutorial: 'Tutorial', tutorialOf: 'Tutorial',
-    'tour.step': 'Step {n} of {total}', 'tour.next': 'Next', 'tour.skip': 'Skip tutorial', 'tour.exit': 'Exit', 'tour.playReal': 'Play for real',
+    'tour.step': 'Step {n} of {total}', 'tour.next': 'Next', 'tour.act': '👆 Make your move on the table to continue.','tour.skip': 'Skip tutorial', 'tour.exit': 'Exit', 'tour.playReal': 'Play for real',
     notices: 'Notices', back: 'Back to lobby', howToPlay: 'How to play', seeTable: 'See the table', lobby: 'Lobby',
     writeName: 'Type your name',
     homeNote: 'Your table against bots, tables with other people and review tables are in each game\'s lobby.',
@@ -515,6 +515,10 @@ async function installApp() {
   if (!routeRoom()) render();
 }
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); app.installEvent = e; if (!routeRoom()) render(); });
+// Já instalada (Chrome/Edge): deixa de dar o evento, por isso o botão esconde-se.
+navigator.getInstalledRelatedApps?.().then((apps) => {
+  if (apps.length && !app.installed) { app.installed = true; if (!routeRoom()) render(); }
+}).catch(() => {});
 window.addEventListener('appinstalled', () => { app.installEvent = null; app.installed = true; if (!routeRoom()) render(); });
 
 function guideLink(meta, id) {
@@ -534,6 +538,9 @@ function guideLink(meta, id) {
  */
 function renderRulesModal(meta) {
   if (!app.rulesOpen || !meta?.rules) return '';
+  // No lobby a UI do jogo ainda não foi carregada: importa-a, para que o CSS dela (que
+  // também veste esta modal) esteja lá. Cada módulo carrega o seu CSS ao ser importado.
+  if (meta.ui && !uiModules.has(meta.ui)) uiModules.set(meta.ui, import(meta.ui).catch((e) => { uiModules.delete(meta.ui); console.error('[ui]', meta.ui, e); }));
   const sections = meta.rules[app.lang] || meta.rules.pt || [];
   return `<div class="rules-modal" role="dialog" aria-modal="true" aria-label="${esc(u('howToPlay'))}">
     <div class="rules-box">

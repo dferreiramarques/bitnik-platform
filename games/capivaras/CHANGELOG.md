@@ -1,4 +1,8 @@
 # Capivaras — histórico de regras
+## 2.1.1 — Regras ilustradas e tutorial mais claro (2026-10-02)
+
+Sem mudanças de regras. A modal "Como se joga" passa a ter o tema do Capivaras também no lobby (antes só o tinha dentro da mesa) e ganha ilustrações com as cartas reais: a mesa de uma ronda, um exemplo de apostas (duas na A, a carta foge; uma na B, é tua), o token do pássaro, as quatro cores de nenúfar e a pontuação. No tutorial, o passo da aposta (e qualquer passo que espere por uma jogada) passa a dizer "Faz a jogada na mesa para continuar", porque não tem botão "Seguinte" e parecia bloqueado no passo 3.
+
 ## 2.1.0 — Tutorial interativo (2026-10-02)
 
 Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se uma ronda a sério contra dois bots, com o motor verdadeiro no browser: as cartas da mesa, a aposta em segredo, a revelação (a carta mais valiosa foge, porque os dois bots apostam nela), a pontuação, os nenúfares, o token do pássaro e as duas voltas ao baralho. Usa o guia de passos e a partida local da plataforma (`ctx.tour`, `ctx.session`, ADR-018).

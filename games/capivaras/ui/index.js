@@ -27,6 +27,9 @@ function ensureCss() {
   document.head.append(link);
 }
 
+// O CSS também veste a modal "Como se joga" do lobby, onde a mesa ainda não foi montada.
+ensureCss();
+
 let root = null;   // .capi (fica montado)
 let view = null;   // conteúdo redesenhado a cada estado
 let ctx = null;
