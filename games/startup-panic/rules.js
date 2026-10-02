@@ -157,8 +157,10 @@ export function setup(ctx) {
     const nomes = ctx.rng.shuffle([...NOMES[tipo]]);
     for (let i = 0; i < n; i++) pool.push({ id: `${tipo}_${i}`, tipo, nome: nomes[i] }); // uma cópia de cada tipo por jogador: ninguém fica sem
   }
-  const baralho = ctx.rng.shuffle([...CEO_IDS]);
-  const primeiro = ctx.rng.int(n);
+  // Cenário fixo (tutorial): os 3 primeiros CEOs sem dado, para mostrar o efeito, e o jogador 0 a abrir (ADR-007).
+  const tutorial = ctx.options?.scenario === 'tutorial';
+  const baralho = tutorial ? ['jh', 'pc', 'mz', ...CEO_IDS.filter((x) => !['jh', 'pc', 'mz'].includes(x))] : ctx.rng.shuffle([...CEO_IDS]);
+  const primeiro = tutorial ? 0 : ctx.rng.int(n);
   const s = {
     n,
     jogadores: Array.from({ length: n }, () => ({ cash: CASH_INICIAL, trab: [] })),

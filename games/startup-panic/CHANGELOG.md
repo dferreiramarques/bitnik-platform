@@ -1,5 +1,13 @@
 # Startup Panic — histórico de regras
 
+## 3.3.0 — Tutorial guiado (2026-10-02)
+
+Pedido do David: um tour/wizard para o jogo. Sem mudanças de regras (as mesas guardadas continuam a retomar).
+
+- **Tutorial** (`ui/tutorial.js`, botão "Tutorial" no lobby e rota `#/tutorial/startup-panic`): corre o motor verdadeiro no browser e a mesma UI das mesas, com 19 passos em PT e EN: os jogadores e a ordem, as 12 rondas e os Gates, o CEO e os setores, as startups, o gráfico de velas (o jogador abre-o), comprar, fechar o Mercado, contratar, níveis e salários, terminar o turno, o bot a jogar, dividendos, o Gate, limites e maiorias, implosões e o arriscar do salário. Cada passo realça a zona da mesa de que fala e avança sozinho quando o jogador faz o que se pede; "Jogar a sério" abre uma mesa contra um bot.
+- **Cenário `tutorial`** (`ctx.options.scenario`): o baralho começa por Jensen H., Patrick C. e Mark Z. (sem dado) e o jogador abre; o resto do jogo é o normal.
+- A mesa deixa espaço ao guia (ao lado em ecrãs largos, por baixo em ecrãs estreitos).
+
 ## 3.2.0 — Histórico de preços com gráfico de velas (2026-10-02)
 
 Pedido do David: um gráfico no estilo de câmbio (velas verdes e vermelhas) com os valores de cada startup ronda a ronda. Sem mudanças de regras; o estado passa a guardar o histórico (`hist`), por isso as mesas guardadas da 3.1 não têm gráfico (continuam jogáveis).
