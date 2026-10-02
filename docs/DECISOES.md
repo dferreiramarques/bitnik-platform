@@ -409,14 +409,14 @@ Alternativas consideradas: só o botão existente (não resolve — ninguém o u
 ### Decisão
 
 - `markAway(userId, true)`: para uma mesa **pública** (`kind === 'public'`) já `over`, liberta o lugar e corre `resetPublicIfEmpty` — mesmo sem um clique em "Sair", ao fim do `graceMs` da desconexão (como já acontecia na sala de espera).
-- Não se aplica a mesas de **convite**: essas ficam à espera do publisher as fechar à mão (ADR-004/ADR-015) — pode querer rever o resultado mais tarde, e ninguém mais "apanha" o lugar de qualquer forma (não aparecem no lobby público).
+- Correção (2026-10-02): aplica-se também às mesas de **convite** acabadas — quem volta ao lobby ou desliga larga o lugar, e quando sai o último a mesa apaga-se (uso único). Antes ficavam presas em "Ver" para quem não jogou. Uma mesa de convite ainda à espera continua a ser gerida pelo publisher.
 - Lobby: uma mesa onde se está sentado e já acabou (`status: 'over'`) ganha um botão "Sair" direto no cartão (`data-leave-room`), para não ser preciso reabri-la só para isso — chama o mesmo `LEAVE` que o botão de dentro da mesa.
 
 ### Consequências
 
 - ✔ Resolve o caso relatado: a mesa pública some do lobby assim que o último jogador desliga, com ou sem clique em "Sair".
 - O `graceMs` (por omissão, 60 s) continua a dar tempo a uma queda de rede breve antes de libertar o lugar — não muda só por o jogo ter acabado.
-- Mesas de convite continuam a precisar de um fecho manual: é um comportamento deliberado (ADR-015), não um esquecimento.
+- Mesas de convite à espera de jogadores continuam a precisar de fecho manual (ADR-015); as acabadas apagam-se quando o último jogador sai.
 
 ---
 
