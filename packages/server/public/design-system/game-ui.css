@@ -1,0 +1,488 @@
+/* ==========================================================================
+   bitnikgames design system — game UI (camada opcional)
+   Padrões extraídos de jogos reais (Bulbous, Capivaras) — cartas, chips
+   coloridos, modais, tabs, toasts, badge circular. Nem todo o projeto
+   precisa disto (um site de marketing não), por isso não é importado por
+   default em index.css — importa este ficheiro à parte nos projetos que
+   tenham UI de jogo (tabuleiro, cartas, tabuleiro digital).
+
+   Como as cores de marca (--brand-primary/secondary/accent) só dão 3
+   tons, e jogos com peças/equipas/jogadores costumam precisar de mais,
+   este ficheiro define 4 tokens de cor extra (--game-color-1..4) que
+   cada jogo deve sobrescrever com a sua própria paleta — os componentes
+   abaixo (chip, etc.) referenciam-nos genericamente.
+
+   Sombras por skin: cada jogo pode ter um --ink muito diferente (Bulbous
+   é escuro, Capivaras é claro e quente) — uma sombra preta plana não
+   serve para os dois. Em vez de escurecer/tingir --shadow-card à mão,
+   define --shadow-color-rgb (o rgb do --ink dessa skin, sem alpha) no
+   :root do jogo ANTES de importar/copiar este ficheiro; --shadow-card e
+   --shadow-card-hover (em tokens.css) já compõem esse rgb, então a
+   sombra segue a tinta certa automaticamente. Ex.: Capivaras tem
+   --ink:#2e1a0a → --shadow-color-rgb: 46, 26, 10.
+
+   Cartas com imagem (.game-card img): não ponhas border-radius na
+   imagem/vídeo lá dentro. Um filho absolute; inset:0 dentro de uma carta
+   com border + overflow:hidden já ocupa uma caixa mais pequena (encolhida
+   pela largura do border) — dar-lhe o MESMO radius do cartão faz esse
+   raio próprio curvar menos apertado nessa caixa menor do que a curva
+   exterior do cartão, deixando uma fresta da cor de fundo do cartão a
+   aparecer mesmo no canto. Deixa o overflow:hidden do pai fazer todo o
+   arredondamento (como já está abaixo); só se REALMENTE precisares de um
+   raio próprio na imagem, usa calc(var(--radius) - <border-width>) para
+   ficar concêntrico. Bug real, apanhado e corrigido no Bulbous.
+   ========================================================================== */
+
+:root {
+  --game-color-1: var(--brand-primary);
+  --game-color-1-dim: color-mix(in srgb, var(--game-color-1) 18%, var(--bg));
+  --game-color-2: var(--brand-secondary);
+  --game-color-2-dim: color-mix(in srgb, var(--game-color-2) 18%, var(--bg));
+  --game-color-3: var(--brand-accent);
+  --game-color-3-dim: color-mix(in srgb, var(--game-color-3) 18%, var(--bg));
+  --game-color-4: var(--text-muted);
+  --game-color-4-dim: color-mix(in srgb, var(--game-color-4) 18%, var(--bg));
+}
+
+/* --- chip: pill de 3 tons (contorno + fundo diluído + texto na cor) ---
+   Diferente do .badge (bg sólido + texto branco/ink) — o chip é para
+   referenciar uma cor de jogo (equipa, naipe, jogador) de forma legível
+   mesmo em fundos escuros, sem competir visualmente com badges de estado. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--chip-color, var(--brand-primary));
+  background: var(--chip-color-dim, var(--bg-alt));
+  color: var(--chip-color, var(--brand-primary));
+}
+
+.chip-1 {
+  --chip-color: var(--game-color-1);
+  --chip-color-dim: var(--game-color-1-dim);
+}
+.chip-2 {
+  --chip-color: var(--game-color-2);
+  --chip-color-dim: var(--game-color-2-dim);
+}
+.chip-3 {
+  --chip-color: var(--game-color-3);
+  --chip-color-dim: var(--game-color-3-dim);
+}
+.chip-4 {
+  --chip-color: var(--game-color-4);
+  --chip-color-dim: var(--game-color-4-dim);
+}
+
+/* --- game-card: carta/peça com imagem, barra inferior e estados de jogo --- */
+.game-card {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--bg-alt);
+  cursor: default;
+  user-select: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.game-card.is-clickable {
+  cursor: pointer;
+}
+
+/* Só em quem faz hover mesmo: num ecrã tátil o :hover fica "preso" depois
+   do toque (carta levantada até se tocar noutro sítio). Ver docs/game-layout.md. */
+@media (hover: hover) {
+  .game-card.is-clickable:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-card-hover);
+    z-index: 10;
+  }
+}
+
+.game-card.is-selected {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 35%, transparent);
+  transform: translateY(-4px);
+  z-index: 10;
+}
+
+.game-card.is-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.game-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.game-card-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 0.25rem 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+/* --- badge circular: numeração/ordem sobreposta a uma peça --- */
+.badge-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  color: var(--color-white);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  border: 2px solid var(--color-white);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* --- modal / overlay --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal-box {
+  background: var(--color-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  max-width: 480px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* --- tabs --- */
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.tab {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0.55rem 0.9rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab.active {
+  color: var(--brand-primary);
+  border-bottom-color: var(--brand-primary);
+}
+
+/* --- toast: notificação transitória, centrada em baixo --- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  background: var(--color-ink);
+  color: var(--color-cream);
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-card-hover);
+  z-index: 200;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Layout de jogo em telemóvel — partes genéricas
+   Extraídas da conversão do Bulbous e do Capivaras para telemóvel. Aqui
+   fica só o que não depende da estrutura de cada jogo; a receita completa
+   (grelha do ecrã de jogo, fórmula de tamanho das peças da mesa, painéis de
+   adversário, modo compacto, balão do tutorial) está em docs/game-layout.md.
+
+   Critério "compacto" usado abaixo (igual no CSS e no JS de cada jogo):
+     (max-width: 640px), (orientation: landscape) and (max-height: 500px)
+   ========================================================================== */
+
+/* --- altura real e toque ---
+   dvh = altura visível de facto (sem a barra de endereço do browser móvel);
+   100% fica como fallback. overscroll-behavior evita o pull-to-refresh a
+   meio de uma jogada; touch-action tira o atraso/zoom de duplo toque. */
+html,
+body {
+  height: 100%;
+}
+@supports (height: 100dvh) {
+  html,
+  body {
+    height: 100dvh;
+  }
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button {
+  touch-action: manipulation;
+}
+
+/* --- alvos de toque >= 44px (recomendação iOS/Android) --- */
+@media (pointer: coarse) {
+  .btn,
+  .tab,
+  .hand-toggle,
+  .recap-pill {
+    min-height: 44px;
+  }
+}
+
+/* --- fila com scroll horizontal: centrar com margens automáticas ---
+   Nunca justify-content:center numa fila com overflow-x: quando o conteúdo
+   é mais largo do que a fila, transborda para os DOIS lados e o início
+   (1.º adversário, 1.ª carta) fica inalcançável pelo scroll. As margens
+   auto centram quando cabe e encostam à esquerda quando não cabe.
+   Usa .game-row, ou copia as duas regras :first-child/:last-child para as
+   filas que já tens. */
+.game-row {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+}
+.game-row > :first-child {
+  margin-left: auto;
+}
+.game-row > :last-child {
+  margin-right: auto;
+}
+
+/* --- html.edge: margens de notch / barra de estado só em ecrã inteiro ---
+   A classe é posta por JS (syncEdge, ver docs) quando a página ocupa o
+   ecrã todo — app instalada (PWA) ou requestFullscreen. No browser normal
+   é o browser que reserva essas zonas; aplicar env(safe-area-inset-*) aí
+   cria faixas vazias (visto em Android). Põe .game-header no cabeçalho do
+   ecrã de jogo, ou copia a regra para o teu seletor. */
+html.edge .game-header {
+  padding-top: max(4px, env(safe-area-inset-top));
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
+}
+
+/* --- botões só do compacto (⛶ ecrã inteiro, 📖 regras…) ---
+   Escondidos fora do compacto, visíveis dentro. A 2.ª regra não é
+   redundante: o display do autor ganha ao [hidden] do browser, e o JS
+   esconde o ⛶ com hidden onde não há requestFullscreen (iPhone, PWA). */
+.hdr-compact {
+  display: none;
+}
+@media (max-width: 640px), (orientation: landscape) and (max-height: 500px) {
+  .hdr-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hdr-compact[hidden] {
+    display: none;
+  }
+}
+
+/* --- mão colapsável: botão "+N outras" / "− recolher" ---
+   Tracejado, do tamanho de uma carta (--card-h do jogo; sem ele estica à
+   altura da fila). Conteúdo: <b>+3</b><small>outras</small>. .wide para o
+   caso "Nenhuma carta jogável · Ver mão (7)". */
+.hand-toggle {
+  width: 52px;
+  height: var(--card-h, auto);
+  align-self: stretch;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 2px dashed var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.hand-toggle b {
+  font-size: 1.15rem;
+}
+.hand-toggle small {
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+.hand-toggle.wide {
+  width: auto;
+  padding: 0 14px;
+}
+.hand-toggle:active {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+@media (hover: hover) {
+  .hand-toggle:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+  }
+}
+
+/* --- resumo automático (substitui um botão "Continuar") ---
+   <button class="recap-pill">🏆 X ganhou a vaza<span class="recap-timer"
+   style="animation-duration:3000ms"></span></button>
+   A barra esvazia-se e o JS fecha o resumo ao fim do mesmo tempo; tocar
+   salta. A cor da barra segue a do texto (currentColor), por isso basta
+   pôr color: <cor do vencedor> no botão. Não reconstruir o elemento a
+   cada re-render, senão a animação recomeça (ver docs). */
+.recap-pill {
+  position: relative;
+  overflow: hidden;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.recap-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: currentColor;
+  transform-origin: left;
+  animation: recapDrain linear forwards;
+}
+@keyframes recapDrain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* --- modais em telemóvel ---
+   Vertical estreito: o .modal-box vira uma bottom sheet (encostada em
+   baixo, na zona do polegar, cantos de cima arredondados). Horizontal
+   baixo: menos moldura e quase o ecrã todo de altura, para um fim de jogo
+   com tabela caber em ~300px sem scroll. */
+@media (max-width: 640px) {
+  .modal-overlay {
+    justify-content: flex-end;
+    align-items: stretch;
+    flex-direction: column;
+    padding: 0;
+  }
+  .modal-box {
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    max-height: 88vh;
+    max-height: 88dvh;
+    animation: sheetUp 0.25s ease;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .modal-overlay {
+    padding: 6px;
+  }
+  .modal-box {
+    padding: 10px 18px;
+    max-height: calc(100vh - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+}
+
+/* --- painel não modal como bottom sheet (regras, histórico…) ---
+   Em desktop o painel fica onde está e .game-sheet não faz nada. No
+   compacto sai do fluxo e só aparece com .open (posta pela mesma função
+   que abre/fecha o painel em desktop), como bottom sheet. O fundo
+   escurecido é a sombra de 100vmax — não precisa de elemento à parte.
+   Fica abaixo dos modais (z-index 100), que podem abrir por cima.
+   Se o painel tem um cabeçalho que deve ficar à vista, põe o scroll no
+   corpo (overflow-y: auto nele) em vez do painel. */
+@media (max-width: 640px), (orientation: landscape) and (max-height: 500px) {
+  .game-sheet {
+    display: none;
+  }
+  .game-sheet.open {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    max-width: 640px;
+    margin: 0 auto;
+    max-height: 88vh;
+    max-height: 88dvh;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    box-shadow: 0 0 0 100vmax rgba(var(--shadow-color-rgb), 0.55);
+    animation: sheetUp 0.25s ease;
+  }
+}
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

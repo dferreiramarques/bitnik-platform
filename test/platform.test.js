@@ -669,6 +669,25 @@ test('Figma: exporta tokens em W3C Design Tokens e a volta dá a aparência cert
   assert.deepEqual(designTokensToAppearance(changed, { defaults }).games.catania, { theme: null, tokens: { '--cat-gold': '#00aaff' } });
 });
 
+test('design system da Bitnik: servido pela plataforma e guardado pelo service worker, sem CDN (ADR-017)', async () => {
+  for (const make of [makeStudio, makeRuntime]) {
+    const s = await boot(make);
+    const base = `http://localhost:${s.port}`;
+    const html = await (await fetch(`${base}/`)).text();
+    assert.ok(html.includes('href="/design-system/index.css"'));
+    assert.ok(html.includes('href="/design-system/game-ui.css"'));
+    assert.ok(!html.includes('bitnikgames-design-system'), 'já não vem do CDN');
+    for (const f of ['index', 'tokens', 'base', 'components', 'game-ui']) {
+      const res = await fetch(`${base}/design-system/${f}.css`);
+      assert.equal(res.status, 200, f);
+      assert.ok(res.headers.get('content-type').startsWith('text/css'));
+      assert.ok(s.platform.serviceWorker.precache.includes(`/design-system/${f}.css`), `o service worker guarda ${f}`);
+    }
+    assert.equal((await fetch(`${base}/design-system/outro.css`)).status, 404, 'só os cinco ficheiros');
+    await s.stop();
+  }
+});
+
 test('PWA: service worker com versão por conteúdo e o que o tutorial precisa para funcionar offline', async () => {
   const s = await boot(makeStudio);
   const base = `http://localhost:${s.port}`;
