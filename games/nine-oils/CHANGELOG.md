@@ -1,5 +1,14 @@
 # Nine Oils — histórico de regras
 
+## 1.2.1 — Imagens mais leves: dados e cartas em webp, ao tamanho de uso (2026-10-02)
+
+Sem mudanças de jogo: os dados (374×364, ~250 KB cada) e as cartas de
+personagem (816×1111, ~240 KB cada) eram mostrados a 64 px e 130×176 px,
+ou seja, descarregava-se mais de 2,5 MB de imagens para as redimensionar
+no ecrã, o que atrasava a primeira mesa com a cache vazia. Passam a webp
+a ~2× o tamanho de uso (dados 160 px, cartas 280 px): ~0,2 MB no total,
+com a mesma aparência (o canal alfa dos dados mantém-se).
+
 ## 1.2.0 — Tutorial interativo (2026-10-02)
 
 Sem mudanças de regras: o jogo ganha um tutorial interativo ("Tutorial", ao lado de "Como se joga", no lobby). Joga-se um turno a sério contra o bot, com o motor verdadeiro no browser: lançar os dados, escolher um Triplo + Duplo, ver o adversário jogar e roubar uma garrafa com um Rapaz; a defesa com Valentões e o limite de mão explicam-se em texto. O primeiro lançamento sai de um roteiro (4-4-4-2-2) para ensinar uma combinação concreta. Usa o guia de passos da plataforma (`ctx.tour`, ADR-018).

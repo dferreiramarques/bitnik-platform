@@ -33,7 +33,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const MSG_MS = 2600;
 const EMOJI = { TEMPTRESS: '❤️‍🔥', BOY: '👦🏽', BULLY: '💪🏼' };
 const asset = (rel) => new URL(rel, import.meta.url).href;
-const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.jpg'), BOY: asset('./cartas/boy.jpg'), BULLY: asset('./cartas/bully.jpg') };
+const CARD_ART = { TEMPTRESS: asset('./cartas/temptress.webp'), BOY: asset('./cartas/boy.webp'), BULLY: asset('./cartas/bully.webp') };
 const GROUP_COLORS = 4; // cores de contorno que se repetem, se houver mais partes do que isso (raro)
 /** Dado: a face é só CSS (ver [data-face] em nine-oils.css) — a animação
  * mostra as 6 faces em sequência (um "flipbook", com desfoque e um leve

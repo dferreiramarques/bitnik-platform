@@ -3,7 +3,7 @@
 // é só conteúdo de UI, mostrado pela plataforma (app.js). Pode aparecer antes
 // de entrar na mesa (lobby), por isso o `visual` usa estilo inline, sem
 // depender do nine-oils.css, e caminhos absolutos para as imagens do pacote.
-const die = (n, size = 26) => `<img src="/games/nine-oils/ui/dados/${n}.png" alt="${n}" style="width:${size}px;height:${size}px;border-radius:18%;object-fit:cover;">`;
+const die = (n, size = 26) => `<img src="/games/nine-oils/ui/dados/${n}.webp" alt="${n}" style="width:${size}px;height:${size}px;border-radius:18%;object-fit:cover;">`;
 const dieGroup = (faces, label, size) => `<div style="text-align:center;font-size:12px;">
   <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:2px;margin-bottom:4px;">${faces.map((n) => die(n, size)).join('')}</div>
   ${label}
@@ -18,9 +18,9 @@ const combosVisual = (labels) => `<div style="display:grid;grid-template-columns
 </div>`;
 const card = (file, alt) => `<img src="/games/nine-oils/ui/cartas/${file}" alt="${alt}" style="width:52px;height:70px;object-fit:cover;border-radius:6px;box-shadow:0 2px 6px rgb(0 0 0 / .3);">`;
 const cardsVisual = (labels) => `<div style="display:flex;gap:10px;margin:10px 0 2px;flex-wrap:wrap;">
-  <div style="text-align:center;font-size:12px;">${card('temptress.jpg', labels[0])}<div>${labels[0]}</div></div>
-  <div style="text-align:center;font-size:12px;">${card('boy.jpg', labels[1])}<div>${labels[1]}</div></div>
-  <div style="text-align:center;font-size:12px;">${card('bully.jpg', labels[2])}<div>${labels[2]}</div></div>
+  <div style="text-align:center;font-size:12px;">${card('temptress.webp', labels[0])}<div>${labels[0]}</div></div>
+  <div style="text-align:center;font-size:12px;">${card('boy.webp', labels[1])}<div>${labels[1]}</div></div>
+  <div style="text-align:center;font-size:12px;">${card('bully.webp', labels[2])}<div>${labels[2]}</div></div>
 </div>`;
 
 export default {

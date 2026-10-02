@@ -81,67 +81,67 @@
   animation-duration: .45s; animation-timing-function: steps(1, jump-end); animation-fill-mode: both;
   border: 0; padding: 0; display: block; -webkit-appearance: none; appearance: none;
 }
-.nof-die[data-face="1"] { background-image: url('./dados/1.png'); animation-name: nof-roll-1; }
-.nof-die[data-face="2"] { background-image: url('./dados/2.png'); animation-name: nof-roll-2; }
-.nof-die[data-face="3"] { background-image: url('./dados/3.png'); animation-name: nof-roll-3; }
-.nof-die[data-face="4"] { background-image: url('./dados/4.png'); animation-name: nof-roll-4; }
-.nof-die[data-face="5"] { background-image: url('./dados/5.png'); animation-name: nof-roll-5; }
-.nof-die[data-face="6"] { background-image: url('./dados/6.png'); animation-name: nof-roll-6; }
+.nof-die[data-face="1"] { background-image: url('./dados/1.webp'); animation-name: nof-roll-1; }
+.nof-die[data-face="2"] { background-image: url('./dados/2.webp'); animation-name: nof-roll-2; }
+.nof-die[data-face="3"] { background-image: url('./dados/3.webp'); animation-name: nof-roll-3; }
+.nof-die[data-face="4"] { background-image: url('./dados/4.webp'); animation-name: nof-roll-4; }
+.nof-die[data-face="5"] { background-image: url('./dados/5.webp'); animation-name: nof-roll-5; }
+.nof-die[data-face="6"] { background-image: url('./dados/6.webp'); animation-name: nof-roll-6; }
 /* As 6 faces em sequência são iguais em todos; só a última etapa (a face
    lançada) muda por dado — por isso cada nof-roll-N só difere no fim. */
 @keyframes nof-roll-1 {
-  0%, 13.9% { background-image: url('./dados/1.png'); filter: blur(2px); transform: translateY(-3px); }
-  14%, 27.9% { background-image: url('./dados/2.png'); filter: blur(3px); transform: translateY(3px); }
-  28%, 41.9% { background-image: url('./dados/3.png'); filter: blur(4px); transform: translateY(-3px); }
-  42%, 55.9% { background-image: url('./dados/4.png'); filter: blur(5px); transform: translateY(3px); }
-  56%, 69.9% { background-image: url('./dados/5.png'); filter: blur(7px); transform: translateY(-3px); }
-  70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
-  84%, 100% { background-image: url('./dados/1.png'); filter: blur(0); transform: translateY(0); }
+  0%, 13.9% { background-image: url('./dados/1.webp'); filter: blur(2px); transform: translateY(-3px); }
+  14%, 27.9% { background-image: url('./dados/2.webp'); filter: blur(3px); transform: translateY(3px); }
+  28%, 41.9% { background-image: url('./dados/3.webp'); filter: blur(4px); transform: translateY(-3px); }
+  42%, 55.9% { background-image: url('./dados/4.webp'); filter: blur(5px); transform: translateY(3px); }
+  56%, 69.9% { background-image: url('./dados/5.webp'); filter: blur(7px); transform: translateY(-3px); }
+  70%, 83.9% { background-image: url('./dados/6.webp'); filter: blur(4px); transform: translateY(3px); }
+  84%, 100% { background-image: url('./dados/1.webp'); filter: blur(0); transform: translateY(0); }
 }
 @keyframes nof-roll-2 {
-  0%, 13.9% { background-image: url('./dados/1.png'); filter: blur(2px); transform: translateY(-3px); }
-  14%, 27.9% { background-image: url('./dados/2.png'); filter: blur(3px); transform: translateY(3px); }
-  28%, 41.9% { background-image: url('./dados/3.png'); filter: blur(4px); transform: translateY(-3px); }
-  42%, 55.9% { background-image: url('./dados/4.png'); filter: blur(5px); transform: translateY(3px); }
-  56%, 69.9% { background-image: url('./dados/5.png'); filter: blur(7px); transform: translateY(-3px); }
-  70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
-  84%, 100% { background-image: url('./dados/2.png'); filter: blur(0); transform: translateY(0); }
+  0%, 13.9% { background-image: url('./dados/1.webp'); filter: blur(2px); transform: translateY(-3px); }
+  14%, 27.9% { background-image: url('./dados/2.webp'); filter: blur(3px); transform: translateY(3px); }
+  28%, 41.9% { background-image: url('./dados/3.webp'); filter: blur(4px); transform: translateY(-3px); }
+  42%, 55.9% { background-image: url('./dados/4.webp'); filter: blur(5px); transform: translateY(3px); }
+  56%, 69.9% { background-image: url('./dados/5.webp'); filter: blur(7px); transform: translateY(-3px); }
+  70%, 83.9% { background-image: url('./dados/6.webp'); filter: blur(4px); transform: translateY(3px); }
+  84%, 100% { background-image: url('./dados/2.webp'); filter: blur(0); transform: translateY(0); }
 }
 @keyframes nof-roll-3 {
-  0%, 13.9% { background-image: url('./dados/1.png'); filter: blur(2px); transform: translateY(-3px); }
-  14%, 27.9% { background-image: url('./dados/2.png'); filter: blur(3px); transform: translateY(3px); }
-  28%, 41.9% { background-image: url('./dados/3.png'); filter: blur(4px); transform: translateY(-3px); }
-  42%, 55.9% { background-image: url('./dados/4.png'); filter: blur(5px); transform: translateY(3px); }
-  56%, 69.9% { background-image: url('./dados/5.png'); filter: blur(7px); transform: translateY(-3px); }
-  70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
-  84%, 100% { background-image: url('./dados/3.png'); filter: blur(0); transform: translateY(0); }
+  0%, 13.9% { background-image: url('./dados/1.webp'); filter: blur(2px); transform: translateY(-3px); }
+  14%, 27.9% { background-image: url('./dados/2.webp'); filter: blur(3px); transform: translateY(3px); }
+  28%, 41.9% { background-image: url('./dados/3.webp'); filter: blur(4px); transform: translateY(-3px); }
+  42%, 55.9% { background-image: url('./dados/4.webp'); filter: blur(5px); transform: translateY(3px); }
+  56%, 69.9% { background-image: url('./dados/5.webp'); filter: blur(7px); transform: translateY(-3px); }
+  70%, 83.9% { background-image: url('./dados/6.webp'); filter: blur(4px); transform: translateY(3px); }
+  84%, 100% { background-image: url('./dados/3.webp'); filter: blur(0); transform: translateY(0); }
 }
 @keyframes nof-roll-4 {
-  0%, 13.9% { background-image: url('./dados/1.png'); filter: blur(2px); transform: translateY(-3px); }
-  14%, 27.9% { background-image: url('./dados/2.png'); filter: blur(3px); transform: translateY(3px); }
-  28%, 41.9% { background-image: url('./dados/3.png'); filter: blur(4px); transform: translateY(-3px); }
-  42%, 55.9% { background-image: url('./dados/4.png'); filter: blur(5px); transform: translateY(3px); }
-  56%, 69.9% { background-image: url('./dados/5.png'); filter: blur(7px); transform: translateY(-3px); }
-  70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
-  84%, 100% { background-image: url('./dados/4.png'); filter: blur(0); transform: translateY(0); }
+  0%, 13.9% { background-image: url('./dados/1.webp'); filter: blur(2px); transform: translateY(-3px); }
+  14%, 27.9% { background-image: url('./dados/2.webp'); filter: blur(3px); transform: translateY(3px); }
+  28%, 41.9% { background-image: url('./dados/3.webp'); filter: blur(4px); transform: translateY(-3px); }
+  42%, 55.9% { background-image: url('./dados/4.webp'); filter: blur(5px); transform: translateY(3px); }
+  56%, 69.9% { background-image: url('./dados/5.webp'); filter: blur(7px); transform: translateY(-3px); }
+  70%, 83.9% { background-image: url('./dados/6.webp'); filter: blur(4px); transform: translateY(3px); }
+  84%, 100% { background-image: url('./dados/4.webp'); filter: blur(0); transform: translateY(0); }
 }
 @keyframes nof-roll-5 {
-  0%, 13.9% { background-image: url('./dados/1.png'); filter: blur(2px); transform: translateY(-3px); }
-  14%, 27.9% { background-image: url('./dados/2.png'); filter: blur(3px); transform: translateY(3px); }
-  28%, 41.9% { background-image: url('./dados/3.png'); filter: blur(4px); transform: translateY(-3px); }
-  42%, 55.9% { background-image: url('./dados/4.png'); filter: blur(5px); transform: translateY(3px); }
-  56%, 69.9% { background-image: url('./dados/5.png'); filter: blur(7px); transform: translateY(-3px); }
-  70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
-  84%, 100% { background-image: url('./dados/5.png'); filter: blur(0); transform: translateY(0); }
+  0%, 13.9% { background-image: url('./dados/1.webp'); filter: blur(2px); transform: translateY(-3px); }
+  14%, 27.9% { background-image: url('./dados/2.webp'); filter: blur(3px); transform: translateY(3px); }
+  28%, 41.9% { background-image: url('./dados/3.webp'); filter: blur(4px); transform: translateY(-3px); }
+  42%, 55.9% { background-image: url('./dados/4.webp'); filter: blur(5px); transform: translateY(3px); }
+  56%, 69.9% { background-image: url('./dados/5.webp'); filter: blur(7px); transform: translateY(-3px); }
+  70%, 83.9% { background-image: url('./dados/6.webp'); filter: blur(4px); transform: translateY(3px); }
+  84%, 100% { background-image: url('./dados/5.webp'); filter: blur(0); transform: translateY(0); }
 }
 @keyframes nof-roll-6 {
-  0%, 13.9% { background-image: url('./dados/1.png'); filter: blur(2px); transform: translateY(-3px); }
-  14%, 27.9% { background-image: url('./dados/2.png'); filter: blur(3px); transform: translateY(3px); }
-  28%, 41.9% { background-image: url('./dados/3.png'); filter: blur(4px); transform: translateY(-3px); }
-  42%, 55.9% { background-image: url('./dados/4.png'); filter: blur(5px); transform: translateY(3px); }
-  56%, 69.9% { background-image: url('./dados/5.png'); filter: blur(7px); transform: translateY(-3px); }
-  70%, 83.9% { background-image: url('./dados/6.png'); filter: blur(4px); transform: translateY(3px); }
-  84%, 100% { background-image: url('./dados/6.png'); filter: blur(0); transform: translateY(0); }
+  0%, 13.9% { background-image: url('./dados/1.webp'); filter: blur(2px); transform: translateY(-3px); }
+  14%, 27.9% { background-image: url('./dados/2.webp'); filter: blur(3px); transform: translateY(3px); }
+  28%, 41.9% { background-image: url('./dados/3.webp'); filter: blur(4px); transform: translateY(-3px); }
+  42%, 55.9% { background-image: url('./dados/4.webp'); filter: blur(5px); transform: translateY(3px); }
+  56%, 69.9% { background-image: url('./dados/5.webp'); filter: blur(7px); transform: translateY(-3px); }
+  70%, 83.9% { background-image: url('./dados/6.webp'); filter: blur(4px); transform: translateY(3px); }
+  84%, 100% { background-image: url('./dados/6.webp'); filter: blur(0); transform: translateY(0); }
 }
 .nof-die:nth-child(9n+1) { animation-delay: .01s; } .nof-die:nth-child(9n+2) { animation-delay: .03s; }
 .nof-die:nth-child(9n+3) { animation-delay: .05s; } .nof-die:nth-child(9n+4) { animation-delay: .07s; }
