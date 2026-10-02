@@ -24,7 +24,8 @@ const UI = {
     points: '{n} pts', again: 'Jogar outra vez', system: 'Jogo',
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
-    install: 'Instalar app', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
+    install: 'Instalar', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
+    installManual: 'Para instalar: usa o ícone de instalar na barra de endereço do browser (ou o menu do browser → Instalar app).',
     timer: '{event} em {s} s',
     expired: 'Versão antiga ({from}), já não pode ser retomada',
     expiredTable: 'Esta partida foi jogada com a versão {from} e o jogo está agora na {to}. Já não pode ser retomada.',
@@ -60,7 +61,8 @@ const UI = {
     points: '{n} pts', again: 'Play again', system: 'Game',
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
-    install: 'Install app', installIos: 'To install: tap Share, then "Add to Home Screen".',
+    install: 'Install', installIos: 'To install: tap Share, then "Add to Home Screen".',
+    installManual: 'To install: use the install icon in the browser address bar (or the browser menu → Install app).',
     timer: '{event} in {s} s',
     expired: 'Old version ({from}), can no longer be resumed',
     expiredTable: 'This game was played with version {from} and the game is now on {to}. It can no longer be resumed.',
@@ -495,18 +497,18 @@ function guideButton(meta) {
 /**
  * Instalar a app (PWA): o manifest é da marca, por isso instala o lobby com os
  * jogos deste deploy. Chrome, Edge e Android dão o evento `beforeinstallprompt`;
- * o iOS não — aí só se explica o caminho manual. Some quando já está instalada
+ * o iOS e outros browsers não — aí só se explica o caminho manual. Some quando já está instalada
  * (modo standalone).
  */
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function installButton() {
-  if (isStandalone() || app.installed || (!app.installEvent && !isIos())) return '';
+  if (isStandalone() || app.installed) return '';
   return `<button class="lob-btn" data-install><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>${u('install')}</button>`;
 }
 async function installApp() {
   const ev = app.installEvent;
-  if (!ev) { toast(u('installIos')); return; }
+  if (!ev) { toast(u(isIos() ? 'installIos' : 'installManual')); return; }
   app.installEvent = null; // o pedido só se pode usar uma vez
   ev.prompt();
   if ((await ev.userChoice).outcome === 'accepted') app.installed = true;
