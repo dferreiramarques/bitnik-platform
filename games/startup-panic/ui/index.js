@@ -173,6 +173,9 @@ function renderStartups(v) {
     const buy = find('SP_BUY', { startup: su.id, qty: 1 });
     const sell = find('SP_SELL_MARKET', { startup: su.id, qty: 1 });
     const gate = find('SP_SELL_STARTUP', { startup: su.id });
+    const delta = v.variacoes?.[su.id] || 0;
+    const rende = team.reduce((a, w) => a + (w.rende || 0), 0);
+    const semEquipa = mine > 0 && !team.length && !su.implodida;
     const acts = su.implodida ? '' : `<div class="sp-acts">
       ${v.fase === 'MERCADO' && me != null && legal('SP_END_MARKET').length ? `
         <button class="sp-act buy" type="button" data-act="buy" data-id="${su.id}" ${buy ? '' : 'disabled'} title="${esc(buy ? '' : ctx.t('ui.cantAct'))}">${esc(ctx.t('ui.buy'))} · ${su.preco}M</button>
@@ -180,11 +183,12 @@ function renderStartups(v) {
         ${v.gate.aberto && gate ? `<button class="sp-act gate" type="button" data-act="sellgate" data-id="${su.id}">${esc(ctx.t('ui.sellGate', { mult: v.gate.mult }))}</button>` : ''}` : ''}
     </div>`;
     return `<div class="sp-su${mine ? ' mine' : ''}${su.implodida ? ' dead' : ''}" style="--sc:var(--sp-setor-${su.setor})">
-      <div class="sp-suhead"><span class="nm">${SETOR_ICON[su.setor]} ${esc(stName(su.id))}</span><span class="price">${su.implodida ? '💀' : `${su.preco}M`}</span></div>
-      <small>${su.implodida ? esc(ctx.t('ui.imploded')) : `${esc(ctx.t('ui.base'))} ${su.base}M + ${esc(ctx.t(`setor.${su.setor}`))} ${v.setores[su.setor] >= 0 ? '+' : ''}${v.setores[su.setor]}M`}</small>
+      <div class="sp-suhead"><span class="nm">${SETOR_ICON[su.setor]} ${esc(stName(su.id))}</span><span class="price">${su.implodida ? '💀' : `${su.preco}M`}${delta ? `<small class="${delta > 0 ? 'up' : 'down'}" title="${esc(ctx.t('ui.priceChange'))}">${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}</small>` : ''}</span></div>
+      <small>${su.implodida ? esc(ctx.t('ui.imploded')) : `${esc(ctx.t('ui.base'))} ${su.base}M + ${esc(ctx.t(`setor.${su.setor}`))} ${v.setores[su.setor] >= 0 ? '+' : ''}${v.setores[su.setor]}M${su.bonusPr ? ` + ${esc(ctx.t('ui.prBonus', { n: su.bonusPr }))}` : ''}`}${su.protegida && !su.implodida ? ` <span title="${esc(ctx.t('ui.protected'))}">🛡️</span>` : ''}</small>
       <div class="sp-holders">${holders.map((h) => `<span><i class="sp-dot" style="background:var(--game-color-${(h.i % 4) + 1})"></i><b>${h.n}</b>${h.i === me ? ` <small>${esc(ctx.t('ui.you'))}</small>` : ''}</span>`).join('') || '<small>—</small>'}</div>
       <small>${major ? esc(ctx.t('ui.majority', { nome: nameOf(major.i) })) : esc(ctx.t('ui.noMajority'))}</small>
-      <div class="sp-wk">${team.map((w) => `<span title="${esc(w.nome)}">${TIPO_ICON[w.tipo]}${w.senior ? '⭐' : ''}</span>`).join('')}</div>
+      ${semEquipa ? `<small class="sp-warn">⚠ ${esc(ctx.t('ui.noTeamWarn'))}</small>` : ''}
+      <div class="sp-wk">${rende ? `<b class="sp-yield">${esc(ctx.t('ui.perRound', { n: rende }))}</b>` : ''}${team.map((w) => `<span title="${esc(w.nome)}">${TIPO_ICON[w.tipo]}${w.senior ? '⭐' : ''}</span>`).join('')}</div>
       ${acts}
     </div>`;
   }).join('');
@@ -196,17 +200,19 @@ function renderTeam(v) {
   if (me == null) return '<div></div>';
   const j = v.jogadores[me];
   const pool = ['engineer', 'lawyer', 'pr', 'cfo'].map((t) => `<span>${TIPO_ICON[t]} ${v.pool.filter((w) => w.tipo === t).length}</span>`).join(' ');
+  const previsto = j.previsao.reduce((a, d) => a + d.ganho, 0);
   const canMaint = v.fase === 'MANUTENCAO' && legal('SP_END_TURN').length > 0;
   const workers = j.trab.map((w) => `<div class="sp-worker">
     <span class="nm">${TIPO_ICON[w.tipo]} ${esc(w.nome)} ${w.senior ? `⭐ <small>${esc(ctx.t('ui.senior1'))}</small>` : ''}</span>
-    <small>${esc(ctx.t(`tipo.${w.tipo}`))} · ${esc(stName(w.startup))}</small>
+    <small>${esc(ctx.t(`tipo.${w.tipo}`))} · ${esc(stName(w.startup))} · <b>${esc(ctx.t('ui.yields', { n: w.rende }))}</b></small>
+    <small>${esc(ctx.t(`tipo.${w.tipo}.desc`))}</small>
     ${canMaint ? `<div class="sp-acts">
       <button class="sp-act" type="button" data-act="move" data-id="${w.id}" ${legal('SP_MOVE_WORKER').some((m) => m.payload.worker === w.id) ? '' : 'disabled'}>${esc(ctx.t('ui.move'))}</button>
       <button class="sp-act" type="button" data-act="fire" data-id="${w.id}">${esc(ctx.t('ui.fire'))}</button>
     </div>` : ''}
   </div>`).join('');
   return `<section class="sp-team">
-    <div class="sp-teamhead"><span class="sp-lbl">${esc(ctx.t('ui.team'))}</span><span>💰 <b>${v.meuCash}M</b></span><span class="sp-lbl">${esc(ctx.t('ui.pool'))}</span><span>${pool}</span>
+    <div class="sp-teamhead"><span class="sp-lbl">${esc(ctx.t('ui.team'))}</span><span>💰 <b>${v.meuCash}M</b></span><span title="${esc(ctx.t('ui.networth'))}">📊 <b>${v.meuPatrimonio}M</b></span><span title="${esc(ctx.t('ui.expectedHint'))}">💵 ${esc(ctx.t('ui.expected'))}: <b>${esc(ctx.t('ui.perRound', { n: previsto }))}</b></span><span class="sp-lbl">${esc(ctx.t('ui.pool'))}</span><span>${pool}</span>
       ${canMaint && legal('SP_HIRE').length ? `<button class="sp-act" type="button" data-act="hire">${esc(ctx.t('ui.hire'))}</button>` : ''}</div>
     ${j.trab.length ? `<div class="sp-workers">${workers}</div>` : `<div class="sp-empty">${esc(ctx.t('ui.noTeam'))}</div>`}
   </section>`;
@@ -256,6 +262,7 @@ function renderModal(v) {
       <h3>${esc(ctx.t('ui.hire'))}</h3>
       <div class="sp-lbl">${esc(ctx.t('ui.pickType'))}</div>
       <div class="sp-opts">${tipos.map((t) => opt('hire-tipo', t, `${TIPO_ICON[t]} ${esc(ctx.t(`tipo.${t}`))}`, h.tipo === t)).join('')}</div>
+      ${h.tipo ? `<p class="sp-desc">${esc(ctx.t(`tipo.${h.tipo}.desc`))}</p>` : ''}
       ${h.tipo ? `<div class="sp-lbl">${esc(ctx.t('ui.pickLevel'))}</div><div class="sp-opts">${niveis.map((s) => opt('hire-nivel', s ? '1' : '0', esc(ctx.t(s ? 'ui.senior' : 'ui.intern')), h.senior === s)).join('')}</div>` : ''}
       ${h.senior != null ? `<div class="sp-lbl">${esc(ctx.t('ui.pickStartup'))}</div><div class="sp-opts">${sus.map((s) => opt('hire-su', s, esc(stName(s)), h.startup === s)).join('')}</div>` : ''}
       <div class="sp-modal-acts"><button class="sp-btn" type="button" data-act="close">${esc(ctx.t('ui.cancel'))}</button><button class="sp-btn primary" type="button" data-act="hire-ok" ${ok ? '' : 'disabled'}>${esc(ctx.t('ui.confirm'))}</button></div>

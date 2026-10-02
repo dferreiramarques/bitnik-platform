@@ -17,11 +17,12 @@ export default {
       'No Gate podes ainda propor uma troca de ações a outro jogador, que tem de aceitar.',
     ] },
     { title: 'Equipa e dividendos', body: [
-      'Contrata trabalhadores (até 4, no máximo 1 de cada tipo por startup). O Estagiário é grátis; o Sénior custa 2M e 1M por ronda, mas paga o dobro.',
-      'No fim da ronda, cada ação tua numa startup com trabalhadores teus paga a soma dos dividendos da equipa: Engenheiro 2M, os outros 1M. Sem trabalhadores, não há dividendos.',
+      'Contrata trabalhadores (até 4, no máximo 1 de cada tipo por startup). O Estagiário é grátis; o Sénior custa 2M e 1M por ronda, mas rende o dobro.',
+      'Engenheiro: 2M por ação e por ronda. Advogado: 1M por ação e protege a startup de implodir. PR: 1M por ação e sobe 1M ao preço da startup. CFO: renda fixa de 2M por ronda, mesmo sem ações.',
+      'No fim da ronda recebes o que a tua equipa rende; o ecrã mostra quanto cada trabalhador rende e o total previsto. Ações numa startup sem equipa não pagam nada.',
     ] },
     { title: 'Implosões', body: [
-      'Alguns CEOs fazem uma startup implodir: deixa de valer, de pagar dividendos e de se poder vender.',
+      'Alguns CEOs fazem implodir a startup mais cara que não tenha um Advogado (de qualquer jogador): deixa de valer, de pagar dividendos e de se poder vender. Com preços iguais, sorteia-se.',
     ] },
   ],
   en: [
@@ -40,11 +41,12 @@ export default {
       'At the Gate you can also offer another player a share swap, which they must accept.',
     ] },
     { title: 'Team and dividends', body: [
-      'Hire workers (up to 4, at most 1 of each type per startup). The Intern is free; the Senior costs 2M plus 1M per round, but pays double.',
-      'At the end of the round, each of your shares in a startup where you have workers pays the sum of the team\'s dividends: Engineer 2M, the others 1M. No workers, no dividends.',
+      'Hire workers (up to 4, at most 1 of each type per startup). The Intern is free; the Senior costs 2M plus 1M per round, but earns double.',
+      'Engineer: 2M per share per round. Lawyer: 1M per share and protects the startup from imploding. PR: 1M per share and adds 1M to the startup price. CFO: fixed income of 2M per round, even with no shares.',
+      'At the end of the round you collect what your team earns; the screen shows what each worker earns and the expected total. Shares in a startup with no team pay nothing.',
     ] },
     { title: 'Implosions', body: [
-      'Some CEOs make a startup implode: it stops being worth anything, paying dividends and being sold.',
+      'Some CEOs make the most expensive startup without a Lawyer (anyone\'s) implode: it stops being worth anything, paying dividends and being sold. On equal prices, it is drawn.',
     ] },
   ],
 };

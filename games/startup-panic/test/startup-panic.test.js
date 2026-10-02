@@ -129,7 +129,7 @@ test('Cada ronda revela um CEO e o seu setor de afinidade recebe sempre +1M', ()
 const setor = (s, x) => s.setores[x];
 const implodidas = (s) => s.startups.filter((x) => x.implodida).length;
 
-test('CEO Elon V.: IA sobe ⌊dado/2⌋M; com 5 ou 6 implode uma startup', () => {
+test('CEO Elon V.: IA sobe ⌊dado/2⌋M; com 5 ou 6 implode a startup mais cara', () => {
   let s = limpo(); CEOS.ev.efeito(s, falso(), 4);
   assert.equal(setor(s, 'ia'), 2); assert.equal(implodidas(s), 0);
   s = limpo(); CEOS.ev.efeito(s, falso(), 5);
@@ -205,6 +205,80 @@ test('CEO Sam B.: dado ≥4 implode uma startup; abaixo, Fintech +4M', () => {
 test('CEO Whitney W.: o multiplicador do Gate sobe 1 nível', () => {
   const s = limpo(); CEOS.ww.efeito(s, falso());
   assert.equal(s.bonusGate, 1);
+});
+
+test('Implosão: atinge a startup viva mais cara; com empate, sorteia entre as mais caras', () => {
+  const s = limpo();
+  CEOS.sb.efeito(s, falso(), 4); // CashBurn (4M) é a única mais cara
+  assert.deepEqual(s.startups.filter((x) => x.implodida).map((x) => x.id), ['cashburn']);
+  CEOS.sb.efeito(s, { ...falso(), rng: { pick: (a) => a.at(-1) } }, 4); // agora CRISPRash 4M
+  assert.deepEqual(s.startups.filter((x) => x.implodida).map((x) => x.id), ['cashburn', 'crispash']);
+  const t = limpo(); t.startups.find((x) => x.id === 'cashburn').preco = 9;
+  CEOS.sb.efeito(t, falso(), 4);
+  assert.ok(t.startups.find((x) => x.id === 'cashburn').implodida);
+});
+
+test('Advogado: a startup onde há um Advogado (de qualquer jogador) não implode; a seguinte mais cara sim', () => {
+  const s = limpo();
+  s.jogadores[1].trab = [{ id: 'l', tipo: 'lawyer', nome: 'x', startup: 'cashburn', senior: false }];
+  CEOS.sb.efeito(s, falso(), 4);
+  assert.equal(s.startups.find((x) => x.id === 'cashburn').implodida, false);
+  assert.equal(s.startups.find((x) => x.id === 'crispash').implodida, true); // a seguinte mais cara (4M)
+  const t = limpo();
+  for (const x of t.startups) t.jogadores[0].trab.push({ id: 'l' + x.id, tipo: 'lawyer', nome: 'x', startup: x.id, senior: false });
+  CEOS.sb.efeito(t, falso(), 4);
+  assert.equal(t.startups.filter((x) => x.implodida).length, 0);
+});
+
+test('PR: cada PR numa startup sobe 1M ao preço, e desfaz-se ao despedir ou mover', () => {
+  let m = manutencao(novo(2, 'pr'));
+  const j = vez(m);
+  const antes = su(m, 'deepanic').preco;
+  m = jogar(m, j, 'SP_HIRE', { worker: m.state.pool.find((w) => w.tipo === 'pr').id, startup: 'deepanic', senior: false });
+  assert.equal(su(m, 'deepanic').preco, antes + 1);
+  const w = jog(m, j).trab[0];
+  m = jogar(m, j, 'SP_MOVE_WORKER', { worker: w.id, startup: 'halluci' });
+  assert.equal(su(m, 'deepanic').preco, antes);
+  assert.equal(su(m, 'halluci').preco, 3);
+  m = jogar(m, j, 'SP_FIRE', { worker: w.id });
+  assert.equal(su(m, 'halluci').preco, 2);
+});
+
+test('CFO: renda fixa de 2M por ronda (4M Sénior), sem precisar de ações', () => {
+  let m = proximaWhitney(novo(2, 'cfo'));
+  const j = m.state.ordem[0];
+  m = tweak(m, (s) => {
+    s.jogadores[j].trab = [{ id: 'c1', tipo: 'cfo', nome: 'x', startup: 'deepanic', senior: false }, { id: 'c2', tipo: 'cfo', nome: 'y', startup: 'halluci', senior: true }];
+    s.pool = s.pool.filter((p) => !['c1', 'c2'].includes(p.id));
+  });
+  m = fecharRonda(m);
+  assert.equal(jog(m, j).cash, 10 - 1 + 2 + 4); // salário do Sénior + as duas rendas
+  assert.deepEqual(m.state.dividendos.map((d) => [d.startup, d.ganho]), [['deepanic', 2], ['halluci', 4]]);
+});
+
+test('Previsão: o view mostra o que cada trabalhador rende e os dividendos previstos', () => {
+  const m = tweak(novo(2, 'prev'), (s) => {
+    su({ state: s }, 'deepanic').acoes[0] = 3;
+    s.jogadores[0].trab = [
+      { id: 'a', tipo: 'engineer', nome: 'x', startup: 'deepanic', senior: true },
+      { id: 'b', tipo: 'lawyer', nome: 'y', startup: 'deepanic', senior: false },
+      { id: 'c', tipo: 'cfo', nome: 'z', startup: 'halluci', senior: false },
+    ];
+    s.jogadores[0].cash = 4;
+  });
+  const v = viewFor(game, m, 0).view;
+  assert.deepEqual(v.jogadores[0].trab.map((w) => w.rende), [12, 3, 2]);
+  assert.equal(v.jogadores[0].previsao.reduce((a, d) => a + d.ganho, 0), 17);
+  assert.equal(v.meuPatrimonio, 4 + 3 * su(m, 'deepanic').preco);
+  assert.equal(viewFor(game, m, 1).view.meuPatrimonio, 10);
+  assert.equal(v.startups.find((x) => x.id === 'deepanic').protegida, true);
+});
+
+test('Variação: o estado guarda quanto o CEO da ronda mexeu no preço de cada startup', () => {
+  const m = fecharRonda(proximaWhitney(novo(2, 'var'))); // Whitney: afinidade Segurança +1M
+  assert.equal(m.state.ceo.id, 'ww');
+  assert.deepEqual(Object.entries(m.state.variacoes).filter(([, d]) => d !== 0).sort(), [['hackshield', 1], ['zerotrust', 1]]);
+  assert.equal(viewFor(game, m, 0).view.variacoes.hackshield, 1);
 });
 
 test('Uma implosão deixa a startup sem valor: sai da pontuação e das compras', () => {

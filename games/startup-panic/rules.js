@@ -23,8 +23,14 @@ export const STARTUPS = [
 ];
 
 export const TIPOS = ['engineer', 'lawyer', 'pr', 'cfo'];
-/** Dividendo base por ação e por ronda; o Sénior paga o dobro. */
-export const DIVIDENDO = { engineer: 2, lawyer: 1, pr: 1, cfo: 1 };
+/**
+ * Dividendo base por ação e por ronda; o Sénior paga o dobro. O CFO não paga por ação: tem renda fixa.
+ * Efeitos próprios: o Advogado protege a startup de implodir; o PR sobe o preço da startup;
+ * o CFO rende FIXO_CFO por ronda mesmo sem ações.
+ */
+export const DIVIDENDO = { engineer: 2, lawyer: 1, pr: 1 };
+export const FIXO_CFO = 2;
+export const BONUS_PR = 1;
 export const NOMES = {
   engineer: ['Ada', 'Linus', 'Grace', 'Tim', 'Bjarne', 'Guido', 'Dennis', 'Ken'],
   lawyer: ['Harvey', 'Kim', 'Elle', 'Saul', 'Alan', 'Ruth', 'Thurgood', 'Amal'],
@@ -43,20 +49,36 @@ const fmt = (n) => (n >= 0 ? '+' : '') + n + 'M';
 
 // ─── Efeitos de mercado ─────────────────────────────────────
 
+/** Há um Advogado (de qualquer jogador) nesta startup: não implode. */
+export const protegida = (s, id) => s.jogadores.some((j) => j.trab.some((w) => w.startup === id && w.tipo === 'lawyer'));
+/** Bónus de preço dos PR (de qualquer jogador) nesta startup. */
+export const bonusPr = (s, id) => BONUS_PR * s.jogadores.reduce((a, j) => a + j.trab.filter((w) => w.startup === id && w.tipo === 'pr').length, 0);
+
+/** Preço = base + valor do setor + PR, no mínimo 1M. */
+export function recalcular(s) {
+  for (const su of s.startups) if (!su.implodida) su.preco = Math.max(1, su.base + s.setores[su.setor] + bonusPr(s, su.id));
+}
+
 function mexer(s, ctx, setor, delta) {
   if (!delta) return;
   s.setores[setor] += delta;
-  for (const su of s.startups) {
-    if (su.setor === setor && !su.implodida) su.preco = Math.max(1, su.base + s.setores[setor]);
-  }
+  recalcular(s);
   ctx.log('log.SETOR', { setor: `@setor.${setor}`, d: fmt(delta) });
 }
 
+/** Implode a startup viva mais cara que não tenha Advogado (empate: sorteio). */
 function implodir(s, ctx) {
   if (s.seguro) return;
   const vivas = s.startups.filter((x) => !x.implodida);
-  if (!vivas.length) return;
-  const alvo = ctx.rng.pick(vivas);
+  const livres = vivas.filter((x) => !protegida(s, x.id));
+  if (!livres.length) {
+    if (vivas.length) ctx.log('log.PROTEGIDAS');
+    return;
+  }
+  const max = Math.max(...livres.map((x) => x.preco));
+  const topo = livres.filter((x) => x.preco === max);
+  const alvo = topo.length > 1 ? ctx.rng.pick(topo) : topo[0];
+  for (const x of vivas) if (protegida(s, x.id) && x.preco >= alvo.preco) ctx.log('log.PROTEGIDA', { startup: `@startup.${x.id}` });
   alvo.implodida = true;
   ctx.log('log.IMPLODE', { startup: `@startup.${alvo.id}` }, { announce: 'warn' });
 }
@@ -132,6 +154,7 @@ export function setup(ctx) {
     compradas: [], // startups em que o jogador da vez comprou neste turno
     proposta: null, // troca à espera de resposta
     dividendos: [],
+    variacoes: {}, // variação de preço de cada startup causada pelo CEO da ronda
     acabou: false,
   };
   ctx.log('log.RONDA', { n: 1 });
@@ -140,6 +163,7 @@ export function setup(ctx) {
 }
 
 function comecarRonda(s, ctx) {
+  const antes = Object.fromEntries(s.startups.map((x) => [x.id, x.preco]));
   s.seguro = false;
   s.sobretaxa = 0;
   if (s.penalizacao) {
@@ -155,6 +179,7 @@ function comecarRonda(s, ctx) {
   ctx.log('log.CEO', { ceo: `@ceo.${id}`, setor: `@setor.${ceo.setor}`, dado: dado ?? '' });
   if (dado) ctx.log('log.DADO', { n: dado });
   ceo.efeito(s, ctx, dado);
+  s.variacoes = Object.fromEntries(s.startups.map((x) => [x.id, x.implodida ? 0 : x.preco - antes[x.id]]));
 
   const base = GATE_BASE[s.idx];
   if (base) {
@@ -166,20 +191,33 @@ function comecarRonda(s, ctx) {
   }
 }
 
+/** Quanto rende um trabalhador por ronda ao seu dono: por ação (Engenheiro, Advogado, PR) ou fixo (CFO). */
+export function rendimento(s, seat, w) {
+  const su = startup(s, w.startup);
+  if (!su || su.implodida) return 0;
+  const m = w.senior ? 2 : 1;
+  return w.tipo === 'cfo' ? FIXO_CFO * m : su.acoes[seat] * DIVIDENDO[w.tipo] * m;
+}
+
+/** Dividendos de um jogador por startup viva onde tem trabalhadores (os mesmos que se pagam no fim da ronda). */
+export function dividendosDe(s, seat) {
+  const out = [];
+  for (const su of s.startups) {
+    if (su.implodida) continue;
+    const meus = s.jogadores[seat].trab.filter((w) => w.startup === su.id);
+    const ganho = meus.reduce((a, w) => a + rendimento(s, seat, w), 0);
+    if (ganho > 0) out.push({ seat, startup: su.id, acoes: su.acoes[seat], ganho });
+  }
+  return out;
+}
+
 function fimDeRonda(s, ctx) {
   s.dividendos = [];
   s.jogadores.forEach((j, seat) => {
-    let soma = 0;
-    for (const su of s.startups) {
-      if (su.implodida || !su.acoes[seat]) continue;
-      const meus = j.trab.filter((w) => w.startup === su.id);
-      if (!meus.length) continue; // sem trabalhadores, não há dividendos
-      const div = meus.reduce((a, w) => a + DIVIDENDO[w.tipo] * (w.senior ? 2 : 1), 0);
-      const ganho = su.acoes[seat] * div;
-      j.cash += ganho;
-      soma += ganho;
-      s.dividendos.push({ seat, startup: su.id, acoes: su.acoes[seat], div, ganho });
-    }
+    const lista = dividendosDe(s, seat);
+    const soma = lista.reduce((a, d) => a + d.ganho, 0);
+    j.cash += soma;
+    s.dividendos.push(...lista);
     if (soma > 0) ctx.log('log.DIVIDENDOS', { lugar: seat + 1, n: soma });
   });
   s.ronda += 1;
@@ -201,6 +239,7 @@ function liquidar(s, ctx, seat) {
       ctx.log('log.ABANDONOU', { nome: w.nome });
     }
   }
+  recalcular(s);
   if (pago > 0) ctx.log('log.SALARIOS', { n: pago });
   return pago;
 }
@@ -328,6 +367,7 @@ export const moves = {
     j.cash -= custo;
     s.pool.splice(s.pool.indexOf(w), 1);
     j.trab.push({ id: w.id, tipo: w.tipo, nome: w.nome, startup: su.id, senior: !!senior });
+    recalcular(s);
     ctx.log(senior ? 'log.HIRE_SENIOR' : 'log.HIRE', { nome: w.nome, tipo: `@tipo.${w.tipo}`, startup: `@startup.${su.id}` });
   },
 
@@ -339,6 +379,7 @@ export const moves = {
     if (i < 0) return ctx.invalid('err.TRABALHADOR');
     const [w] = j.trab.splice(i, 1);
     s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
+    recalcular(s);
     ctx.log('log.FIRE', { nome: w.nome });
   },
 
@@ -356,6 +397,7 @@ export const moves = {
     if (j.cash < custo) return ctx.invalid('err.CASH', { preciso: custo, tens: j.cash });
     j.cash -= custo;
     w.startup = su.id;
+    recalcular(s);
     ctx.log('log.MOVE', { nome: w.nome, startup: `@startup.${su.id}`, custo });
   },
 
@@ -464,7 +506,8 @@ export function view(s, seat) {
     bonusGate: s.bonusGate,
     penalizacao: s.penalizacao,
     setores: s.setores,
-    startups: s.startups,
+    startups: s.startups.map((su) => ({ ...su, protegida: protegida(s, su.id), bonusPr: bonusPr(s, su.id) })),
+    variacoes: s.variacoes,
     pool: s.pool,
     pagos: s.pagos,
     compradas: s.compradas,
@@ -474,10 +517,12 @@ export function view(s, seat) {
     maxTrabalhadores: MAX_TRABALHADORES,
     jogadores: s.jogadores.map((j, i) => ({
       cash: i === seat ? j.cash : null,
-      trab: j.trab,
+      trab: j.trab.map((w) => ({ ...w, rende: rendimento(s, i, w) })),
       acoes: acoesDe(s, i),
+      previsao: dividendosDe(s, i),
     })),
     meuCash: meu ? meu.cash : null,
+    meuPatrimonio: meu ? pontuar(s, seat) : null,
     acabou: s.acabou,
     players: s.jogadores.map((j, i) => ({
       score: s.acabou ? pontuar(s, i) : undefined,

@@ -68,3 +68,14 @@ Atualizado a 2026-09-29.
 - O "lugar" é o do assento, não a ordem de jogo (que muda a cada ronda). Tudo dentro do ruído da simulação (~±1,5 pontos), exceto o desvio do 2 jogadores, que sai invertido.
 - A referência vem de um simulador que não está no repositório. A diferença provável é a correção da 0.2.0: comprar e vender no Gate no mesmo turno dava lucro sem limite e o `spBot` original nunca a exerceu.
 - O bot só compra, vende no Gate e contrata Engenheiros Estagiários: não contrata Séniores nem propõe trocas.
+
+## Startup Panic (2.0.0)
+
+| Jogadores | Vitórias por lugar (1000 partidas, bot do pacote) |
+|---|---|
+| 2 | 49,3 / 50,7 |
+| 3 | 32,6 / 33,0 / 34,5 |
+| 4 | 24,4 / 26,7 / 24,7 / 24,2 |
+
+- Mais equilibrado do que a 1.0.0 (sem vantagem de lugar). O bot agora também contrata Advogado e CFO. Partidas mais longas: ~163, 186 e 211 jogadas por partida (2, 3 e 4 jogadores).
+- **O que a simulação não mede:** se o jogo é mais divertido. Observado a jogar: os bots esgotam a pool partilhada de trabalhadores já na ronda 1 (4+3+2 de 12), o que é um ponto a rever no assessment (pool maior, ou limite por ronda).

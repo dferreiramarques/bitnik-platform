@@ -458,3 +458,27 @@ O Startup Panic muda a ordem de jogo a cada ronda (joga primeiro quem tem açõe
 - Os bots nunca propõem trocas e recusam as que lhes propõem; a simulação não exercita a troca (só os testes).
 - As percentagens de vitória por lugar reproduzem-se de forma aproximada (ver `docs/EQUILIBRIO.md`), não exata, por causa da correção do Gate.
 
+---
+
+## ADR-018: Startup Panic 2.0.0: trabalhadores com papel e implosão com critério
+
+**Estado:** aceite, a rever no assessment (2026-10-02)
+
+### Contexto
+
+Depois de jogar a 1.0.0, o David apontou: o jogo é aborrecido, as ações parecem não ter impacto, não é claro o que cada trabalhador faz, e a startup que implode é escolhida sem critério. Verificou-se que Advogado, PR e CFO eram idênticos (1M por ação): só o Engenheiro diferia, por isso nada havia para explicar.
+
+### Decisão
+
+- Cada tipo ganha um papel: Advogado protege a startup de implodir, PR sobe 1M ao preço, CFO rende 2M fixos por ronda (sem ações). O Engenheiro mantém 2M por ação. O Sénior dobra tudo.
+- A implosão atinge a startup viva mais cara sem Advogado (empate: sorteio via `ctx.rng`), em vez de uma ao acaso. Quem lidera paga o risco; o Advogado é a contra-jogada.
+- O preço passa a `base + setor + PR` e recalcula-se sempre que a equipa muda (`recalcular`).
+- O `view` passa a trazer o que cada trabalhador rende, os dividendos previstos, o valor total e a variação de preço do CEO, para a UI mostrar o impacto das jogadas.
+- As constantes (`FIXO_CFO`, `BONUS_PR`, `DIVIDENDO`) estão no topo de `rules.js`, para afinar sem mexer na lógica.
+
+### Consequências
+
+- ✔ Escolhas de equipa com sentido (proteger, valorizar, renda), e uma implosão previsível e disputável.
+- Os valores (2M, +1M) foram escolhidos sem playtest: assessment pendente. A simulação mede só o equilíbrio por lugar, não a diversão.
+- Muda regras: pacote em 2.0.0 e mesas guardadas da 1.x expiradas.
+
