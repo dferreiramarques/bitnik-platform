@@ -413,6 +413,13 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
   display: grid; justify-items: center; gap: 4px; text-align: center;
   color: var(--game-on-table, #fffaf1); opacity: 0; transform: translateY(-50%);
 }
+/* Caixa de vidro (como os painéis da mesa) para a mensagem se ler sobre qualquer fundo. */
+.mesa-msg-box {
+  display: grid; justify-items: center; gap: 4px; max-width: min(90%, 640px); padding: 14px 28px; border-radius: 14px;
+  background: var(--game-glass, rgba(20,32,26,.35)); border: 1px solid var(--game-glass-line, rgba(255,250,241,.35));
+  -webkit-backdrop-filter: blur(var(--game-glass-blur, 8px)); backdrop-filter: blur(var(--game-glass-blur, 8px));
+  box-shadow: 0 8px 32px rgb(0 0 0 / .3);
+}
 .mesa-msg b { font-family: var(--ui-display); font-weight: 800; font-size: clamp(34px, 6vw, 56px); line-height: 1; text-shadow: 0 4px 24px rgb(0 0 0 / .45); }
 .mesa-msg small { font-weight: 600; font-size: 13px; text-shadow: 0 1px 3px rgb(0 0 0 / .7), 0 0 12px rgb(0 0 0 / .4); }
 .mesa-msg.warn b { color: var(--game-on-table-warn, #ffb38f); }
@@ -441,6 +448,7 @@ body.is-table #view { max-width: none; padding: 0; margin: 0; }
      sobretudo frases longas (ex.: avisos de descarte), que de resto só
      tinham o título "b", sem "small". */
   .mesa-msg { padding: 0 12px; }
+  .mesa-msg-box { padding: 10px 18px; border-radius: 12px; }
   .mesa-msg b { font-size: clamp(20px, 7vw, 30px); }
 }
 
