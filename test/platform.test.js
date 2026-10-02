@@ -712,6 +712,15 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
   const manifest = await (await fetch(`${base}/manifest.webmanifest`)).json();
   assert.equal(manifest.scope, '/');
   assert.equal(manifest.display, 'standalone');
+  // Instalável: os navegadores pedem ícones PNG de 192 e 512, servidos e guardados offline.
+  for (const size of [192, 512]) {
+    assert.ok(manifest.icons.some((i) => i.sizes === `${size}x${size}` && i.type === 'image/png' && i.src === `/icon-${size}.png`), `ícone ${size}`);
+    const png = await fetch(`${base}/icon-${size}.png`);
+    assert.equal(png.status, 200);
+    assert.equal(png.headers.get('content-type'), 'image/png');
+    assert.deepEqual([...new Uint8Array(await png.arrayBuffer()).slice(0, 4)], [137, 80, 78, 71], 'é um PNG');
+    assert.ok(precache.includes(`/icon-${size}.png`), `o service worker guarda o ícone ${size}`);
+  }
   await s.stop();
 });
 
