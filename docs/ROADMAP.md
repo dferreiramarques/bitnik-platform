@@ -17,6 +17,7 @@ Atualizado a 2026-10-02.
 | 2 | ◐ | Migração dos jogos antigos (4 migrados, todos com UI própria; falta a secção "Clientes" na consola) |
 | 3 | ☐ | Tabuleiros — proposta em `docs/TABULEIROS.md`, para começar depois da Fase 1 (o editor depende dos cartões do Forge) |
 | 4 | ☐ | Plataforma multi-marca — ideia por desenhar, para comercializar o output a outras editoras |
+| 5 | ☐ | Companion app para a versão física dos jogos — ideia por desenhar (primeiro caso: Startup Panic) |
 
 ## Fase 0 — Base ✔
 
@@ -128,3 +129,14 @@ Isto é bem maior do que o `consoleAtRoot` da Fase 0c: hoje as mesas, o `storage
 - ☐ Isolar `storage` por marca (hoje é um `fileStorage`/`memoryStorage` só).
 - ☐ Decidir como uma marca nova ganha jogos: todos os aprovados por omissão, ou por marca?
 - ☐ Faturação/limites, se isto vier a ser vendido como serviço.
+
+## Fase 5 — Companion app para jogos de tabuleiro físicos ☐
+
+Ideia (2026-10-02, vinda do playtest do Startup Panic), para uma versão futura: quem joga o jogo físico usa uma app no telemóvel para a contabilidade que, sem ajuda, estraga o jogo. A plataforma já tem as regras puras e o motor, por isso a app pode reutilizar o pacote do jogo (`rules.js`) em vez de reescrever a lógica.
+
+No Startup Panic seria preciso, por exemplo: preços das startups a recalcular com o CEO, o PR e as implosões; o cash de cada jogador (escondido dos outros); níveis, salários e dividendos por equipa; a ordem de jogo da ronda; o dado dos salários; e o multiplicador dos Gates. Por desenhar, ainda sem ordem:
+
+- ☐ Decidir o modelo: uma app por mesa (uma pessoa regista tudo) ou uma por jogador (cada um vê só o seu cash).
+- ☐ Decidir o que o motor precisa de oferecer sem servidor de mesa: aplicar jogadas à mão, desfazer, e partilhar o estado entre telemóveis.
+- ☐ Saber que jogos fazem sentido (os que têm contas e informação escondida) e o custo comercial para um publisher.
+
