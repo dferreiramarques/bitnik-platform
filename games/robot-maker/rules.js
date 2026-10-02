@@ -74,6 +74,7 @@ export function setup(ctx) {
     rodada: 1,
     ordem: Array.from({ length: n }, (_, i) => i),
     vez: 0,
+    fase: 'trabalho',
     jogadores: Array.from({ length: n }, () => ({
       l1: 0, l2: 0, workers: 1, livres: 1, deploy: 0,
       robot: { head: 0, chest: 0, arm: 0, port: 0, legs: 0 },
@@ -82,7 +83,7 @@ export function setup(ctx) {
     })),
     tabuleiro: { forja: null, deploy: null },
     mercado: { stock, fila, baralho },
-    adquiridos: { 1: false, 2: false, 3: false },
+    adquiridos: { 1: [], 2: [], 3: [] },
     esgotados: [],
     fim: { gatilho: null, rondaExtra: false },
     acabou: false,
@@ -135,7 +136,7 @@ export function result(s) {
 
 function instalar(s, seat, ctx, p) {
   const j = s.jogadores[seat];
-  if (p.tipo === 'robot') { j.robot[p.slot] = p.nivel; s.adquiridos[p.nivel] = true; } else j.cpu = { familia: p.familia, nivel: p.nivel };
+  if (p.tipo === 'robot') { j.robot[p.slot] = p.nivel; s.adquiridos[p.nivel].push(p.slot); } else j.cpu = { familia: p.familia, nivel: p.nivel };
   s.mercado.stock[p.id]--;
   // Peça esgotada: sai da fila e entra a do topo do baralho (à direita).
   if (p.tipo === 'robot' && s.mercado.stock[p.id] <= 0) {
@@ -151,7 +152,8 @@ function instalar(s, seat, ctx, p) {
       s.esgotados.push(c[0]);
       j.circuito = c[0];
       j.workers += 1;
-      j.livres += 1;
+      // Pela Forja (fase dos workers) o worker novo joga já; por compra, só na ronda seguinte.
+      if (s.fase === 'trabalho') j.livres += 1;
       ctx.log(`log.CIRCUITO.${c[0]}`, {}, { announce: true });
     }
   }
@@ -165,6 +167,7 @@ function instalar(s, seat, ctx, p) {
 function avancar(s, ctx) {
   s.vez += 1;
   while (s.vez < s.ordem.length && s.fim.rondaExtra && s.ordem[s.vez] === s.fim.gatilho) s.vez += 1;
+  s.fase = 'trabalho';
   if (s.vez >= s.ordem.length) fecharRonda(s, ctx);
 }
 
@@ -178,16 +181,16 @@ function fecharRonda(s, ctx) {
     s.fim.rondaExtra = true;
     ctx.log('log.RONDA_EXTRA', {}, { announce: 'warn' });
   }
-  // Rotação do mercado: sem aquisições num nível, a peça mais à esquerda vai para o fundo do baralho.
+  // Rotação do mercado: se ninguém adquiriu a peça mais à esquerda de um nível, vai para o fundo do baralho.
   for (const nivel of [1, 2, 3]) {
     const f = s.mercado.fila[nivel];
     const b = s.mercado.baralho[nivel];
-    if (!s.adquiridos[nivel] && f.length && b.length) {
+    if (f.length && b.length && !s.adquiridos[nivel].includes(f[0])) {
       b.push(f.shift());
       f.push(b.shift());
       ctx.log('log.ROTACAO', { nivel });
     }
-    s.adquiridos[nivel] = false;
+    s.adquiridos[nivel] = [];
   }
   for (const j of s.jogadores) j.livres = j.workers;
   s.tabuleiro = { forja: null, deploy: null };
@@ -195,24 +198,34 @@ function fecharRonda(s, ctx) {
   s.rodada += 1;
   s.vez = 0;
   while (s.vez < s.ordem.length && s.fim.rondaExtra && s.ordem[s.vez] === s.fim.gatilho) s.vez += 1;
+  s.fase = 'trabalho';
   ctx.log('log.RONDA', { n: s.rodada });
 }
 
-/** Gasta um worker; quando o jogador fica sem livres, o turno passa. */
-function gastar(s, seat, ctx) {
+/** Gasta um worker. */
+function gastar(s, seat) {
   s.jogadores[seat].livres -= 1;
-  return seat;
 }
+/** Há alguma peça que o jogador possa pagar agora? */
+const podeComprar = (s, seat) => {
+  const j = s.jogadores[seat];
+  return compraveis(s, seat).some((id) => { const [c1, c2] = custoDe(parsePeca(id)); return j.l1 >= c1 && j.l2 >= c2; });
+};
+/** Depois de um worker: sem livres passa-se ao mercado; se não há nada para comprar, o turno acaba. */
 function concluir(s, seat, ctx) {
-  if (s.jogadores[seat].livres <= 0) avancar(s, ctx);
+  if (s.jogadores[seat].livres > 0) return;
+  s.fase = 'mercado';
+  if (!podeComprar(s, seat)) avancar(s, ctx);
 }
 
 const semWorkers = (s, seat, ctx) => (s.jogadores[seat].livres <= 0 ? ctx.invalid('err.SEM_WORKERS') : null);
+const soTrabalho = (s, ctx) => (s.fase !== 'trabalho' ? ctx.invalid('err.FASE') : null);
 
 // ─── Jogadas ────────────────────────────────────────────────
 
 export const moves = {
   COMPILADOR(s, _p, ctx) {
+    const fase = soTrabalho(s, ctx); if (fase) return fase;
     const bad = semWorkers(s, ctx.seat, ctx); if (bad) return bad;
     gastar(s, ctx.seat);
     s.jogadores[ctx.seat].l1 += 3;
@@ -221,6 +234,7 @@ export const moves = {
   },
 
   OPTIMIZADOR(s, _p, ctx) {
+    const fase = soTrabalho(s, ctx); if (fase) return fase;
     const bad = semWorkers(s, ctx.seat, ctx); if (bad) return bad;
     gastar(s, ctx.seat);
     const j = s.jogadores[ctx.seat];
@@ -229,6 +243,7 @@ export const moves = {
   },
 
   FORJA(s, p, ctx) {
+    const fase = soTrabalho(s, ctx); if (fase) return fase;
     const bad = semWorkers(s, ctx.seat, ctx); if (bad) return bad;
     if (s.tabuleiro.forja !== null) return ctx.invalid('err.SLOT_OCUPADO');
     const j = s.jogadores[ctx.seat];
@@ -249,6 +264,7 @@ export const moves = {
   },
 
   DEPLOY(s, _p, ctx) {
+    const fase = soTrabalho(s, ctx); if (fase) return fase;
     const bad = semWorkers(s, ctx.seat, ctx); if (bad) return bad;
     if (s.tabuleiro.deploy !== null) return ctx.invalid('err.SLOT_OCUPADO');
     gastar(s, ctx.seat);
@@ -259,7 +275,7 @@ export const moves = {
   },
 
   COMPRAR(s, p, ctx) {
-    const bad = semWorkers(s, ctx.seat, ctx); if (bad) return bad;
+    if (s.fase !== 'mercado') return ctx.invalid('err.FASE');
     const peca = parsePeca(p?.peca);
     if (!peca) return ctx.invalid('err.PECA_INVALIDA');
     const j = s.jogadores[ctx.seat];
@@ -269,11 +285,17 @@ export const moves = {
     if (peca.nivel !== atual + 1) return ctx.invalid('err.NIVEL');
     const [c1, c2] = custoDe(peca);
     if (j.l1 < c1 || j.l2 < c2) return ctx.invalid('err.RECURSOS');
-    gastar(s, ctx.seat);
     j.l1 -= c1;
     j.l2 -= c2;
     ctx.log(`log.COMPRAR.${peca.id}`);
     instalar(s, ctx.seat, ctx, peca);
+    avancar(s, ctx);
+  },
+
+  IR_AO_MERCADO(s, _p, ctx) {
+    const fase = soTrabalho(s, ctx); if (fase) return fase;
+    s.jogadores[ctx.seat].livres = 0;
+    ctx.log('log.IR_AO_MERCADO');
     concluir(s, ctx.seat, ctx);
   },
 
@@ -300,14 +322,20 @@ export function compraveis(s, seat) {
 }
 
 export function enumerate(s, seat) {
-  if (s.acabou || s.ordem[s.vez] !== seat || s.jogadores[seat].livres <= 0) return [];
+  if (s.acabou || s.ordem[s.vez] !== seat) return [];
   const j = s.jogadores[seat];
-  const out = [{ type: 'COMPILADOR', payload: {} }, { type: 'OPTIMIZADOR', payload: {} }];
-  if (s.tabuleiro.forja === null) for (const x of slotsForja(s, j)) out.push({ type: 'FORJA', payload: { peca: x } });
-  if (s.tabuleiro.deploy === null) out.push({ type: 'DEPLOY', payload: {} });
-  for (const id of compraveis(s, seat)) {
-    const [c1, c2] = custoDe(parsePeca(id));
-    if (j.l1 >= c1 && j.l2 >= c2) out.push({ type: 'COMPRAR', payload: { peca: id } });
+  const out = [];
+  if (s.fase === 'trabalho') {
+    if (j.livres <= 0) return [];
+    out.push({ type: 'COMPILADOR', payload: {} }, { type: 'OPTIMIZADOR', payload: {} });
+    if (s.tabuleiro.forja === null) for (const x of slotsForja(s, j)) out.push({ type: 'FORJA', payload: { peca: x } });
+    if (s.tabuleiro.deploy === null) out.push({ type: 'DEPLOY', payload: {} });
+    if (podeComprar(s, seat)) out.push({ type: 'IR_AO_MERCADO', payload: {} });
+  } else {
+    for (const id of compraveis(s, seat)) {
+      const [c1, c2] = custoDe(parsePeca(id));
+      if (j.l1 >= c1 && j.l2 >= c2) out.push({ type: 'COMPRAR', payload: { peca: id } });
+    }
   }
   out.push({ type: 'PASSAR', payload: {} });
   return out;
@@ -318,6 +346,7 @@ export function view(s, seat) {
     rodada: s.rodada,
     ordem: s.ordem,
     vez: s.vez,
+    fase: s.fase,
     jogadores: s.jogadores.map((j) => ({ ...j, pontos: pontuar(j) })),
     tabuleiro: s.tabuleiro,
     mercado: {

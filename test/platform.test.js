@@ -696,6 +696,33 @@ test('PWA: service worker com versão por conteúdo e o que o tutorial precisa p
   await s.stop();
 });
 
+test('Forge: os exemplos em docs/forge-seeds importam (projeto, partida narrada e testes) e só citam cartões que existem', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const url = `http://localhost:${s.port}/admin/forge`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const lerSeed = async (f) => JSON.parse(await readFile(new URL(`../docs/forge-seeds/${f}.json`, import.meta.url), 'utf8'));
+  for (const jogo of ['nine-oils', 'robot-maker']) {
+    const imp = await (await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify({ project: await lerSeed(jogo) }) })).json();
+    assert.equal(imp.slug, jogo);
+    const ids = new Set(imp.project.cards.map((c) => c.id));
+    assert.ok(imp.project.cards.length > 10 && imp.project.nodes.length > 10, jogo);
+
+    const partida = await lerSeed(`${jogo}-partida`);
+    const np = await (await fetch(`${url}/${jogo}/narrations`, { method: 'POST', headers: auth, body: JSON.stringify({ narration: partida }) })).json();
+    assert.equal(np.narration.jogadas.length, partida.jogadas.length, jogo);
+    for (const j of np.narration.jogadas) for (const c of j.cartoes) assert.ok(ids.has(c), `${jogo}: a jogada ${j.n} cita o cartão ${c}, que não existe`);
+    for (const d of np.narration.duvidas) for (const c of d.cartoes) assert.ok(ids.has(c), `${jogo}: a dúvida ${d.id} cita o cartão ${c}`);
+
+    const testes = await (await fetch(`${url}/${jogo}/tests`, { method: 'POST', headers: auth, body: JSON.stringify({ tests: await lerSeed(`${jogo}-testes`) }) })).json();
+    assert.ok(testes.tests.itens.length > 10, jogo);
+    for (const t of testes.tests.itens) {
+      assert.ok(ids.has(t.cartao), `${jogo}: o teste "${t.nome}" cita o cartão ${t.cartao}, que não existe`);
+      assert.match(t.codigo, /^test\(/, `${jogo}: ${t.nome}`);
+    }
+  }
+  await s.stop();
+});
+
 test('Forge: projetos no Studio; importar do Rule Forge; guardar normalizado; sobrevive a restart', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
   const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });

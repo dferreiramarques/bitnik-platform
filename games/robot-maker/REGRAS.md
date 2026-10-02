@@ -8,9 +8,9 @@ Jogo de tabuleiro digital por turnos, worker placement com construção de robot
 
 Fonte: github.com/dferreiramarques/robot-maker (public/index.html, v0.2), com estas decisões do David:
 - Início: 0 Bloco L1 e 1 worker.
-- Turno: um jogador faz tudo o que consegue (um worker por ação) e depois joga o seguinte; a ronda é um turno de cada jogador.
+- Turno em duas fases, por esta ordem: primeiro os workers no tabuleiro (um por ação) e depois uma compra no mercado, sem gastar worker; a compra acaba o turno. A ronda é um turno de cada jogador.
 - Stock 8/2/1 por peça (nível 1 duplicado: as L1 nunca devem escassear) (cada slot e nível, CPUs incluídas), com 4 peças reveladas por nível (3 baralhos baralhados, fila de 4).
-- Rotação do mercado: se ninguém adquire peças de um nível numa ronda, a mais à esquerda vai para o fundo e entra a seguinte.
+- Rotação do mercado: no fim da ronda, a peça mais à esquerda de cada nível vai para o fundo do baralho se ninguém a adquiriu, e entra a seguinte.
 - Circuitos: máximo 1 por jogador; esgotam-se para todos; o worker fica disponível já.
 - Gatilho: 6 slots com pelo menos 1 peça L3 e 3 peças de nível 2 ou mais (1×L3, 2×L2, 3×L1).
 - Fim de jogo: quem completa o robot (gatilho) não joga mais; a ronda em curso acaba e joga-se mais uma ronda só com os outros (risco/recompensa; impacto a avaliar).
