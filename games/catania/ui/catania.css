@@ -186,11 +186,11 @@
 
 /* ── Barra de ações ── */
 .cat-bar {
-  /* margin-right desloca o centro para a esquerda, para nunca ficar por
-     baixo dos controlos de zoom (presos ao canto, ver .cat-zoombar) — só
-     interessa aqui, onde a barra fica centrada; nos layouts de telemóvel
-     (abaixo) os zoombar estão escondidos e a barra ocupa a linha toda. */
-  justify-self: center; max-width: 100%; margin-right: 328px; box-sizing: border-box;
+  /* Centrada na mesa. O max-width reserva dos dois lados o espaço dos controlos
+     de zoom (presos ao canto, ver .cat-zoombar), para nunca ficarem por baixo;
+     nos layouts de telemóvel (abaixo) os zoombar estão escondidos e a barra
+     ocupa a linha toda. */
+  justify-self: center; max-width: calc(100% - 360px); box-sizing: border-box;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
   padding: 6px; border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
 }
@@ -310,7 +310,7 @@
   .cat-card { width: 34px; height: 46px; }
   .cat-card img { width: 16px; height: 16px; }
   .cat-card b { font-size: 12px; }
-  .cat-bar { justify-self: stretch; margin-right: 0; gap: 4px; padding: 4px; border-radius: 12px; }
+  .cat-bar { justify-self: stretch; max-width: 100%; margin-right: 0; gap: 4px; padding: 4px; border-radius: 12px; }
   .cat-bar .cat-btn { flex: 1 1 calc(50% - 4px); }
   .cat-bar .cat-info { flex: 3 1 60%; max-width: none; }
   .cat-bar .cat-info + .cat-btn { flex: 1 1 25%; }
@@ -359,7 +359,7 @@
   .cat-bar .cat-btn { padding: 4px 8px; }
   .cat-me { justify-content: flex-start; }
   .cat-card { width: 32px; height: 44px; }
-  .cat-bar { grid-area: bar; justify-self: stretch; margin-right: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cat-bar { grid-area: bar; justify-self: stretch; max-width: 100%; margin-right: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .cat-bar .cat-step { display: none; }
   .cat-bar .cat-info { grid-column: span 3; }
   .cat-bar .cat-wait { grid-column: 1 / -1; }
