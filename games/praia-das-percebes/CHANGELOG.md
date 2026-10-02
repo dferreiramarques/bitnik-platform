@@ -6,8 +6,9 @@ Correção: um objetivo que já estava feito no tabuleiro quando era revelado
 (um quadrado 3×3, 2 pranchas, uma excursão...) era entregue a quem pusesse a
 peça seguinte, mesmo sem a ter completado; e uma linha ou coluna só contava se
 a peça fosse na mesma linha, o que deixava cartas sem contar perto do fim.
-Agora a formação tem de incluir a peça acabada de colocar, e o objetivo que se
-revela a seguir não conta com essa peça: só se conquista depois de revelado.
+Agora a formação tem de incluir a peça acabada de colocar. O objetivo que se
+revela a seguir a uma conquista conta logo se essa mesma peça o completar; o
+que já estava feito sem ela não conta.
 
 ## 2.1.2 — Marcador do salva-vidas legível (2026-10-02)
 

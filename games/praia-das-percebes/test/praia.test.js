@@ -124,17 +124,21 @@ test('Objetivos: a formação tem de incluir a peça acabada de colocar (2.1.3)'
   assert.ok(objetivoFeito('pranchas', praiaDe(['SS']), 0, 0));
 });
 
-test('O objetivo que se revela a seguir não conta com a mesma peça nem com o que já estava feito (2.1.3)', () => {
-  // A linha de 5 é conquistada; o quadrado 3×3, que se revela a seguir, já estava feito: não é conquistado.
-  let m = tweak(novo(), (s) => {
-    s.tabuleiro = praiaDe(['1111.', '111..', '111..']);
+test('O objetivo que se revela a seguir conta se a mesma peça o completar, não se já estava feito (2.1.3)', () => {
+  // A mesma peça fecha a linha de 5 e o quadrado 3×3, que se revela a seguir: contam os dois.
+  const base = (linhas) => tweak(novo(), (s) => {
+    s.tabuleiro = praiaDe(linhas);
     s.objetivos = [{ id: 'linha5', pts: 4 }];
     s.porRevelar = [{ id: 'quadrado3', pts: 2 }, { id: 'pranchas', pts: 4 }];
     s.peca = peca(1, 'areia');
   });
-  m = ok(jogar(m, 0, 'COLOCAR', { r: 0, c: 4 }));
+  let m = ok(jogar(base(['1111.', '..111', '..111']), 0, 'COLOCAR', { r: 0, c: 4 }));
+  assert.deepEqual(m.state.conquistados.map((o) => o.id), ['linha5', 'quadrado3']);
+  assert.equal(m.state.jogadores[0].objPts, 6);
+  assert.deepEqual(m.state.objetivos.map((o) => o.id), ['pranchas']);
+  // O quadrado já estava feito antes e a peça não faz parte dele: fica por conquistar.
+  m = ok(jogar(base(['1111.', '111..', '111..']), 0, 'COLOCAR', { r: 0, c: 4 }));
   assert.deepEqual(m.state.conquistados.map((o) => o.id), ['linha5']);
-  assert.equal(m.state.jogadores[0].objPts, 4);
   assert.deepEqual(m.state.objetivos.map((o) => o.id), ['quadrado3']);
 });
 

@@ -175,10 +175,9 @@ export const moves = {
     s.ultima = { tipo: 'COLOCAR', r, c, jogador: ctx.seat };
     ctx.log('log.COLOCOU', { peca: `@peca.${peca.tipo}`, banhistas: peca.banhistas });
     // Objetivos revelados feitos com esta peça: são de quem a pôs; revela-se outro.
-    // Só contam os objetivos que já estavam revelados: o que se revela a seguir
-    // não é verificado com esta peça (2.1.3).
-    for (const o of [...s.objetivos]) {
-      if (!objetivoFeito(o.id, s.tabuleiro, r, c)) continue;
+    // O objetivo que se revela a seguir também conta com esta peça, se ela o completar
+    // (2.1.3); o que já estava feito sem ela não conta.
+    for (let o = s.objetivos.find((x) => objetivoFeito(x.id, s.tabuleiro, r, c)); o; o = s.objetivos.find((x) => objetivoFeito(x.id, s.tabuleiro, r, c))) {
       s.objetivos = s.objetivos.filter((x) => x.id !== o.id);
       s.conquistados.push({ ...o, jogador: ctx.seat });
       s.jogadores[ctx.seat].objPts += o.pts;
