@@ -1,5 +1,14 @@
 # Startup Panic — histórico de regras
 
+## 3.1.0 — Pagar os salários é opcional (2026-10-02)
+
+Pedido do David: pagar deve ser uma escolha, para quem quiser arriscar. Mudança de regras (as mesas guardadas da 3.0 ficam expiradas):
+
+- Nova jogada `SP_RISK_SALARY` por trabalhador: não pagas e lança-se o dado (6 fica sem receber, outro número sai), mesmo tendo cash.
+- `SP_PAY_SALARY` passa a poder pagar um trabalhador (`worker`) ou, sem `worker`, todos os que o cash deixa.
+- Ao terminar o turno, o que não decidiste cobra-se sozinho: paga-se se houver cash, senão lança-se o dado (como na 3.0). Quem já foi pago ou arriscado não se cobra outra vez.
+- UI: cada trabalhador com salário mostra "Pagar XM" e "Arriscar 🎲" (e "✔ Salário pago"); o botão da barra passa a "Pagar todos". Novo texto no registo ("arriscou") e mensagem da mesa com o dado.
+
 ## 3.0.0 — Limite total de ações, níveis de trabalhador e salários com dado (2026-10-02)
 
 Feedback do David a jogar a 2.0.0 (as mesas guardadas da 2.x ficam expiradas):

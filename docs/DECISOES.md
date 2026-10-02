@@ -497,7 +497,7 @@ Jogando a 2.0.0, o David viu que: com 4 ações por startup é difícil ter maio
 - Limite de 9 ações por jogador no total (`MAX_ACOES_TOTAL`), em startups vivas, nas compras e nas trocas. Concentra o investimento em 2 ou 3 startups, onde a maioria é natural.
 - Pool com `numPlayers` cópias de cada tipo. Remove-se o limite fixo de 4 trabalhadores (`MAX_TRABALHADORES`): o custo crescente e a pool limitam.
 - Nível = escalão pela ordem de contratação (`NIVEIS`: Estagiário, Júnior, Mid, Sénior), fixado ao contratar; `SP_HIRE` deixa de ter o campo `senior`. Multiplica o rendimento; custo de contratar e salário por ronda sobem com o nível.
-- Salário sem cash: dado via `ctx.rng` (6 fica sem receber, outro número sai), com mensagem da mesa e registo (ADR-014).
+- Salário sem cash: dado via `ctx.rng` (6 fica sem receber, outro número sai), com mensagem da mesa e registo (ADR-014). Na 3.1.0 pagar passou a ser opcional: `SP_RISK_SALARY` deixa arriscar o dado por escolha, mesmo com cash; o que não se decide cobra-se ao terminar o turno (paga se der, senão dado).
 - O `view` traz `proximo` (nível, custo e salário do próximo), `meusSalarios`, `totalAcoes` e `gateBase`, para a UI explicar os custos e desenhar a timeline.
 
 ### Consequências

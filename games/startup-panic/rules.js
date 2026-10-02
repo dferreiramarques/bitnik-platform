@@ -235,30 +235,38 @@ function fimDeRonda(s, ctx) {
   s.ronda += 1;
 }
 
+/** Dado do salário: com 6 o trabalhador fica (sem receber), com outro número vai-se embora e volta à pool. */
+function dadoDoSalario(s, ctx, j, w, sal, arriscou) {
+  const dado = 1 + ctx.rng.int(6);
+  if (dado === 6) {
+    ctx.log(arriscou ? 'log.ARRISCOU_FICA' : 'log.FICA', { nome: w.nome, sal, dado }, { announce: { variant: 'warn', key: 'msg.FICA', params: { nome: w.nome, dado } } });
+  } else {
+    j.trab.splice(j.trab.indexOf(w), 1);
+    s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
+    ctx.log(arriscou ? 'log.ARRISCOU_SAI' : 'log.ABANDONOU', { nome: w.nome, sal, dado }, { announce: { variant: 'warn', key: 'msg.ABANDONOU', params: { nome: w.nome, dado } } });
+  }
+  s.pagos.push(w.id);
+}
+
+/** Salários ainda por decidir neste turno. */
+const porPagar = (s, seat) => s.jogadores[seat].trab.filter((w) => salarioDe(s, w) > 0 && !s.pagos.includes(w.id));
+
 /**
- * Paga os salários por pagar. Quem não tem cash para um trabalhador lança um dado: com 6 ele fica (sem receber),
- * com qualquer outro número vai-se embora e volta à pool. Devolve quanto foi pago.
+ * Ao terminar o turno cobra o que o jogador não decidiu: paga se houver cash; se não houver, lança o dado.
+ * (Pagar é opcional: ele pode antes pagar um a um com SP_PAY_SALARY ou arriscar com SP_RISK_SALARY.)
  */
 function liquidar(s, ctx, seat) {
   const j = s.jogadores[seat];
   let pago = 0;
-  for (const w of [...j.trab]) {
+  for (const w of porPagar(s, seat)) {
     const sal = salarioDe(s, w);
-    if (!sal || s.pagos.includes(w.id)) continue;
     if (j.cash >= sal) {
       j.cash -= sal;
       pago += sal;
+      s.pagos.push(w.id);
     } else {
-      const dado = 1 + ctx.rng.int(6);
-      if (dado === 6) {
-        ctx.log('log.FICA', { nome: w.nome, sal, dado }, { announce: { variant: 'warn', key: 'msg.FICA', params: { nome: w.nome, dado } } });
-      } else {
-        j.trab.splice(j.trab.indexOf(w), 1);
-        s.pool.push({ id: w.id, tipo: w.tipo, nome: w.nome });
-        ctx.log('log.ABANDONOU', { nome: w.nome, sal, dado }, { announce: { variant: 'warn', key: 'msg.ABANDONOU', params: { nome: w.nome, dado } } });
-      }
+      dadoDoSalario(s, ctx, j, w, sal, false);
     }
-    s.pagos.push(w.id);
   }
   recalcular(s);
   if (pago > 0) ctx.log('log.SALARIOS', { n: pago });
@@ -424,11 +432,34 @@ export const moves = {
     ctx.log('log.MOVE', { nome: w.nome, startup: `@startup.${su.id}`, custo });
   },
 
-  SP_PAY_SALARY(s, _p, ctx) {
+  /** Paga o salário de um trabalhador (`worker`) ou, sem `worker`, de todos os que o cash deixar pagar. */
+  SP_PAY_SALARY(s, { worker } = {}, ctx) {
     const e = naVez(s, ctx, 'MANUTENCAO');
     if (e) return e;
-    if (!s.jogadores[ctx.seat].trab.some((x) => salarioDe(s, x) > 0 && !s.pagos.includes(x.id))) return ctx.invalid('err.SEM_SALARIOS');
-    liquidar(s, ctx, ctx.seat);
+    const j = s.jogadores[ctx.seat];
+    const pendentes = porPagar(s, ctx.seat).filter((w) => worker === undefined || w.id === worker);
+    if (!pendentes.length) return ctx.invalid('err.SEM_SALARIOS');
+    let pago = 0;
+    for (const w of pendentes) {
+      const sal = salarioDe(s, w);
+      if (j.cash < sal) continue;
+      j.cash -= sal;
+      pago += sal;
+      s.pagos.push(w.id);
+    }
+    if (!pago) return ctx.invalid('err.CASH', { preciso: salarioDe(s, pendentes[0]), tens: j.cash });
+    ctx.log('log.SALARIOS', { n: pago });
+  },
+
+  /** Não paga o salário de um trabalhador e arrisca: dado, com 6 ele fica (sem receber), com outro número sai. */
+  SP_RISK_SALARY(s, { worker }, ctx) {
+    const e = naVez(s, ctx, 'MANUTENCAO');
+    if (e) return e;
+    const j = s.jogadores[ctx.seat];
+    const w = porPagar(s, ctx.seat).find((x) => x.id === worker);
+    if (!w) return ctx.invalid('err.SEM_SALARIOS');
+    dadoDoSalario(s, ctx, j, w, salarioDe(s, w), true);
+    recalcular(s);
   },
 
   /** Passa a vez. Os salários por pagar são cobrados aqui. No fim da última vez da ronda pagam-se os dividendos e entra o CEO seguinte. */
@@ -505,7 +536,12 @@ export function enumerate(s, seat) {
       if (j.cash < custo) continue;
       for (const su of vivas) if (su.id !== w.startup && !tem(j, su.id, w.tipo)) out.push({ type: 'SP_MOVE_WORKER', payload: { worker: w.id, startup: su.id } });
     }
-    if (j.trab.some((x) => salarioDe(s, x) > 0 && !s.pagos.includes(x.id))) out.push({ type: 'SP_PAY_SALARY', payload: {} });
+    const pendentes = porPagar(s, seat);
+    if (pendentes.some((w) => j.cash >= salarioDe(s, w))) out.push({ type: 'SP_PAY_SALARY', payload: {} });
+    for (const w of pendentes) {
+      if (j.cash >= salarioDe(s, w)) out.push({ type: 'SP_PAY_SALARY', payload: { worker: w.id } });
+      out.push({ type: 'SP_RISK_SALARY', payload: { worker: w.id } });
+    }
     out.push({ type: 'SP_END_TURN', payload: {} });
   }
   return out;
@@ -542,7 +578,7 @@ export function view(s, seat) {
     gateBase: GATE_BASE,
     jogadores: s.jogadores.map((j, i) => ({
       cash: i === seat ? j.cash : null,
-      trab: j.trab.map((w) => ({ ...w, rende: rendimento(s, i, w) })),
+      trab: j.trab.map((w) => ({ ...w, rende: rendimento(s, i, w), salario: salarioDe(s, w), pago: s.pagos.includes(w.id) })),
       acoes: acoesDe(s, i),
       totalAcoes: totalAcoes(s, i),
       previsao: dividendosDe(s, i),
@@ -573,6 +609,8 @@ export function describeMove(move) {
   if (move.type === 'SP_SELL_STARTUP') return { key: 'moveLabel.SP_SELL_STARTUP', params: { startup: `@startup.${p.startup}` } };
   if (move.type === 'SP_TRADE_PROPOSE') return { key: 'moveLabel.SP_TRADE_PROPOSE', params: { dar: `@startup.${p.de}`, receber: `@startup.${p.por}`, para: p.para + 1 } };
   if (move.type === 'SP_HIRE') return { key: 'moveLabel.SP_HIRE', params: { tipo: `@tipo.${String(p.worker).split('_')[0]}`, startup: `@startup.${p.startup}` } };
+  if (move.type === 'SP_PAY_SALARY' && p.worker) return { key: 'moveLabel.SP_PAY_ONE', params: {} };
+  if (move.type === 'SP_RISK_SALARY') return { key: 'moveLabel.SP_RISK_SALARY', params: {} };
   if (move.type === 'SP_MOVE_WORKER') return { key: 'moveLabel.SP_MOVE_WORKER', params: { startup: `@startup.${p.startup}` } };
   return { key: `move.${move.type}`, params: {} };
 }

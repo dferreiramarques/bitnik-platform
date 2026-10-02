@@ -111,7 +111,7 @@ O resultado arredonda-se e soma-se o bónus acumulado da Whitney W. O Gate fica 
 - **Contratar** (`SP_HIRE`): tira um trabalhador da pool e põe-no numa startup (não é preciso ter ações nela, mas só se recebem dividendos dela com ações). O nível (e o custo) sai da ordem de contratação. **Máximo 1 de cada tipo por startup; não há limite fixo de trabalhadores**, só a pool e o custo.
 - **Despedir** (`SP_FIRE`): o trabalhador volta à pool.
 - **Mover** (`SP_MOVE_WORKER`): muda um trabalhador de startup, com indemnização igual ao salário (mínimo 1M); não para a mesma startup nem onde já tens um desse tipo.
-- **Pagar salários** (`SP_PAY_SALARY`): o salário de cada trabalhador com salário (mais 1M de sobretaxa com o Adam N.). Se não tiveres cash para um deles, **lança-se um dado**: com **6 o trabalhador fica** (sem receber), com **qualquer outro número vai-se embora** e volta à pool. A mesa avisa o que aconteceu. Os salários por pagar cobram-se sozinhos ao terminar o turno.
+- **Salários** (de cada trabalhador com salário, mais 1M de sobretaxa com o Adam N.): **pagar é opcional**. Por trabalhador podes **pagar** (`SP_PAY_SALARY`, ou sem `worker` para pagar todos os que o cash deixar) ou **arriscar** (`SP_RISK_SALARY`): não pagas e **lança-se um dado**; com **6 o trabalhador fica** (sem receber), com **qualquer outro número vai-se embora** e volta à pool. Arriscar não custa cash e podes fazê-lo mesmo tendo dinheiro. O que não decidires cobra-se ao terminar o turno: paga-se se houver cash e, se não houver, **lança-se o dado**. Quem se paga (ou arrisca) neste turno não se cobra outra vez. A mesa avisa sempre o que aconteceu.
 - **Terminar o turno** (`SP_END_TURN`).
 
 ### Dividendos
@@ -135,5 +135,5 @@ Pontuação = `cash + Σ (ações × preço atual)` das startups não implodidas
 2. A maioria real é o que abre o Gate. Com 9 ações no total, escolhe 2 ou 3 startups onde queres maioria.
 3. O CEO é revelado antes de jogares: reage a setores que acabaram de cair.
 4. Elon V., Travis K. e Sam B. fazem implodir a startup mais cara sem Advogado: ser dono da líder tem risco. Um Advogado protege a startup (e as ações de todos os que a têm); um PR sobe-lhe o preço.
-5. Mantém cash para os salários: sem ele, cada trabalhador sem pagamento joga ao dado, e só com um 6 fica.
+5. Mantém cash para os salários: sem pagamento há um dado, e só com um 6 o trabalhador fica. Arriscar de propósito poupa cash, mas 5 em 6 perdes o trabalhador.
 6. Só o Gate realiza o multiplicador; ações guardadas até ao fim valem o preço normal.
