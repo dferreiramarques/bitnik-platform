@@ -418,13 +418,6 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .home-id { display: flex; align-items: baseline; gap: 6px; margin-right: auto; min-width: 0; white-space: nowrap; overflow: hidden; }
 .home-brandname, .home-gamename { font-family: var(--ui-display); font-size: 14px; color: #fff; }
 .home-gamename { opacity: .9; overflow: hidden; text-overflow: ellipsis; }
-.home-name-sm {
-  width: 140px; height: 32px; box-sizing: border-box; padding: 0 10px; border-radius: 8px; margin-right: 4px;
-  background: rgb(255 250 241 / .22); border: 1px solid rgb(255 250 241 / .4); color: #fff; font: 600 12px var(--ui-body);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-}
-.home-name-sm::placeholder { color: rgb(255 255 255 / .75); }
-.home-name-sm:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .home-top .mesa-panel { color: var(--ui-text); }
 .home-main {
   align-self: center; justify-self: center; width: min(1120px, 100%); box-sizing: border-box;
@@ -434,14 +427,25 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .home-brand { margin: 0; font: 800 clamp(36px, 7vh, 56px)/1 var(--ui-display); color: #fff; text-shadow: 0 2px 12px rgb(0 0 0 / .2); }
 .home-name { display: grid; gap: 8px; justify-items: center; margin: clamp(4px, 1.5vh, 16px) 0 0; }
 .home-name span { font: 700 18px var(--ui-display); }
-/* O campo do nome é sólido e claro (ADR-014): a única entrada de texto sobre o fundo. */
-.home-name input {
-  width: 320px; max-width: 100%; height: 48px; box-sizing: border-box; padding: 0 16px; text-align: center;
-  border-radius: 12px; border: 2px solid color-mix(in srgb, var(--brand-primary, #b8461f) 55%, #000);
+/* ── Nome do jogador (ADR-014): campo sólido e claro, nunca em vidro, para se
+   destacar sobre o fundo — o mesmo campo em todo o lado (início, lobby,
+   mesa), debaixo do título; só o tamanho muda (.compact, fora do início).
+   `--game-accent`/`--game-panel`/`--game-text` vêm da skin do jogo (lobby e
+   mesa); no início, sem jogo nenhum, recuam para os tokens da marca. ── */
+.name-field {
+  width: 320px; max-width: 100%; height: 48px; box-sizing: border-box; padding: 0 16px;
+  border-radius: 12px; border: 2px solid color-mix(in srgb, var(--game-accent, var(--brand-primary, #b8461f)) 55%, #000);
   box-shadow: 0 0 0 4px rgb(255 250 241 / .3);
-  background: #fffaf1; color: #2b1b12; font: 600 16px var(--ui-body);
+  background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); font: 600 16px var(--ui-body);
+  text-shadow: none;
 }
-.home-name input:focus-visible { outline: 3px solid #fffaf1; outline-offset: 3px; }
+.name-field:focus-visible { outline: 3px solid #fffaf1; outline-offset: 3px; }
+.name-field.compact {
+  width: 220px; height: 38px; padding: 0 12px; border-radius: 10px; font-size: 14px;
+  box-shadow: 0 0 0 3px rgb(255 250 241 / .25);
+}
+/* No início, o campo é centrado (como o título); fora dele, à esquerda. */
+.home-name .name-field { text-align: center; }
 .home-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 212px)); justify-content: center; gap: 8px; }
 @media (max-width: 1100px) and (min-width: 761px) { .home-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); } }
 .home-card {
@@ -603,7 +607,7 @@ body.is-home { background: var(--brand-primary, #b8461f); }
   .ent-bar { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 1fr 1fr; background: none; border: 0; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .ent-bar .pri { grid-column: 1 / -1; min-height: 44px; }
   .ent-bar .lob-btn { min-height: 44px; }
-  .home-name-sm { width: 110px; }
+  .name-field.compact { width: 100%; }
   .home-gamename { display: none; }
   .lob-main { padding: 12px 8px 32px; gap: 8px; }
   .lob-head { margin-bottom: 0; }

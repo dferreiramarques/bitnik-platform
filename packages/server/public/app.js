@@ -184,13 +184,23 @@ function saveName(name) {
   $('#name').value = app.welcome?.name ?? name;
 }
 
-/** Linha de cima do Início e do lobby: marca (· jogo), nome, avisos, consola, voltar e língua. */
+/** Entrada do nome do jogador (ADR-014): sólida e clara, nunca em vidro, para
+ * se destacar sobre a mesa — o mesmo campo em todo o lado (início, lobby,
+ * mesa), debaixo do título (marca ou jogo) e alinhado como ele; só o
+ * tamanho muda (`compact`, fora do início). */
+function nameField({ compact = false, id: fieldId = null } = {}) {
+  return `<input${fieldId ? ` id="${esc(fieldId)}"` : ''} class="name-field${compact ? ' compact' : ''}" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}">`;
+}
+
+/** Linha de cima do Início e do lobby: marca (· jogo), avisos, consola, voltar e língua. O
+ * nome do jogador já não vive aqui (era inconsistente: grande no Início, num
+ * campo à parte; pequeno, em vidro, nesta barra, no lobby) — fica sempre
+ * debaixo do título, com o mesmo campo (ver nameField). */
 function renderBrandTop(game = null) {
   const brand = W()?.brand?.name || $('#brand').textContent;
   return `<header class="home-top">
     <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
     <div class="mesa-actions">
-      ${game ? `<input class="home-name-sm" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}">` : ''}
       <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>
       ${game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : ''}
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
@@ -224,6 +234,7 @@ function renderLobby(only = null) {
           <p>${playersText(g.players)}</p></div>
         ${guideLink(g, g.id)}
       </div>
+      <div class="lob-name">${nameField({ compact: true })}</div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
       <div class="lob-grid">
         <div class="lob-card mine solo">
@@ -275,7 +286,7 @@ function renderHome() {
       <div class="home-head">
         <h1 class="home-brand">${esc(brand)}</h1>
         <label class="home-name"><span>${u('writeName')}</span>
-          <input id="homeName" data-name-input maxlength="24" autocomplete="nickname" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}"></label>
+          ${nameField({ id: 'homeName' })}</label>
       </div>
       <div class="home-grid" style="--cols:${Math.min(Math.max(games.length, 1), 5)}">${games.map((g, i) => {
         const coverStyle = `--cover:${COVERS[i % COVERS.length]}${g.thumbnail ? `;--home-cover-img:${esc(g.thumbnail)}` : ''}`;
@@ -436,18 +447,18 @@ function usesFullMesa(msg) {
   return useGameUi(msg) || ['playing', 'over'].includes(msg.room.status);
 }
 
-/** Linha de cima da mesa em ecrã inteiro (ADR-014): marca, jogo, avisos, guia, sair e língua. */
+/** Linha de cima da mesa em ecrã inteiro (ADR-014): marca, jogo, avisos, guia, sair e língua.
+ * Sem o nome do jogador: cada jogo reserva o seu próprio espaço no topo,
+ * calibrado para esta única linha — uma segunda linha empurrava os
+ * cartões dos jogadores para trás dela em todos os jogos (testado). Quem
+ * entra direto por um link de convite muda o nome no lobby, como todos. */
 function renderTableTop(gameId, meta, extra = '') {
   const brand = W()?.brand?.name || $('#brand').textContent;
   const offline = app.status === 'closed' ? `<span class="mesa-chip warn" role="status">${esc(u('closed'))}</span>` : '';
-  // Quem entra direto por um link de convite nunca passa pelo lobby (onde
-  // normalmente se escolhe o nome) — sem este campo, ficava preso ao nome
-  // por omissão.
-  const nameInput = `<input class="home-name-sm" data-name-input maxlength="24" autocomplete="nickname" aria-label="${esc(u('yourName'))}" placeholder="${esc(u('yourName'))}" value="${esc(shownName())}">`;
   return `<header class="mesa-top">
     <div class="mesa-id"><strong class="mesa-brand">${esc(brand)}</strong><span class="mesa-sep">·</span>
       <strong class="mesa-game">${esc(t('game.name', {}, gameId))}</strong><span class="mesa-meta">${meta}</span></div>
-    <div class="mesa-actions">${nameInput}${offline}<span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}
+    <div class="mesa-actions">${offline}<span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}
       <button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
   </header>`;
