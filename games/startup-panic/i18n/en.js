@@ -64,6 +64,7 @@ export default {
   'err.CASH': 'You need {preciso}M and have {tens}M.',
   'err.SEM_ACOES': 'You do not own shares of that startup.',
   'err.GATE_FECHADO': 'The Sale Gate is not open.',
+  'err.COMPRADA_NO_TURNO': 'You cannot sell at the Gate a startup you bought into this turn.',
   'err.MAIORIA': 'You need a real majority (more than 50% of the shares) to sell at the Gate.',
   'err.ALVO': 'Invalid player for the swap.',
   'err.TROCA_SEM_ACOES': 'Both players need shares of the startups being swapped.',
