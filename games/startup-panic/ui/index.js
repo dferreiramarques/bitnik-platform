@@ -49,7 +49,7 @@ export function update(next) {
   msg = next;
   for (const l of msg.log || []) {
     if (l.announce == null || (l.seq ?? 0) <= ui.lastLogSeq) continue;
-    ctx.announce(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
+    ctx.announce?.(ctx.t(l.announce.key, l.announce.params), '', l.announce.variant);
   }
   ui.lastLogSeq = Math.max(ui.lastLogSeq, ...(msg.log || []).map((l) => l.seq ?? 0));
   // Janelas que deixaram de fazer sentido (mudou a vez, a fase ou a ronda).
@@ -113,12 +113,13 @@ function render() {
   layout.innerHTML = `
     ${renderPlayers(v)}
     ${renderTimeline(v)}
-    <div class="sp-top">${renderCeo(v)}${renderSectors(v)}</div>
+    <div class="sp-top" data-tut="top">${renderCeo(v)}${renderSectors(v)}</div>
     ${renderStartups(v)}
     ${renderTeam(v)}
     ${msg.result ? '' : renderBar(v)}
     ${renderLog()}
     ${renderModal(v)}`;
+  ctx.afterRender?.();
 }
 
 const activeSeat = (v) => (v.acabou ? null : v.vez);
@@ -126,7 +127,7 @@ const activeSeat = (v) => (v.acabou ? null : v.vez);
 function renderPlayers(v) {
   const me = mySeat();
   const act = activeSeat(v);
-  return `<div class="sp-players" aria-label="${esc(ctx.t('ui.order'))}">${v.ordem.map((i, k) => {
+  return `<div class="sp-players" data-tut="players" aria-label="${esc(ctx.t('ui.order'))}">${v.ordem.map((i, k) => {
     const j = v.jogadores[i];
     const state = i === act ? (i === me ? ctx.t('ui.yourTurn') : ctx.t('ui.turnOf', { nome: nameOf(i) })) : '';
     const cash = j.cash == null ? `<span title="${esc(ctx.t('ui.hidden'))}">🔒</span>` : `<b>${j.cash}M</b>`;
@@ -146,7 +147,7 @@ function renderTimeline(v) {
     const open = base && n === v.ronda && v.gate.aberto ? v.gate.mult : null;
     return `<li class="${cls}"${base ? ` title="${esc(ctx.t('ui.gateRound', { mult: base }))}"` : ''}><b>${n}</b>${base ? `<span>🔔 ×${open ?? base}</span>` : ''}</li>`;
   }).join('');
-  return `<ol class="sp-timeline" aria-label="${esc(ctx.t('ui.timeline'))}">${cells}</ol>`;
+  return `<ol class="sp-timeline" data-tut="timeline" aria-label="${esc(ctx.t('ui.timeline'))}">${cells}</ol>`;
 }
 
 function renderCeo(v) {
@@ -205,7 +206,7 @@ function renderStartups(v) {
       ${acts}
     </div>`;
   }).join('');
-  return `<section class="sp-section"><div class="sp-lbl">${esc(ctx.t('ui.startups'))}</div><div class="sp-startups">${cards}</div></section>`;
+  return `<section class="sp-section" data-tut="startups"><div class="sp-lbl">${esc(ctx.t('ui.startups'))}</div><div class="sp-startups">${cards}</div></section>`;
 }
 
 function renderTeam(v) {
@@ -228,7 +229,7 @@ function renderTeam(v) {
       <button class="sp-act" type="button" data-act="fire" data-id="${w.id}">${esc(ctx.t('ui.fire'))}</button>
     </div>` : ''}
   </div>`).join('');
-  return `<section class="sp-team">
+  return `<section class="sp-team" data-tut="team">
     <div class="sp-teamhead"><span class="sp-lbl">${esc(ctx.t('ui.team'))}</span><span>💰 <b>${v.meuCash}M</b></span><span title="${esc(ctx.t('ui.networth'))}">📊 <b>${v.meuPatrimonio}M</b></span><span title="${esc(ctx.t('ui.expectedHint'))}">💵 ${esc(ctx.t('ui.expected'))}: <b>${esc(ctx.t('ui.perRound', { n: previsto }))}</b></span><span title="${esc(ctx.t('ui.salaries'))}">💸 ${esc(ctx.t('ui.salaries'))}: <b>${v.meusSalarios}M</b></span><span class="sp-lbl">${esc(ctx.t('ui.pool'))}</span><span>${pool}</span>
       ${canMaint && legal('SP_HIRE').length ? `<button class="sp-act" type="button" data-act="hire">${esc(ctx.t('ui.hire'))}</button>` : ''}</div>
     ${j.trab.length ? `<div class="sp-workers">${workers}</div>` : `<div class="sp-empty">${esc(ctx.t('ui.noTeam'))}</div>`}
@@ -238,17 +239,17 @@ function renderTeam(v) {
 function renderBar(v) {
   const me = mySeat();
   const act = activeSeat(v);
-  if (me == null) return `<div class="sp-bar"><span class="sp-hint">${esc(ctx.t('ui.spectating'))}</span></div>`;
-  if (v.proposta && v.proposta.de === me) return `<div class="sp-bar"><span class="sp-hint">${esc(ctx.t('ui.waitingReply'))}</span></div>`;
-  if (!(msg.legal || []).length) return `<div class="sp-bar"><span class="sp-hint">${esc(ctx.t('ui.waiting', { nome: nameOf(act ?? 0) }))}</span></div>`;
+  if (me == null) return `<div class="sp-bar" data-tut="bar"><span class="sp-hint">${esc(ctx.t('ui.spectating'))}</span></div>`;
+  if (v.proposta && v.proposta.de === me) return `<div class="sp-bar" data-tut="bar"><span class="sp-hint">${esc(ctx.t('ui.waitingReply'))}</span></div>`;
+  if (!(msg.legal || []).length) return `<div class="sp-bar" data-tut="bar"><span class="sp-hint">${esc(ctx.t('ui.waiting', { nome: nameOf(act ?? 0) }))}</span></div>`;
   if (v.fase === 'MERCADO') {
-    return `<div class="sp-bar">
+    return `<div class="sp-bar" data-tut="bar">
       <span class="sp-hint">${esc(ctx.t('ui.phaseMarket'))}</span>
       ${legal('SP_TRADE_PROPOSE').length ? `<button class="sp-btn" type="button" data-act="trade">${esc(ctx.t('ui.trade'))}</button>` : ''}
       <button class="sp-btn primary" type="button" data-act="endmarket">${esc(ctx.t('ui.endMarket'))}</button>
     </div>`;
   }
-  return `<div class="sp-bar">
+  return `<div class="sp-bar" data-tut="bar">
     <span class="sp-hint">${esc(ctx.t('ui.phaseMaint'))}</span>
     ${legal('SP_PAY_SALARY').some((m) => m.payload.worker === undefined) ? `<button class="sp-btn" type="button" data-act="pay">${esc(ctx.t('ui.paySalary'))}</button>` : ''}
     <button class="sp-btn primary" type="button" data-act="endturn">${esc(ctx.t('ui.endTurn'))}</button>
@@ -351,7 +352,7 @@ function renderChart(v) {
 
 function renderLog() {
   const items = ui.logOpen ? [...(msg.log || [])].reverse().slice(0, 12) : [];
-  return `<aside class="sp-log">
+  return `<aside class="sp-log" data-tut="log">
     <button class="sp-lbl sp-log-head" data-act="logfold" aria-expanded="${ui.logOpen}">${esc(ctx.t('ui.log'))} ${ui.logOpen ? '▾' : '▸'}</button>
     ${items.length ? `<ol>${items.map((l) => `<li>${l.seat != null ? `<b>${esc(nameOf(l.seat))}</b> ` : ''}${esc(ctx.t(l.key, l.params))}</li>`).join('')}</ol>` : ''}
   </aside>`;

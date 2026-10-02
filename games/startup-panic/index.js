@@ -8,7 +8,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'startup-panic',
-  version: '3.2.0',
+  version: '3.3.0',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',
@@ -16,6 +16,7 @@ export default defineGame({
   i18n: { pt, en },
   root: new URL('./', import.meta.url).href,
   ui: './ui/index.js',
+  tutorial: './ui/tutorial.js',
   skin: './ui/skin.json',
   rules: rulesText,
   botDelayMs: [600, 1100],

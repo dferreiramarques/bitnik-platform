@@ -157,6 +157,28 @@ export default `
 .sp-modal-box .sp-btn:disabled { background: var(--game-disabled-bg, #e6dccb); color: var(--game-disabled-text, #8a7d6e); }
 .sp-modal-acts { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 
+/* tutorial */
+.sp-guide {
+  position: absolute; z-index: 25; left: 12px; right: 12px; top: 48px; box-sizing: border-box; padding: 12px 14px; display: grid; gap: 6px; max-height: 45%; overflow-y: auto;
+  background: var(--game-panel, #fffaf1); color: var(--game-text, #2b1b12); border: 2px solid var(--game-accent, #b8461f); border-radius: var(--game-radius, 14px);
+  box-shadow: 0 12px 32px rgb(0 0 0 / .35); font-family: var(--game-font-body, Inter, system-ui, sans-serif);
+}
+/* Com o tutorial a decorrer, a mesa deixa espaço ao guia: em baixo dele (ecrã estreito) ou ao lado (ecrã largo). */
+.tutorial .sp-layout { top: calc(env(safe-area-inset-top, 0px) + 56px + var(--sp-guide-h, 180px)); }
+@media (min-width: 1100px) {
+  .sp-guide { left: auto; right: 12px; width: 340px; max-height: calc(100% - 60px); }
+  .tutorial .sp-layout { top: calc(env(safe-area-inset-top, 0px) + 40px); right: 364px; }
+}
+.sp-guide h3 { font-family: var(--game-font-display); color: var(--game-accent-strong, #8f3513); margin: 0; font-size: 17px; }
+.sp-guide p { margin: 0; line-height: 1.5; font-size: 14px; }
+.sp-guide-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--game-muted, #6b5b4e); }
+.sp-guide-btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.sp-guide .sp-btn { min-height: 36px; padding: 4px 12px; font-size: 13px; color: var(--game-text, #2b1b12); background: var(--game-panel-2, #f3e4cb); border-color: var(--game-line, #d8c7a8); }
+.sp-guide .sp-btn.primary { background: var(--game-accent, #b8461f); color: var(--game-on-accent, #fff); border-color: transparent; }
+.tut-hi { outline: 3px solid var(--game-on-table-accent, #ffd9c2); outline-offset: 3px; border-radius: 10px; animation: sp-pulse 1.6s ease-in-out infinite; }
+@keyframes sp-pulse { 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .tut-hi { animation: none; } }
+
 /* registo */
 .sp-log { position: absolute; left: 12px; bottom: 76px; max-width: 320px; font-size: 10px; font-weight: 300; color: var(--otm); }
 .sp-log-head { background: none; border: 0; padding: 0; color: var(--otm); }

@@ -832,3 +832,17 @@ test('Histórico: a startup que implode fecha a vela a 0 (marcada) e deixa de te
   assert.equal(m.state.hist.deepanic.length, 2);
 });
 
+
+// ─── Cenário do tutorial ─────────────────────────────────────
+
+test('Cenário tutorial: o jogador 0 abre e os 3 primeiros CEOs são fixos (sem dado), para o guia', () => {
+  for (const seed of ['a', 'b', 'c']) {
+    const m = createMatch(game, { numPlayers: 2, seed, options: { scenario: 'tutorial' } });
+    assert.deepEqual(m.state.baralho.slice(0, 3), ['jh', 'pc', 'mz']);
+    assert.deepEqual([...m.state.baralho].sort(), [...CEO_IDS].sort());
+    assert.equal(m.state.ordem[0], 0);
+    assert.equal(m.state.ceo.id, 'jh');
+    assert.equal(m.state.ceo.dado, null);
+  }
+  assert.ok(typeof game.tutorial === 'string' && game.tutorial.endsWith('tutorial.js'));
+});
