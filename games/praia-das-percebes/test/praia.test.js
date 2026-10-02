@@ -111,6 +111,20 @@ test('Objetivos: linha de 5 e 7, coluna de 4 e 6, quadrados 3×3 e 5×5, 2 pranc
   assert.ok(!objetivoFeito('excursao', praiaDe(['33', '32']), 1, 1));
 });
 
+test('O objetivo revelado a seguir também conta com a mesma peça (2.1.3)', () => {
+  // Uma linha de 5 completa-se e, ao mesmo tempo, fecha-se um quadrado 3×3 que só se revela depois.
+  let m = tweak(novo(), (s) => {
+    s.tabuleiro = praiaDe(['1111.', '111..', '111..']);
+    s.objetivos = [{ id: 'linha5', pts: 4 }];
+    s.porRevelar = [{ id: 'quadrado3', pts: 2 }, { id: 'pranchas', pts: 4 }];
+    s.peca = peca(1, 'areia');
+  });
+  m = ok(jogar(m, 0, 'COLOCAR', { r: 0, c: 4 }));
+  assert.deepEqual(m.state.conquistados.map((o) => o.id), ['linha5', 'quadrado3']);
+  assert.equal(m.state.jogadores[0].objPts, 6);
+  assert.deepEqual(m.state.objetivos.map((o) => o.id), ['pranchas']);
+});
+
 test('Um objetivo feito é de quem pôs a peça e revela-se outro', () => {
   let m = tweak(novo(), (s) => {
     s.tabuleiro = praiaDe(['1111']);

@@ -1,5 +1,13 @@
 # Praia das Percebes — histórico de regras
 
+## 2.1.3 — Objetivo revelado conta logo (2026-10-02)
+
+Correção: quando uma peça conquistava um objetivo, o objetivo que se revelava a
+seguir não era verificado com essa mesma peça. Se já estivesse feito (por exemplo
+um quadrado 3×3 fechado na mesma jogada), ficava por contar e os pontos perdiam-se
+perto do fim, quando o tabuleiro está cheio. Agora repete-se a verificação até
+não haver mais objetivos feitos.
+
 ## 2.1.2 — Marcador do salva-vidas legível (2026-10-02)
 
 Sem mudanças de jogo: o emoji e a seta do salva-vidas ganham sombra (o emoji
