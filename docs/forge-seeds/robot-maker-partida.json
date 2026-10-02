@@ -1,0 +1,515 @@
+{
+  "cenario": "Jogo completo de 2 jogadores: J1 joga como BETA-7 (agressivo) e J2 como LUMIS (eficiência).",
+  "jogadores": 2,
+  "jogadas": [
+    {
+      "n": 1,
+      "jogador": null,
+      "acao": "[Ronda 1] Preparação: 2 jogadores, ordem J1 → J2; cada um com 0 L1, 0 L2 e 1 worker; mercado com 4 peças reveladas por nível.",
+      "cartoes": [
+        "c-setup",
+        "c-mercado"
+      ],
+      "resultado": "Estado inicial.",
+      "estado": "J1: 0×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro –, Bra –, Int –, Per –, CPU –]. J2: 0×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro –, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×4 Bra×4 Per×4 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 2,
+      "jogador": 1,
+      "acao": "[Ronda 1] J1 coloca um worker na Forja e escolhe Braço Simples (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot arm sem pagar custo; stock de Braço Simples (L1): 3. A Forja fica ocupada nesta ronda.",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int –, Per –, CPU –]. J2: 0×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro –, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×4 Bra×3 Per×4 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 3,
+      "jogador": 2,
+      "acao": "[Ronda 1] J2 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 3×L1).",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int –, Per –, CPU –]. J2: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×4 Bra×3 Per×4 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 4,
+      "jogador": null,
+      "acao": "[Ronda 1] Fim da ronda 1: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=1, J2=1. Ninguém adquiriu peças de nível 2: Pernas Turbo (a mais à esquerda) vai para o fundo do baralho e entra Braço Laser à direita. Ninguém adquiriu peças de nível 3: Tronco Adaptativo (a mais à esquerda) vai para o fundo do baralho e entra Braço Plasma à direita.",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int –, Per –, CPU –]. J2: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×4 Bra×3 Per×4 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 5,
+      "jogador": 2,
+      "acao": "[Ronda 2] J2 coloca um worker na Forja e escolhe Tronco Leve (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot chest sem pagar custo; stock de Tronco Leve (L1): 3. A Forja fica ocupada nesta ronda.",
+      "estado": "J1: 0×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int –, Per –, CPU –]. J2: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×3 Bra×3 Per×4 (baralho: Cab); L2: Cab×2 Int×2 Tro×2 Bra×2 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 6,
+      "jogador": 1,
+      "acao": "[Ronda 2] J1 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 3×L1).",
+      "estado": "J1: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int –, Per –, CPU –]. J2: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×3 Bra×3 Per×4 (baralho: Cab); L2: Cab×2 Int×2 Tro×2 Bra×2 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 7,
+      "jogador": null,
+      "acao": "[Ronda 2] Fim da ronda 2: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=1, J2=1. Ninguém adquiriu peças de nível 2: Cabeça Sensor (a mais à esquerda) vai para o fundo do baralho e entra Pernas Turbo à direita. Ninguém adquiriu peças de nível 3: Antena Quântica (a mais à esquerda) vai para o fundo do baralho e entra Tronco Adaptativo à direita.",
+      "estado": "J1: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int –, Per –, CPU –]. J2: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×4 Tro×3 Bra×3 Per×4 (baralho: Cab); L2: Cab×2 Int×2 Tro×2 Bra×2 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 8,
+      "jogador": 1,
+      "acao": "[Ronda 3] J1 coloca um worker na Forja e escolhe Porta Série (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot port sem pagar custo; stock de Porta Série (L1): 3. A Forja fica ocupada nesta ronda.",
+      "estado": "J1: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int L1, Per –, CPU –]. J2: 3×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per –, CPU –]. Mercado L1: Int×3 Tro×3 Bra×3 Per×4 (baralho: Cab); L2: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 9,
+      "jogador": 2,
+      "acao": "[Ronda 3] J2 compra Bio-Core L1 no mercado (custo 2×L1).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 1×L1, 0×L2); a peça vai para o slot cpu; stock de Bio-Core L1: 3; não ganha pontos agora.",
+      "estado": "J1: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int L1, Per –, CPU –]. J2: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per –, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×3 Bra×3 Per×4 (baralho: Cab); L2: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 10,
+      "jogador": null,
+      "acao": "[Ronda 3] Fim da ronda 3: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=1, J2=1. Ninguém adquiriu peças de nível 2: Porta Dados (a mais à esquerda) vai para o fundo do baralho e entra Cabeça Sensor à direita. Ninguém adquiriu peças de nível 3: Cabeça IA (a mais à esquerda) vai para o fundo do baralho e entra Antena Quântica à direita.",
+      "estado": "J1: 3×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int L1, Per –, CPU –]. J2: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per –, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×3 Bra×3 Per×4 (baralho: Cab); L2: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 11,
+      "jogador": 2,
+      "acao": "[Ronda 4] J2 coloca um worker na Forja e escolhe Pernas Standard (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot legs sem pagar custo; stock de Pernas Standard (L1): 3. A Forja fica ocupada nesta ronda.",
+      "estado": "J1: 3×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int L1, Per –, CPU –]. J2: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×3 Bra×3 Per×3 (baralho: Cab); L2: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 12,
+      "jogador": 1,
+      "acao": "[Ronda 4] J1 compra Combat Core L1 no mercado (custo 2×L1).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 1×L1, 0×L2); a peça vai para o slot cpu; stock de Combat Core L1: 3; não ganha pontos agora.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int L1, Per –, CPU Combat Core L1]. J2: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×3 Bra×3 Per×3 (baralho: Cab); L2: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 13,
+      "jogador": null,
+      "acao": "[Ronda 4] Fim da ronda 4: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=1, J2=1. Ninguém adquiriu peças de nível 2: Tronco Blindado (a mais à esquerda) vai para o fundo do baralho e entra Porta Dados à direita. Ninguém adquiriu peças de nível 3: Pernas Gravitação (a mais à esquerda) vai para o fundo do baralho e entra Cabeça IA à direita.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro –, Bra L1, Int L1, Per –, CPU Combat Core L1]. J2: 1×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×3 Bra×3 Per×3 (baralho: Cab); L2: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: nenhum."
+    },
+    {
+      "n": 14,
+      "jogador": 1,
+      "acao": "[Ronda 5] J1 coloca um worker na Forja e escolhe Tronco Leve (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot chest sem pagar custo; stock de Tronco Leve (L1): 2. A Forja fica ocupada nesta ronda. Circuito Armas completo: recolhe o worker cinzento (workers 2, 1 livre já); o circuito esgota-se para todos.",
+      "estado": "J1: 1×L1 0×L2, workers livres 1/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 1×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×2 Bra×3 Per×3 (baralho: Cab); L2: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas."
+    },
+    {
+      "n": 15,
+      "jogador": 1,
+      "acao": "[Ronda 5] J1 coloca um worker no Deploy.",
+      "cartoes": [
+        "c-deploy",
+        "c-forja-exclusiva"
+      ],
+      "resultado": "+6 pts de Deploy (total 6); o Deploy fica ocupado até ao fim da ronda.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 1×L1 0×L2, workers livres 1/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×2 Bra×3 Per×3 (baralho: Cab); L2: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas."
+    },
+    {
+      "n": 16,
+      "jogador": 2,
+      "acao": "[Ronda 5] J2 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 4×L1).",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 4×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×2 Bra×3 Per×3 (baralho: Cab); L2: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas."
+    },
+    {
+      "n": 17,
+      "jogador": null,
+      "acao": "[Ronda 5] Fim da ronda 5: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=1. Ninguém adquiriu peças de nível 2: Braço Laser (a mais à esquerda) vai para o fundo do baralho e entra Tronco Blindado à direita. Ninguém adquiriu peças de nível 3: Braço Plasma (a mais à esquerda) vai para o fundo do baralho e entra Pernas Gravitação à direita.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 4×L1 0×L2, workers livres 0/1, Deploy 0, robot [Cab –, Tro L1, Bra –, Int –, Per L1, CPU Bio-Core L1]. Mercado L1: Int×3 Tro×2 Bra×3 Per×3 (baralho: Cab); L2: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas."
+    },
+    {
+      "n": 18,
+      "jogador": 2,
+      "acao": "[Ronda 6] J2 coloca um worker na Forja e escolhe Braço Simples (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot arm sem pagar custo; stock de Braço Simples (L1): 2. A Forja fica ocupada nesta ronda. Circuito Mobilidade completo: recolhe o worker cinzento (workers 2, 1 livre já); o circuito esgota-se para todos.",
+      "estado": "J1: 1×L1 0×L2, workers livres 2/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 4×L1 0×L2, workers livres 1/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int –, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×3 Tro×2 Bra×2 Per×3 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 19,
+      "jogador": 2,
+      "acao": "[Ronda 6] J2 compra Porta Série (L1) no mercado (custo 2×L1).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 2×L1, 0×L2); a peça vai para o slot port; stock de Porta Série (L1): 2; não ganha pontos agora.",
+      "estado": "J1: 1×L1 0×L2, workers livres 2/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 2×L1 0×L2, workers livres 0/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×3 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 20,
+      "jogador": 1,
+      "acao": "[Ronda 6] J1 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 4×L1).",
+      "estado": "J1: 4×L1 0×L2, workers livres 1/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per –, CPU Combat Core L1], circuito Armas. J2: 2×L1 0×L2, workers livres 0/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×3 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 21,
+      "jogador": 1,
+      "acao": "[Ronda 6] J1 compra Pernas Standard (L1) no mercado (custo 2×L1).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 2×L1, 0×L2); a peça vai para o slot legs; stock de Pernas Standard (L1): 2; não ganha pontos agora.",
+      "estado": "J1: 2×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 2×L1 0×L2, workers livres 0/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 22,
+      "jogador": null,
+      "acao": "[Ronda 6] Fim da ronda 6: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=2. Ninguém adquiriu peças de nível 2: Pernas Turbo (a mais à esquerda) vai para o fundo do baralho e entra Braço Laser à direita. Ninguém adquiriu peças de nível 3: Tronco Adaptativo (a mais à esquerda) vai para o fundo do baralho e entra Braço Plasma à direita.",
+      "estado": "J1: 2×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 2×L1 0×L2, workers livres 0/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: Bra). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 23,
+      "jogador": 1,
+      "acao": "[Ronda 7] J1 coloca um worker no Optimizador.",
+      "cartoes": [
+        "c-optimizador"
+      ],
+      "resultado": "Converte 2×L1 em 1×L2 (agora 0×L1, 1×L2).",
+      "estado": "J1: 0×L1 1×L2, workers livres 1/2, Deploy 6, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 2×L1 0×L2, workers livres 2/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Cab×2 Int×2 Tro×2 Bra×2 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 24,
+      "jogador": 1,
+      "acao": "[Ronda 7] J1 compra Braço Laser (L2) no mercado (custo 0×L1 + 1×L2).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 0×L1, 0×L2); a peça vai para o slot arm e substitui Braço Simples (L1); stock de Braço Laser (L2): 1; não ganha pontos agora.",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 2×L1 0×L2, workers livres 2/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Cab×2 Int×2 Tro×2 Bra×1 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 25,
+      "jogador": 2,
+      "acao": "[Ronda 7] J2 coloca um worker no Optimizador.",
+      "cartoes": [
+        "c-optimizador"
+      ],
+      "resultado": "Converte 2×L1 em 1×L2 (agora 0×L1, 1×L2).",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 1×L2, workers livres 1/2, Deploy 0, robot [Cab –, Tro L1, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Cab×2 Int×2 Tro×2 Bra×1 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 26,
+      "jogador": 2,
+      "acao": "[Ronda 7] J2 compra Tronco Blindado (L2) no mercado (custo 0×L1 + 1×L2).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 0×L1, 0×L2); a peça vai para o slot chest e substitui Tronco Leve (L1); stock de Tronco Blindado (L2): 1; não ganha pontos agora.",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 0, robot [Cab –, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 27,
+      "jogador": null,
+      "acao": "[Ronda 7] Fim da ronda 7: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=2. Ninguém adquiriu peças de nível 1: Porta Série (a mais à esquerda) vai para o fundo do baralho e entra Cabeça Básica à direita. Ninguém adquiriu peças de nível 3: Antena Quântica (a mais à esquerda) vai para o fundo do baralho e entra Tronco Adaptativo à direita.",
+      "estado": "J1: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 0, robot [Cab –, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Int×2 Tro×2 Bra×2 Per×2 (baralho: Cab); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Int×1 Cab×1 Per×1 Bra×1 (baralho: Tro). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 28,
+      "jogador": 2,
+      "acao": "[Ronda 8] J2 coloca um worker na Forja e escolhe Cabeça Básica (L1).",
+      "cartoes": [
+        "c-forja",
+        "c-progressao"
+      ],
+      "resultado": "A peça fica no slot head sem pagar custo; stock de Cabeça Básica (L1): 3. A Forja fica ocupada nesta ronda.",
+      "estado": "J1: 0×L1 0×L2, workers livres 2/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 1/2, Deploy 0, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×3 (baralho: Int); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 29,
+      "jogador": 2,
+      "acao": "[Ronda 8] J2 coloca um worker no Deploy.",
+      "cartoes": [
+        "c-deploy",
+        "c-forja-exclusiva"
+      ],
+      "resultado": "+6 pts de Deploy (total 6); o Deploy fica ocupado até ao fim da ronda.",
+      "estado": "J1: 0×L1 0×L2, workers livres 2/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×3 (baralho: Int); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 30,
+      "jogador": 1,
+      "acao": "[Ronda 8] J1 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 3×L1).",
+      "estado": "J1: 3×L1 0×L2, workers livres 1/2, Deploy 6, robot [Cab –, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×3 (baralho: Int); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 31,
+      "jogador": 1,
+      "acao": "[Ronda 8] J1 compra Cabeça Básica (L1) no mercado (custo 2×L1).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 1×L1, 0×L2); a peça vai para o slot head; stock de Cabeça Básica (L1): 2; não ganha pontos agora.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 32,
+      "jogador": null,
+      "acao": "[Ronda 8] Fim da ronda 8: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=2. Ninguém adquiriu peças de nível 2: Cabeça Sensor (a mais à esquerda) vai para o fundo do baralho e entra Pernas Turbo à direita. Ninguém adquiriu peças de nível 3: Cabeça IA (a mais à esquerda) vai para o fundo do baralho e entra Antena Quântica à direita.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Cab×2 Int×2 Tro×1 Bra×1 (baralho: Per); L3: Cab×1 Per×1 Bra×1 Tro×1 (baralho: Int). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 33,
+      "jogador": 1,
+      "acao": "[Ronda 9] J1 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 4×L1).",
+      "estado": "J1: 4×L1 0×L2, workers livres 1/2, Deploy 6, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 2/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Int×2 Tro×1 Bra×1 Per×2 (baralho: Cab); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 34,
+      "jogador": 1,
+      "acao": "[Ronda 9] J1 coloca um worker no Deploy.",
+      "cartoes": [
+        "c-deploy",
+        "c-forja-exclusiva"
+      ],
+      "resultado": "+6 pts de Deploy (total 12); o Deploy fica ocupado até ao fim da ronda.",
+      "estado": "J1: 4×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 2/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Int×2 Tro×1 Bra×1 Per×2 (baralho: Cab); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 35,
+      "jogador": 2,
+      "acao": "[Ronda 9] J2 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 3×L1).",
+      "estado": "J1: 4×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 3×L1 0×L2, workers livres 1/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Int×2 Tro×1 Bra×1 Per×2 (baralho: Cab); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 36,
+      "jogador": 2,
+      "acao": "[Ronda 9] J2 coloca um worker no Optimizador.",
+      "cartoes": [
+        "c-optimizador"
+      ],
+      "resultado": "Converte 2×L1 em 1×L2 (agora 1×L1, 1×L2).",
+      "estado": "J1: 4×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 1×L1 1×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Int×2 Tro×1 Bra×1 Per×2 (baralho: Cab); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 37,
+      "jogador": null,
+      "acao": "[Ronda 9] Fim da ronda 9: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=2. Ninguém adquiriu peças de nível 1: Tronco Leve (a mais à esquerda) vai para o fundo do baralho e entra Porta Série à direita. Ninguém adquiriu peças de nível 2: Porta Dados (a mais à esquerda) vai para o fundo do baralho e entra Cabeça Sensor à direita. Ninguém adquiriu peças de nível 3: Pernas Gravitação (a mais à esquerda) vai para o fundo do baralho e entra Cabeça IA à direita.",
+      "estado": "J1: 4×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 1×L1 1×L2, workers livres 0/2, Deploy 6, robot [Cab L1, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Tro×2 Bra×2 Per×2 Cab×2 (baralho: Int); L2: Int×2 Tro×1 Bra×1 Per×2 (baralho: Cab); L3: Per×1 Bra×1 Tro×1 Int×1 (baralho: Cab). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 38,
+      "jogador": 2,
+      "acao": "[Ronda 10] J2 compra Cabeça Sensor (L2) no mercado (custo 1×L1 + 1×L2).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 0×L1, 0×L2); a peça vai para o slot head e substitui Cabeça Básica (L1); stock de Cabeça Sensor (L2): 1; não ganha pontos agora.",
+      "estado": "J1: 4×L1 0×L2, workers livres 2/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 1/2, Deploy 6, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 39,
+      "jogador": 2,
+      "acao": "[Ronda 10] J2 coloca um worker no Deploy.",
+      "cartoes": [
+        "c-deploy",
+        "c-forja-exclusiva"
+      ],
+      "resultado": "+6 pts de Deploy (total 12); o Deploy fica ocupado até ao fim da ronda.",
+      "estado": "J1: 4×L1 0×L2, workers livres 2/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 40,
+      "jogador": 1,
+      "acao": "[Ronda 10] J1 coloca um worker no Optimizador.",
+      "cartoes": [
+        "c-optimizador"
+      ],
+      "resultado": "Converte 2×L1 em 1×L2 (agora 2×L1, 1×L2).",
+      "estado": "J1: 2×L1 1×L2, workers livres 1/2, Deploy 12, robot [Cab L1, Tro L1, Bra L2, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Bra×1 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 41,
+      "jogador": 1,
+      "acao": "[Ronda 10] J1 compra Braço Plasma (L3) no mercado (custo 1×L1 + 1×L2).",
+      "cartoes": [
+        "c-comprar",
+        "c-progressao"
+      ],
+      "resultado": "Paga o custo (agora 1×L1, 0×L2); a peça vai para o slot arm e substitui Braço Laser (L2); stock de Braço Plasma (L3): 0; não ganha pontos agora. Gatilho do fim: J1 tem as 6 slots e uma peça L3; depois desta ronda joga-se mais uma ronda completa e o jogo acaba. Esgotou Braço Plasma; sai da fila e entra Pernas Gravitação (topo do baralho do nível 3) à direita.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L1, Tro L1, Bra L3, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Bra×0 Tro×1 Int×1 Cab×1 (baralho: Per). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 42,
+      "jogador": null,
+      "acao": "[Ronda 10] Fim da ronda 10: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=2. Ninguém adquiriu peças de nível 1: Braço Simples (a mais à esquerda) vai para o fundo do baralho e entra Tronco Leve à direita. Gatilho ativo: joga-se mais uma ronda sem J1, que completou o robot e já não joga.",
+      "estado": "J1: 1×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L1, Tro L1, Bra L3, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 0×L1 0×L2, workers livres 0/2, Deploy 12, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Bra×2 Per×2 Cab×2 Int×2 (baralho: Tro); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: vazio). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 43,
+      "jogador": 2,
+      "acao": "[Ronda 11] J2 coloca um worker no Compilador.",
+      "cartoes": [
+        "c-compilador"
+      ],
+      "resultado": "+3 L1 (agora 3×L1).",
+      "estado": "J1: 1×L1 0×L2, workers livres 2/2, Deploy 12, robot [Cab L1, Tro L1, Bra L3, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 3×L1 0×L2, workers livres 1/2, Deploy 12, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: vazio). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 44,
+      "jogador": 2,
+      "acao": "[Ronda 11] J2 coloca um worker no Deploy.",
+      "cartoes": [
+        "c-deploy",
+        "c-forja-exclusiva"
+      ],
+      "resultado": "+6 pts de Deploy (total 18); o Deploy fica ocupado até ao fim da ronda.",
+      "estado": "J1: 1×L1 0×L2, workers livres 2/2, Deploy 12, robot [Cab L1, Tro L1, Bra L3, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 3×L1 0×L2, workers livres 0/2, Deploy 18, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: vazio). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 45,
+      "jogador": null,
+      "acao": "[Ronda 11] Fim da ronda 11: workers regressam, slots ficam livres, a ordem roda.",
+      "cartoes": [
+        "c-workers-voltam",
+        "c-ordem"
+      ],
+      "resultado": "Workers: J1=2, J2=2. Ninguém adquiriu peças de nível 1: Pernas Standard (a mais à esquerda) vai para o fundo do baralho e entra Braço Simples à direita. Ninguém adquiriu peças de nível 2: Tronco Blindado (a mais à esquerda) vai para o fundo do baralho e entra Porta Dados à direita. O jogo acaba.",
+      "estado": "J1: 1×L1 0×L2, workers livres 2/2, Deploy 12, robot [Cab L1, Tro L1, Bra L3, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 3×L1 0×L2, workers livres 0/2, Deploy 18, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Per×2 Cab×2 Int×2 Tro×2 (baralho: Bra); L2: Tro×1 Bra×1 Per×2 Cab×1 (baralho: Int); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: vazio). Circuitos esgotados: Armas, Mobilidade."
+    },
+    {
+      "n": 46,
+      "jogador": null,
+      "acao": "[Ronda 11] Pontuação final.",
+      "cartoes": [
+        "c-pontuacao",
+        "c-cpu-fatores",
+        "c-bonus"
+      ],
+      "resultado": "J1: Cab L1 3, Tro L1 4, Bra L3 12×2=24, Int L1 4×2=8, Per L1 3; CPU Combat Core L1 5; Deploy 12; bónus 13 => 72. J2: Cab L2 8×2=16, Tro L2 8, Bra L1 3, Int L1 4, Per L1 3; CPU Bio-Core L1 5; Deploy 18; bónus 8 => 65.",
+      "estado": "J1: 1×L1 0×L2, workers livres 2/2, Deploy 12, robot [Cab L1, Tro L1, Bra L3, Int L1, Per L1, CPU Combat Core L1], circuito Armas. J2: 3×L1 0×L2, workers livres 2/2, Deploy 18, robot [Cab L2, Tro L2, Bra L1, Int L1, Per L1, CPU Bio-Core L1], circuito Mobilidade. Mercado L1: Cab×2 Int×2 Tro×2 Bra×2 (baralho: Per); L2: Bra×1 Per×2 Cab×1 Int×2 (baralho: Tro); L3: Tro×1 Int×1 Cab×1 Per×1 (baralho: vazio). Circuitos esgotados: Armas, Mobilidade."
+    }
+  ],
+  "duvidas": [
+    {
+      "jogada": 41,
+      "pergunta": "Quem completa o robot (gatilho) continua o seu turno com os workers que lhe restam?",
+      "assumido": "Assumi que sim: acaba o turno normalmente e só deixa de jogar a partir da ronda seguinte.",
+      "cartoes": [
+        "c-trigger-fim",
+        "c-turno"
+      ],
+      "estado": "resolvida",
+      "nota": "David: sim, continua o turno com os workers que lhe restam."
+    }
+  ],
+  "fim": "Ganha J1: J1 72 pts contra J2 65 pts, ao fim de 11 rondas (gatilho de J1). Sem empate."
+}

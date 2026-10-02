@@ -1,0 +1,568 @@
+{
+  "gameName": "Robot Maker",
+  "nodes": [
+    {
+      "id": "d-recursos",
+      "kind": "DATA",
+      "label": "Recursos (Bloco L1, Bloco L2)",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "d-robot",
+      "kind": "DATA",
+      "label": "Robot: 6 slots (cabeça, tronco, braço, interface, pernas, CPU)",
+      "x": 40,
+      "y": 140
+    },
+    {
+      "id": "d-pecas",
+      "kind": "DATA",
+      "label": "Peças e CPUs (custos, pontos, fatores)",
+      "x": 40,
+      "y": 240
+    },
+    {
+      "id": "d-mercado",
+      "kind": "DATA",
+      "label": "Mercado (stock partilhado)",
+      "x": 40,
+      "y": 340
+    },
+    {
+      "id": "d-circuitos",
+      "kind": "DATA",
+      "label": "Circuitos (5 únicos)",
+      "x": 40,
+      "y": 440
+    },
+    {
+      "id": "f-ronda",
+      "kind": "FLOW",
+      "label": "Ronda (roda a ordem; workers regressam)",
+      "x": 300,
+      "y": 40
+    },
+    {
+      "id": "f-turno",
+      "kind": "FLOW",
+      "label": "Turno: um worker por ação",
+      "x": 300,
+      "y": 140
+    },
+    {
+      "id": "f-fim",
+      "kind": "FLOW",
+      "label": "Fim de jogo (ronda em curso + uma ronda sem quem completou)",
+      "x": 300,
+      "y": 540
+    },
+    {
+      "id": "a-worker",
+      "kind": "ACTION",
+      "label": "Colocar worker",
+      "x": 560,
+      "y": 40
+    },
+    {
+      "id": "a-compilador",
+      "kind": "ACTION",
+      "label": "Compilador: +3 L1",
+      "x": 780,
+      "y": 20
+    },
+    {
+      "id": "a-optimizador",
+      "kind": "ACTION",
+      "label": "Optimizador: 2×L1 → 1×L2",
+      "x": 780,
+      "y": 100
+    },
+    {
+      "id": "a-forja",
+      "kind": "ACTION",
+      "label": "Forja: 1 peça L1 grátis",
+      "x": 780,
+      "y": 180
+    },
+    {
+      "id": "a-deploy",
+      "kind": "ACTION",
+      "label": "Deploy: +6 pts",
+      "x": 780,
+      "y": 260
+    },
+    {
+      "id": "a-comprar",
+      "kind": "ACTION",
+      "label": "Comprar peça no mercado",
+      "x": 560,
+      "y": 340
+    },
+    {
+      "id": "a-passar",
+      "kind": "ACTION",
+      "label": "Passar",
+      "x": 560,
+      "y": 440
+    },
+    {
+      "id": "a-circuito",
+      "kind": "ACTION",
+      "label": "Recolher circuito (worker cinzento)",
+      "x": 560,
+      "y": 540
+    },
+    {
+      "id": "s-final",
+      "kind": "SCORE",
+      "label": "Pontuação final (robotScore)",
+      "x": 300,
+      "y": 640
+    },
+    {
+      "id": "s-bonus",
+      "kind": "SCORE",
+      "label": "Bónus de conclusão",
+      "x": 560,
+      "y": 640
+    }
+  ],
+  "edges": [
+    {
+      "from": "f-ronda",
+      "to": "f-turno"
+    },
+    {
+      "from": "f-turno",
+      "to": "a-worker"
+    },
+    {
+      "from": "f-turno",
+      "to": "a-comprar"
+    },
+    {
+      "from": "f-turno",
+      "to": "a-passar"
+    },
+    {
+      "from": "a-worker",
+      "to": "a-compilador"
+    },
+    {
+      "from": "a-worker",
+      "to": "a-optimizador"
+    },
+    {
+      "from": "a-worker",
+      "to": "a-forja"
+    },
+    {
+      "from": "a-worker",
+      "to": "a-deploy"
+    },
+    {
+      "from": "a-compilador",
+      "to": "d-recursos"
+    },
+    {
+      "from": "a-optimizador",
+      "to": "d-recursos"
+    },
+    {
+      "from": "a-forja",
+      "to": "d-robot"
+    },
+    {
+      "from": "a-comprar",
+      "to": "d-mercado"
+    },
+    {
+      "from": "a-comprar",
+      "to": "d-robot"
+    },
+    {
+      "from": "a-comprar",
+      "to": "a-circuito"
+    },
+    {
+      "from": "a-forja",
+      "to": "a-circuito"
+    },
+    {
+      "from": "a-circuito",
+      "to": "d-circuitos"
+    },
+    {
+      "from": "d-pecas",
+      "to": "a-comprar"
+    },
+    {
+      "from": "d-robot",
+      "to": "f-fim"
+    },
+    {
+      "from": "f-fim",
+      "to": "s-final"
+    },
+    {
+      "from": "s-bonus",
+      "to": "s-final"
+    }
+  ],
+  "cards": [
+    {
+      "id": "c-setup",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "general",
+      "title": "Preparação",
+      "given": "uma partida nova com N jogadores (2 a 4)",
+      "when": "a partida começa",
+      "then": "cada jogador tem 0 Bloco L1, 0 Bloco L2, 1 worker, 0 pontos e o robot vazio; o mercado tem o stock inicial e 4 peças reveladas por nível; os 5 circuitos estão disponíveis; a ordem de turno é a ordem de lugares"
+    },
+    {
+      "id": "c-ordem",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "general",
+      "title": "Ordem de turno roda uma posição por ronda",
+      "given": "uma ronda que acaba de terminar",
+      "when": "começa a ronda seguinte",
+      "then": "a ordem roda uma posição: [A,B,C,D] passa a [B,C,D,A]; os slots do tabuleiro não alteram a ordem"
+    },
+    {
+      "id": "c-turno",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "player",
+      "title": "Um turno usa todos os workers",
+      "given": "é a vez de um jogador com workers disponíveis",
+      "when": "joga",
+      "then": "cada worker faz uma ação (colocar no tabuleiro ou comprar uma peça no mercado); o jogador continua até gastar todos os workers ou passar, e só então joga o seguinte"
+    },
+    {
+      "id": "c-passar",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "player",
+      "title": "Passar gasta os workers que restam",
+      "given": "um jogador com workers por usar",
+      "when": "passa",
+      "then": "fica sem workers nesta ronda e o turno passa ao seguinte; a ronda acaba quando todos jogaram uma vez"
+    },
+    {
+      "id": "c-workers-voltam",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "general",
+      "title": "No fim da ronda os workers regressam",
+      "given": "todos os jogadores já jogaram o seu turno na ronda",
+      "when": "se fecha a ronda",
+      "then": "todos os workers voltam aos jogadores (workers = o total permanente), os slots do tabuleiro ficam livres, a ordem roda uma posição e o contador de rondas sobe"
+    },
+    {
+      "id": "c-workers-max",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "player",
+      "title": "Máximo de 3 workers e 1 circuito por jogador",
+      "given": "um jogador que já recolheu um circuito, ou que já tem 3 workers",
+      "when": "completa as slots de outro circuito",
+      "then": "não recolhe nenhum worker novo e esse circuito fica disponível"
+    },
+    {
+      "id": "c-compilador",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-compilador",
+      "title": "Compilador dá 3 L1 por worker",
+      "given": "um jogador coloca um worker no Compilador",
+      "when": "a ação se resolve",
+      "then": "ganha 3 Bloco L1 por worker; o slot é ilimitado e o mesmo jogador pode pôr lá mais de um worker (cada um dá +3)"
+    },
+    {
+      "id": "c-optimizador",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-optimizador",
+      "title": "Optimizador converte 2 L1 em 1 L2",
+      "given": "um jogador com pelo menos 2 Bloco L1 coloca um worker no Optimizador",
+      "when": "a ação se resolve",
+      "then": "perde 2 L1 e ganha 1 L2"
+    },
+    {
+      "id": "c-optimizador-vazio",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-optimizador",
+      "title": "Optimizador sem 2 L1 gasta o worker sem efeito",
+      "given": "um jogador com menos de 2 Bloco L1 coloca um worker no Optimizador",
+      "when": "a ação se resolve",
+      "then": "não ganha nem perde recursos e o worker conta como usado"
+    },
+    {
+      "id": "c-forja",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-forja",
+      "title": "Forja dá uma peça L1 à escolha",
+      "given": "a Forja está livre e o jogador tem pelo menos um slot de robot vazio com peça L1 em stock",
+      "when": "coloca lá um worker e escolhe uma peça L1 de robot",
+      "then": "a peça fica instalada nesse slot sem pagar custo e o stock diminui; a Forja nunca dá CPUs e só preenche slots de robot vazios (o slot CPU não conta). Sem slot vazio ou sem stock, o worker gasta-se sem efeito"
+    },
+    {
+      "id": "c-forja-exclusiva",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-forja",
+      "title": "Forja e Deploy são exclusivos",
+      "given": "a Forja já tem um worker",
+      "when": "outro jogador tenta colocar lá um worker",
+      "then": "a jogada é rejeitada; o mesmo vale para o Deploy, e o mesmo jogador também só pode pôr lá um worker"
+    },
+    {
+      "id": "c-deploy",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "node",
+      "ref": "a-deploy",
+      "title": "Deploy dá 6 pontos acumulados",
+      "given": "o Deploy está livre",
+      "when": "um jogador coloca lá um worker",
+      "then": "ganha 6 pontos de Deploy que se somam à pontuação; cada utilização dá +6; o valor ajusta-se depois com testes de balanço (se for um caminho de vitória, baixa-se)"
+    },
+    {
+      "id": "c-comprar",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "player",
+      "title": "Comprar uma peça paga o custo e reduz o stock",
+      "given": "um jogador com recursos para o custo da peça, e stock no mercado",
+      "when": "compra a peça",
+      "then": "paga o custo em L1 e L2, a peça vai para o seu robot e o stock do mercado baixa 1; comprar não dá pontos; a peça substituída sai do jogo (versão digital) e não dá pontos"
+    },
+    {
+      "id": "c-comprar-recursos",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "player",
+      "title": "Sem recursos ou sem stock não se compra",
+      "given": "um jogador sem recursos suficientes, ou uma peça sem stock",
+      "when": "tenta comprá-la",
+      "then": "a jogada é rejeitada com a razão"
+    },
+    {
+      "id": "c-progressao",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-robot",
+      "title": "Progressão obrigatória L1 → L2 → L3",
+      "given": "um slot do robot",
+      "when": "o jogador compra uma peça para esse slot",
+      "then": "só aceita L1 se o slot está vazio, L2 se tem L1, L3 se tem L2; saltar níveis é rejeitado; a peça nova substitui a anterior e a anterior sai do jogo. No slot CPU só conta o nível: pode trocar-se de família (Bio, Combat, Agility, Shield) e o Omni Core L3 entra sobre qualquer CPU L2. Peças especiais futuras podem fazer override"
+    },
+    {
+      "id": "c-mercado",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-mercado",
+      "title": "Mercado: baralhos por nível, fila de 4 e rotação",
+      "given": "o início da partida",
+      "when": "se prepara o mercado",
+      "then": "cada peça (cada slot em cada nível) e cada CPU tem o seu próprio stock: 4 de nível 1, 2 de nível 2, 1 de nível 3. As peças de robot ficam separadas por nível em 3 baralhos, baralhados com ctx.rng; de cada um saem as 4 primeiras para uma fila visível (as CPUs estão sempre à vista). Quando uma peça esgota, sai da fila e entra à direita a do topo do baralho. Rotação: no fim de cada ronda, por nível, se ninguém adquiriu peças desse nível (compra ou Forja), a peça mais à esquerda da fila vai para o fundo do baralho e entra à direita a do topo; a peça não perde stock. Se o baralho do nível está vazio, a fila fica como está"
+    },
+    {
+      "id": "c-pecas",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-pecas",
+      "title": "Custos e pontos das peças",
+      "given": "a tabela de peças",
+      "when": "se consulta o custo",
+      "then": "Cabeça L1 2/0·3, L2 1/1·8, L3 1/1·15; Tronco 2/0·4, 0/1·8, 1/1·12; Braço 2/0·3, 0/1·8, 1/1·12; Interface 2/0·4, 0/1·8, 1/1·12; Pernas 2/0·3, 1/1·8, 1/1·12 (custo L1/L2·pontos)"
+    },
+    {
+      "id": "c-cpus",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-pecas",
+      "title": "CPUs e custos",
+      "given": "a tabela de CPUs",
+      "when": "se consulta o custo",
+      "then": "Bio, Combat, Agility e Shield: L1 2/0·5, L2 1/1·9, L3 1/1·14; Omni Core só existe em L3, custa 2/1 e vale 18"
+    },
+    {
+      "id": "c-cpu-fatores",
+      "kind": "SCORE",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-pecas",
+      "title": "A CPU amplifica as zonas indicadas",
+      "given": "um robot com CPU",
+      "when": "se calcula a pontuação",
+      "then": "Bio-Core: cabeça ×2 / ×2.5 / (cabeça+pernas) ×3; Combat: (braço+interface) ×2 / ×2.5 / (braço+interface+tronco) ×3; Agility: pernas ×2 / ×2.5 / (pernas+cabeça) ×3; Shield: tronco ×2 / ×2.5 / (tronco+braço+interface) ×3; Omni L3: todas as zonas ×1.5; os pontos de cada peça amplificada arredondam-se para baixo (3×2.5=7)"
+    },
+    {
+      "id": "c-circuito",
+      "kind": "ACTION",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-circuitos",
+      "title": "Circuito dá um worker permanente",
+      "given": "um circuito ainda disponível cujas 3 slots o jogador acaba de preencher, e o jogador não tem circuito nem 3 workers",
+      "when": "o jogador completa a terceira slot",
+      "then": "recolhe o worker cinzento: ganha 1 worker permanente e 1 worker disponível já nesta ronda, e o circuito esgota-se para todos; se várias combinações ficam completas, usa a primeira disponível da lista"
+    },
+    {
+      "id": "c-circuito-lista",
+      "kind": "DATA",
+      "category": "regra",
+      "scope": "component",
+      "ref": "d-circuitos",
+      "title": "Os 5 circuitos",
+      "given": "os circuitos da partida",
+      "when": "se consultam as slots exigidas",
+      "then": "Central: cabeça+tronco+pernas; Combate: cabeça+tronco+braço; Mobilidade: tronco+braço+pernas; Armas: braço+interface+tronco; Processo: cabeça+braço+interface"
+    },
+    {
+      "id": "c-trigger-fim",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "node",
+      "ref": "f-fim",
+      "title": "Gatilho do fim de jogo: risco e recompensa",
+      "given": "um jogador com as 6 slots preenchidas e pelo menos uma peça L3 (CPU incluída)",
+      "when": "isso acontece",
+      "then": "quem completa o robot acaba o seu turno (gasta os workers que lhe restam) e deixa de jogar a partir daí; a ronda em curso termina e joga-se mais uma ronda completa só com os outros jogadores; depois o jogo acaba. É um mecanismo de risco/recompensa: completar dá bónus mas dá aos outros uma última ronda para ganhar pontos. O impacto avalia-se depois com testes"
+    },
+    {
+      "id": "c-sem-gatilho",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "node",
+      "ref": "f-fim",
+      "title": "Sem L3 ou sem 6 slots o jogo não acaba",
+      "given": "um jogador com 6 slots preenchidas mas todas L1/L2",
+      "when": "a ronda acaba",
+      "then": "o jogo continua"
+    },
+    {
+      "id": "c-limite-rondas",
+      "kind": "FLOW",
+      "category": "regra",
+      "scope": "node",
+      "ref": "f-fim",
+      "title": "Limite de rondas de segurança (proposta: 30)",
+      "given": "a ronda 30 a terminar sem gatilho",
+      "when": "se fecha a ronda",
+      "then": "o jogo acaba na mesma e conta a pontuação final"
+    },
+    {
+      "id": "c-pontuacao",
+      "kind": "SCORE",
+      "category": "regra",
+      "scope": "node",
+      "ref": "s-final",
+      "title": "Pontuação final",
+      "given": "o fim do jogo",
+      "when": "se pontua cada jogador",
+      "then": "pontos de Deploy + soma (pontos da peça × fator da CPU se a zona for amplificada) + pontos da CPU; as zonas são cabeça, tronco, braços (braço e interface), pernas"
+    },
+    {
+      "id": "c-bonus",
+      "kind": "SCORE",
+      "category": "regra",
+      "scope": "node",
+      "ref": "s-bonus",
+      "title": "Bónus de conclusão",
+      "given": "o fim do jogo",
+      "when": "se calcula o bónus",
+      "then": "+8 se o robot tem as 6 slots; +5 se tem pelo menos uma peça L3; acumulam-se"
+    },
+    {
+      "id": "c-vencedor",
+      "kind": "SCORE",
+      "category": "regra",
+      "scope": "node",
+      "ref": "s-final",
+      "title": "Vencedor e empates",
+      "given": "as pontuações finais",
+      "when": "se ordena",
+      "then": "ganha quem tiver mais pontos; em empate, mais peças L3 (a confirmar)"
+    },
+    {
+      "id": "c-log",
+      "kind": "ACTION",
+      "category": "plataforma",
+      "scope": "general",
+      "title": "Registo de ações explica a regra",
+      "given": "qualquer ação resolvida",
+      "when": "o estado muda",
+      "then": "o registo guarda uma linha PT/EN com a regra aplicada, para valor pedagógico"
+    },
+    {
+      "id": "c-bot-beta7",
+      "kind": "ACTION",
+      "category": "bot",
+      "scope": "player",
+      "title": "BETA-7 (agressivo)",
+      "given": "um bot BETA-7",
+      "when": "é a sua vez",
+      "then": "joga uma jogada válida, por esta ordem: (1) Forja, se está livre e tem slot de robot vazio (escolhe braço, interface, cabeça, tronco, pernas); (2) compra o que consegue pagar, preferindo braço, interface e Combat Core, e depois o resto; (3) Deploy, se está livre e tem um worker extra depois de já ter agido neste turno, ou tem 5 ou mais L1 sem poder comprar; (4) Optimizador, se tem 2 L1 e a compra que quer precisa de L2 que não tem; (5) Compilador."
+    },
+    {
+      "id": "c-bot-grix",
+      "kind": "ACTION",
+      "category": "bot",
+      "scope": "player",
+      "title": "GRIX (defensivo)",
+      "given": "um bot GRIX",
+      "when": "é a sua vez",
+      "then": "joga uma jogada válida, por esta ordem: (1) Forja, se está livre e tem slot de robot vazio (escolhe tronco, pernas, cabeça, braço, interface); (2) compra o que consegue pagar, preferindo tronco, pernas e Shield Core, e depois o resto; (3) Deploy, se está livre e tem um worker extra depois de já ter agido neste turno, ou tem 5 ou mais L1 sem poder comprar; (4) Optimizador, se tem 2 L1 e a compra que quer precisa de L2 que não tem; (5) Compilador."
+    },
+    {
+      "id": "c-bot-lumis",
+      "kind": "ACTION",
+      "category": "bot",
+      "scope": "player",
+      "title": "LUMIS (eficiência)",
+      "given": "um bot LUMIS",
+      "when": "é a sua vez",
+      "then": "joga uma jogada válida, por esta ordem: (1) Forja, se está livre e tem slot de robot vazio (escolhe cabeça, tronco, pernas, braço, interface); (2) compra o que consegue pagar, preferindo cabeça e Bio-Core, e depois o resto; (3) Deploy, se está livre e tem um worker extra depois de já ter agido neste turno, ou tem 5 ou mais L1 sem poder comprar; (4) Optimizador, se tem 2 L1 e a compra que quer precisa de L2 que não tem; (5) Compilador."
+    },
+    {
+      "id": "c-balanco",
+      "kind": "SCORE",
+      "category": "bot",
+      "scope": "general",
+      "title": "Balanço em 200 partidas IA vs IA",
+      "given": "200 partidas simuladas com 4 bots",
+      "when": "se agregam os resultados",
+      "then": "o primeiro jogador ganha ≈25%, a duração média ronda as 13 rondas e a diferença entre 1.º e 4.º fica abaixo de ≈125 pontos"
+    }
+  ],
+  "rules": [
+    {
+      "id": "r-resumo",
+      "ref": null,
+      "title": "Robot Maker: resumo",
+      "text": "Jogo de tabuleiro digital por turnos, worker placement com construção de robot. 2 a 4 jogadores, 45 a 90 minutos, 8+. Projeto educativo InGaming, CICF Maia (STEM). Cada jogador é um engenheiro que constrói o robot mais eficiente. O jogo acaba quando alguém completa o robot e ganha quem tiver mais pontos."
+    },
+    {
+      "id": "r-valores",
+      "ref": null,
+      "title": "Valores confirmados pelo David",
+      "text": "Fonte: github.com/dferreiramarques/robot-maker (public/index.html, v0.2), com estas decisões do David:\n- Início: 0 Bloco L1 e 1 worker.\n- Turno: um jogador faz tudo o que consegue (um worker por ação) e depois joga o seguinte; a ronda é um turno de cada jogador.\n- Stock 4/2/1 por peça (cada slot e nível, CPUs incluídas), com 4 peças reveladas por nível (3 baralhos baralhados, fila de 4).\n- Rotação do mercado: se ninguém adquire peças de um nível numa ronda, a mais à esquerda vai para o fundo e entra a seguinte.\n- Circuitos: máximo 1 por jogador; esgotam-se para todos; o worker fica disponível já.\n- Fim de jogo: quem completa o robot (gatilho) não joga mais; a ronda em curso acaba e joga-se mais uma ronda só com os outros (risco/recompensa; impacto a avaliar).\n- Progressão: L1 em slot vazio, L2 sobre L1, L3 sobre L2; a Forja só dá L1 em slot vazio, nunca CPUs; a peça substituída sai do jogo; a CPU pode mudar de família respeitando o nível.\n- Arredondamentos: para baixo.\n- Deploy: +6, a ajustar com testes. Com +7 uma estratégia só de Deploy ganhava a todas as partidas simuladas, por isso fica em 6; se for um caminho de vitória, baixa-se.\n- A pontuação é provisória: só se faz commit no fim, como no Catania.\nPropostas minhas, a testar: limite de segurança de 30 rondas e desempate por mais peças L3."
+    }
+  ]
+}

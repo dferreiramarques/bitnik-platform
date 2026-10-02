@@ -44,6 +44,7 @@ Jogos instalados no Studio:
 | Nine Oils | `games/nine-oils` | 1.1.0 | 2 | Genérica |
 | Bulbous | `games/bulbous` | 1.0.0 | 2 ou 4 | Genérica |
 | Capivaras | `games/capivaras` | 1.0.0 | 2–6 | Genérica (feito pela Forge) |
+| Robot Maker | `games/robot-maker` | 1.0.0 | 2–4 | Própria no template vanilla (feito pela Forge) |
 
 As versões de cada jogo estão no `package.json` e as mudanças no `CHANGELOG.md` do pacote.
 
