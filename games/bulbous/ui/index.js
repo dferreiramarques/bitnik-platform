@@ -252,7 +252,7 @@ function renderMinis(j) {
 function donePill(j, seat) {
   const n = j.baelfs.filter((b) => b.completa).length;
   if (!n) return '';
-  return `<button class="bulbous-donepill" type="button" data-done="${seat}">${esc(ctx.t('ui.completed'))} (${n})</button>`;
+  return `<button class="bulbous-donepill" type="button" data-done="${seat}" aria-label="${esc(ctx.t('ui.completed'))}" title="${esc(ctx.t('ui.completed'))}"><span class="bulbous-donepill-txt">${esc(ctx.t('ui.completed'))}</span><span class="bulbous-donepill-ico" aria-hidden="true">☑</span> (${n})</button>`;
 }
 
 /** Modal com as Baelfungious completas de um jogador, com scroll. */
