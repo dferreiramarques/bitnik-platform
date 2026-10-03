@@ -225,7 +225,7 @@ function renderBrandTop(game = null, { extra = '', backHome = true } = {}) {
   return `<header class="home-top">
     <div class="home-id">${!game && W()?.brand?.logo ? '' : `<strong class="home-brandname">${brandMark()}</strong>`}${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
     <div class="mesa-actions">
-      <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}${back}
+      <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}${back}${game ? '' : installButton()}
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
   </header>`;
 }
@@ -255,7 +255,7 @@ function renderLobby(only = null) {
       <div class="lob-head">
         <div class="lob-title"><h1>${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</h1>
           <p>${playersText(g.players)}</p></div>
-        <div class="lob-tools">${installButton()}${guideLink(g, g.id, { tutorial: true })}</div>
+        <div class="lob-tools">${guideLink(g, g.id, { tutorial: true })}</div>
       </div>
       <div class="lob-name">${nameField({ compact: true })}</div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
@@ -510,9 +510,10 @@ function guideButton(meta) {
  */
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+/** Botão de instalar a app: só na página da marca, ao lado da língua (ver renderBrandTop). */
 function installButton() {
   if (isStandalone() || app.installed) return '';
-  return `<button class="lob-ico" data-install aria-label="${esc(u('install'))}" title="${esc(u('install'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button>`;
+  return `<button class="mesa-btn" data-install aria-label="${esc(u('install'))}" title="${esc(u('install'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button>`;
 }
 async function installApp() {
   const ev = app.installEvent;
