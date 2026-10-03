@@ -612,6 +612,14 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 .lob-btn:hover { background: rgb(255 250 241 / .3); color: #fff; }
 .lob-btn.sm { min-height: 32px; }
 .lob-btn.ico { padding: 0; min-width: 36px; justify-content: center; }
+/* Tutorial e regras: só o ícone, sem caixa (alvo de toque de 36px). */
+.lob-ico {
+  min-width: 36px; min-height: 36px; padding: 0; border: 0; background: transparent; color: #fff; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; text-shadow: 0 1px 3px rgb(0 0 0 / .6);
+}
+.lob-ico svg { filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6)); }
+.lob-ico:hover { background: rgb(255 255 255 / .12); }
+.lob-ico:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .lob-btn.on { background: rgb(255 250 241 / .45); border-color: #fff; }
 .lob-btn.pri { background: #fff; color: var(--brand-primary, #b8461f); border-color: transparent; }
 .lob-btn.pri:hover { background: #fffaf1; color: var(--brand-primary, #b8461f); }

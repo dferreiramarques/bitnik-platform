@@ -488,13 +488,12 @@ function renderTableTop(gameId, meta, extra = '') {
 
 /**
  * Botão durante a partida: com conteúdo de regras abre a modal "Como se joga"
- * sem sair da mesa ("?"); sem `rules`, o atalho é o "Tutorial" (play).
+ * sem sair da mesa ("?"); o "Tutorial" é o livro. Ambos sem caixa.
  */
 function guideButton(meta) {
-  if (meta?.rules) return `<button class="mesa-btn" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>`;
-  // "Como se joga" são as regras; o wizard é o "Tutorial" (ícone de play, como no lobby).
-  if (meta?.tutorial) return `<a class="mesa-btn" href="#/tutorial/${esc(meta.id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg></a>`;
-  return '';
+  const tutorial = meta?.tutorial ? `<a class="mesa-btn" href="#/tutorial/${esc(meta.id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/></svg></a>` : '';
+  const rules = meta?.rules ? `<button class="mesa-btn" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>` : '';
+  return tutorial + rules;
 }
 
 /** Como guideButton(), mas com texto (lobby e sala de espera, antes da mesa). */
@@ -526,12 +525,13 @@ navigator.getInstalledRelatedApps?.().then((apps) => {
 window.addEventListener('appinstalled', () => { app.installEvent = null; app.installed = true; if (!routeRoom()) render(); });
 
 function guideLink(meta, id) {
-  const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg>';
-  const play = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
+  const icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
+  const book = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/></svg>';
   // O tutorial interativo tem botão próprio: com regras escritas (modal), deixava de se chegar a ele.
-  const tutorial = meta?.tutorial ? `<a class="lob-btn ico" href="#/tutorial/${esc(id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}">${play}</a>` : '';
-  if (meta?.rules) return `${tutorial}<button class="lob-btn ico" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}">${icon}</button>`;
-  return tutorial; // sem regras escritas, só o Tutorial (nunca o wizard com o nome "Como se joga")
+  // Tutorial (livro) e regras (?): só o ícone, sem caixa (.lob-ico).
+  const tutorial = meta?.tutorial ? `<a class="lob-ico" href="#/tutorial/${esc(id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}">${book}</a>` : '';
+  const rules = meta?.rules ? `<button class="lob-ico" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}">${icon}</button>` : '';
+  return tutorial + rules; // sem regras escritas, só o Tutorial (nunca o wizard com o nome "Como se joga")
 }
 
 const fxClass = (fx) => (fx ? ` fx-${fx}` : '');
