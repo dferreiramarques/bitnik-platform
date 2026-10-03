@@ -1,5 +1,10 @@
 # Nine Oils — histórico de regras
 
+
+## 1.2.2 — Ficha das combinações sempre ativa; mensagens em vidro (2026-10-03)
+
+Sem mudanças de regras. A ficha das combinações passa a estar sempre ativa (sem opções, mostra "Sem combinações"), para o ecrã não saltar quando muda de estado. As mensagens da mesa ganham um vidro mais cheio e desfocado, que tapa o resto da interface e as torna mais legíveis.
+
 ## 1.2.1 — Imagens mais leves: dados e cartas em webp, ao tamanho de uso (2026-10-02)
 
 Sem mudanças de jogo: os dados (374×364, ~250 KB cada) e as cartas de

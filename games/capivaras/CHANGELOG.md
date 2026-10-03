@@ -1,4 +1,9 @@
 # Capivaras — histórico de regras
+
+## 2.1.2 — Telemóvel na horizontal: containers trocados (2026-10-03)
+
+Sem mudanças de regras. Na horizontal, a barra de apostas/revelação passa para baixo da coluna dos jogadores e as cartas apanhadas para baixo das cartas da mesa; a coluna dos jogadores só tem fade em baixo.
+
 ## 2.1.1 — Regras ilustradas e tutorial mais claro (2026-10-02)
 
 Sem mudanças de regras. A modal "Como se joga" passa a ter o tema do Capivaras também no lobby (antes só o tinha dentro da mesa) e ganha ilustrações com as cartas reais: a mesa de uma ronda, um exemplo de apostas (duas na A, a carta foge; uma na B, é tua), o token do pássaro, as quatro cores de nenúfar e a pontuação. No tutorial, o passo da aposta (e qualquer passo que espere por uma jogada) passa a dizer "Faz a jogada na mesa para continuar", porque não tem botão "Seguinte" e parecia bloqueado no passo 3.

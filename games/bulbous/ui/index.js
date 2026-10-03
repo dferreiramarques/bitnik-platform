@@ -52,7 +52,7 @@ let view = null;
 let ctx = null;
 let msg = null;
 let resizeObs = null;
-const fresh = () => ({ logOpen: false, selected: new Set(), declareOrder: [], declareRonda: null, prevKey: null, lastLogSeq: 0 });
+const fresh = () => ({ logOpen: false, doneSeat: null, selected: new Set(), declareOrder: [], declareRonda: null, prevKey: null, lastLogSeq: 0 });
 let ui = fresh();
 
 export function mount(el, context) {
@@ -127,6 +127,9 @@ function cardVisual(c) {
 }
 
 function onClick(e) {
+  if (e.target.classList.contains('bulbous-done-backdrop') || e.target.closest('.bulbous-done-x')) { ui.doneSeat = null; render(); return; }
+  const done = e.target.closest('[data-done]');
+  if (done) { ui.doneSeat = Number(done.dataset.done); render(); return; }
   const choose = e.target.closest('[data-choose]');
   if (choose) {
     const baelf = Number(choose.dataset.choose);
@@ -185,7 +188,8 @@ function render() {
     </div>
     ${renderHand(v)}
     ${msg.result ? '' : `<div class="bulbous-bar" data-tut="bar">${renderBar(v)}</div>`}
-    ${renderLog()}`;
+    ${renderLog()}
+    ${renderDone(v)}`;
   fitHand();
   ctx.afterRender?.(); // o tutorial volta a pôr o destaque
 }
@@ -229,6 +233,7 @@ function renderPlayers(v) {
       <div class="bulbous-pcards">${esc(ctx.t('ui.hand'))}: ${j.mao ? j.mao.length : j.cartas}</div>
       <div class="bulbous-pstate">${estado}</div>
       ${renderMinis(j)}
+      ${donePill(j, i)}
     </div>`;
   }).join('')}</div>`;
 }
@@ -240,6 +245,28 @@ function renderMinis(j) {
       <span class="bulbous-mini-dots">${Array.from({ length: b.espacos }, (_, k) => `<i class="bulbous-mini-dot${k < b.bolbos.length ? ' filled' : ''}"></i>`).join('')}</span>
     </span>`;
   }).join('')}</div>`;
+}
+
+/** Pill "Completas (N)" — só aparece quando já há Baelfungious completas; abre
+ * o modal com elas (e os bolbos que cada uma leva). */
+function donePill(j, seat) {
+  const n = j.baelfs.filter((b) => b.completa).length;
+  if (!n) return '';
+  return `<button class="bulbous-donepill" type="button" data-done="${seat}">${esc(ctx.t('ui.completed'))} (${n})</button>`;
+}
+
+/** Modal com as Baelfungious completas de um jogador, com scroll. */
+function renderDone(v) {
+  const seat = ui.doneSeat;
+  const j = seat != null ? v.jogadores[seat] : null;
+  if (!j) return '';
+  const cards = j.baelfs.filter((b) => b.completa).map((b) => `<div class="bulbous-baelf-slot">${baelfCard(b, v)}</div>`).join('');
+  return `<div class="bulbous-done-backdrop">
+    <div class="bulbous-done-modal" role="dialog" aria-label="${esc(ctx.t('ui.completed'))}">
+      <div class="bulbous-done-head"><span>${esc(ctx.t('ui.completed'))} — ${esc(ctx.seatName(seat))}</span><button class="bulbous-done-x" type="button" aria-label="${esc(ctx.t('ui.close'))}">✕</button></div>
+      <div class="bulbous-done-list">${cards || `<span class="bulbous-lbl">${esc(ctx.t('ui.noneCompleted'))}</span>`}</div>
+    </div>
+  </div>`;
 }
 
 function renderChips(v) {
@@ -313,7 +340,7 @@ function renderEscolher(v) {
 function renderMyBaelfs(v) {
   const me = mySeat();
   if (me == null) return '<div></div>';
-  return `<div class="bulbous-mybaelfs">${renderMinis(v.jogadores[me])}</div>`;
+  return `<div class="bulbous-mybaelfs">${renderMinis(v.jogadores[me])}${donePill(v.jogadores[me], me)}</div>`;
 }
 
 function renderLog() {

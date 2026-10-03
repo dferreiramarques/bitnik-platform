@@ -1,5 +1,10 @@
 # Praia das Percebes — histórico de regras
 
+
+## 2.1.4 — Só na vertical, sem botões de zoom (2026-10-03)
+
+Sem mudanças de regras. Saem os botões de zoom (continua o zoom e o arrastar com os dedos e a roda). No telemóvel o jogo tenta bloquear a orientação na vertical e, na horizontal, mostra um aviso para rodar o ecrã.
+
 ## 2.1.3 — Objetivos só contam com a peça que os completa (2026-10-02)
 
 Correção: um objetivo que já estava feito no tabuleiro quando era revelado

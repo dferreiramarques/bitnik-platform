@@ -59,6 +59,9 @@ export default {
   'err.DESEMPATE_COR': 'Only a card of the colour of this Baelfungious counts in the tie-break.',
 
   'ui.log': 'Log',
+  'ui.completed': 'Completed',
+  'ui.close': 'Close',
+  'ui.noneCompleted': 'None completed yet',
   'ui.round': 'Round {n}',
   'ui.governor': 'Governor',
   'ui.deckLeft': '{n} in the deck',

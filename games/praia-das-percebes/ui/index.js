@@ -68,6 +68,13 @@ export function mount(el, context) {
   root = document.createElement('div');
   root.className = 'praia';
   root.append(renderWind());
+  // Só se joga na vertical no telemóvel: o bloqueio de orientação só funciona
+  // em ecrã inteiro (e não no iOS), por isso há também um aviso para rodar (CSS).
+  screen.orientation?.lock?.('portrait')?.catch?.(() => {});
+  const rotate = document.createElement('div');
+  rotate.className = 'praia-rotate';
+  rotate.innerHTML = `<span aria-hidden="true">📱</span><b>${esc(ctx.t('ui.rotate'))}</b>`;
+  root.append(rotate);
   view = document.createElement('div');
   view.className = 'praia-layout';
   root.append(view);
@@ -84,6 +91,7 @@ export function mount(el, context) {
 }
 
 export function unmount() {
+  try { screen.orientation?.unlock?.(); } catch { /* sem bloqueio ativo */ }
   resizeObs?.disconnect(); resizeObs = null;
   frame = null;
   root?.remove();
@@ -112,12 +120,6 @@ function onClick(e) {
     if (mv) ctx.move({ type: mv.type, payload: mv.payload });
     return;
   }
-  const zb = e.target.closest('[data-zoom]');
-  if (zb) {
-    const [cx, cy] = viewCenter();
-    if (zb.dataset.zoom === 'fit') { ui.zoom = { s: 1, x: 0, y: 0 }; applyZoom(false, true); } else zoomAt(cx, cy, zb.dataset.zoom === 'in' ? 1.25 : 0.8);
-    return;
-  }
   const bar = e.target.closest('[data-idx]');
   if (bar) { const mv = msg.legal?.[Number(bar.dataset.idx)]; if (mv) ctx.move({ type: mv.type, payload: mv.payload }); return; }
   if (e.target.closest('[data-act="logfold"]')) { ui.logOpen = !ui.logOpen; render(); return; }
@@ -137,13 +139,7 @@ function render() {
       </div>
       ${renderDeck(v)}
     </div>
-    <div class="praia-center" data-tut="board">
-      <div class="praia-zoombar">
-        <button class="praia-zb" data-zoom="in" type="button" aria-label="${esc(ctx.t('ui.zoomIn'))}">+</button>
-        <button class="praia-zb" data-zoom="out" type="button" aria-label="${esc(ctx.t('ui.zoomOut'))}">−</button>
-        <button class="praia-zb" data-zoom="fit" type="button" aria-label="${esc(ctx.t('ui.zoomFit'))}">⤢</button>
-      </div>
-    </div>
+    <div class="praia-center" data-tut="board"></div>
     <div class="praia-bottom">
       ${renderPiece(v, me)}
     </div>

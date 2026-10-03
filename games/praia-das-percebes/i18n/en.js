@@ -41,9 +41,7 @@ export default {
   'ui.placeHere': 'Place here',
   'ui.turnOf': '{nome}’s turn…',
   'ui.spectating': 'Watching the game.',
-  'ui.zoomIn': 'Zoom in',
-  'ui.zoomOut': 'Zoom out',
-  'ui.zoomFit': 'Fit',
+  'ui.rotate': 'Rotate your phone to portrait to play',
   // Tutorial (ui/tutorial.js)
   'tut.you': 'You',
   'tut.bot': 'Bot',

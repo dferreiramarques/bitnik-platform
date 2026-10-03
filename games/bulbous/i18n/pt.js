@@ -59,6 +59,9 @@ export default {
   'err.DESEMPATE_COR': 'No desempate só vale uma carta da cor desta Baelfungious.',
 
   'ui.log': 'Registo',
+  'ui.completed': 'Completas',
+  'ui.close': 'Fechar',
+  'ui.noneCompleted': 'Ainda sem completas',
   'ui.round': 'Ronda {n}',
   'ui.governor': 'Governante',
   'ui.deckLeft': '{n} no baralho',

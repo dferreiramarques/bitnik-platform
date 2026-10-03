@@ -9,7 +9,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'praia-das-percebes',
-  version: '2.1.3',
+  version: '2.1.4',
   players: { min: 2, max: 4 },
   author: 'David Marques',
   license: 'UNLICENSED',

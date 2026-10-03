@@ -246,3 +246,31 @@
   }
   .bulbous-move { width: 100%; padding: 6px 8px; font-size: 11.5px; white-space: normal; text-align: center; }
 }
+
+/* ── Baelfungious completas: pill (no cartão do jogador e na minha zona) que
+   abre um modal com elas e os bolbos que cada uma leva, com scroll. ── */
+.bulbous-donepill {
+  justify-self: start; padding: 2px 10px; min-height: 22px; border-radius: 999px; box-sizing: border-box;
+  background: var(--g); border: 1px solid var(--gl); color: var(--ot);
+  font-size: 10px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap;
+}
+.bulbous-donepill:hover, .bulbous-donepill:focus-visible { border-color: var(--bulb-accent, #c084fc); }
+.bulbous-mybaelfs { align-items: center; }
+.bulbous-done-backdrop {
+  position: absolute; inset: 0; z-index: 20; background: rgb(0 0 0 / .55);
+  display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;
+}
+.bulbous-done-modal {
+  width: min(560px, 100%); max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;
+  padding: 14px; border-radius: var(--bulb-radius, 12px);
+  background: rgb(22 22 42 / .92); border: 1px solid var(--gl); color: var(--ot);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgb(0 0 0 / .5);
+}
+.bulbous-done-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 800; font-size: 14px; }
+.bulbous-done-x { width: 28px; height: 28px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: var(--g); color: var(--ot); }
+.bulbous-done-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; overflow-y: auto; min-height: 0; padding: 4px; }
+.bulbous-done-list .bulbous-baelf { width: 108px; }
+.bulbous-done-list .bulbous-baelf.complete { opacity: 1; }
+@container (max-width: 760px) {
+  .bulbous-done-list .bulbous-baelf { width: 84px; }
+}
