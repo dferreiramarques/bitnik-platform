@@ -508,7 +508,7 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || n
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function installButton() {
   if (isStandalone() || app.installed) return '';
-  return `<button class="lob-btn" data-install><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>${u('install')}</button>`;
+  return `<button class="lob-btn ico" data-install aria-label="${esc(u('install'))}" title="${esc(u('install'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button>`;
 }
 async function installApp() {
   const ev = app.installEvent;
@@ -526,11 +526,11 @@ navigator.getInstalledRelatedApps?.().then((apps) => {
 window.addEventListener('appinstalled', () => { app.installEvent = null; app.installed = true; if (!routeRoom()) render(); });
 
 function guideLink(meta, id) {
-  const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
+  const icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg>';
   const play = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
   // O tutorial interativo tem botão próprio: com regras escritas (modal), deixava de se chegar a ele.
-  const tutorial = meta?.tutorial ? `<a class="lob-btn" href="#/tutorial/${esc(id)}">${play}${u('tutorial')}</a>` : '';
-  if (meta?.rules) return `${tutorial}<button class="lob-btn" data-rules>${icon}${u('howToPlay')}</button>`;
+  const tutorial = meta?.tutorial ? `<a class="lob-btn ico" href="#/tutorial/${esc(id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}">${play}</a>` : '';
+  if (meta?.rules) return `${tutorial}<button class="lob-btn ico" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}">${icon}</button>`;
   return tutorial; // sem regras escritas, só o Tutorial (nunca o wizard com o nome "Como se joga")
 }
 
