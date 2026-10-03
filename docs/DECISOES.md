@@ -574,3 +574,8 @@ Cada publisher cliente tem o seu runtime (um deploy por marca), mas o desenho do
 - A aparência de cada jogo por marca copia-se da Aparência do Studio (botão "Copiar a aparência atual"); ainda não há um editor completo por marca.
 - A pré-visualização não impede jogar os jogos que ficaram de fora por link direto; é só para mostrar o lobby.
 - O pacote é um JSON; um zip pronto a instalar (projeto do runtime com os pacotes dos jogos) fica para depois.
+
+### Adenda ao ADR-022: secções do lobby
+
+- O lobby pode agrupar os jogos por secções com título (ex.: "Jogos da Bitnik", "Jogos de outra publisher", "Open source"), para agregar acordos e cedências. `appearance.sections`: `[{ title, games: [ids] }]`; um jogo só numa secção; os que não estão em nenhuma aparecem primeiro, sem título.
+- Vale para a plataforma (endpoint `PUT /admin/sections`, não apagado ao guardar a Aparência) e para cada marca (`appearance.sections` do perfil, exportado com o pacote). Edita-se em Consola › Marcas.

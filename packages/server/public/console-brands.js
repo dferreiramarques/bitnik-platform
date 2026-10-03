@@ -11,7 +11,7 @@ const MAX_LOGO_KB = 300;
 const TXT = {
   pt: {
     title: 'Marcas', lead: 'Lobbies para clientes: escolhe os jogos, afina a identidade, mostra ao cliente e exporta o pacote para o runtime dele.',
-    secPlatform: 'Esta plataforma', secClients: 'Marcas de clientes', none: 'Ainda não há marcas de clientes.', current: 'plataforma atual', duplicate: 'Duplicar como nova marca', copyOf: '{name} (cópia)', add: 'Nova marca', edit: 'Editar', open: 'Abrir', export: 'Exportar pacote', remove: 'Apagar',
+    sections: 'Secções do lobby', sectionsHint: 'Agrupa os jogos por títulos (ex.: "Jogos da Bitnik", "Jogos de outra publisher"). Os jogos sem secção aparecem primeiro, sem título.', addSection: 'Adicionar secção', sectionName: 'Título da secção', removeSection: 'Tirar secção', noSections: 'Sem secções: os jogos aparecem numa lista só.', editSections: 'Secções', platformSections: 'Secções do lobby da plataforma', sectionsSaved: 'Secções guardadas.', secPlatform: 'Esta plataforma', secClients: 'Marcas de clientes', none: 'Ainda não há marcas de clientes.', current: 'plataforma atual', duplicate: 'Duplicar como nova marca', copyOf: '{name} (cópia)', add: 'Nova marca', edit: 'Editar', open: 'Abrir', export: 'Exportar pacote', remove: 'Apagar',
     removeConfirm: 'Apagar a marca "{name}"? Não se pode desfazer.', games: '{n} jogos',
     name: 'Nome da marca', id: 'Identificador (no link /marca/…)', lang: 'Língua do lobby', logo: 'Logótipo', logoUpload: 'Carregar logótipo', logoRemove: 'Tirar',
     logoHint: 'Substitui o nome no topo e é o ícone do separador. PNG, SVG ou WebP, até {kb} KB.',
@@ -25,7 +25,7 @@ const TXT = {
   },
   en: {
     title: 'Brands', lead: 'Lobbies for clients: pick the games, tune the identity, show it to the client and export the package for their runtime.',
-    secPlatform: 'This platform', secClients: 'Client brands', none: 'No client brands yet.', current: 'current platform', duplicate: 'Duplicate as a new brand', copyOf: '{name} (copy)', add: 'New brand', edit: 'Edit', open: 'Open', export: 'Export package', remove: 'Delete',
+    sections: 'Lobby sections', sectionsHint: 'Group the games under titles (e.g. "Bitnik games", "Other publisher games"). Games without a section show first, untitled.', addSection: 'Add section', sectionName: 'Section title', removeSection: 'Remove section', noSections: 'No sections: games show in one list.', editSections: 'Sections', platformSections: 'Platform lobby sections', sectionsSaved: 'Sections saved.', secPlatform: 'This platform', secClients: 'Client brands', none: 'No client brands yet.', current: 'current platform', duplicate: 'Duplicate as a new brand', copyOf: '{name} (copy)', add: 'New brand', edit: 'Edit', open: 'Open', export: 'Export package', remove: 'Delete',
     removeConfirm: 'Delete the brand "{name}"? This cannot be undone.', games: '{n} games',
     name: 'Brand name', id: 'Identifier (in the /marca/… link)', lang: 'Lobby language', logo: 'Logo', logoUpload: 'Upload logo', logoRemove: 'Remove',
     logoHint: 'Replaces the name at the top and is the tab icon. PNG, SVG or WebP, up to {kb} KB.',
@@ -51,20 +51,22 @@ export function init(context) { ctx = context; }
 const tr = (k, p = {}) => (TXT[ctx.lang()] || TXT.pt)[k].replace(/\{(\w+)\}/g, (_, x) => p[x] ?? '');
 
 export async function load() { st.data = await ctx.api('brands'); }
-export function leave() { st.editing = null; }
+export function leave() { st.editing = null; st.platformSections = null; }
 
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
 const gamesWithSkin = (a) => Object.keys(a?.games || {}).length;
 
 export function view() {
   if (!st.data) return '<p class="empty">…</p>';
-  return `<h2>${tr('title')}</h2><p class="con-lead">${tr('lead')}</p>${st.editing ? editor() : list()}`;
+  const body = st.platformSections ? platformSectionsEditor() : st.editing ? editor() : list();
+  return `<h2>${tr('title')}</h2><p class="con-lead">${tr('lead')}</p>${body}`;
 }
 
 function list() {
   const p = st.data.platform;
   const own = p ? `<li data-platform>
       <span class="grow"><strong>${esc(p.name)}</strong> <span class="pill">${tr('current')}</span> <small>${esc(p.home)} · ${tr('games', { n: p.games.length })}</small></span>
+      <button class="btn btn-ghost" data-br="platform-sections">${tr('editSections')}</button>
       <a class="btn btn-ghost" href="${esc(p.home)}" target="_blank" rel="noopener">${tr('open')}</a>
       <button class="btn btn-ghost" data-br="duplicate">${tr('duplicate')}</button></li>` : '';
   const cards = st.data.brands.map((b) => `<li data-brand="${esc(b.id)}">
@@ -76,6 +78,24 @@ function list() {
   return `<div class="panel"><button class="btn btn-primary" data-br="new">${tr('add')}</button></div>
     <div class="panel"><h3>${tr('secPlatform')}</h3><ul class="rows">${own}</ul></div>
     <div class="panel"><h3>${tr('secClients')}</h3>${cards ? `<ul class="rows">${cards}</ul>` : `<p class="empty">${tr('none')}</p>`}</div>`;
+}
+
+/** Editor de secções (partilhado): `sections` é o array a editar; `gameIds` os jogos que se podem pôr. */
+function sectionsHtml(sections, gameIds) {
+  const names = Object.fromEntries(st.data.games.map((g) => [g.id, g.name]));
+  const rows = sections.map((s, i) => `<div class="panel" data-sec="${i}" style="display:grid;gap:8px">
+      <div class="ap-input"><input data-br-sec-title="${i}" value="${esc(s.title)}" maxlength="40" placeholder="${esc(tr('sectionName'))}" aria-label="${esc(tr('sectionName'))}">
+        <button class="btn btn-quiet btn-sm" data-br="sec-remove" data-i="${i}">${tr('removeSection')}</button></div>
+      <div style="display:flex;gap:6px 18px;flex-wrap:wrap">${gameIds.map((id) => `<label class="check"><input type="checkbox" data-br-sec-game="${i}|${esc(id)}" ${s.games.includes(id) ? 'checked' : ''}> ${esc(names[id] || id)}</label>`).join('')}</div></div>`).join('');
+  return `<small>${tr('sectionsHint')}</small>${rows || `<p class="empty">${tr('noSections')}</p>`}
+    <div><button class="btn btn-ghost btn-sm" data-br="sec-add">${tr('addSection')}</button></div>`;
+}
+
+function platformSectionsEditor() {
+  const p = st.data.platform;
+  return `<div class="panel"><h3>${tr('platformSections')}</h3>${sectionsHtml(st.platformSections, p.games)}
+    <div class="ap-input" style="margin-top:12px"><button class="btn btn-primary" data-br="platform-sections-save">${tr('save')}</button>
+      <button class="btn btn-ghost" data-br="platform-sections-close">${tr('cancel')}</button></div></div>`;
 }
 
 function tokenRow(k, type, value) {
@@ -105,6 +125,7 @@ function editor() {
       <small>${tr('logoHint', { kb: MAX_LOGO_KB })}</small></fieldset>
     <fieldset class="ap-group"><legend>${tr('pickGames')}</legend><small>${tr('pickHint')}</small>
       <div style="display:flex;gap:6px 18px;flex-wrap:wrap">${gameRows}</div></fieldset>
+    <fieldset class="ap-group"><legend>${tr('sections')}</legend>${sectionsHtml(e.appearance.sections || [], e.games)}</fieldset>
     <fieldset class="ap-group"><legend>${tr('colors')}</legend>
       ${Object.entries(st.data.brandTokens).map(([k, type]) => tokenRow(k, type, tokens[k])).join('')}</fieldset>
     <fieldset class="ap-group"><legend>${tr('skin')}</legend><small>${tr('skinHint')}</small>
@@ -142,7 +163,11 @@ function blank() {
 export function after(root) {
   if (st.bound) return;
   st.bound = true;
+  /** As secções que se estão a editar: as da marca em edição, ou as da plataforma. */
+  const secList = () => (st.platformSections ? st.platformSections : st.editing ? (st.editing.appearance.sections ??= []) : null);
   root.addEventListener('input', (ev) => {
+    const secTitle = ev.target.dataset?.brSecTitle;
+    if (secTitle != null && secList()) { secList()[Number(secTitle)].title = ev.target.value; return; }
     const e = st.editing;
     if (!e) return;
     const f = ev.target.dataset?.brF;
@@ -160,6 +185,15 @@ export function after(root) {
     }
   });
   root.addEventListener('change', async (ev) => {
+    const sg = ev.target.dataset?.brSecGame;
+    if (sg && secList()) {
+      const [i, id] = sg.split('|');
+      // Um jogo só numa secção: ao marcar aqui, sai das outras.
+      for (const [k, sec] of secList().entries()) sec.games = sec.games.filter((x) => x !== id || (ev.target.checked && k === Number(i)));
+      if (ev.target.checked) secList()[Number(i)].games.push(id);
+      ctx.rerender();
+      return;
+    }
     const e = st.editing;
     if (!e) return;
     const g = ev.target.dataset?.brGame;
@@ -177,7 +211,17 @@ export function after(root) {
     const row = ev.target.closest('[data-brand]')?.dataset.brand;
     const e = st.editing;
     try {
-      if (act === 'new') st.editing = blank();
+      if (act === 'sec-add') secList().push({ title: '', games: [] });
+      else if (act === 'sec-remove') secList().splice(Number(ev.target.closest('[data-i]').dataset.i), 1);
+      else if (act === 'platform-sections') st.platformSections = clone(st.data.platform.sections || []);
+      else if (act === 'platform-sections-close') st.platformSections = null;
+      else if (act === 'platform-sections-save') {
+        const { sections } = await ctx.api('sections', { method: 'PUT', body: { sections: st.platformSections } });
+        st.platformSections = null;
+        await load();
+        ctx.toast(tr('sectionsSaved'));
+      }
+      else if (act === 'new') st.editing = blank();
       else if (act === 'duplicate') {
         // Ponto de partida: os jogos que aparecem agora no lobby da plataforma e a sua aparência.
         const p = st.data.platform;

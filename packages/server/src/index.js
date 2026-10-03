@@ -494,9 +494,25 @@ export function createPlatform({
     return out;
   }
 
+  /** Secções do lobby: [{ title, games: [ids] }]; um jogo só numa secção; só jogos instalados. */
+  function cleanSections(input) {
+    const seen = new Set();
+    const out = [];
+    for (const s of Array.isArray(input) ? input.slice(0, 12) : []) {
+      const title = String(s?.title ?? '').replace(/[<>]/g, '').trim().slice(0, 40);
+      const games = [...new Set((s?.games || []).map(String))].filter((id) => G.has(id) && !seen.has(id));
+      if (!title) continue;
+      games.forEach((id) => seen.add(id));
+      out.push({ title, games });
+    }
+    return out;
+  }
+
   /** Valida as afinações (marca + jogos); só tokens declarados, só temas que existem. */
   async function cleanAppearance(input = {}) {
     const next = { brand: { tokens: cleanBrandTokens(input.brand?.tokens) }, games: {} };
+    const sections = cleanSections(input.sections);
+    if (sections.length) next.sections = sections;
     for (const [gameId, cfg] of Object.entries(input.games || {})) {
       const out = await cleanGameConfig(gameId, cfg);
       if (out.theme || Object.keys(out.tokens).length || out.thumbnail || out.anims) next.games[gameId] = out;
@@ -509,10 +525,21 @@ export function createPlatform({
     const next = await cleanAppearance(input);
     // A visibilidade tem o seu próprio endpoint; o editor de aparência não a toca.
     if (appearance.hidden) next.hidden = appearance.hidden;
+    if (appearance.sections && !next.sections) next.sections = appearance.sections; // as secções do lobby têm o seu próprio endpoint
     appearance = next;
     storage.saveAppearance?.(appearance);
     broadcastAppearance();
     return appearance;
+  }
+
+  /** Secções do lobby desta plataforma (a marca do servidor). */
+  function setPlatformSections(input) {
+    const sections = cleanSections(input);
+    const { sections: _, ...rest } = appearance;
+    appearance = sections.length ? { ...rest, sections } : rest;
+    storage.saveAppearance?.(appearance);
+    broadcastAppearance();
+    return sections;
   }
 
   /** Manda a cada ligado a aparência que lhe corresponde (a global, ou a da marca em pré-visualização). */
@@ -1171,6 +1198,7 @@ export function createPlatform({
           home: adminToken && consoleAtRoot ? `/${brand.id}` : '/',
           games: [...G.values()].filter((g) => !(appearance.hidden?.[g.id] ?? !!g.hidden)).map((g) => g.id),
         };
+        platform.sections = appearance.sections || [];
         return json(res, 200, { platform, brands, games: [...G.values()].map((g) => ({ id: g.id, name: gameName(g), prototype: !!g.prototype })), brandTokens: BRAND_TOKENS, current: appearance });
       }
       const brandMatch = url.match(/^\/admin\/brands\/([a-z0-9-]+)(\/export)?$/);
@@ -1183,6 +1211,7 @@ export function createPlatform({
         if (!exp && req.method === 'PUT') return json(res, 200, { brand: await saveBrand(bid, await readJson(req, APPEARANCE_MAX)) });
         if (!exp && req.method === 'DELETE') return json(res, deleteBrand(bid) ? 204 : 404);
       }
+      if (url === '/admin/sections' && req.method === 'PUT') return json(res, 200, { sections: setPlatformSections((await readJson(req)).sections) });
       if (url === '/admin/appearance' && req.method === 'GET') return json(res, 200, await appearanceCatalog());
       if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req, APPEARANCE_MAX)) });
       if (url === '/admin/appearance/presets' && req.method === 'POST') {
