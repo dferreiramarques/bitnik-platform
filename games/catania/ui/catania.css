@@ -100,7 +100,7 @@
 .cat-hex { cursor: default; }
 /* Textura dos hexágonos: multiplica, por isso mantém as cores do recurso;
    a intensidade vem do token --tile-texture-strength. */
-.cat-hex-tex { fill: url(#cat-tex); mix-blend-mode: multiply; opacity: var(--tile-texture-strength, .5); pointer-events: none; }
+.cat-hex-tex { mix-blend-mode: multiply; opacity: var(--tile-texture-strength, .5); pointer-events: none; }
 .cat-hex.can { cursor: pointer; }
 .cat-hex.can .cat-hex-shape { stroke: var(--cat-gold); stroke-width: 3; }
 .cat-hex.can:hover .cat-hex-glow, .cat-hex.can:focus .cat-hex-glow { opacity: .28; }

@@ -186,8 +186,9 @@ function renderPlayers(v) {
   }).join('')}</div>`;
 }
 
-/** Textura dos hexágonos (token --tile-texture, "Aparência" na consola): uma
- * imagem sobreposta por multiplicação, para não perder as cores. Lê o token
+/** Textura dos hexágonos (token --tile-texture, "Aparência" na consola): a
+ * mesma imagem inteira em cada hexágono (1 a 1, não uma só imagem repartida
+ * pelo tabuleiro), sobreposta por multiplicação, para não perder as cores. Lê o token
  * do estilo calculado (a plataforma aplica-o em folhas de estilo próprias) e
  * extrai o url(); sem imagem ou com intensidade 0, não há textura. Devolve o
  * href para o <pattern> (ver renderBoard) ou null. */
@@ -234,7 +235,7 @@ function renderBoard(v) {
         ${move ? `role="button" tabindex="0" aria-label="${esc(label)}"` : `aria-label="${esc(label)}"`}>
       <title>${esc(label)}</title>
       <polygon class="cat-hex-shape" points="${hexPts(cx, cy, R - 1.5)}" style="fill:var(--cat-res-${hex.type})" stroke="rgb(0 0 0 / .5)" stroke-width="1.2"/>
-      ${tex ? `<polygon class="cat-hex-tex" points="${hexPts(cx, cy, R - 1.5)}"/>` : ''}
+      ${tex ? `<polygon class="cat-hex-tex" points="${hexPts(cx, cy, R - 1.5)}" fill="url(#cat-tex-${hex.id})"/>` : ''}
       ${move ? `<polygon class="cat-hex-glow" points="${hexPts(cx, cy, R - 1.5)}"/>` : ''}
       <image href="${ICONS[hex.type]}" x="${cx - 16}" y="${cy - 22}" width="32" height="32" style="pointer-events:none"/>
       <text x="${cx}" y="${cy + 24}" text-anchor="middle" font-size="9" font-weight="600" fill="rgb(255 255 255 / .8)" style="font-family:var(--cat-font-display);pointer-events:none">${esc(name)}</text>
@@ -248,7 +249,7 @@ function renderBoard(v) {
   // Para onde o fogo pode ir: contorno a pulsar por cima de todos os hexágonos (o brilho não fica tapado pelos vizinhos).
   const picks = v.hexes.filter((hex) => hexMove(hex.id)?.type === 'MOVE_FIRE')
     .map((hex) => `<polygon points="${hexPts(hex.px.x, hex.px.y, R - 1.5)}"/>`).join('');
-  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${tex ? `<defs><pattern id="cat-tex" patternUnits="userSpaceOnUse" width="520" height="355"><image href="${esc(tex)}" width="520" height="355" preserveAspectRatio="none"/></pattern></defs>` : ''}${renderFoam(v)}${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true" style="--pick-delay:${loopDelay(1.3)}">${picks}</g>` : ''}</svg>`;
+  return `<svg viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Catania">${tex ? `<defs>${v.hexes.map((hex) => `<pattern id="cat-tex-${hex.id}" patternUnits="userSpaceOnUse" x="${hex.px.x - R}" y="${hex.px.y - R}" width="${R * 2}" height="${R * 2}"><image href="${esc(tex)}" width="${R * 2}" height="${R * 2}" preserveAspectRatio="xMidYMid slice"/></pattern>`).join('')}</defs>` : ''}${renderFoam(v)}${hexes}${picks ? `<g class="cat-firepicks" aria-hidden="true" style="--pick-delay:${loopDelay(1.3)}">${picks}</g>` : ''}</svg>`;
 }
 
 
