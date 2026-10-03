@@ -26,7 +26,7 @@ const UI = {
     points: '{n} pts', again: 'Jogar outra vez', system: 'Jogo',
     confirmRemove: 'Apagar esta mesa?',
     notSent: 'Sem ligação: a jogada não foi enviada.',
-    install: 'Instalar', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
+    install: 'Instalar', installAndroid: 'Para instalar no telemóvel: abre o menu do browser (⋮ ou ≡) e escolhe "Instalar app" ou "Adicionar ao ecrã principal". Se não aparecer, abre esta página no Chrome.', installIos: 'Para instalar: toca em Partilhar e depois em "Adicionar ao ecrã principal".',
     installManual: 'Para instalar: usa o ícone de instalar na barra de endereço do browser (ou o menu do browser → Instalar app). Se já instalaste, abre a app pelo ícone no ambiente de trabalho ou no menu Iniciar.',
     timer: '{event} em {s} s',
     expired: 'Versão antiga ({from}), já não pode ser retomada',
@@ -63,7 +63,7 @@ const UI = {
     points: '{n} pts', again: 'Play again', system: 'Game',
     confirmRemove: 'Delete this table?',
     notSent: 'Offline: the move was not sent.',
-    install: 'Install', installIos: 'To install: tap Share, then "Add to Home Screen".',
+    install: 'Install', installAndroid: 'To install on your phone: open the browser menu (⋮ or ≡) and choose "Install app" or "Add to Home screen". If it is not there, open this page in Chrome.', installIos: 'To install: tap Share, then "Add to Home Screen".',
     installManual: 'To install: use the install icon in the browser address bar (or the browser menu → Install app). If you already installed it, open the app from its desktop or Start menu icon.',
     timer: '{event} in {s} s',
     expired: 'Old version ({from}), can no longer be resumed',
@@ -223,7 +223,7 @@ function renderBrandTop(game = null, { extra = '', backHome = true } = {}) {
     ? (game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : '')
     : `<button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>`;
   return `<header class="home-top">
-    <div class="home-id"><strong class="home-brandname">${brandMark()}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
+    <div class="home-id">${!game && W()?.brand?.logo ? '' : `<strong class="home-brandname">${brandMark()}</strong>`}${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
     <div class="mesa-actions">
       <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}${back}
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
@@ -516,7 +516,7 @@ function installButton() {
 }
 async function installApp() {
   const ev = app.installEvent;
-  if (!ev) { toast(u(isIos() ? 'installIos' : 'installManual')); return; }
+  if (!ev) { toast(u(isIos() ? 'installIos' : /android/i.test(navigator.userAgent) ? 'installAndroid' : 'installManual')); return; }
   app.installEvent = null; // o pedido só se pode usar uma vez
   ev.prompt();
   if ((await ev.userChoice).outcome === 'accepted') app.installed = true;

@@ -1285,8 +1285,9 @@ export function createPlatform({
       const homeSlash = consoleAtHome ? `${home}/` : home;
       res.writeHead(200, { 'Content-Type': MIME['.webmanifest'] });
       return res.end(JSON.stringify({
-        id: homeSlash, scope: homeSlash, lang: brand.lang || 'pt',
-        name: brand.name, short_name: brand.name, start_url: homeSlash, display: 'standalone',
+        // scope sem a barra final: a página do lobby (/bitnik) tem de estar dentro do âmbito, senão o browser não oferece instalar.
+        id: homeSlash, scope: home, lang: brand.lang || 'pt',
+        name: brand.name, short_name: brand.name, start_url: homeSlash, display: 'standalone', prefer_related_applications: false,
         related_applications: [{ platform: 'webapp', url: `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/manifest.webmanifest` }],
         background_color: brand.tokens?.['--color-cream'] || '#fbf3e4',
         theme_color: brand.tokens?.['--color-brick'] || '#b8461f',

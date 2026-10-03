@@ -474,7 +474,7 @@ test('consoleAtRoot: "/" passa a ser a consola e o lobby muda para "/<brand.id>"
 
   const manifest = await (await fetch(`${base}/manifest.webmanifest`)).json();
   assert.equal(manifest.start_url, '/bitnik/');
-  assert.equal(manifest.scope, '/bitnik/');
+  assert.equal(manifest.scope, '/bitnik');
 
   assert.ok(s.platform.serviceWorker.precache.includes('/bitnik'), 'o service worker guarda o lobby, não a consola');
   assert.ok(!s.platform.serviceWorker.precache.includes('/'), 'nunca a consola em cache offline');
