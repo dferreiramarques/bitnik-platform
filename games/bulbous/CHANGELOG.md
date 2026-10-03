@@ -1,5 +1,10 @@
 # Bulbous — histórico de regras
 
+
+## 1.2.2 — Pill das completas no telemóvel (2026-10-03)
+
+Sem mudanças de regras. No telemóvel na vertical, a pill "Completas (N)" cortava o texto; passa a mostrar só ☑ (N).
+
 ## 1.2.1 — Baelfungious completas (2026-10-03)
 
 Sem mudanças de regras. Quando há Baelfungious completas, aparece uma pill "Completas (N)" no cartão do jogador e na minha zona; abre um modal com scroll com essas cartas e os bolbos que cada uma leva.

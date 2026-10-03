@@ -9,7 +9,7 @@ import rulesText from './ui/rules-text.js';
 
 export default defineGame({
   id: 'bulbous',
-  version: '1.2.1',
+  version: '1.2.2',
   // 2 jogadores, ou 4 (individual; em equipas com options.equipas). A 3 não se joga.
   players: { min: 2, max: 4, counts: [2, 4] },
   author: 'David Marques',

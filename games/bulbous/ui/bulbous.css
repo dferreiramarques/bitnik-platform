@@ -271,6 +271,10 @@
 .bulbous-done-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; overflow-y: auto; min-height: 0; padding: 4px; }
 .bulbous-done-list .bulbous-baelf { width: 108px; }
 .bulbous-done-list .bulbous-baelf.complete { opacity: 1; }
+.bulbous-donepill-ico { display: none; }
 @container (max-width: 760px) {
+  /* Telemóvel na vertical: sem espaço para o texto — só ☑ (N). */
+  .bulbous-donepill-txt { display: none; }
+  .bulbous-donepill-ico { display: inline; }
   .bulbous-done-list .bulbous-baelf { width: 84px; }
 }
