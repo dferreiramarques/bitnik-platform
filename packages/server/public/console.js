@@ -7,6 +7,7 @@ const UI = {
     console: 'Consola', lobby: 'Abrir o lobby', lang: 'EN', logout: 'Sair',
     loginTitle: 'Entrar na consola', loginLead: 'Usa o ADMIN_TOKEN deste servidor.', token: 'Token', enter: 'Entrar',
     badToken: 'Token inválido.', offline: 'Sem ligação ao servidor.', saved: 'Guardado.', copied: 'Link copiado.',
+    nav_g_ops: 'Operação', nav_g_create: 'Criação',
     nav_painel: 'Painel', nav_jogos: 'Jogos', nav_mesas: 'Mesas de aprovação', nav_avisos: 'Avisos', nav_forge: 'Forge', soon: 'Fase 1',
     painelLead: 'Estado deste servidor, atualizado a cada 10 s.',
     brand: 'Marca', studio: 'Studio', runtime: 'Runtime', engine: 'Motor', node: 'Node', uptime: 'Ligado há',
@@ -55,6 +56,7 @@ const UI = {
     console: 'Console', lobby: 'Open the lobby', lang: 'PT', logout: 'Sign out',
     loginTitle: 'Sign in to the console', loginLead: "Use this server's ADMIN_TOKEN.", token: 'Token', enter: 'Sign in',
     badToken: 'Invalid token.', offline: 'Cannot reach the server.', saved: 'Saved.', copied: 'Link copied.',
+    nav_g_ops: 'Operations', nav_g_create: 'Create',
     nav_painel: 'Dashboard', nav_jogos: 'Games', nav_mesas: 'Review tables', nav_avisos: 'Notices', nav_forge: 'Forge', soon: 'Phase 1',
     painelLead: 'State of this server, refreshed every 10 s.',
     brand: 'Brand', studio: 'Studio', runtime: 'Runtime', engine: 'Engine', node: 'Node', uptime: 'Up for',
@@ -107,7 +109,8 @@ import * as brandsUi from '/console-brands.js';
 import { flash } from '/motion.js';
 
 const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'aparencia', 'marcas', 'forge'];
-const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', aparencia: '🎨', marcas: '🏷', forge: '⚒' };
+// Menu lateral: dois grupos. Os ícones são ficheiros em /console-icons/<secção>.svg (um SVG por secção, a cores desenhadas por CSS).
+const NAV_GROUPS = [['nav_g_ops', ['painel', 'jogos', 'mesas', 'avisos']], ['nav_g_create', ['aparencia', 'marcas', 'forge']]];
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -319,8 +322,9 @@ function render() {
   document.querySelector('.con').classList.toggle('con-solo', !app.token);
   if (!app.token) { $('#view').innerHTML = viewLogin(render.error); return; }
   const cur = section();
-  $('#nav').innerHTML = SECTIONS.map((s) => `<a href="#/${s}" ${s === cur ? 'aria-current="page"' : ''}>
-    <span aria-hidden="true">${ICONS[s]}</span>${u(`nav_${s}`)}</a>`).join('');
+  $('#nav').innerHTML = NAV_GROUPS.map(([g, items]) => `<div class="con-nav-group" role="group" aria-label="${esc(u(g))}"><span class="con-nav-title">${u(g)}</span>${items.map((s) => `<a href="#/${s}" ${s === cur ? 'aria-current="page"' : ''}>
+    <span class="con-ico" style="--ico:url(/console-icons/${s}.svg)" aria-hidden="true"></span>${u(`nav_${s}`)}</a>`).join('')}</div>`).join('');
+  document.documentElement.style.setProperty('--bar-h', `${document.querySelector('header.bar')?.offsetHeight || 58}px`);
   const views = {
     painel: viewPainel, jogos: viewJogos, mesas: viewMesas, avisos: viewAvisos,
     aparencia: () => appearanceUi.view(),
