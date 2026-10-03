@@ -1264,6 +1264,8 @@ test('marcas: perfil validado e guardado; /marca/<id> mostra só os jogos escolh
 
   const cat = await (await fetch(`${base}/admin/brands`, { headers: auth })).json();
   assert.deepEqual(cat.brands, []);
+  assert.equal(cat.platform.id, 'bitnik');
+  assert.ok(cat.platform.games.includes('catania'), 'a marca da plataforma traz os jogos que aparecem no lobby');
   assert.ok(cat.games.some((g) => g.id === 'catania') && cat.games.some((g) => g.id === 'bulbous'), 'o catálogo lista todos os jogos');
 
   // Recusas: sem nome, jogo que não existe, id reservado, token desconhecido, logótipo perigoso.

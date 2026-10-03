@@ -1165,7 +1165,13 @@ export function createPlatform({
         return json(res, 200, { hidden: setGameHidden(vis[1], (await readJson(req)).hidden) });
       }
       if (url === '/admin/brands' && req.method === 'GET') {
-        return json(res, 200, { brands, games: [...G.values()].map((g) => ({ id: g.id, name: gameName(g), prototype: !!g.prototype })), brandTokens: BRAND_TOKENS, current: appearance });
+        // A própria marca deste servidor (no Studio, a Bitnik): endereço do lobby e jogos que lá aparecem agora.
+        const platform = {
+          id: brand.id, name: brand.name, lang: brand.lang || 'pt', logo: brand.logo || null,
+          home: adminToken && consoleAtRoot ? `/${brand.id}` : '/',
+          games: [...G.values()].filter((g) => !(appearance.hidden?.[g.id] ?? !!g.hidden)).map((g) => g.id),
+        };
+        return json(res, 200, { platform, brands, games: [...G.values()].map((g) => ({ id: g.id, name: gameName(g), prototype: !!g.prototype })), brandTokens: BRAND_TOKENS, current: appearance });
       }
       const brandMatch = url.match(/^\/admin\/brands\/([a-z0-9-]+)(\/export)?$/);
       if (brandMatch) {
