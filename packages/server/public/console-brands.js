@@ -11,7 +11,7 @@ const MAX_LOGO_KB = 300;
 const TXT = {
   pt: {
     title: 'Marcas', lead: 'Lobbies para clientes: escolhe os jogos, afina a identidade, mostra ao cliente e exporta o pacote para o runtime dele.',
-    none: 'Ainda não há marcas.', add: 'Nova marca', edit: 'Editar', open: 'Abrir', export: 'Exportar pacote', remove: 'Apagar',
+    none: 'Ainda não há marcas de clientes.', current: 'plataforma atual', duplicate: 'Duplicar como nova marca', copyOf: '{name} (cópia)', add: 'Nova marca', edit: 'Editar', open: 'Abrir', export: 'Exportar pacote', remove: 'Apagar',
     removeConfirm: 'Apagar a marca "{name}"? Não se pode desfazer.', games: '{n} jogos',
     name: 'Nome da marca', id: 'Identificador (no link /marca/…)', lang: 'Língua do lobby', logo: 'Logótipo', logoUpload: 'Carregar logótipo', logoRemove: 'Tirar',
     logoHint: 'Substitui o nome no topo e é o ícone do separador. PNG, SVG ou WebP, até {kb} KB.',
@@ -25,7 +25,7 @@ const TXT = {
   },
   en: {
     title: 'Brands', lead: 'Lobbies for clients: pick the games, tune the identity, show it to the client and export the package for their runtime.',
-    none: 'No brands yet.', add: 'New brand', edit: 'Edit', open: 'Open', export: 'Export package', remove: 'Delete',
+    none: 'No client brands yet.', current: 'current platform', duplicate: 'Duplicate as a new brand', copyOf: '{name} (copy)', add: 'New brand', edit: 'Edit', open: 'Open', export: 'Export package', remove: 'Delete',
     removeConfirm: 'Delete the brand "{name}"? This cannot be undone.', games: '{n} games',
     name: 'Brand name', id: 'Identifier (in the /marca/… link)', lang: 'Lobby language', logo: 'Logo', logoUpload: 'Upload logo', logoRemove: 'Remove',
     logoHint: 'Replaces the name at the top and is the tab icon. PNG, SVG or WebP, up to {kb} KB.',
@@ -62,6 +62,11 @@ export function view() {
 }
 
 function list() {
+  const p = st.data.platform;
+  const own = p ? `<li data-platform>
+      <span class="grow"><strong>${esc(p.name)}</strong> <span class="pill">${tr('current')}</span> <small>${esc(p.home)} · ${tr('games', { n: p.games.length })}</small></span>
+      <a class="btn btn-ghost" href="${esc(p.home)}" target="_blank" rel="noopener">${tr('open')}</a>
+      <button class="btn btn-ghost" data-br="duplicate">${tr('duplicate')}</button></li>` : '';
   const cards = st.data.brands.map((b) => `<li data-brand="${esc(b.id)}">
       <span class="grow"><strong>${esc(b.name)}</strong> <small>/marca/${esc(b.id)} · ${tr('games', { n: b.games.length })}</small></span>
       <button class="btn btn-ghost" data-br="edit">${tr('edit')}</button>
@@ -69,7 +74,7 @@ function list() {
       <button class="btn btn-ghost" data-br="export">${tr('export')}</button>
       <button class="btn btn-ghost" data-br="remove">${tr('remove')}</button></li>`).join('');
   return `<div class="panel"><button class="btn btn-primary" data-br="new">${tr('add')}</button></div>
-    <div class="panel">${cards ? `<ul class="rows">${cards}</ul>` : `<p class="empty">${tr('none')}</p>`}</div>`;
+    <div class="panel"><ul class="rows">${own}${cards}</ul>${cards ? '' : `<p class="empty">${tr('none')}</p>`}</div>`;
 }
 
 function tokenRow(k, type, value) {
@@ -172,6 +177,12 @@ export function after(root) {
     const e = st.editing;
     try {
       if (act === 'new') st.editing = blank();
+      else if (act === 'duplicate') {
+        // Ponto de partida: os jogos que aparecem agora no lobby da plataforma e a sua aparência.
+        const p = st.data.platform;
+        st.editing = { ...blank(), name: tr('copyOf', { name: p.name }), games: [...p.games], appearance: { brand: { tokens: {} }, games: clone(st.data.current?.games || {}) } };
+        st.editing.id = slug(st.editing.name);
+      }
       else if (act === 'close') { st.editing = null; await load(); }
       else if (act === 'edit') {
         const b = st.data.brands.find((x) => x.id === row);
