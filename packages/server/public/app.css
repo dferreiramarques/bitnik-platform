@@ -611,6 +611,7 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 }
 .lob-btn:hover { background: rgb(255 250 241 / .3); color: #fff; }
 .lob-btn.sm { min-height: 32px; }
+.lob-btn.ico { padding: 0; min-width: 36px; justify-content: center; }
 .lob-btn.on { background: rgb(255 250 241 / .45); border-color: #fff; }
 .lob-btn.pri { background: #fff; color: var(--brand-primary, #b8461f); border-color: transparent; }
 .lob-btn.pri:hover { background: #fffaf1; color: var(--brand-primary, #b8461f); }
