@@ -507,7 +507,7 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || n
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function installButton() {
   if (isStandalone() || app.installed) return '';
-  return `<button class="lob-btn ico" data-install aria-label="${esc(u('install'))}" title="${esc(u('install'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button>`;
+  return `<button class="lob-ico" data-install aria-label="${esc(u('install'))}" title="${esc(u('install'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button>`;
 }
 async function installApp() {
   const ev = app.installEvent;
