@@ -244,6 +244,24 @@
         "pt": "Arredondamento",
         "en": "Corner radius"
       }
+    },
+    "--tile-texture": {
+      "value": "url(\"/games/catania/ui/textura-papel.webp\")",
+      "type": "background",
+      "group": "art",
+      "label": {
+        "pt": "Textura dos hexágonos (papel)",
+        "en": "Hex tile texture (paper)"
+      }
+    },
+    "--tile-texture-strength": {
+      "value": "0.5",
+      "type": "size",
+      "group": "art",
+      "label": {
+        "pt": "Intensidade da textura (0 a 1; 0 = sem textura)",
+        "en": "Texture strength (0 to 1; 0 = none)"
+      }
     }
   },
   "contrast": [

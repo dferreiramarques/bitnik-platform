@@ -3,6 +3,11 @@
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
 
+
+## 5.0.12 — Textura de papel nos hexágonos (2026-10-03)
+
+Sem mudanças de jogo. Os hexágonos ganham uma textura de papel por cima (multiplicação, mantém as cores), com os tokens `--tile-texture` e `--tile-texture-strength` editáveis em Aparência (intensidade 0 desliga).
+
 ## 5.0.11 — Pilhas abertas por cima da barra de ações (2026-10-03)
 
 Sem mudanças de jogo. No telemóvel, a modal dos valores das pilhas ficava cortada por baixo do painel de ações; passa a abrir por cima dele.

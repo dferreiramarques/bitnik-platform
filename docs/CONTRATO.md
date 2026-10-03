@@ -127,6 +127,7 @@ Um pacote pode também trazer um tutorial (`tutorial: './ui/tutorial.js'`), com 
   - `--die-face-1` a `--die-face-6`: uma face de um dado de 6. Sem valor, a UI própria desenha a face com pintas.
   - `--card-back` (o verso, comum a todas) e `--card-<TIPO>`, um por tipo de carta do jogo (ex. `--card-TEMPTRESS`).
   - `--token-<nome>`, um por marcador genérico que o jogo usa (meeple, pino, cubo, ficha com número) — o nome é livre, escolhido pelo jogo.
+  - `--tile-texture` (`type: "background"`, `group: "art"`) e `--tile-texture-strength` (`type: "size"`, 0 a 1): textura opcional por cima das peças do tabuleiro (hexágonos, casas), sobreposta por multiplicação para não perder as cores. Aparecem na consola em "Aparência" (com carregamento de imagem); intensidade 0 ou sem imagem = sem textura. A UI do jogo lê-os do estilo calculado (ver `tileTexture()` no Catania).
   O resto do tabuleiro (o que não é dado, carta ou marcador) não entra nesta convenção; fica específico do jogo, como sempre.
 
 No Studio, o botão "Modo protótipo" troca para a UI genérica. Se o módulo não carregar, a plataforma usa a genérica.
