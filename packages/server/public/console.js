@@ -31,6 +31,7 @@ const UI = {
     publish: 'Publicar aviso', noNotices: 'Não há avisos ativos.', until: 'até {when}', drainOn: 'partidas novas suspensas',
     needWhen: 'Indica a hora da atualização.', needText: 'Escreve o texto do aviso.',
     nav_aparencia: 'Aparência',
+    nav_marcas: 'Marcas',
     apLead: 'A marca (moldura) e a aparência de cada jogo neste deploy. As alterações aparecem já na pré-visualização; só chegam aos jogadores quando guardas.',
     apTarget: 'Editar', apBrand: 'Marca (moldura)', apTheme: 'Tema', apThemeDefault: 'Por omissão (skin do pacote)',
     apSave: 'Guardar', apDiscard: 'Descartar alterações', apResetAll: 'Repor tudo', apExport: 'Exportar JSON', apImport: 'Importar JSON',
@@ -78,6 +79,7 @@ const UI = {
     publish: 'Publish notice', noNotices: 'No active notices.', until: 'until {when}', drainOn: 'new games stopped',
     needWhen: 'Set the update time.', needText: 'Write the notice text.',
     nav_aparencia: 'Appearance',
+    nav_marcas: 'Brands',
     apLead: 'The brand (frame) and the look of each game on this deploy. Changes show in the preview right away; players only get them when you save.',
     apTarget: 'Edit', apBrand: 'Brand (frame)', apTheme: 'Theme', apThemeDefault: 'Default (package skin)',
     apSave: 'Save', apDiscard: 'Discard changes', apResetAll: 'Reset all', apExport: 'Export JSON', apImport: 'Import JSON',
@@ -101,10 +103,11 @@ const UI = {
 
 import * as appearanceUi from '/console-appearance.js';
 import * as forgeUi from '/console-forge.js';
+import * as brandsUi from '/console-brands.js';
 import { flash } from '/motion.js';
 
-const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'aparencia', 'forge'];
-const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', aparencia: '🎨', forge: '⚒' };
+const SECTIONS = ['painel', 'jogos', 'mesas', 'avisos', 'aparencia', 'marcas', 'forge'];
+const ICONS = { painel: '◧', jogos: '♟', mesas: '🔗', avisos: '🔔', aparencia: '🎨', marcas: '🏷', forge: '⚒' };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -321,15 +324,18 @@ function render() {
   const views = {
     painel: viewPainel, jogos: viewJogos, mesas: viewMesas, avisos: viewAvisos,
     aparencia: () => appearanceUi.view(),
+    marcas: () => brandsUi.view(),
     forge: () => forgeUi.view(),
   };
   // Não redesenha um formulário que está a ser preenchido.
   if (document.activeElement?.closest?.('form') && render.section === cur) return;
   if (render.section === 'aparencia' && cur !== 'aparencia') appearanceUi.leave();
+  if (render.section === 'marcas' && cur !== 'marcas') brandsUi.leave();
   if (render.section === 'forge' && cur !== 'forge') forgeUi.leave();
   render.section = cur;
   $('#view').innerHTML = views[cur]();
   if (cur === 'aparencia') appearanceUi.after($('#view'));
+  if (cur === 'marcas') brandsUi.after($('#view'));
   if (cur === 'forge') forgeUi.after($('#view'));
 }
 
@@ -348,6 +354,7 @@ async function load() {
     }
     if (cur === 'avisos') app.notices = (await api('notices')).notices;
     if (cur === 'aparencia') await appearanceUi.load();
+    if (cur === 'marcas') await brandsUi.load();
     if (cur === 'forge') await forgeUi.load();
     $('#status').textContent = '';
   } catch (e) {
@@ -486,5 +493,6 @@ setInterval(() => { if (app.token && section() === 'painel') load(); }, 10_000);
 
 const rerender = () => { render.section = null; render(); };
 appearanceUi.init({ api, u, lang: () => app.lang, toast, rerender });
+brandsUi.init({ api, lang: () => app.lang, toast, rerender });
 forgeUi.init({ api, lang: () => app.lang, toast, rerender });
 load();

@@ -1224,7 +1224,7 @@ test('a mesa em ecrã inteiro (app.css) não apanha classes da consola, que tamb
     for (const [, c] of sel.matchAll(/\.([a-zA-Z][\w-]*)/g)) fixas.add(c);
   }
   const consola = ['console.html', 'console.js', 'console-forge.js', 'console-forge-code.js', 'console-forge-flow.js',
-    'console-forge-play.js', 'console-forge-tests.js', 'console-appearance.js'];
+    'console-forge-play.js', 'console-forge-tests.js', 'console-appearance.js', 'console-brands.js'];
   for (const f of consola) {
     const src = await readFile(new URL(f, pub), 'utf8');
     for (const [, attr] of src.matchAll(/class="([^"]*)"/g)) {
@@ -1253,4 +1253,65 @@ test('fileStorage: flush() espera pelas escritas em curso (o servidor chama-o ao
   await st.flush();
   assert.equal(JSON.parse(await readFile(join(dir, 'users.json'), 'utf8')).t1.name, 'Ana');
   assert.equal(JSON.parse(await readFile(join(dir, 'forge', 'jogo.json'), 'utf8')).gameName, 'Jogo');
+});
+
+test('marcas: perfil validado e guardado; /marca/<id> mostra só os jogos escolhidos, com a aparência da marca; exporta e o runtime carrega', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bitnik-'));
+  const s = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const base = `http://localhost:${s.port}`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const put = (id, body) => fetch(`${base}/admin/brands/${id}`, { method: 'PUT', headers: auth, body: JSON.stringify(body) });
+
+  const cat = await (await fetch(`${base}/admin/brands`, { headers: auth })).json();
+  assert.deepEqual(cat.brands, []);
+  assert.ok(cat.games.some((g) => g.id === 'catania') && cat.games.some((g) => g.id === 'bulbous'), 'o catálogo lista todos os jogos');
+
+  // Recusas: sem nome, jogo que não existe, id reservado, token desconhecido, logótipo perigoso.
+  assert.equal((await put('editora-x', { name: '', games: ['catania'] })).status, 400);
+  assert.equal((await put('editora-x', { name: 'X', games: ['nao-existe'] })).status, 400);
+  assert.equal((await put('console', { name: 'X', games: ['catania'] })).status, 400);
+  assert.equal((await put('editora-x', { name: 'X', games: ['catania'], appearance: { brand: { tokens: { '--qualquer': '#fff' } } } })).status, 400);
+  assert.equal((await put('editora-x', { name: 'X', games: ['catania'], logo: 'javascript:alert(1)' })).status, 400);
+
+  const logo = 'data:image/png;base64,iVBORw0KGgo=';
+  const ok = await put('editora-x', { name: 'Editora X', lang: 'en', logo, games: ['catania'], appearance: { brand: { tokens: { '--brand-primary': '#123456' } }, games: { catania: { tokens: { '--cat-gold': '#ff0000' } } } } });
+  assert.equal(ok.status, 200);
+
+  // A página da marca leva as cores do perfil e diz ao cliente qual é; marca que não existe dá 404.
+  const page = await (await fetch(`${base}/marca/editora-x`)).text();
+  assert.match(page, /id="appearance-brand">:root\{--brand-primary:#123456\}/);
+  assert.match(page, /window\.BRAND_ID="editora-x"/);
+  assert.equal((await fetch(`${base}/marca/nao-existe`)).status, 404);
+
+  // Com a marca no HELLO: só os jogos escolhidos, nome, língua, logótipo e aparência do perfil; sem ela, o Studio normal.
+  const c = new BitnikClient({ url: `ws://localhost:${s.port}/ws`, storage: memStore(), name: 'T', brand: 'editora-x' });
+  const w = c.next('welcome'); c.connect();
+  const welcome = await w;
+  assert.deepEqual(welcome.games.map((g) => g.id), ['catania']);
+  assert.deepEqual([welcome.brand.name, welcome.brand.lang, welcome.brand.logo], ['Editora X', 'en', logo]);
+  assert.equal(welcome.appearance.games.catania.tokens['--cat-gold'], '#ff0000');
+  c.close();
+  const normal = await s.client();
+  assert.ok(normal.welcome.games.length > 1);
+  assert.equal(normal.welcome.brand.name, 'Bitnik');
+  assert.equal(normal.welcome.appearance.games.catania, undefined, 'a aparência da marca não vaza para o Studio');
+
+  // Exportar → o runtime do cliente carrega o pacote.
+  const pack = await (await fetch(`${base}/admin/brands/editora-x/export`, { headers: auth })).json();
+  assert.equal(pack.format, 'bitnik-brand/1');
+  const r = await boot(makeRuntime, { profile: pack });
+  const rc = await r.client();
+  assert.deepEqual(rc.welcome.games.map((g) => g.id), ['catania']);
+  assert.equal(rc.welcome.brand.name, 'Editora X');
+  assert.equal(rc.welcome.appearance.brand.tokens['--brand-primary'], '#123456');
+  await r.stop();
+
+  // Fica guardada: um Studio novo sobre a mesma pasta vê a marca; apagar remove-a.
+  await s.stop();
+  const s2 = await boot(makeStudio, { adminToken: 'segredo', dataDir: dir });
+  const again = await (await fetch(`http://localhost:${s2.port}/admin/brands`, { headers: auth })).json();
+  assert.deepEqual(again.brands.map((b) => b.id), ['editora-x']);
+  assert.equal((await fetch(`http://localhost:${s2.port}/admin/brands/editora-x`, { method: 'DELETE', headers: auth })).status, 204);
+  assert.equal((await fetch(`http://localhost:${s2.port}/marca/editora-x`)).status, 404);
+  await s2.stop();
 });

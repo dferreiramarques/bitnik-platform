@@ -1,8 +1,8 @@
 // Adaptadores de persistência. O servidor só conhece esta interface:
 //   load()            → { users: {token: user}, rooms: [room] }
 //   saveRoom(room)    / deleteRoom(id) / saveUsers(users)
-//   saveNotices(list) / saveAppearance(obj) / saveAppearancePresets(list) (opcionais;
-//     load() devolve também { notices, appearance, appearancePresets })
+//   saveNotices(list) / saveAppearance(obj) / saveAppearancePresets(list) / saveBrands(list) (opcionais;
+//     load() devolve também { notices, appearance, appearancePresets, brands })
 //   saveForgeProject(slug, p) / deleteForgeProject(slug) (opcionais, só no Studio; load() devolve { forge })
 //   flush()           (opcional) → espera pelas escritas pendentes; o servidor chama-o ao fechar
 // O match é JSON puro, por isso guardar uma sala é só serializá-la.
@@ -15,13 +15,14 @@ export function memoryStorage() {
   let notices = [];
   let appearance = null;
   let appearancePresets = [];
+  let brands = [];
   const forge = new Map();
   return {
     async load() {
       return {
         users: structuredClone(users), rooms: [...rooms.values()].map((r) => structuredClone(r)),
         notices: structuredClone(notices), appearance: structuredClone(appearance),
-        appearancePresets: structuredClone(appearancePresets),
+        appearancePresets: structuredClone(appearancePresets), brands: structuredClone(brands),
         forge: Object.fromEntries([...forge].map(([k, v]) => [k, structuredClone(v)])),
       };
     },
@@ -31,6 +32,7 @@ export function memoryStorage() {
     async saveNotices(n) { notices = structuredClone(n); },
     async saveAppearance(a) { appearance = structuredClone(a); },
     async saveAppearancePresets(p) { appearancePresets = structuredClone(p); },
+    async saveBrands(b) { brands = structuredClone(b); },
     async saveForgeProject(slug, p) { forge.set(slug, structuredClone(p)); },
     async deleteForgeProject(slug) { forge.delete(slug); },
   };
@@ -76,6 +78,8 @@ export function fileStorage(dir) {
       try { appearance = JSON.parse(await readFile(join(dir, 'appearance.json'), 'utf8')); } catch { /* sem afinações */ }
       let appearancePresets = [];
       try { appearancePresets = JSON.parse(await readFile(join(dir, 'appearance-presets.json'), 'utf8')); } catch { /* sem skins guardadas */ }
+      let brands = [];
+      try { brands = JSON.parse(await readFile(join(dir, 'brands.json'), 'utf8')); } catch { /* sem marcas */ }
       const forge = {};
       await mkdir(forgeDir, { recursive: true });
       for (const f of await readdir(forgeDir)) {
@@ -84,7 +88,7 @@ export function fileStorage(dir) {
           console.error('[storage] projeto da Forge ilegível', f, e.message);
         }
       }
-      return { users, rooms, notices, appearance, appearancePresets, forge };
+      return { users, rooms, notices, appearance, appearancePresets, brands, forge };
     },
     saveRoom: (room) => write(join(roomsDir, `${safe(room.id)}.json`), room),
     async deleteRoom(id) {
@@ -98,6 +102,7 @@ export function fileStorage(dir) {
     saveNotices: (notices) => write(join(dir, 'notices.json'), notices),
     saveAppearance: (appearance) => write(join(dir, 'appearance.json'), appearance),
     saveAppearancePresets: (presets) => write(join(dir, 'appearance-presets.json'), presets),
+    saveBrands: (brands) => write(join(dir, 'brands.json'), brands),
     saveForgeProject: (slug, p) => write(join(forgeDir, `${safe(slug)}.json`), p),
     async deleteForgeProject(slug) {
       const file = join(forgeDir, `${safe(slug)}.json`);
