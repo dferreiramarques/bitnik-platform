@@ -120,6 +120,8 @@ export function createPlatform({
   profile = null,
 } = {}) {
   if (profile) brand = { ...brand, name: profile.name, lang: profile.lang, logo: profile.logo || null };
+  // Logótipo da marca do servidor, de um ficheiro SVG (brand.logoFile): servido em /brand-logo.svg e usado no lugar do nome.
+  if (brand.logoFile && !brand.logo) brand = { ...brand, logo: '/brand-logo.svg' };
   // ─── Jogos ──────────────────────────────────────────────────
   const G = new Map();
   const PV = new Map(); // protótipos da Forge: id → Map(versão → jogo); o G tem a mais recente
@@ -1265,6 +1267,7 @@ export function createPlatform({
         .replaceAll('{{BRAND_NAME}}', escHtml(profile.name)).replace('{{BRAND_HEAD}}', brandHead(profile))
         .replace('{{LANG}}', profile.lang).replace('href="/icon.svg"', `href="${profile.logo ? escHtml(profile.logo) : '/icon.svg'}"`));
     }
+    if (url === '/brand-logo.svg' && brand.logoFile) return serveFile(res, brand.logoFile, MIME['.svg']);
     if (url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, brand: brand.id, games: [...G.keys()], rooms: rooms.size }));
