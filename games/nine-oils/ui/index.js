@@ -440,20 +440,20 @@ function renderComboConfirm(v) {
 
 /** Ficha expansível/colapsável (como a pilha de valores do Catania): as
  * combinações disponíveis neste lançamento, visíveis aos dois — nunca
- * botões aqui, só informação. A ficha em si fica sempre no ecrã (não só na
- * fase COMBO), desativada quando não há opções para mostrar, para o resto do
- * layout (cartões dos jogadores) não saltar de posição a cada fase. Fechada
+ * botões aqui, só informação. A ficha em si fica sempre no ecrã e sempre
+ * ativa (não só na fase COMBO; sem opções, mostra "sem combinações"), para
+ * o resto do layout não saltar a cada fase. Fechada
  * por omissão; com fundo em vidro quando aberta, porque fica por cima dos
  * dados. */
 function renderComboInfo(v) {
-  const has = !!v.opcoes?.length;
-  const open = has && ui.comboOpen;
-  const toggle = `<button class="nof-combo-pill" type="button" data-act="combo-toggle" aria-expanded="${open}"${has ? '' : ' disabled'}>${esc(ctx.t('ui.comboOptions'))} ${open ? '▴' : '▾'}</button>`;
+  const open = ui.comboOpen;
+  const toggle = `<button class="nof-combo-pill" type="button" data-act="combo-toggle" aria-expanded="${open}">${esc(ctx.t('ui.comboOptions'))} ${open ? '▴' : '▾'}</button>`;
   if (!open) return `<div class="nof-combo-dock" data-tut="combos">${toggle}</div>`;
-  const rows = v.opcoes.map((o, i) => {
+  const rows = (v.opcoes?.length ? v.opcoes : []).map((o, i) => {
     const label = describeMove({ type: 'ESCOLHER_COMBO', payload: { opcao: i } }, v);
     return `<div class="nof-combo-info-row">${esc(ctx.t(label.key, label.params))}</div>`;
   });
+  if (!rows.length) rows.push(`<div class="nof-combo-info-row">${esc(ctx.t('ui.noCombos'))}</div>`);
   return `<div class="nof-combo-dock" data-tut="combos">${toggle}<div class="nof-combo-info">${rows.join('')}</div></div>`;
 }
 

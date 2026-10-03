@@ -61,6 +61,7 @@ export default {
   'ui.opponentHand': 'Hand: {n}',
   'ui.hintBlind': 'Pick a face-down card from the opponent’s hand.',
   'ui.comboOptions': 'Combos',
+  'ui.noCombos': 'No combos',
   'ui.assignGroup': 'Assign',
   'ui.hintDiscard': 'You have more than 3 cards. Discard.',
   'ui.yourTurn': 'Your turn',

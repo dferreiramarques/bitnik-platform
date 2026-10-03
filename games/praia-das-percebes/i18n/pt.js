@@ -41,9 +41,7 @@ export default {
   'ui.placeHere': 'Colocar aqui',
   'ui.turnOf': 'Vez de {nome}…',
   'ui.spectating': 'A ver a partida.',
-  'ui.zoomIn': 'Aproximar',
-  'ui.zoomOut': 'Afastar',
-  'ui.zoomFit': 'Ver tudo',
+  'ui.rotate': 'Roda o telemóvel para a vertical para jogar',
   // Tutorial (ui/tutorial.js)
   'tut.you': 'Tu',
   'tut.bot': 'Bot',

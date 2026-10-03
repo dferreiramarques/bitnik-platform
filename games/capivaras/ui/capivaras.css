@@ -202,16 +202,18 @@ button.capi-card:hover, button.capi-card:focus-visible { transform: translateY(-
   .capi-layout {
     grid-template-columns: 160px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: "players chips" "players center" "bottom bar";
+    grid-template-areas: "players chips" "players center" "bar bottom";
     column-gap: 10px; row-gap: 6px;
     padding: calc(env(safe-area-inset-top, 0px) + 36px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(8px, env(safe-area-inset-left, 0px));
   }
-  /* Fade nas pontas: até 6 jogadores, só ~3 cabem — sugere que há mais para
-     baixo (scroll vertical) sem precisar de seta nem sombra à parte. */
+  /* Fade só em baixo: até 6 jogadores, só ~3 cabem — sugere que há mais para
+     baixo (scroll vertical) sem precisar de seta nem sombra à parte. Em cima
+     não é preciso. As cartas apanhadas ficam por baixo da mesa; a barra de
+     apostas/revelação por baixo dos jogadores. */
   .capi-players {
     grid-area: players; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; overflow-y: auto; scrollbar-width: none; margin: 0; padding: 0;
-    mask-image: linear-gradient(to bottom, transparent, black 16px, black calc(100% - 16px), transparent);
-    -webkit-mask-image: linear-gradient(to bottom, transparent, black 16px, black calc(100% - 16px), transparent);
+    mask-image: linear-gradient(to bottom, black calc(100% - 16px), transparent);
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 16px), transparent);
   }
   .capi-player { width: auto; padding: 5px 7px; gap: 2px; }
   .capi-pstate { display: none; }

@@ -2,6 +2,11 @@
 
 Vitórias por lugar em simulação com bots (10 000 partidas por número de jogadores). Com partilha de vitórias nos empates.
 
+
+## 5.0.11 — Pilhas abertas por cima da barra de ações (2026-10-03)
+
+Sem mudanças de jogo. No telemóvel, a modal dos valores das pilhas ficava cortada por baixo do painel de ações; passa a abrir por cima dele.
+
 ## 5.0.10 — Registo flutuante a sério (2026-10-01)
 
 Sem mudanças de jogo: o registo estava dentro da linha de baixo e, ao

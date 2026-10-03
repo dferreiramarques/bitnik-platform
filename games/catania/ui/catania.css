@@ -93,6 +93,9 @@
 .cat-layout > :not(.cat-view, .cat-ovl) { z-index: 1; pointer-events: none; }
 .cat-layout :is(.cat-player, .cat-chip, .cat-me, .cat-bar, .cat-zoombar, .cat-log-head) { pointer-events: auto; }
 .cat-board { position: relative; min-height: 0; }
+/* Pilhas abertas (telemóvel): a modal passa por cima da barra de ações e da
+   minha área, que vêm depois no DOM e a tapavam/cortavam. */
+.show-piles .cat-layout > .cat-board { z-index: 4; }
 .cat-zoom svg { display: block; width: 100%; height: 100%; }
 .cat-hex { cursor: default; }
 .cat-hex.can { cursor: pointer; }
