@@ -1311,7 +1311,7 @@ export function createPlatform({
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
     const ds = url.match(/^\/design-system\/(index|tokens|base|components|game-ui)\.css$/);
     if (ds) return serveFile(res, join(PUBLIC_DIR, 'design-system', `${ds[1]}.css`), MIME['.css']);
-    const pub = url.match(/^\/(app\.js|tour\.js|motion\.js|animation\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-appearance\.js|console-brands\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
+    const pub = url.match(/^\/(app\.js|tour\.js|motion\.js|animation\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-icons\/[a-z]+\.svg|console-appearance\.js|console-brands\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });
