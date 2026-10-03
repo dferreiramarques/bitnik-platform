@@ -35,7 +35,7 @@ const UI = {
     nav_marcas: 'Marcas',
     apLead: 'A marca (moldura) e a aparência de cada jogo neste deploy. As alterações aparecem já na pré-visualização; só chegam aos jogadores quando guardas.',
     apTarget: 'Editar', apBrand: 'Marca (moldura)', apTheme: 'Tema', apThemeDefault: 'Por omissão (skin do pacote)',
-    apSave: 'Guardar', apDiscard: 'Descartar alterações', apResetAll: 'Repor tudo', apExport: 'Exportar JSON', apImport: 'Importar JSON',
+    apSave: 'Guardar', apClean: 'Sem alterações por guardar', apDiscard: 'Descartar alterações', apResetAll: 'Repor tudo', apExport: 'Exportar JSON', apImport: 'Importar JSON',
     apReset: 'Repor', apDefault: 'por omissão: {v}', apUpload: 'Carregar imagem', apTooBig: 'Imagem demasiado grande (máx. {kb} KB).',
     apThumb: 'Miniatura do jogo', apThumbHint: 'Imagem na página da marca (não o fundo do lobby, que é sempre a mesa do jogo).',
     apTabGame: 'Aspeto do jogo', apTabComponents: 'Aspeto dos componentes',
@@ -84,7 +84,7 @@ const UI = {
     nav_marcas: 'Brands',
     apLead: 'The brand (frame) and the look of each game on this deploy. Changes show in the preview right away; players only get them when you save.',
     apTarget: 'Edit', apBrand: 'Brand (frame)', apTheme: 'Theme', apThemeDefault: 'Default (package skin)',
-    apSave: 'Save', apDiscard: 'Discard changes', apResetAll: 'Reset all', apExport: 'Export JSON', apImport: 'Import JSON',
+    apSave: 'Save', apClean: 'No unsaved changes', apDiscard: 'Discard changes', apResetAll: 'Reset all', apExport: 'Export JSON', apImport: 'Import JSON',
     apReset: 'Reset', apDefault: 'default: {v}', apUpload: 'Upload image', apTooBig: 'Image too large (max {kb} KB).',
     apThumb: 'Game thumbnail', apThumbHint: 'Image on the brand page (not the lobby background, which is always the game table).',
     apTabGame: 'Game look', apTabComponents: 'Component look',
@@ -208,9 +208,9 @@ function gamesTable(withSim) {
       <td>${g.problems.length ? `<span class="pill pill-bad" title="${esc(g.problems.join('; '))}">${g.problems.length}</span>` : `<span class="pill pill-ok">${u('ok')}</span>`}</td>
       <td>${g.rooms.playing}</td>
       ${withSim ? `<td class="actions">
-        <button class="btn btn-outline" data-sim-open="${esc(g.id)}">${u('simulate')}</button>
-        <button class="btn btn-outline" data-vis="${esc(g.id)}" data-hidden="${g.hidden ? 1 : 0}" title="${esc(u('visibilityHint'))}">${u(g.hidden ? 'show' : 'hide')}</button>
-        <a class="btn btn-primary" href="${esc(home)}#/j/${esc(g.id)}" target="_blank" rel="noopener">${u('open')}</a>
+        <button class="btn btn-quiet btn-sm" data-sim-open="${esc(g.id)}">${u('simulate')}</button>
+        <button class="btn btn-quiet btn-sm" data-vis="${esc(g.id)}" data-hidden="${g.hidden ? 1 : 0}" title="${esc(u('visibilityHint'))}">${u(g.hidden ? 'show' : 'hide')}</button>
+        <a class="btn btn-primary btn-sm" href="${esc(home)}#/j/${esc(g.id)}" target="_blank" rel="noopener">${u('open')}</a>
       </td>` : ''}
     </tr>${withSim && app.sims[g.id] ? `<tr><td colspan="7">${simPanel(g)}</td></tr>` : ''}`).join('')}</tbody>
   </table></div>`;

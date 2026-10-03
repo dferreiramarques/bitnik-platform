@@ -125,7 +125,17 @@
 .ap-contrast h3 { font-size: 1rem; margin-bottom: 4px; }
 .ap-contrast ul { margin: 0; padding-left: 18px; }
 .ap-contrast p { margin: 0; }
-.ap-dirty { color: #8e2a1f; font-weight: 600; margin: 10px 0 0; }
+.ap-dirty { color: var(--ui-muted); font-size: .9rem; margin-right: auto; }
+.ap-dirty[data-dirty="1"] { color: #8e2a1f; font-weight: 600; }
+/* Guardar/Descartar sempre à vista (o editor é longo), por baixo do cabeçalho da consola. */
+.ap-savebar {
+  position: sticky; top: var(--bar-h, 58px); z-index: 4; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: -14px -16px 10px; padding: 10px 16px; background: var(--ui-card); border-bottom: 2px solid var(--ui-line);
+}
+.btn:disabled { opacity: .5; cursor: default; }
+.btn-sm { min-height: 36px; padding: 4px 12px; font-size: .9rem; }
+.btn-quiet { background: transparent; border-color: transparent; color: var(--ui-muted); }
+.btn-quiet:hover { background: var(--ui-alt); color: var(--ui-text); }
 .ap-sample { display: grid; gap: 10px; padding: 12px; border-radius: var(--ui-r-md); background: var(--ui-bg); }
 .ap-sample p { margin: 0; }
 .ap-sample-btns { display: flex; gap: 8px; flex-wrap: wrap; }

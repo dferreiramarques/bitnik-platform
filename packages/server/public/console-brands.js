@@ -11,7 +11,7 @@ const MAX_LOGO_KB = 300;
 const TXT = {
   pt: {
     title: 'Marcas', lead: 'Lobbies para clientes: escolhe os jogos, afina a identidade, mostra ao cliente e exporta o pacote para o runtime dele.',
-    none: 'Ainda não há marcas de clientes.', current: 'plataforma atual', duplicate: 'Duplicar como nova marca', copyOf: '{name} (cópia)', add: 'Nova marca', edit: 'Editar', open: 'Abrir', export: 'Exportar pacote', remove: 'Apagar',
+    secPlatform: 'Esta plataforma', secClients: 'Marcas de clientes', none: 'Ainda não há marcas de clientes.', current: 'plataforma atual', duplicate: 'Duplicar como nova marca', copyOf: '{name} (cópia)', add: 'Nova marca', edit: 'Editar', open: 'Abrir', export: 'Exportar pacote', remove: 'Apagar',
     removeConfirm: 'Apagar a marca "{name}"? Não se pode desfazer.', games: '{n} jogos',
     name: 'Nome da marca', id: 'Identificador (no link /marca/…)', lang: 'Língua do lobby', logo: 'Logótipo', logoUpload: 'Carregar logótipo', logoRemove: 'Tirar',
     logoHint: 'Substitui o nome no topo e é o ícone do separador. PNG, SVG ou WebP, até {kb} KB.',
@@ -25,7 +25,7 @@ const TXT = {
   },
   en: {
     title: 'Brands', lead: 'Lobbies for clients: pick the games, tune the identity, show it to the client and export the package for their runtime.',
-    none: 'No client brands yet.', current: 'current platform', duplicate: 'Duplicate as a new brand', copyOf: '{name} (copy)', add: 'New brand', edit: 'Edit', open: 'Open', export: 'Export package', remove: 'Delete',
+    secPlatform: 'This platform', secClients: 'Client brands', none: 'No client brands yet.', current: 'current platform', duplicate: 'Duplicate as a new brand', copyOf: '{name} (copy)', add: 'New brand', edit: 'Edit', open: 'Open', export: 'Export package', remove: 'Delete',
     removeConfirm: 'Delete the brand "{name}"? This cannot be undone.', games: '{n} games',
     name: 'Brand name', id: 'Identifier (in the /marca/… link)', lang: 'Lobby language', logo: 'Logo', logoUpload: 'Upload logo', logoRemove: 'Remove',
     logoHint: 'Replaces the name at the top and is the tab icon. PNG, SVG or WebP, up to {kb} KB.',
@@ -74,7 +74,8 @@ function list() {
       <button class="btn btn-ghost" data-br="export">${tr('export')}</button>
       <button class="btn btn-ghost" data-br="remove">${tr('remove')}</button></li>`).join('');
   return `<div class="panel"><button class="btn btn-primary" data-br="new">${tr('add')}</button></div>
-    <div class="panel"><ul class="rows">${own}${cards}</ul>${cards ? '' : `<p class="empty">${tr('none')}</p>`}</div>`;
+    <div class="panel"><h3>${tr('secPlatform')}</h3><ul class="rows">${own}</ul></div>
+    <div class="panel"><h3>${tr('secClients')}</h3>${cards ? `<ul class="rows">${cards}</ul>` : `<p class="empty">${tr('none')}</p>`}</div>`;
 }
 
 function tokenRow(k, type, value) {

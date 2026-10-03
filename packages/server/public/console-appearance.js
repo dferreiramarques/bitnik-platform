@@ -100,6 +100,11 @@ export function view() {
   return `<div><h1>${u('nav_aparencia')}</h1><p class="con-lead">${u('apLead')}</p></div>
     <div class="ap">
       <div class="panel ap-editor">
+        <div class="ap-savebar" id="apSavebar">
+          <span class="ap-dirty" id="apDirty" data-dirty="${dirty() ? 1 : 0}">${u(dirty() ? 'apUnsaved' : 'apClean')}</span>
+          <button class="btn btn-primary" data-ap="save" id="apSave" ${dirty() ? '' : 'disabled'}>${u('apSave')}</button>
+          <button class="btn btn-outline" data-ap="discard" ${dirty() ? '' : 'disabled'}>${u('apDiscard')}</button>
+        </div>
         <form class="form" id="apHead" onsubmit="return false">
           <label>${u('apTarget')}<select id="apTarget">${opts}</select></label>
           ${themeSel}
@@ -107,10 +112,7 @@ export function view() {
         ${presetsHtml()}
         ${g ? gameGroups(g) : brandGroups()}
         <div class="ap-contrast" id="apContrast">${contrastHtml()}</div>
-        <p class="ap-dirty" id="apDirty" ${dirty() ? '' : 'hidden'}>${u('apUnsaved')}</p>
         <div class="ap-actions">
-          <button class="btn btn-primary" data-ap="save">${u('apSave')}</button>
-          <button class="btn btn-outline" data-ap="discard">${u('apDiscard')}</button>
           <button class="btn btn-ghost" data-ap="reset-all">${u('apResetAll')}</button>
           <button class="btn btn-ghost" data-ap="export">${u('apExport')}</button>
           <label class="btn btn-ghost ap-file">${u('apImport')}<input type="file" accept="application/json" data-ap="import" hidden></label>
@@ -297,7 +299,12 @@ function refresh(root) {
   const c = root.querySelector('#apContrast');
   if (c) c.innerHTML = contrastHtml();
   const d = root.querySelector('#apDirty');
-  if (d) d.hidden = !dirty();
+  if (d) {
+    const on = dirty();
+    d.dataset.dirty = on ? 1 : 0;
+    d.textContent = ctx.u(on ? 'apUnsaved' : 'apClean');
+    for (const b of root.querySelectorAll('#apSavebar button')) b.disabled = !on;
+  }
 }
 
 function setToken(k, v) {
