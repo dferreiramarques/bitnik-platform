@@ -1317,3 +1317,40 @@ test('marcas: perfil validado e guardado; /marca/<id> mostra só os jogos escolh
   assert.equal((await fetch(`http://localhost:${s2.port}/marca/editora-x`)).status, 404);
   await s2.stop();
 });
+
+test('secções do lobby: validadas (um jogo numa só, só instalados), na marca e na plataforma, e chegam ao cliente', async () => {
+  const s = await boot(makeStudio, { adminToken: 'segredo' });
+  const base = `http://localhost:${s.port}`;
+  const auth = { Authorization: 'Bearer segredo', 'Content-Type': 'application/json' };
+  const put = (path, body) => fetch(`${base}/admin/${path}`, { method: 'PUT', headers: auth, body: JSON.stringify(body) });
+
+  // Plataforma: títulos vazios saem, jogos que não existem ou repetidos não entram.
+  const r = await put('sections', { sections: [
+    { title: 'Jogos da Bitnik', games: ['catania', 'bulbous', 'nao-existe'] },
+    { title: '  ', games: ['capivaras'] },
+    { title: 'Outra publisher', games: ['bulbous', 'nine-oils'] },
+  ] });
+  assert.equal(r.status, 200);
+  const { sections } = await r.json();
+  assert.deepEqual(sections, [{ title: 'Jogos da Bitnik', games: ['catania', 'bulbous'] }, { title: 'Outra publisher', games: ['nine-oils'] }]);
+  const c = await s.client();
+  assert.deepEqual(c.welcome.appearance.sections, sections);
+  const cat = await (await fetch(`${base}/admin/brands`, { headers: auth })).json();
+  assert.deepEqual(cat.platform.sections, sections);
+
+  // Gravar a Aparência não apaga as secções da plataforma.
+  assert.equal((await put('appearance', { brand: { tokens: {} }, games: {} })).status, 200);
+  assert.deepEqual((await (await fetch(`${base}/admin/brands`, { headers: auth })).json()).platform.sections, sections);
+
+  // Marca: as secções vão no perfil e só aí.
+  assert.equal((await put('brands/editora-y', { name: 'Y', games: ['catania', 'bulbous'], appearance: { sections: [{ title: 'Dela', games: ['bulbous'] }] } })).status, 200);
+  const mc = new BitnikClient({ url: `ws://localhost:${s.port}/ws`, storage: memStore(), name: 'T', brand: 'editora-y' });
+  const w = mc.next('welcome'); mc.connect();
+  assert.deepEqual((await w).appearance.sections, [{ title: 'Dela', games: ['bulbous'] }]);
+  mc.close();
+
+  // Limpar tira-as.
+  assert.deepEqual((await (await put('sections', { sections: [] })).json()).sections, []);
+  assert.equal((await s.client()).welcome.appearance.sections, undefined);
+  await s.stop();
+});

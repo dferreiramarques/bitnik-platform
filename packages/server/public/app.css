@@ -510,6 +510,8 @@ body.is-home { background: var(--brand-primary, #b8461f); }
 }
 /* No início, o campo é centrado (como o título); fora dele, à esquerda. */
 .home-name .name-field { text-align: center; }
+.home-section + .home-section { margin-top: 18px; }
+.home-section-title { margin: 0 0 8px; font: 700 13px var(--ui-body); letter-spacing: .06em; text-transform: uppercase; color: #fff; opacity: .85; text-align: center; }
 .home-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 212px)); justify-content: center; gap: 8px; }
 @media (max-width: 1100px) and (min-width: 761px) { .home-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); } }
 .home-card {

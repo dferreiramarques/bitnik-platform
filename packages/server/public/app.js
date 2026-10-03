@@ -304,6 +304,17 @@ function playersText(p) {
   return u('playersRange', { n });
 }
 
+/** Os jogos do Início por secções (appearance.sections, definidas na consola): os que não estão em nenhuma
+ * vêm primeiro, sem título; sem secções, uma lista só. */
+function homeSections(games) {
+  const defs = app.appearance?.sections || [];
+  if (!defs.length) return [{ title: '', games }];
+  const placed = new Set(defs.flatMap((s) => s.games));
+  const out = [{ title: '', games: games.filter((g) => !placed.has(g.id)) }];
+  for (const s of defs) out.push({ title: s.title, games: s.games.map((id) => games.find((g) => g.id === id)).filter(Boolean) });
+  return out.filter((s) => s.games.length);
+}
+
 function renderHome() {
   // "hidden": instalado e jogável por link direto, mas fora da lista pública
   // (ex.: uma demonstração do template vanilla, ao lado do jogo a sério).
@@ -316,14 +327,16 @@ function renderHome() {
         <label class="home-name"><span>${u('writeName')}</span>
           ${nameField({ id: 'homeName' })}</label>
       </div>
-      <div class="home-grid" style="--cols:${Math.min(Math.max(games.length, 1), 5)}">${games.map((g, i) => {
-        const coverStyle = `--cover:${COVERS[i % COVERS.length]}${g.thumbnail ? `;--home-cover-img:${esc(g.thumbnail)}` : ''}`;
-        return `<a class="home-card${g.thumbnail ? ' has-cover' : ''}" href="#/j/${esc(g.id)}" style="${coverStyle}">
+      ${homeSections(games).map((sec) => `<div class="home-section">
+        ${sec.title ? `<h2 class="home-section-title">${esc(sec.title)}</h2>` : ''}
+        <div class="home-grid" style="--cols:${Math.min(Math.max(sec.games.length, 1), 5)}">${sec.games.map((g) => {
+          const coverStyle = `--cover:${COVERS[games.indexOf(g) % COVERS.length]}${g.thumbnail ? `;--home-cover-img:${esc(g.thumbnail)}` : ''}`;
+          return `<a class="home-card${g.thumbnail ? ' has-cover' : ''}" href="#/j/${esc(g.id)}" style="${coverStyle}">
           <div class="home-cover"><span>${esc(t('game.name', {}, g.id))}</span></div>
           <div class="home-info"><b class="home-mname">${esc(t('game.name', {}, g.id))}</b>
             <small>${playersText(g.players)}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</small></div>
         </a>`;
-      }).join('')}</div>
+        }).join('')}</div></div>`).join('')}
       <p class="home-note">${u('homeNote')}</p>
     </div>
   </section>`;
