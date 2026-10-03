@@ -1,6 +1,6 @@
 # Contexto para uma nova conversa
 
-Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar uma conversa nova sem perder o fio. O detalhe está em `README.md`, `docs/CONTRATO.md`, `docs/ROADMAP.md` e `docs/DECISOES.md`; este ficheiro diz onde está cada coisa e o que ainda falta.
+Resumo do estado da plataforma e do que foi feito até 02/10/2026, para começar uma conversa nova sem perder o fio. O detalhe está em `README.md`, `docs/CONTRATO.md`, `docs/ROADMAP.md` e `docs/DECISOES.md`; este ficheiro diz onde está cada coisa e o que ainda falta.
 
 ## O que é
 
@@ -11,7 +11,8 @@ Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar
 - Jogos:
   - Catania, com UI própria no template;
   - Capivaras, com UI própria no template desde a 2.0.0 (com o baralho e a arte do jogo original, do repositório `dferreiramarques/capivaras`);
-  - Bulbous, Praia das Percebes e Nine Oils, com a UI genérica.
+  - Bulbous, Praia das Percebes (com arte própria das peças), Nine Oils, Robot Maker, com UI própria no template, e Startup Panic (UI própria em `games/startup-panic`);
+  - Nine Oils (Vanilla Demo), cópia congelada do Nine Oils que mostra o template vanilla tal como foi desenhado (escondida da página da marca).
 
 ## Onde está
 
@@ -31,10 +32,20 @@ Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar
   - Fase 0c: consola.
 - **Em curso:**
   - Fase 1: Forge completa até à publicação; falta só a geração pela API, que é opcional;
-  - Fase 2: os quatro jogos migrados com a UI genérica; falta a UI genérica com o desenho do template.
+  - Fase 2: os jogos migrados já têm UI própria no template; falta rever pontos do CHANGELOG de cada um e a secção "Clientes" na consola.
 - O que falta em cada fase está em `docs/ROADMAP.md`.
 
-## O que mudou nas últimas sessões (PRs #2 a #17)
+## O que mudou nas últimas sessões
+
+**Início de outubro de 2026 (PRs #18 a #39).**
+- **Tutoriais:** guia da plataforma `ctx.tour` e partida local `ctx.session` (ADR-018), em todos os jogos; botão "Tutorial" à parte de "Como se joga".
+- **PWA instalável:** ícones PNG e botão "Instalar app" no lobby de cada jogo.
+- **Design system da Bitnik** dentro da plataforma, numa versão fixa (ADR-017): sem CDN, funciona offline.
+- **Lobby:** mesas públicas e de convite acabadas libertam o lugar ao sair (ADR-016).
+- **Jogos:** Robot Maker 2.1.0, Startup Panic 3.4.0 (bots a sério, cartões compactos), Praia das Percebes 2.1.1 (arte das peças, cores vivas, peça e tabuleiro inicial maiores).
+- As ADR-018 a ADR-021 foram renumeradas (havia três com o número 018).
+
+**Até ao PR #17.**
 
 **Mesa em ecrã inteiro (ADR-014).**
 - O Catania corre live no template: painéis de vidro por cima da mesa e tabuleiro numa camada em ecrã inteiro, por baixo da UI.
@@ -105,7 +116,7 @@ Resumo do estado da plataforma e do que foi feito até 27/09/2026, para começar
    - peças que o Catania pediu.
 
    Acrescentar também ao `docs/CONTRATO.md` as mensagens da mesa e o relatório do fim.
-2. **UIs próprias para os outros jogos** (Bulbous, Praia das Percebes, Nine Oils). O Capivaras serve de modelo para um jogo sem tabuleiro: `games/capivaras/ui/`.
+2. **Rever os pontos do CHANGELOG** de cada jogo migrado. As UIs próprias já existem; o Capivaras serve de modelo para um jogo sem tabuleiro: `games/capivaras/ui/`.
 3. **Geração pela API na Forge.** É opcional.
 4. **Secção "Clientes" na consola**, quando houver runtimes em produção.
 5. **Pacote instalável para publishers** (modelo A da proposta): Dockerfile e guia para cPanel com Node ou VPS. Só quando fechar o primeiro cliente.
@@ -136,7 +147,7 @@ Modelos de entrega:
 
 - **Comandos:**
   - `npm install`;
-  - `npm test` (157 testes);
+  - `npm test` (287 testes);
   - `ADMIN_TOKEN=segredo npm run studio`, com a consola em `/console`;
   - `PORT=3001 npm run runtime`.
 - **Convenções** (ver `CLAUDE.md`):
