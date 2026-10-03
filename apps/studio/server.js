@@ -18,6 +18,7 @@ export const bitnikBrand = {
   id: 'bitnik',
   name: 'Bitnik',
   lang: 'pt',
+  logoFile: fileURLToPath(new URL('./public/logo-bitnik.svg', import.meta.url)), // no lugar do nome, no lobby e nas mesas
   fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap',
   stylesheets: [
     '/design-system/index.css',
