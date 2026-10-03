@@ -1,6 +1,7 @@
 // Runtime limpo: o que um publisher cliente recebe.
 // Só depende do motor, do servidor e dos pacotes de jogo entregues.
 // Nada do Studio (Forge, simulação, protótipos) entra aqui.
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createPlatform, fileStorage, memoryStorage } from '@bitnik/server';
 import catania from '@bitnik/game-catania';
@@ -27,9 +28,15 @@ export const clientBrand = {
   },
 };
 
-export function makeRuntime({ dataDir, ...opts } = {}) {
+/** Perfil de marca exportado pelo Studio (tab Marcas): `marca.json` ao lado deste ficheiro, ou BRAND_PROFILE. */
+function loadProfile() {
+  try { return JSON.parse(readFileSync(process.env.BRAND_PROFILE || fileURLToPath(new URL('./marca.json', import.meta.url)), 'utf8')); } catch { return null; }
+}
+
+export function makeRuntime({ dataDir, profile = loadProfile(), ...opts } = {}) {
   return createPlatform({
     brand: clientBrand,
+    profile,
     games: [catania],
     storage: dataDir ? fileStorage(dataDir) : memoryStorage(),
     ...opts,

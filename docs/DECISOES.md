@@ -552,3 +552,25 @@ Jogando a 2.0.0, o David viu que: com 4 ações por startup é difícil ter maio
 - A economia muda muito: dividendos até ×4 com salários de 3M. A simulação mede o equilíbrio por lugar (ver `docs/EQUILIBRIO.md`), não se o jogo ficou mais divertido: assessment pendente.
 - Os valores (9 ações, ×1 a ×4, salários 0 a 3M) são constantes no topo de `rules.js`.
 - Muda regras: pacote em 3.0.0 e mesas guardadas da 2.x expiradas.
+
+## ADR-022: Marcas no Studio (lobbies de clientes em preparação)
+
+**Estado:** aceite (2026-10-03)
+
+### Contexto
+
+Cada publisher cliente tem o seu runtime (um deploy por marca), mas o desenho do lobby (jogos, logótipo, cores, aparência) faz-se e aprova-se antes, no Studio. Faltava uma forma de preparar, mostrar ao cliente, afinar e entregar isso.
+
+### Decisão
+
+- Um perfil de marca (`brands`, guardado como `brands.json`) tem identidade (nome, língua, logótipo, tokens da marca), os jogos escolhidos de entre todos os instalados e a aparência (marca e jogos, a mesma forma e validação da Aparência).
+- Consola › Marcas cria e edita perfis; mostra uma pré-visualização do lobby.
+- `/marca/<id>` serve o lobby com o perfil: a página põe `window.BRAND_ID` e o cliente diz-o no `HELLO` (`brand`). O servidor responde com o nome, a língua, o logótipo, só os jogos escolhidos e a aparência do perfil; a aparência do Studio não vaza para lá, nem a do perfil para o Studio (`appearanceFor`).
+- Entrega: `GET /admin/brands/<id>/export` devolve o pacote (`bitnik-brand/1`, JSON). O runtime carrega-o com a opção `profile` do `createPlatform` (no exemplo, `marca.json` ou `BRAND_PROFILE`): dá o nome, o logótipo, a aparência por omissão e limita os jogos. As afinações guardadas na consola do cliente prevalecem.
+
+### Consequências
+
+- ✔ Iterar e partilhar o lobby de um cliente sem um deploy por tentativa.
+- A aparência de cada jogo por marca copia-se da Aparência do Studio (botão "Copiar a aparência atual"); ainda não há um editor completo por marca.
+- A pré-visualização não impede jogar os jogos que ficaram de fora por link direto; é só para mostrar o lobby.
+- O pacote é um JSON; um zip pronto a instalar (projeto do runtime com os pacotes dos jogos) fica para depois.

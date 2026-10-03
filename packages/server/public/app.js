@@ -126,11 +126,12 @@ function skinFor(gameId) {
 // O modo protótipo era guardado no browser e ficava ligado em todas as mesas; já não é.
 try { localStorage.removeItem('bitnik.proto'); } catch { /* sem storage */ }
 
-const client = new BitnikClient({ lang: app.lang });
+const BRAND_ID = window.BRAND_ID || null; // /marca/<id>: pré-visualização de uma marca do Studio
+const client = new BitnikClient({ lang: app.lang, brand: BRAND_ID });
 const u = (key, params) => fill((UI[app.lang] || UI.pt)[key] ?? key, params);
 
 // Sem rede, a app usa os jogos da última ligação (o tutorial funciona offline).
-const WELCOME_KEY = 'bitnik.welcome';
+const WELCOME_KEY = BRAND_ID ? `bitnik.welcome.${BRAND_ID}` : 'bitnik.welcome';
 app.cachedWelcome = (() => { try { return JSON.parse(localStorage.getItem(WELCOME_KEY)); } catch { return null; } })();
 const W = () => app.welcome || app.cachedWelcome;
 const gameMeta = (id) => W()?.games.find((g) => g.id === id);
@@ -210,13 +211,19 @@ function nameField({ compact = false, id: fieldId = null } = {}) {
  * título, com o mesmo campo (ver nameField). `backHome`: no lobby, o ícone
  * volta ao Início (só com vários jogos); na entrada, ao lobby deste jogo
  * (sempre) — é um passo diferente, por isso não é o mesmo botão. */
+/** Nome da marca, ou o logótipo (se o perfil tiver um) com o nome como texto alternativo. */
+function brandMark() {
+  const b = W()?.brand;
+  const name = b?.name || $('#brand').textContent;
+  return b?.logo ? `<img class="brand-logo" src="${esc(b.logo)}" alt="${esc(name)}">` : esc(name);
+}
+
 function renderBrandTop(game = null, { extra = '', backHome = true } = {}) {
-  const brand = W()?.brand?.name || $('#brand').textContent;
   const back = backHome
     ? (game && manyGames() ? `<button class="mesa-btn" data-home aria-label="${esc(u('home'))}" title="${esc(u('home'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>` : '')
     : `<button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>`;
   return `<header class="home-top">
-    <div class="home-id"><strong class="home-brandname">${esc(brand)}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
+    <div class="home-id"><strong class="home-brandname">${brandMark()}</strong>${game ? `<span class="mesa-sep">·</span><strong class="home-gamename">${esc(t('game.name', {}, game))}</strong>` : ''}</div>
     <div class="mesa-actions">
       <span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}${back}
       <button class="mesa-btn" data-lang>${u('lang')}</button></div>
@@ -248,7 +255,7 @@ function renderLobby(only = null) {
       <div class="lob-head">
         <div class="lob-title"><h1>${esc(t('game.name', {}, g.id))}${g.prototype ? ` <span class="home-proto">${u('prototype', { v: g.version })}</span>` : ''}</h1>
           <p>${playersText(g.players)}</p></div>
-        <div class="lob-tools">${installButton()}${guideLink(g, g.id)}</div>
+        <div class="lob-tools">${installButton()}${guideLink(g, g.id, { tutorial: true })}</div>
       </div>
       <div class="lob-name">${nameField({ compact: true })}</div>
       <h2 class="lob-lbl">${u('yourTable')}</h2>
@@ -298,7 +305,6 @@ function playersText(p) {
 }
 
 function renderHome() {
-  const brand = W()?.brand?.name || $('#brand').textContent;
   // "hidden": instalado e jogável por link direto, mas fora da lista pública
   // (ex.: uma demonstração do template vanilla, ao lado do jogo a sério).
   const games = (W()?.games || []).filter((g) => !isHidden(g));
@@ -306,7 +312,7 @@ function renderHome() {
     ${renderBrandTop()}
     <div class="home-main">
       <div class="home-head">
-        <h1 class="home-brand">${esc(brand)}</h1>
+        <h1 class="home-brand">${brandMark()}</h1>
         <label class="home-name"><span>${u('writeName')}</span>
           ${nameField({ id: 'homeName' })}</label>
       </div>
@@ -475,10 +481,9 @@ function usesFullMesa(msg) {
  * cartões dos jogadores para trás dela em todos os jogos (testado). Quem
  * entra direto por um link de convite muda o nome no lobby, como todos. */
 function renderTableTop(gameId, meta, extra = '') {
-  const brand = W()?.brand?.name || $('#brand').textContent;
   const offline = app.status === 'closed' ? `<span class="mesa-chip warn" role="status">${esc(u('closed'))}</span>` : '';
   return `<header class="mesa-top">
-    <div class="mesa-id"><strong class="mesa-brand">${esc(brand)}</strong><span class="mesa-sep">·</span>
+    <div class="mesa-id"><strong class="mesa-brand">${brandMark()}</strong><span class="mesa-sep">·</span>
       <strong class="mesa-game">${esc(t('game.name', {}, gameId))}</strong><span class="mesa-meta">${meta}</span></div>
     <div class="mesa-actions">${offline}<span id="mesaNotices" class="mesa-notices">${renderNoticeChip()}</span>${extra}
       <button class="mesa-btn" data-lobby aria-label="${esc(u('back'))}" title="${esc(u('back'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
@@ -488,12 +493,12 @@ function renderTableTop(gameId, meta, extra = '') {
 
 /**
  * Botão durante a partida: com conteúdo de regras abre a modal "Como se joga"
- * sem sair da mesa ("?"); o "Tutorial" é o livro. Ambos sem caixa.
+ * sem sair da mesa ("?"). Sem tutorial aqui: só no lobby (sair a meio de um jogo
+ * para o tutorial tirava o jogador da partida).
  */
 function guideButton(meta) {
-  const tutorial = meta?.tutorial ? `<a class="mesa-btn" href="#/tutorial/${esc(meta.id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/></svg></a>` : '';
   const rules = meta?.rules ? `<button class="mesa-btn" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>` : '';
-  return tutorial + rules;
+  return rules;
 }
 
 /** Como guideButton(), mas com texto (lobby e sala de espera, antes da mesa). */
@@ -524,12 +529,12 @@ navigator.getInstalledRelatedApps?.().then((apps) => {
 }).catch(() => {});
 window.addEventListener('appinstalled', () => { app.installEvent = null; app.installed = true; if (!routeRoom()) render(); });
 
-function guideLink(meta, id) {
+function guideLink(meta, id, { tutorial: withTutorial = false } = {}) {
   const icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
   const book = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/></svg>';
   // O tutorial interativo tem botão próprio: com regras escritas (modal), deixava de se chegar a ele.
   // Tutorial (livro) e regras (?): só o ícone, sem caixa (.lob-ico).
-  const tutorial = meta?.tutorial ? `<a class="lob-ico" href="#/tutorial/${esc(id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}">${book}</a>` : '';
+  const tutorial = withTutorial && meta?.tutorial ? `<a class="lob-ico" href="#/tutorial/${esc(id)}" aria-label="${esc(u('tutorial'))}" title="${esc(u('tutorial'))}">${book}</a>` : '';
   const rules = meta?.rules ? `<button class="lob-ico" data-rules aria-label="${esc(u('howToPlay'))}" title="${esc(u('howToPlay'))}">${icon}</button>` : '';
   return tutorial + rules; // sem regras escritas, só o Tutorial (nunca o wizard com o nome "Como se joga")
 }

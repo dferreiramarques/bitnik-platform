@@ -21,11 +21,12 @@ function defaultStorage() {
 }
 
 export class BitnikClient {
-  constructor({ url, storage, name, lang, WebSocketImpl } = {}) {
+  constructor({ url, storage, name, lang, brand, WebSocketImpl } = {}) {
     this.url = url || defaultUrl();
     this.storage = storage === undefined ? defaultStorage() : storage;
     this.name = name;
     this.lang = lang;
+    this.brand = brand; // pré-visualização de uma marca do Studio (/marca/<id>)
     this.WS = WebSocketImpl || globalThis.WebSocket;
     this.listeners = new Map();
     this.ws = null;
@@ -61,7 +62,7 @@ export class BitnikClient {
     ws.onopen = () => {
       this.retry = 0;
       this.emit('status', 'open');
-      this.send('HELLO', { token: this.storage?.getItem(TOKEN_KEY) || null, name: this.name, lang: this.lang });
+      this.send('HELLO', { token: this.storage?.getItem(TOKEN_KEY) || null, name: this.name, lang: this.lang, brand: this.brand });
       clearInterval(this.ping);
       this.ping = setInterval(() => this.send('PING'), 20_000);
     };

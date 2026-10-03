@@ -477,6 +477,9 @@ body.is-home { background: var(--brand-primary, #b8461f); }
   font-size: 12px; text-shadow: 0 1px 3px rgb(0 0 0 / .35);
 }
 .home-id { display: flex; align-items: baseline; gap: 6px; margin-right: auto; min-width: 0; white-space: nowrap; overflow: hidden; }
+.brand-logo { display: block; height: 1em; width: auto; max-width: 100%; }
+.home-brand .brand-logo { height: clamp(40px, 8vh, 64px); }
+.home-brandname .brand-logo, .mesa-brand .brand-logo { height: 22px; }
 .home-brandname, .home-gamename { font-family: var(--ui-display); font-size: 14px; color: #fff; }
 .home-gamename { opacity: .9; overflow: hidden; text-overflow: ellipsis; }
 .home-top .mesa-panel { color: var(--ui-text); }

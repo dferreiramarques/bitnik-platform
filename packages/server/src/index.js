@@ -114,7 +114,12 @@ export function createPlatform({
   soloOverMs = 7 * 24 * 3600_000,
   soloIdleMs = 30 * 24 * 3600_000,
   reapIntervalMs = 3600_000, // de quanto em quanto tempo a limpeza automática verifica
+  // Perfil de marca exportado pelo Studio (tab Marcas): dá ao runtime do cliente
+  // o nome, a língua, o logótipo e a aparência da marca, e só mostra os jogos
+  // escolhidos. As afinações feitas depois na consola do cliente prevalecem.
+  profile = null,
 } = {}) {
+  if (profile) brand = { ...brand, name: profile.name, lang: profile.lang, logo: profile.logo || null };
   // ─── Jogos ──────────────────────────────────────────────────
   const G = new Map();
   const PV = new Map(); // protótipos da Forge: id → Map(versão → jogo); o G tem a mais recente
@@ -124,6 +129,7 @@ export function createPlatform({
     if (G.has(g.id)) throw new Error(`Jogo repetido: ${g.id}`);
     G.set(g.id, g);
   }
+  if (profile) for (const id of [...G.keys()]) if (!profile.games.includes(id)) G.delete(id);
 
   // ─── Service worker (PWA) ─────────────────────────────────────
   // A versão é um hash do conteúdo do que fica em cache e da marca: muda
@@ -160,8 +166,9 @@ export function createPlatform({
   const gameTimers = new Map();    // roomId → Map(key → timeout)
   const graceTimers = new Map();   // userId → timeout
   let notices = [];                // avisos do publisher para todos os ligados
-  let appearance = { brand: { tokens: {} }, games: {} }; // afinações da consola (ADR-008)
+  let appearance = profile ? { brand: { tokens: {}, ...profile.appearance?.brand }, games: {}, ...profile.appearance } : { brand: { tokens: {} }, games: {} }; // afinações da consola (ADR-008)
   let appearancePresets = []; // skins nomeadas, guardadas à parte da aparência ativa: { id, target, name, theme, tokens, createdAt }
+  let brands = [];                 // perfis de marca: lobbies de clientes em preparação (tab Marcas da consola)
   const forge = new Map();         // slug → projeto da Forge (só no Studio, ADR-009)
   let now = () => Date.now();
   let closing = false;
@@ -487,19 +494,79 @@ export function createPlatform({
     return out;
   }
 
-  /** Valida e guarda as afinações; só tokens declarados, só temas que existem. */
-  async function setAppearance(input = {}) {
+  /** Valida as afinações (marca + jogos); só tokens declarados, só temas que existem. */
+  async function cleanAppearance(input = {}) {
     const next = { brand: { tokens: cleanBrandTokens(input.brand?.tokens) }, games: {} };
-    // A visibilidade tem o seu próprio endpoint; o editor de aparência não a toca.
-    if (appearance.hidden) next.hidden = appearance.hidden;
     for (const [gameId, cfg] of Object.entries(input.games || {})) {
       const out = await cleanGameConfig(gameId, cfg);
       if (out.theme || Object.keys(out.tokens).length || out.thumbnail || out.anims) next.games[gameId] = out;
     }
+    return next;
+  }
+
+  /** Valida e guarda as afinações. */
+  async function setAppearance(input = {}) {
+    const next = await cleanAppearance(input);
+    // A visibilidade tem o seu próprio endpoint; o editor de aparência não a toca.
+    if (appearance.hidden) next.hidden = appearance.hidden;
     appearance = next;
     storage.saveAppearance?.(appearance);
-    for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance });
+    broadcastAppearance();
     return appearance;
+  }
+
+  /** Manda a cada ligado a aparência que lhe corresponde (a global, ou a da marca em pré-visualização). */
+  function broadcastAppearance() {
+    for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance: appearanceFor(c) });
+  }
+
+  // ─── Marcas (tab Marcas da consola) ───────────────────────────
+  // Um perfil é um lobby em preparação para um cliente: identidade (nome,
+  // língua, logótipo), jogos escolhidos e aparência (marca + jogos). Vive no
+  // Studio; abre-se em /marca/<id> para mostrar ao cliente, e exporta-se
+  // como pacote (JSON) que o runtime do cliente carrega (opção `profile`).
+  const brandOf = (id) => brands.find((b) => b.id === id) || null;
+  const appearanceFor = (c) => {
+    const b = c.brandId ? brandOf(c.brandId) : null;
+    return b ? { ...b.appearance, hidden: {} } : appearance;
+  };
+
+  function cleanImageUrl(name, value) {
+    const v = String(value ?? '').trim();
+    if (!v) return '';
+    if (v.length > 400_000) throw new Error(`${name}: imagem demasiado grande`);
+    if (!/^(data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]|https:\/\/|\/(?!\/))/i.test(v) || /[\s"'<>()\\]/.test(v.replace(/^data:[^,]*,/, ''))) throw new Error(`${name}: url não permitido`);
+    return v;
+  }
+
+  async function cleanBrandProfile(input = {}, id) {
+    const name = String(input.name ?? '').replace(/[<>]/g, '').trim().slice(0, 40);
+    if (!name) throw new Error('falta o nome da marca');
+    const games = [...new Set((input.games || []).map(String))];
+    for (const g of games) if (!G.has(g)) throw new Error(`${g}: jogo não instalado`);
+    const existing = brandOf(id);
+    return {
+      id, name, lang: input.lang === 'en' ? 'en' : 'pt',
+      logo: cleanImageUrl('logo', input.logo), games,
+      appearance: await cleanAppearance(input.appearance),
+      createdAt: existing?.createdAt ?? now(), updatedAt: now(),
+    };
+  }
+
+  async function saveBrand(id, input) {
+    if (!/^[a-z0-9][a-z0-9-]{1,31}$/.test(id)) throw new Error('o id da marca tem de ter 2 a 32 letras minúsculas, números ou hífens');
+    if (id === brand.id || ['console', 'admin', 'health', 'marca', 'games', 'engine', 'sdk', 'design-system'].includes(id)) throw new Error('id reservado');
+    const profile = await cleanBrandProfile(input, id);
+    brands = [...brands.filter((b) => b.id !== id), profile].sort((a, b) => a.name.localeCompare(b.name));
+    storage.saveBrands?.(brands);
+    return profile;
+  }
+
+  function deleteBrand(id) {
+    const before = brands.length;
+    brands = brands.filter((b) => b.id !== id);
+    storage.saveBrands?.(brands);
+    return brands.length < before;
   }
 
   /** Esconde/mostra um jogo na página da marca (sobrepõe o `hidden` do pacote); o link direto continua a funcionar. */
@@ -507,7 +574,7 @@ export function createPlatform({
     if (!G.has(gameId)) throw new Error(`${gameId}: jogo não instalado`);
     appearance = { ...appearance, hidden: { ...appearance.hidden, [gameId]: !!hidden } };
     storage.saveAppearance?.(appearance);
-    for (const [ws, c] of conns) if (c.user) send(ws, { type: 'APPEARANCE', appearance });
+    broadcastAppearance();
     return appearance.hidden[gameId];
   }
 
@@ -543,7 +610,7 @@ export function createPlatform({
   const fail = (ws, code, params = {}) => send(ws, { type: 'ERROR', code, params });
 
   const handlers = {
-    HELLO(ws, c, { token, name, lang }) {
+    HELLO(ws, c, { token, name, lang, brand: brandId }) {
       let user = token && users[token];
       if (!user) {
         token = id(18);
@@ -551,31 +618,33 @@ export function createPlatform({
         users[token] = user;
         storage.saveUsers(users);
       }
-      Object.assign(c, { user, token, lang: lang || c.lang });
+      // Pré-visualização de uma marca (/marca/<id>): lobby, jogos e aparência do perfil.
+      const profile = brandOf(brandId) || null;
+      Object.assign(c, { user, token, lang: lang || c.lang, brandId: profile?.id ?? null });
       clearTimeout(graceTimers.get(user.userId));
       markAway(user.userId, false);
       send(ws, {
         type: 'WELCOME', userId: user.userId, token, name: user.name, studio,
         engineVersion: ENGINE_VERSION,
-        brand: { id: brand.id, name: brand.name, lang: brand.lang || 'pt' },
+        brand: profile ? { id: profile.id, name: profile.name, lang: profile.lang, logo: profile.logo || null } : { id: brand.id, name: brand.name, lang: brand.lang || 'pt', logo: brand.logo || null },
         platformI18n: PLATFORM_I18N,
-        games: [...G.values()].map((g) => ({
+        games: [...G.values()].filter((g) => !profile || profile.games.includes(g.id)).map((g) => ({
           id: g.id, version: g.version, players: g.players, defaultLang: g.defaultLang, i18n: g.i18n,
           prototype: !!g.prototype,
           // Instalado e jogável por link direto, mas fora da lista pública
           // (página da marca) — ex.: uma demonstração do template vanilla.
-          hidden: appearance.hidden?.[g.id] ?? !!g.hidden,
+          hidden: appearanceFor(c).hidden?.[g.id] ?? !!g.hidden,
           ui: gameFileUrl(g, g.ui),
           tutorial: gameFileUrl(g, g.tutorial),
           skin: gameFileUrl(g, g.skin),
           // Miniatura na página da marca (não o fundo do lobby, que é sempre
           // o --table-bg); a consola pode sobrepor a do pacote (Aparência).
-          thumbnail: appearance.games?.[g.id]?.thumbnail || (g.thumbnail ? `url('${gameFileUrl(g, g.thumbnail)}')` : null),
+          thumbnail: appearanceFor(c).games?.[g.id]?.thumbnail || (g.thumbnail ? `url('${gameFileUrl(g, g.thumbnail)}')` : null),
           rules: g.rules || null,
           themes: Object.fromEntries(Object.entries(g.themes || {}).map(([k, rel]) => [k, gameFileUrl(g, rel)])),
         })),
         notices: activeNotices(),
-        appearance,
+        appearance: appearanceFor(c),
         now: now(),
       });
       send(ws, { type: 'ROOMS', ...roomsFor(user.userId) });
@@ -728,12 +797,14 @@ export function createPlatform({
   }
 
   // ─── HTTP ───────────────────────────────────────────────────
-  const brandHead = () => [
+  const brandHead = (profile = null) => [
     ...(brand.fonts ? [`<link rel="stylesheet" href="${brand.fonts}">`] : []),
     ...(brand.stylesheets || []).map((h) => `<link rel="stylesheet" href="${h}">`),
     brand.tokens ? `<style>:root{${Object.entries(brand.tokens).map(([k, v]) => `${k}:${v}`).join(';')}}</style>` : '',
     // Afinações da marca feitas na consola (já validadas); o JS mantém-nas ao vivo.
-    `<style id="appearance-brand">:root{${Object.entries(appearance.brand.tokens).map(([k, v]) => `${k}:${v}`).join(';')}}</style>`,
+    `<style id="appearance-brand">:root{${Object.entries((profile ? profile.appearance : appearance).brand.tokens).map(([k, v]) => `${k}:${v}`).join(';')}}</style>`,
+    // Pré-visualização de uma marca: o cliente (app.js) diz ao servidor qual é, no HELLO.
+    profile ? `<script>window.BRAND_ID=${JSON.stringify(profile.id)}</script>` : '',
   ].join('\n');
 
   async function serveFile(res, file, type, transform) {
@@ -1093,6 +1164,19 @@ export function createPlatform({
         if (!G.has(vis[1])) return json(res, 404, { error: 'jogo não instalado' });
         return json(res, 200, { hidden: setGameHidden(vis[1], (await readJson(req)).hidden) });
       }
+      if (url === '/admin/brands' && req.method === 'GET') {
+        return json(res, 200, { brands, games: [...G.values()].map((g) => ({ id: g.id, name: gameName(g), prototype: !!g.prototype })), brandTokens: BRAND_TOKENS, current: appearance });
+      }
+      const brandMatch = url.match(/^\/admin\/brands\/([a-z0-9-]+)(\/export)?$/);
+      if (brandMatch) {
+        const [, bid, exp] = brandMatch;
+        if (exp && req.method === 'GET') {
+          const b = brandOf(bid);
+          return b ? json(res, 200, { format: 'bitnik-brand/1', exportedAt: now(), ...b }) : json(res, 404, { error: 'marca inexistente' });
+        }
+        if (!exp && req.method === 'PUT') return json(res, 200, { brand: await saveBrand(bid, await readJson(req, APPEARANCE_MAX)) });
+        if (!exp && req.method === 'DELETE') return json(res, deleteBrand(bid) ? 204 : 404);
+      }
       if (url === '/admin/appearance' && req.method === 'GET') return json(res, 200, await appearanceCatalog());
       if (url === '/admin/appearance' && req.method === 'PUT') return json(res, 200, { appearance: await setAppearance(await readJson(req, APPEARANCE_MAX)) });
       if (url === '/admin/appearance/presets' && req.method === 'POST') {
@@ -1166,6 +1250,15 @@ export function createPlatform({
         .replaceAll('{{BRAND_NAME}}', brand.name).replace('{{BRAND_HEAD}}', brandHead())
         .replace('{{LANG}}', brand.lang || 'pt').replace('{{HOME}}', home));
     }
+    const marca = url.match(/^\/marca\/([a-z0-9-]+)\/?$/);
+    if (marca) {
+      const profile = brandOf(marca[1]);
+      if (!profile) { res.writeHead(404); return res.end('404'); }
+      const escHtml = (x) => String(x).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+      return serveFile(res, join(PUBLIC_DIR, 'app.html'), MIME['.html'], (html) => html
+        .replaceAll('{{BRAND_NAME}}', escHtml(profile.name)).replace('{{BRAND_HEAD}}', brandHead(profile))
+        .replace('{{LANG}}', profile.lang).replace('href="/icon.svg"', `href="${profile.logo ? escHtml(profile.logo) : '/icon.svg'}"`));
+    }
     if (url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, brand: brand.id, games: [...G.keys()], rooms: rooms.size }));
@@ -1212,7 +1305,7 @@ export function createPlatform({
     if (eng) return serveFile(res, join(ENGINE_DIR, eng[1]), MIME['.js']);
     const ds = url.match(/^\/design-system\/(index|tokens|base|components|game-ui)\.css$/);
     if (ds) return serveFile(res, join(PUBLIC_DIR, 'design-system', `${ds[1]}.css`), MIME['.css']);
-    const pub = url.match(/^\/(app\.js|tour\.js|motion\.js|animation\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-appearance\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
+    const pub = url.match(/^\/(app\.js|tour\.js|motion\.js|animation\.js|app\.css|icon\.svg|icon-192\.png|icon-512\.png|console\.js|console\.css|appearance\.js|console-appearance\.js|console-brands\.js|design-tokens\.js|console-forge\.js|console-forge-flow\.js|console-forge-play\.js|console-forge-tests\.js|console-forge-code\.js|documentation\.js|documentation\.css)$/);
     if (pub) return serveFile(res, join(PUBLIC_DIR, pub[1]), MIME[extname(pub[1])]);
     res.writeHead(404); res.end('404');
   });
@@ -1232,6 +1325,7 @@ export function createPlatform({
     notices = (saved.notices || []).filter((n) => n.until > now());
     if (saved.appearance) appearance = { brand: { tokens: {} }, games: {}, ...saved.appearance };
     appearancePresets = Array.isArray(saved.appearancePresets) ? saved.appearancePresets : [];
+    brands = Array.isArray(saved.brands) ? saved.brands : [];
     // Normaliza ao carregar: projetos guardados por versões anteriores ganham os campos novos.
     for (const [slug, p] of Object.entries(saved.forge || {})) {
       forge.set(slug, { ...normalizeProject(p), createdAt: p.createdAt ?? now(), updatedAt: p.updatedAt ?? now() });
