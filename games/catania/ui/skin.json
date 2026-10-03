@@ -255,7 +255,7 @@
       }
     },
     "--tile-texture-strength": {
-      "value": "0.5",
+      "value": "0.75",
       "type": "size",
       "group": "art",
       "label": {
